@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# 密钥（关键！绝不上传）
+.env
+*.env
+!.env.example
+
+# 向量库本地缓存
+backend/.chroma/
+.chroma/
+
+# 前端依赖与产物
+node_modules/
+frontend/dist/
+dist/
+.vite/
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
