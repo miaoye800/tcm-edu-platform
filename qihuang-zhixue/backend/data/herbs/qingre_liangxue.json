@@ -1,0 +1,579 @@
+[
+  {
+    "id": "herb_shengdihuang",
+    "name": "生地黄",
+    "pinyin": "sheng di huang",
+    "aliases": [
+      "生地"
+    ],
+    "category": "清热药",
+    "subcategory": "清热凉血药",
+    "nature": "寒",
+    "flavor": [
+      "甘",
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "清热凉血",
+      "养阴生津"
+    ],
+    "indications": [
+      {
+        "syndrome": "热入营血",
+        "description": "温热病热入营血，舌绛烦渴、身热夜甚"
+      },
+      {
+        "syndrome": "温毒发斑",
+        "description": "热毒入血，斑疹紫暗"
+      },
+      {
+        "syndrome": "血热出血",
+        "description": "血热妄行，吐血、衄血、便血、崩漏"
+      },
+      {
+        "syndrome": "热病伤阴",
+        "description": "热病伤津，口干舌燥、内热消渴"
+      },
+      {
+        "syndrome": "阴虚发热",
+        "description": "阴液亏虚，骨蒸潮热或津伤便秘"
+      }
+    ],
+    "dosage": {
+      "text": "10~15g",
+      "min_g": 10,
+      "max_g": 15,
+      "usage_notes": "鲜品用量可加倍"
+    },
+    "cautions": [
+      "脾虚湿滞、腹满便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_xuanshen"
+        ],
+        "purpose": "清热凉血、养阴生津，用于热入营血、津伤便秘",
+        "formula_ref": "formula_zengyetang"
+      },
+      {
+        "with": [
+          "herb_mudanpi"
+        ],
+        "purpose": "清热凉血、活血散瘀，用于温毒发斑、血热瘀滞",
+        "formula_ref": "formula_qingyingtang"
+      },
+      {
+        "with": [
+          "herb_shuiniujiao"
+        ],
+        "purpose": "清营凉血、解毒止血，用于热入营血、高热神昏、斑疹吐衄",
+        "formula_ref": "formula_qingyingtang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_xuanshen",
+        "key_points": "生地黄重在清热凉血、养阴生津，血热出血和热病伤阴常考；玄参清热凉血兼泻火解毒、软坚散结，咽喉肿痛与瘰疬常考"
+      },
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "生地黄凉血而养阴生津；牡丹皮凉血而活血散瘀，退虚热而不滋腻"
+      },
+      {
+        "compare_with": "herb_chishao",
+        "key_points": "生地黄偏养阴凉血；赤芍偏清热凉血、散瘀止痛，长于瘀热疼痛"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_xuanshen",
+        "herb_mudanpi",
+        "herb_chishao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热凉血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "生地黄 生地 清热凉血药 甘苦寒 归心肝肾经 清热凉血 养阴生津 热入营血 温毒发斑 血热出血 热病伤阴 阴虚发热 内热消渴 津伤便秘"
+  },
+  {
+    "id": "herb_xuanshen",
+    "name": "玄参",
+    "pinyin": "xuan shen",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热凉血药",
+    "nature": "微寒",
+    "flavor": [
+      "甘",
+      "苦",
+      "咸"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃",
+      "肾"
+    ],
+    "effects": [
+      "清热凉血",
+      "泻火解毒",
+      "滋阴"
+    ],
+    "indications": [
+      {
+        "syndrome": "热入营血",
+        "description": "温热病热入营血，身热夜甚、舌绛烦渴"
+      },
+      {
+        "syndrome": "温毒发斑",
+        "description": "温毒入血，斑疹紫暗"
+      },
+      {
+        "syndrome": "津伤便秘",
+        "description": "热病伤阴或阴虚津亏，大便燥结"
+      },
+      {
+        "syndrome": "骨蒸劳嗽",
+        "description": "阴虚火旺，骨蒸潮热、劳嗽咯血"
+      },
+      {
+        "syndrome": "目赤咽痛",
+        "description": "火热上攻，目赤肿痛、咽喉肿痛"
+      },
+      {
+        "syndrome": "瘰疬白喉痈肿疮毒",
+        "description": "热毒痰火郁结，瘰疬痰核、白喉、疮痈肿毒"
+      }
+    ],
+    "dosage": {
+      "text": "10~15g",
+      "min_g": 10,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒、食少便溏者慎用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_shengdihuang",
+          "herb_maidong"
+        ],
+        "purpose": "增液润燥、滋阴通便，用于热病伤阴津亏便秘",
+        "formula_ref": "formula_zengyetang"
+      },
+      {
+        "with": [
+          "herb_lianqiao"
+        ],
+        "purpose": "清热解毒、散结消肿，用于瘰疬痰核、痈肿疮毒",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_jiegeng"
+        ],
+        "purpose": "清热解毒、利咽，用于咽喉肿痛、白喉",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shengdihuang",
+        "key_points": "玄参甘苦咸寒，清热凉血兼泻火解毒、滋阴软坚；生地黄甘苦寒，偏养阴生津、凉血止血"
+      },
+      {
+        "compare_with": "herb_maidong",
+        "key_points": "玄参清热解毒、软坚散结力突出；麦冬偏养阴润肺、益胃生津、清心除烦"
+      },
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "玄参滋阴解毒、软坚利咽；牡丹皮凉血活血、退虚热，善治无汗骨蒸"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shengdihuang",
+        "herb_maidong",
+        "herb_mudanpi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热凉血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "玄参 清热凉血药 甘苦咸寒 归肺胃肾经 清热凉血 泻火解毒 滋阴 热入营血 温毒发斑 津伤便秘 骨蒸劳嗽 目赤咽痛 瘰疬 白喉 痈肿疮毒"
+  },
+  {
+    "id": "herb_mudanpi",
+    "name": "牡丹皮",
+    "pinyin": "mu dan pi",
+    "aliases": [
+      "丹皮"
+    ],
+    "category": "清热药",
+    "subcategory": "清热凉血药",
+    "nature": "微寒",
+    "flavor": [
+      "苦",
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "清热凉血",
+      "活血化瘀"
+    ],
+    "indications": [
+      {
+        "syndrome": "热入营血",
+        "description": "温热病热入营血，发斑发疹、血热妄行"
+      },
+      {
+        "syndrome": "温毒发斑",
+        "description": "温毒入血，斑疹紫暗"
+      },
+      {
+        "syndrome": "血热吐衄",
+        "description": "血热妄行，吐血、衄血"
+      },
+      {
+        "syndrome": "温病伤阴阴虚发热",
+        "description": "温病后期阴虚发热，夜热早凉、无汗骨蒸"
+      },
+      {
+        "syndrome": "血滞经闭痛经",
+        "description": "血热瘀滞，月经不调、经闭痛经"
+      },
+      {
+        "syndrome": "跌扑伤痛痈肿疮毒",
+        "description": "瘀热互结，跌打肿痛或痈肿疮毒"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "血虚有寒、月经过多者慎用",
+      "孕妇慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_shengdihuang"
+        ],
+        "purpose": "清热凉血、养阴活血，用于热入营血、血热发斑",
+        "formula_ref": "formula_qingyingtang"
+      },
+      {
+        "with": [
+          "herb_chishao"
+        ],
+        "purpose": "清热凉血、活血散瘀，用于血热瘀滞、痛经经闭",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_qinghao"
+        ],
+        "purpose": "清退虚热，用于温病后期阴虚发热、夜热早凉",
+        "formula_ref": "formula_qinghaobiejiatang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shengdihuang",
+        "key_points": "牡丹皮凉血而活血散瘀，退虚热不滋腻；生地黄凉血而养阴生津，滋腻性较强"
+      },
+      {
+        "compare_with": "herb_chishao",
+        "key_points": "牡丹皮善退虚热、清无汗骨蒸；赤芍善散瘀止痛，肝郁血瘀胁痛、痛经常考"
+      },
+      {
+        "compare_with": "herb_shuiniujiao",
+        "key_points": "牡丹皮清热凉血兼活血化瘀；水牛角清热凉血、解毒定惊，适于热入营血高热神昏"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shengdihuang",
+        "herb_chishao",
+        "herb_shuiniujiao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热凉血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "牡丹皮 丹皮 清热凉血药 苦辛微寒 归心肝肾经 清热凉血 活血化瘀 热入营血 温毒发斑 血热吐衄 阴虚发热 无汗骨蒸 血滞经闭 痛经 跌扑伤痛 痈肿疮毒"
+  },
+  {
+    "id": "herb_chishao",
+    "name": "赤芍",
+    "pinyin": "chi shao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热凉血药",
+    "nature": "微寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝"
+    ],
+    "effects": [
+      "清热凉血",
+      "散瘀止痛"
+    ],
+    "indications": [
+      {
+        "syndrome": "热入营血",
+        "description": "温热病热入营血，斑疹紫暗、血热妄行"
+      },
+      {
+        "syndrome": "温毒发斑",
+        "description": "热毒入血，发斑发疹"
+      },
+      {
+        "syndrome": "血热吐衄",
+        "description": "血热妄行，吐血、衄血"
+      },
+      {
+        "syndrome": "目赤肿痛",
+        "description": "肝经风热或肝火上炎，目赤肿痛"
+      },
+      {
+        "syndrome": "肝郁胁痛经闭痛经",
+        "description": "肝郁血滞，胁肋疼痛、经闭痛经"
+      },
+      {
+        "syndrome": "癥瘕腹痛跌扑损伤",
+        "description": "瘀血阻滞，癥瘕积聚、腹痛、跌打损伤"
+      },
+      {
+        "syndrome": "痈肿疮疡",
+        "description": "热毒瘀滞，疮痈肿痛"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "血虚无瘀者慎用",
+      "孕妇慎用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_mudanpi"
+        ],
+        "purpose": "清热凉血、活血散瘀，用于血热瘀滞、经闭痛经、疮痈肿痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_chaihu"
+        ],
+        "purpose": "疏肝清热、活血止痛，用于肝郁胁痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_taoren"
+        ],
+        "purpose": "活血散瘀、清热止痛，用于瘀热互结之腹痛、跌扑损伤",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "赤芍长于散瘀止痛，主肝郁胁痛、经闭痛经；牡丹皮兼退虚热，善治无汗骨蒸"
+      },
+      {
+        "compare_with": "herb_shengdihuang",
+        "key_points": "赤芍清热凉血兼散瘀止痛；生地黄清热凉血兼养阴生津"
+      },
+      {
+        "compare_with": "herb_baishao",
+        "key_points": "赤芍偏清热凉血、散瘀止痛；白芍偏养血敛阴、柔肝止痛、平抑肝阳"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_mudanpi",
+        "herb_shengdihuang",
+        "herb_baishao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热凉血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "赤芍 清热凉血药 苦微寒 归肝经 清热凉血 散瘀止痛 热入营血 温毒发斑 血热吐衄 目赤肿痛 肝郁胁痛 经闭痛经 癥瘕腹痛 跌扑损伤 痈肿疮疡"
+  },
+  {
+    "id": "herb_shuiniujiao",
+    "name": "水牛角",
+    "pinyin": "shui niu jiao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热凉血药",
+    "nature": "寒",
+    "flavor": [
+      "咸"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肝"
+    ],
+    "effects": [
+      "清热凉血",
+      "解毒",
+      "定惊"
+    ],
+    "indications": [
+      {
+        "syndrome": "温病高热神昏",
+        "description": "热入营血或热陷心包，高热神昏、谵语躁狂"
+      },
+      {
+        "syndrome": "惊风癫狂",
+        "description": "热盛动风，惊厥抽搐或癫狂躁扰"
+      },
+      {
+        "syndrome": "血热斑疹吐衄",
+        "description": "热入血分，斑疹紫暗、吐血、衄血"
+      },
+      {
+        "syndrome": "痈肿疮疡",
+        "description": "热毒炽盛，痈肿疮毒"
+      }
+    ],
+    "dosage": {
+      "text": "15~30g",
+      "min_g": 15,
+      "max_g": 30,
+      "usage_notes": "宜先煎3小时以上"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_shengdihuang",
+          "herb_xuanshen"
+        ],
+        "purpose": "清营凉血、养阴解毒，用于热入营血、高热神昏、斑疹吐衄",
+        "formula_ref": "formula_qingyingtang"
+      },
+      {
+        "with": [
+          "herb_huanglian"
+        ],
+        "purpose": "清心解毒、凉血定惊，用于热陷心包、高热神昏",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_mudanpi"
+        ],
+        "purpose": "清热凉血、解毒散瘀，用于温毒发斑、血热瘀滞",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shengdihuang",
+        "key_points": "水牛角咸寒，重在清热凉血、解毒定惊，主高热神昏惊厥；生地黄凉血兼养阴生津，主热病伤阴、血热出血"
+      },
+      {
+        "compare_with": "herb_xijiao",
+        "key_points": "水牛角为犀角代用品，清热凉血、解毒定惊力较缓，用量较大且宜久煎"
+      },
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "水牛角偏解毒定惊，适合热入营血神昏惊厥；牡丹皮偏活血散瘀、退虚热"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shengdihuang",
+        "herb_xuanshen",
+        "herb_mudanpi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热凉血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "水牛角 清热凉血药 咸寒 归心肝经 清热凉血 解毒 定惊 温病高热神昏 惊风癫狂 血热斑疹 吐衄 痈肿疮疡 宜先煎"
+  }
+]

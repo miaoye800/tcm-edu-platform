@@ -1,0 +1,910 @@
+[
+  {
+    "id": "herb_renshen",
+    "name": "人参",
+    "pinyin": "ren shen",
+    "aliases": [
+      "生晒参",
+      "红参"
+    ],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "微温",
+    "flavor": [
+      "甘",
+      "微苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "肺",
+      "心",
+      "肾"
+    ],
+    "effects": [
+      "大补元气",
+      "复脉固脱",
+      "补脾益肺",
+      "生津养血",
+      "安神益智"
+    ],
+    "indications": [
+      {
+        "syndrome": "气虚欲脱",
+        "description": "大汗、大吐、大泻或久病大失血后元气虚脱，脉微欲绝"
+      },
+      {
+        "syndrome": "脾气不足",
+        "description": "食少倦怠、呕吐泄泻"
+      },
+      {
+        "syndrome": "肺气虚弱",
+        "description": "气短喘促、咳嗽无力"
+      },
+      {
+        "syndrome": "津伤口渴内热消渴",
+        "description": "热病气津两伤或消渴口干"
+      },
+      {
+        "syndrome": "心神不安",
+        "description": "气血不足，失眠健忘、心悸怔忡"
+      }
+    ],
+    "dosage": {
+      "text": "3~9g",
+      "min_g": 3,
+      "max_g": 9,
+      "usage_notes": "另煎兑服；用于急救虚脱可用15~30g"
+    },
+    "cautions": [
+      "实证、热证而正气不虚者忌用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_fuzi"
+        ],
+        "purpose": "回阳益气固脱，用于亡阳气脱",
+        "formula_ref": "formula_shenfu_tang"
+      },
+      {
+        "with": [
+          "herb_maidong",
+          "herb_wuweizi"
+        ],
+        "purpose": "益气生津、敛阴止汗，用于气阴两伤",
+        "formula_ref": "formula_shengmai_san"
+      },
+      {
+        "with": [
+          "herb_baizhu",
+          "herb_fuling",
+          "herb_gancao"
+        ],
+        "purpose": "益气健脾，用于脾胃气虚",
+        "formula_ref": "formula_sijunzi_tang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_dangshen",
+        "key_points": "人参大补元气、救脱力强，兼安神益智；党参补脾肺气、生津养血力平，不用于急救虚脱"
+      },
+      {
+        "compare_with": "herb_taizishen",
+        "key_points": "人参补气力强而微温；太子参补气生津力缓，适合气阴不足轻证"
+      },
+      {
+        "compare_with": "herb_huangqi",
+        "key_points": "人参偏大补元气、补五脏气；黄芪偏补气升阳、固表止汗、托毒生肌、利水"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_dangshen",
+        "herb_taizishen",
+        "herb_huangqi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "人参 生晒参 红参 补气药 甘微苦微温 归脾肺心肾经 大补元气 复脉固脱 补脾益肺 生津养血 安神益智 气虚欲脱 脾气不足 肺气虚弱 津伤口渴 内热消渴 心神不安 另煎"
+  },
+  {
+    "id": "herb_dangshen",
+    "name": "党参",
+    "pinyin": "dang shen",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "平",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "肺"
+    ],
+    "effects": [
+      "补脾肺气",
+      "补血",
+      "生津"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾肺气虚",
+        "description": "食少倦怠、便溏，咳喘气短"
+      },
+      {
+        "syndrome": "气血不足",
+        "description": "面色萎黄、头晕心悸"
+      },
+      {
+        "syndrome": "气津两伤",
+        "description": "气短口渴，津伤口干"
+      }
+    ],
+    "dosage": {
+      "text": "9~30g",
+      "min_g": 9,
+      "max_g": 30,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "实证、热证而正气不虚者慎用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_baizhu",
+          "herb_fuling",
+          "herb_gancao"
+        ],
+        "purpose": "补脾益气，用于脾胃气虚",
+        "formula_ref": "formula_sijunzi_tang"
+      },
+      {
+        "with": [
+          "herb_huangqi"
+        ],
+        "purpose": "益气健脾、补肺，用于气虚乏力、自汗",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_danggui"
+        ],
+        "purpose": "益气补血，用于气血两虚",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_renshen",
+        "key_points": "党参补气力较人参缓，重在补脾肺气、生津补血；人参大补元气、救脱力强"
+      },
+      {
+        "compare_with": "herb_taizishen",
+        "key_points": "党参补气偏脾肺，力较太子参强；太子参偏益气生津，性平力缓"
+      },
+      {
+        "compare_with": "herb_shanyao",
+        "key_points": "党参偏补脾肺气；山药兼补脾肺肾、固精止带"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_renshen",
+        "herb_taizishen",
+        "herb_shanyao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "党参 补气药 甘平 归脾肺经 补脾肺气 补血 生津 脾肺气虚 气血不足 气津两伤"
+  },
+  {
+    "id": "herb_taizishen",
+    "name": "太子参",
+    "pinyin": "tai zi shen",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "平",
+    "flavor": [
+      "甘",
+      "微苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "肺"
+    ],
+    "effects": [
+      "补气健脾",
+      "生津润肺"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾虚体倦食少",
+        "description": "脾气不足，倦怠乏力、食少便溏"
+      },
+      {
+        "syndrome": "病后虚弱",
+        "description": "病后气阴不足，体虚乏力"
+      },
+      {
+        "syndrome": "气阴不足自汗口渴",
+        "description": "气短自汗、口干口渴"
+      },
+      {
+        "syndrome": "肺燥干咳",
+        "description": "肺气阴不足，干咳少痰"
+      }
+    ],
+    "dosage": {
+      "text": "9~30g",
+      "min_g": 9,
+      "max_g": 30,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "邪实而正气不虚者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_maidong"
+        ],
+        "purpose": "益气养阴、生津润肺，用于气阴不足、肺燥干咳",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_baizhu"
+        ],
+        "purpose": "补气健脾，用于脾虚食少体倦",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_wuweizi"
+        ],
+        "purpose": "益气生津、敛汗，用于气阴不足自汗口渴",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_renshen",
+        "key_points": "太子参补气力缓，兼生津润肺，适合气阴不足轻证；人参大补元气、救脱力强"
+      },
+      {
+        "compare_with": "herb_dangshen",
+        "key_points": "太子参偏气阴双补、润肺生津；党参偏补脾肺气，兼补血"
+      },
+      {
+        "compare_with": "herb_beishashen",
+        "key_points": "太子参以补气为主兼生津；北沙参以养阴清肺、益胃生津为主"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": false,
+      "common_confusions": [
+        "herb_renshen",
+        "herb_dangshen",
+        "herb_beishashen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "太子参 补气药 甘微苦平 归脾肺经 补气健脾 生津润肺 脾虚体倦 食少 病后虚弱 气阴不足 自汗口渴 肺燥干咳"
+  },
+  {
+    "id": "herb_huangqi",
+    "name": "黄芪",
+    "pinyin": "huang qi",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "微温",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "肺"
+    ],
+    "effects": [
+      "补气升阳",
+      "固表止汗",
+      "利水消肿",
+      "生津养血",
+      "行滞通痹",
+      "托毒排脓",
+      "敛疮生肌"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾气虚证",
+        "description": "食少便溏、倦怠乏力"
+      },
+      {
+        "syndrome": "肺气虚证",
+        "description": "咳喘气短、声低懒言"
+      },
+      {
+        "syndrome": "气虚自汗",
+        "description": "卫气不固，自汗恶风"
+      },
+      {
+        "syndrome": "气虚水肿",
+        "description": "脾肺气虚，水湿不运之浮肿尿少"
+      },
+      {
+        "syndrome": "气血亏虚",
+        "description": "血虚萎黄、内热消渴"
+      },
+      {
+        "syndrome": "半身不遂痹痛麻木",
+        "description": "气虚血滞，肢体麻木疼痛"
+      },
+      {
+        "syndrome": "痈疽难溃久溃不敛",
+        "description": "正虚毒滞，疮疡脓成不溃或溃久不敛"
+      }
+    ],
+    "dosage": {
+      "text": "9~30g",
+      "min_g": 9,
+      "max_g": 30,
+      "usage_notes": "补气升阳宜炙用，其他多生用"
+    },
+    "cautions": [
+      "表实邪盛、疮疡初起或溃后热毒尚盛者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_renshen"
+        ],
+        "purpose": "大补肺脾之气，用于气虚欲脱或气虚乏力",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_baizhu",
+          "herb_fangfeng"
+        ],
+        "purpose": "益气固表止汗，用于表虚自汗",
+        "formula_ref": "formula_yupingfengsan"
+      },
+      {
+        "with": [
+          "herb_danggui"
+        ],
+        "purpose": "补气生血，用于血虚发热或气血亏虚",
+        "formula_ref": "formula_danggui_buxue_tang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_renshen",
+        "key_points": "黄芪偏补气升阳、固表止汗、托毒生肌、利水；人参偏大补元气、救脱安神"
+      },
+      {
+        "compare_with": "herb_baizhu",
+        "key_points": "黄芪补气升阳、固表托毒；白术补气健脾、燥湿利水、止汗安胎"
+      },
+      {
+        "compare_with": "herb_gancao",
+        "key_points": "黄芪升补外达，善固表托疮；甘草补中益气且调和诸药、缓急止痛"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_renshen",
+        "herb_baizhu",
+        "herb_gancao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "黄芪 补气药 甘微温 归脾肺经 补气升阳 固表止汗 利水消肿 生津养血 行滞通痹 托毒排脓 敛疮生肌 脾气虚 肺气虚 气虚自汗 气虚水肿 内热消渴 半身不遂 痹痛麻木 痈疽难溃 久溃不敛"
+  },
+  {
+    "id": "herb_baizhu",
+    "name": "白术",
+    "pinyin": "bai zhu",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "温",
+    "flavor": [
+      "苦",
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "胃"
+    ],
+    "effects": [
+      "补气健脾",
+      "燥湿利水",
+      "止汗",
+      "安胎"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾气虚弱",
+        "description": "食少便溏、倦怠乏力"
+      },
+      {
+        "syndrome": "脾虚饮停痰饮水肿",
+        "description": "脾虚水湿不运，痰饮、水肿、小便不利"
+      },
+      {
+        "syndrome": "气虚自汗",
+        "description": "脾肺气虚，卫外不固"
+      },
+      {
+        "syndrome": "胎动不安",
+        "description": "脾虚气弱，胎元不固"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": "补气健脾宜炒用，燥湿利水宜生用"
+    },
+    "cautions": [
+      "阴虚内热、津液亏耗者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_renshen",
+          "herb_fuling",
+          "herb_gancao"
+        ],
+        "purpose": "补气健脾，用于脾胃气虚",
+        "formula_ref": "formula_sijunzi_tang"
+      },
+      {
+        "with": [
+          "herb_huangqi",
+          "herb_fangfeng"
+        ],
+        "purpose": "益气固表止汗，用于表虚自汗",
+        "formula_ref": "formula_yupingfengsan"
+      },
+      {
+        "with": [
+          "herb_huangqin"
+        ],
+        "purpose": "健脾清热安胎，用于胎热兼脾虚胎动不安",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huangqi",
+        "key_points": "白术补气健脾、燥湿利水并安胎；黄芪补气升阳、固表托毒力强"
+      },
+      {
+        "compare_with": "herb_shanyao",
+        "key_points": "白术苦温燥湿，长于健脾燥湿利水；山药甘平补脾肺肾，兼固精止带"
+      },
+      {
+        "compare_with": "herb_cangzhu",
+        "key_points": "白术以补气健脾为主；苍术以燥湿健脾、祛风散寒为主"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huangqi",
+        "herb_shanyao",
+        "herb_cangzhu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "白术 补气药 苦甘温 归脾胃经 补气健脾 燥湿利水 止汗 安胎 脾气虚弱 食少便溏 痰饮水肿 气虚自汗 胎动不安"
+  },
+  {
+    "id": "herb_shanyao",
+    "name": "山药",
+    "pinyin": "shan yao",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "平",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "肺",
+      "肾"
+    ],
+    "effects": [
+      "益气养阴",
+      "补脾肺肾",
+      "固精止带"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾虚食少便溏",
+        "description": "脾气不足，食少倦怠、大便溏泄"
+      },
+      {
+        "syndrome": "肺虚喘咳",
+        "description": "肺气阴不足，咳喘气短"
+      },
+      {
+        "syndrome": "肾虚遗精尿频",
+        "description": "肾气不固，遗精、尿频"
+      },
+      {
+        "syndrome": "带下",
+        "description": "脾肾亏虚，带下清稀"
+      },
+      {
+        "syndrome": "内热消渴",
+        "description": "气阴两虚，口渴多饮"
+      }
+    ],
+    "dosage": {
+      "text": "15~30g",
+      "min_g": 15,
+      "max_g": 30,
+      "usage_notes": "麸炒可增强补脾止泻作用"
+    },
+    "cautions": [
+      "湿盛中满或积滞者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_renshen",
+          "herb_baizhu"
+        ],
+        "purpose": "补脾益气止泻，用于脾虚泄泻",
+        "formula_ref": "formula_shenling_baizhu_san"
+      },
+      {
+        "with": [
+          "herb_shudihuang",
+          "herb_shanzhuyu"
+        ],
+        "purpose": "补肾固精，用于肾虚遗精尿频",
+        "formula_ref": "formula_liuwei_dihuang_wan"
+      },
+      {
+        "with": [
+          "herb_huangqi"
+        ],
+        "purpose": "益气养阴，用于气阴两虚消渴",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_baizhu",
+        "key_points": "山药平补脾肺肾，兼固精止带；白术温燥，健脾燥湿利水力强"
+      },
+      {
+        "compare_with": "herb_dangshen",
+        "key_points": "山药补气兼养阴固涩；党参偏补脾肺气、生津补血"
+      },
+      {
+        "compare_with": "herb_taizishen",
+        "key_points": "山药平补脾肺肾，兼固精止带；太子参补气健脾、生津润肺，偏气阴不足轻证"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_baizhu",
+        "herb_dangshen",
+        "herb_shudihuang"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "山药 补气药 甘平 归脾肺肾经 益气养阴 补脾肺肾 固精止带 脾虚食少便溏 肺虚喘咳 肾虚遗精尿频 带下 内热消渴"
+  },
+  {
+    "id": "herb_gancao",
+    "name": "甘草",
+    "pinyin": "gan cao",
+    "aliases": [
+      "炙甘草"
+    ],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "平",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肺",
+      "脾",
+      "胃"
+    ],
+    "effects": [
+      "补脾益气",
+      "祛痰止咳",
+      "缓急止痛",
+      "清热解毒",
+      "调和诸药"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾胃虚弱",
+        "description": "倦怠乏力、食少便溏"
+      },
+      {
+        "syndrome": "心气不足",
+        "description": "心悸怔忡、脉结代"
+      },
+      {
+        "syndrome": "咳嗽痰多",
+        "description": "多种咳嗽痰多证"
+      },
+      {
+        "syndrome": "脘腹四肢挛急疼痛",
+        "description": "脘腹疼痛或四肢拘挛疼痛"
+      },
+      {
+        "syndrome": "痈肿疮毒药食中毒",
+        "description": "热毒疮疡或药食毒物中毒"
+      }
+    ],
+    "dosage": {
+      "text": "2~10g",
+      "min_g": 2,
+      "max_g": 10,
+      "usage_notes": "补脾益气宜炙用，清热解毒宜生用"
+    },
+    "cautions": [
+      "湿盛胀满、水肿者慎用",
+      "不宜与甘遂、大戟、海藻、芫花同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "甘遂",
+        "大戟",
+        "海藻",
+        "芫花"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_renshen",
+          "herb_baizhu",
+          "herb_fuling"
+        ],
+        "purpose": "补气健脾，用于脾胃气虚",
+        "formula_ref": "formula_sijunzi_tang"
+      },
+      {
+        "with": [
+          "herb_guizhi"
+        ],
+        "purpose": "温通心阳、补益心气，用于心悸脉结代",
+        "formula_ref": "formula_zhigancao_tang"
+      },
+      {
+        "with": [
+          "herb_baishao"
+        ],
+        "purpose": "缓急止痛，用于脘腹或四肢挛急疼痛",
+        "formula_ref": "formula_shaoyao_gancao_tang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_dazao",
+        "key_points": "甘草补中益气、调和诸药并解毒缓急；大枣补中益气、养血安神并缓和药性"
+      },
+      {
+        "compare_with": "herb_huangqi",
+        "key_points": "甘草补气力缓，重在调和缓急；黄芪补气升阳、固表托毒力强"
+      },
+      {
+        "compare_with": "herb_baishao",
+        "key_points": "甘草与白芍相配缓急止痛；白芍本身偏养血敛阴、柔肝止痛"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_dazao",
+        "herb_huangqi",
+        "herb_baishao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "甘草 炙甘草 补气药 甘平 归心肺脾胃经 补脾益气 祛痰止咳 缓急止痛 清热解毒 调和诸药 脾胃虚弱 心气不足 咳嗽痰多 脘腹四肢挛急疼痛 痈肿疮毒 药食中毒"
+  },
+  {
+    "id": "herb_dazao",
+    "name": "大枣",
+    "pinyin": "da zao",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补气药",
+    "nature": "温",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "胃",
+      "心"
+    ],
+    "effects": [
+      "补中益气",
+      "养血安神"
+    ],
+    "indications": [
+      {
+        "syndrome": "脾虚食少便溏",
+        "description": "脾胃虚弱，食少便溏、倦怠乏力"
+      },
+      {
+        "syndrome": "妇人脏躁",
+        "description": "营血不足，精神恍惚、悲伤欲哭"
+      },
+      {
+        "syndrome": "药性峻烈配伍缓和",
+        "description": "配伍用于缓和药物峻烈之性"
+      }
+    ],
+    "dosage": {
+      "text": "6~15g",
+      "min_g": 6,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "湿盛、痰热、食积、虫积及齿病者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_gancao",
+          "herb_xiaomai"
+        ],
+        "purpose": "养心安神、和中缓急，用于妇人脏躁",
+        "formula_ref": "formula_ganmai_dazao_tang"
+      },
+      {
+        "with": [
+          "herb_shengjiang"
+        ],
+        "purpose": "调和营卫、和胃护中，用于解表方中调和脾胃",
+        "formula_ref": "formula_guizhitang"
+      },
+      {
+        "with": [
+          "herb_dangshen",
+          "herb_baizhu"
+        ],
+        "purpose": "补中益气，用于脾虚食少便溏",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_gancao",
+        "key_points": "大枣补中益气、养血安神，常缓和药性；甘草补气解毒、缓急止痛、调和诸药更常用"
+      },
+      {
+        "compare_with": "herb_longyanrou",
+        "key_points": "大枣补脾养血安神力缓；龙眼肉补益心脾、养血安神力较专"
+      },
+      {
+        "compare_with": "herb_shengjiang",
+        "key_points": "大枣甘温补中、缓和药性；生姜辛温解表散寒、温中止呕"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 1,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_gancao",
+        "herb_longyanrou",
+        "herb_shengjiang"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补气药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "大枣 补气药 甘温 归脾胃心经 补中益气 养血安神 脾虚食少便溏 妇人脏躁 缓和药性"
+  }
+]

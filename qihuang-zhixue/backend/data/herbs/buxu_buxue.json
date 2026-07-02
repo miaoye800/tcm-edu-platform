@@ -1,0 +1,549 @@
+[
+  {
+    "id": "herb_danggui",
+    "name": "当归",
+    "pinyin": "dang gui",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补血药",
+    "nature": "温",
+    "flavor": [
+      "甘",
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "心",
+      "脾"
+    ],
+    "effects": [
+      "补血活血",
+      "调经止痛",
+      "润肠通便"
+    ],
+    "indications": [
+      {
+        "syndrome": "血虚萎黄",
+        "description": "血虚面色萎黄、眩晕心悸"
+      },
+      {
+        "syndrome": "月经不调经闭痛经",
+        "description": "血虚、血瘀或寒凝所致月经病"
+      },
+      {
+        "syndrome": "虚寒腹痛风湿痹痛",
+        "description": "血虚寒凝或痹阻疼痛"
+      },
+      {
+        "syndrome": "跌扑损伤痈疽疮疡",
+        "description": "血瘀疼痛或疮疡脓成不溃、溃后不敛"
+      },
+      {
+        "syndrome": "血虚肠燥便秘",
+        "description": "血虚津亏，大便秘结"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": "补血多用当归身，活血多用当归尾，酒炒增强活血作用"
+    },
+    "cautions": [
+      "湿盛中满、大便泄泻者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_huangqi"
+        ],
+        "purpose": "补气生血，用于血虚发热、气血亏虚",
+        "formula_ref": "formula_danggui_buxue_tang"
+      },
+      {
+        "with": [
+          "herb_shudihuang",
+          "herb_baishao",
+          "herb_chuanxiong"
+        ],
+        "purpose": "补血调经，用于血虚血滞月经不调",
+        "formula_ref": "formula_siwu_tang"
+      },
+      {
+        "with": [
+          "herb_roucongrong"
+        ],
+        "purpose": "养血润肠通便，用于血虚肠燥便秘",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shudihuang",
+        "key_points": "当归补血兼活血调经止痛、润肠；熟地黄补血滋阴、填精益髓，偏静补"
+      },
+      {
+        "compare_with": "herb_baishao",
+        "key_points": "当归辛温走散，补血活血；白芍酸收，养血敛阴、柔肝止痛"
+      },
+      {
+        "compare_with": "herb_ejiao",
+        "key_points": "当归补血活血调经；阿胶补血滋阴、润肺止血，偏滋腻"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shudihuang",
+        "herb_baishao",
+        "herb_ejiao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "当归 补血药 甘辛温 归肝心脾经 补血活血 调经止痛 润肠通便 血虚萎黄 月经不调 经闭痛经 虚寒腹痛 风湿痹痛 跌扑损伤 痈疽疮疡 血虚肠燥便秘"
+  },
+  {
+    "id": "herb_shudihuang",
+    "name": "熟地黄",
+    "pinyin": "shu di huang",
+    "aliases": [
+      "熟地"
+    ],
+    "category": "补虚药",
+    "subcategory": "补血药",
+    "nature": "微温",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "补血滋阴",
+      "益精填髓"
+    ],
+    "indications": [
+      {
+        "syndrome": "血虚萎黄",
+        "description": "血虚面色萎黄、眩晕心悸、月经不调"
+      },
+      {
+        "syndrome": "肝肾阴虚",
+        "description": "腰膝酸软、盗汗遗精、内热消渴"
+      },
+      {
+        "syndrome": "精血亏虚",
+        "description": "眩晕耳鸣、须发早白"
+      }
+    ],
+    "dosage": {
+      "text": "10~30g",
+      "min_g": 10,
+      "max_g": 30,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "性质黏腻，脾胃虚弱、气滞痰多、腹满便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_danggui",
+          "herb_baishao",
+          "herb_chuanxiong"
+        ],
+        "purpose": "补血调经，用于血虚月经不调",
+        "formula_ref": "formula_siwu_tang"
+      },
+      {
+        "with": [
+          "herb_shanyao",
+          "herb_shanzhuyu"
+        ],
+        "purpose": "滋补肝肾，用于肝肾阴虚",
+        "formula_ref": "formula_liuwei_dihuang_wan"
+      },
+      {
+        "with": [
+          "herb_lurong"
+        ],
+        "purpose": "补肾阳、益精血，用于精血亏虚、肾阳不足",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shengdihuang",
+        "key_points": "熟地黄补血滋阴、益精填髓；生地黄清热凉血、养阴生津"
+      },
+      {
+        "compare_with": "herb_danggui",
+        "key_points": "熟地黄偏滋补精血；当归补血兼活血调经止痛"
+      },
+      {
+        "compare_with": "herb_heshouwu",
+        "key_points": "熟地黄滋腻补肝肾精血；何首乌补益精血兼截疟、解毒、润肠"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shengdihuang",
+        "herb_danggui",
+        "herb_heshouwu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "熟地黄 熟地 补血药 甘微温 归肝肾经 补血滋阴 益精填髓 血虚萎黄 肝肾阴虚 腰膝酸软 盗汗遗精 内热消渴 精血亏虚 眩晕耳鸣 须发早白"
+  },
+  {
+    "id": "herb_baishao",
+    "name": "白芍",
+    "pinyin": "bai shao",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补血药",
+    "nature": "微寒",
+    "flavor": [
+      "苦",
+      "酸"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "脾"
+    ],
+    "effects": [
+      "养血调经",
+      "敛阴止汗",
+      "柔肝止痛",
+      "平抑肝阳"
+    ],
+    "indications": [
+      {
+        "syndrome": "血虚萎黄月经不调",
+        "description": "血虚面色萎黄、月经不调、崩漏"
+      },
+      {
+        "syndrome": "自汗盗汗",
+        "description": "营卫不和或阴虚汗出"
+      },
+      {
+        "syndrome": "胁痛腹痛四肢挛痛",
+        "description": "肝脾不和、血虚筋脉失养所致疼痛"
+      },
+      {
+        "syndrome": "肝阳上亢",
+        "description": "头痛眩晕"
+      }
+    ],
+    "dosage": {
+      "text": "6~15g",
+      "min_g": 6,
+      "max_g": 15,
+      "usage_notes": "养血敛阴多生用，柔肝止痛多炒用"
+    },
+    "cautions": [
+      "阳衰虚寒者慎用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_danggui",
+          "herb_shudihuang",
+          "herb_chuanxiong"
+        ],
+        "purpose": "补血调经，用于血虚月经不调",
+        "formula_ref": "formula_siwu_tang"
+      },
+      {
+        "with": [
+          "herb_guizhi"
+        ],
+        "purpose": "调和营卫，用于营卫不和自汗",
+        "formula_ref": "formula_guizhitang"
+      },
+      {
+        "with": [
+          "herb_gancao"
+        ],
+        "purpose": "缓急止痛，用于脘腹四肢挛急疼痛",
+        "formula_ref": "formula_shaoyao_gancao_tang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_chishao",
+        "key_points": "白芍养血敛阴、柔肝止痛；赤芍清热凉血、散瘀止痛"
+      },
+      {
+        "compare_with": "herb_danggui",
+        "key_points": "白芍酸收敛阴，偏柔肝止痛；当归辛温走散，补血活血调经"
+      },
+      {
+        "compare_with": "herb_gancao",
+        "key_points": "白芍配甘草缓急止痛；甘草还补气解毒、调和诸药"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_chishao",
+        "herb_danggui",
+        "herb_gancao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "白芍 补血药 苦酸微寒 归肝脾经 养血调经 敛阴止汗 柔肝止痛 平抑肝阳 血虚萎黄 月经不调 自汗盗汗 胁痛腹痛 四肢挛痛 肝阳上亢"
+  },
+  {
+    "id": "herb_ejiao",
+    "name": "阿胶",
+    "pinyin": "e jiao",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补血药",
+    "nature": "平",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "补血",
+      "滋阴",
+      "润燥",
+      "止血"
+    ],
+    "indications": [
+      {
+        "syndrome": "血虚萎黄眩晕心悸",
+        "description": "血虚不能上荣，面色萎黄、头晕心悸"
+      },
+      {
+        "syndrome": "心烦不眠",
+        "description": "阴血亏虚，心神失养"
+      },
+      {
+        "syndrome": "虚风内动",
+        "description": "阴血亏虚，筋脉失养动风"
+      },
+      {
+        "syndrome": "肺燥咳嗽",
+        "description": "肺阴不足，干咳少痰或咯血"
+      },
+      {
+        "syndrome": "血热出血",
+        "description": "吐血、衄血、便血、崩漏、妊娠胎漏"
+      }
+    ],
+    "dosage": {
+      "text": "3~9g",
+      "min_g": 3,
+      "max_g": 9,
+      "usage_notes": "烊化兑服"
+    },
+    "cautions": [
+      "性质黏腻，脾胃虚弱、食少便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_shengdihuang"
+        ],
+        "purpose": "滋阴补血、止血，用于阴虚血热出血",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_maidong"
+        ],
+        "purpose": "滋阴润肺，用于肺燥咳嗽",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_baishao"
+        ],
+        "purpose": "养血滋阴，用于血虚心烦不眠、虚风内动",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_danggui",
+        "key_points": "阿胶补血滋阴、润肺止血，偏静补而黏腻；当归补血活血、调经止痛"
+      },
+      {
+        "compare_with": "herb_shudihuang",
+        "key_points": "阿胶兼润肺止血；熟地黄偏补肝肾、益精填髓"
+      },
+      {
+        "compare_with": "herb_maidong",
+        "key_points": "阿胶补血滋阴止血；麦冬养阴润肺、益胃生津、清心除烦"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_danggui",
+        "herb_shudihuang",
+        "herb_maidong"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "阿胶 补血药 甘平 归肺肝肾经 补血 滋阴 润燥 止血 血虚萎黄 眩晕心悸 心烦不眠 虚风内动 肺燥咳嗽 血热出血 胎漏 烊化"
+  },
+  {
+    "id": "herb_heshouwu",
+    "name": "何首乌",
+    "pinyin": "he shou wu",
+    "aliases": [
+      "制何首乌"
+    ],
+    "category": "补虚药",
+    "subcategory": "补血药",
+    "nature": "微温",
+    "flavor": [
+      "苦",
+      "甘",
+      "涩"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "心",
+      "肾"
+    ],
+    "effects": [
+      "补益精血",
+      "解毒",
+      "截疟",
+      "润肠通便"
+    ],
+    "indications": [
+      {
+        "syndrome": "精血亏虚",
+        "description": "头晕眼花、须发早白、腰膝酸软"
+      },
+      {
+        "syndrome": "久疟体虚",
+        "description": "体虚久疟不止"
+      },
+      {
+        "syndrome": "痈疽瘰疬肠燥便秘",
+        "description": "疮痈瘰疬或血虚津亏肠燥便秘"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": "补益精血宜制用，解毒截疟润肠宜生用"
+    },
+    "cautions": [
+      "大便溏泄及痰湿较重者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_shudihuang"
+        ],
+        "purpose": "补肝肾、益精血，用于精血亏虚、须发早白",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_danggui"
+        ],
+        "purpose": "补血养血，用于血虚萎黄、头晕目眩",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_roucongrong"
+        ],
+        "purpose": "养血润肠通便，用于血虚肠燥便秘",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shudihuang",
+        "key_points": "何首乌制用补精血，生用解毒截疟润肠；熟地黄专于补血滋阴、益精填髓"
+      },
+      {
+        "compare_with": "herb_danggui",
+        "key_points": "何首乌偏补肝肾精血、乌须发；当归偏补血活血、调经止痛"
+      },
+      {
+        "compare_with": "herb_nvzhenzi",
+        "key_points": "何首乌微温兼润肠解毒；女贞子甘苦凉，滋补肝肾、明目乌发"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shudihuang",
+        "herb_danggui",
+        "herb_nvzhenzi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补血药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "何首乌 制何首乌 补血药 苦甘涩微温 归肝心肾经 补益精血 解毒 截疟 润肠通便 精血亏虚 头晕眼花 须发早白 腰膝酸软 久疟体虚 痈疽瘰疬 肠燥便秘"
+  }
+]

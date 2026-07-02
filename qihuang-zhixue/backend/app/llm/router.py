@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from app.config import Settings, get_settings
 from app.llm.clients import BaseLLMClient, ChatMessage, DeepSeekClient, MockClient, ZhipuClient
@@ -43,7 +43,11 @@ class ModelRouter:
         spec = self.resolve(task_type)
         api_key = self._api_key_for_provider(spec.provider)
         if not api_key:
-            return MockClient(model_name=spec.model_name, provider=spec.provider)
+            return MockClient(
+                model_name=spec.model_name,
+                provider=spec.provider,
+                stream_delay=self.settings.mock_stream_delay,
+            )
         if spec.provider == "deepseek":
             return DeepSeekClient(model_name=spec.model_name, api_key=api_key)
         if spec.provider == "zhipu":
@@ -53,6 +57,50 @@ class ModelRouter:
     async def chat(self, task_type: str, messages: Sequence[ChatMessage], **kw: Any) -> str:
         client = self.select(task_type)
         return await client.chat(messages, **kw)
+
+    async def classify(self, messages: str | Sequence[ChatMessage]) -> Literal["profile_setup", "knowledge_qa", "other"]:
+        """将用户输入归类为画像设置、知识问答或其他意图。"""
+
+        text = messages if isinstance(messages, str) else _last_user_content(messages)
+        if _contains_any(text, ("画像", "学习目标", "基础", "年级", "薄弱", "偏好", "计划")):
+            return "profile_setup"
+        if _contains_any(
+            text,
+            (
+                "功效",
+                "主治",
+                "用量",
+                "归经",
+                "药性",
+                "禁忌",
+                "配伍",
+                "中药",
+                "麻黄",
+                "桂枝",
+                "解表",
+                "风寒",
+                "风热",
+            ),
+        ):
+            return "knowledge_qa"
+
+        try:
+            result = await self.chat(
+                "classify",
+                [
+                    {"role": "system", "content": "只输出 profile_setup、knowledge_qa 或 other。"},
+                    {"role": "user", "content": text},
+                ],
+            )
+        except NotImplementedError:
+            return "other"
+
+        normalized = result.strip().lower()
+        if "profile_setup" in normalized:
+            return "profile_setup"
+        if "knowledge_qa" in normalized:
+            return "knowledge_qa"
+        return "other"
 
     async def chat_stream(self, task_type: str, messages: Sequence[ChatMessage]) -> AsyncIterator[str]:
         client = self.select(task_type)
@@ -65,3 +113,16 @@ class ModelRouter:
         if provider == "zhipu":
             return self.settings.zhipu_api_key
         return None
+
+
+def _last_user_content(messages: Sequence[ChatMessage]) -> str:
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            return str(message.get("content", ""))
+    if messages:
+        return str(messages[-1].get("content", ""))
+    return ""
+
+
+def _contains_any(text: str, keywords: Sequence[str]) -> bool:
+    return any(keyword in text for keyword in keywords)

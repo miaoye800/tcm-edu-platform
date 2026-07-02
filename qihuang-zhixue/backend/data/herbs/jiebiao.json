@@ -3,29 +3,80 @@
     "id": "herb_mahuang",
     "name": "麻黄",
     "pinyin": "ma huang",
-    "aliases": ["净麻黄", "炙麻黄"],
+    "aliases": [
+      "净麻黄",
+      "炙麻黄"
+    ],
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛", "苦"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "膀胱"],
-    "effects": ["发汗解表", "宣肺平喘", "利水消肿"],
-    "indications": [
-      { "syndrome": "风寒表实证", "description": "恶寒发热、无汗、头身疼痛、脉浮紧" },
-      { "syndrome": "咳嗽气喘", "description": "风寒束肺或肺热壅盛之喘咳" },
-      { "syndrome": "风水水肿", "description": "水肿兼表证" }
+    "flavor": [
+      "辛",
+      "苦"
     ],
-    "dosage": { "text": "2~10g", "min_g": 2, "max_g": 10, "usage_notes": "发汗解表宜生用，止咳平喘多炙用" },
-    "cautions": ["表虚自汗、阴虚盗汗及肾虚喘咳者慎用", "高血压患者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "膀胱"
+    ],
+    "effects": [
+      "发汗解表",
+      "宣肺平喘",
+      "利水消肿"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒表实证",
+        "description": "恶寒发热、无汗、头身疼痛、脉浮紧"
+      },
+      {
+        "syndrome": "咳嗽气喘",
+        "description": "风寒束肺或肺热壅盛之喘咳"
+      },
+      {
+        "syndrome": "风水水肿",
+        "description": "水肿兼表证"
+      }
+    ],
+    "dosage": {
+      "text": "2~10g",
+      "min_g": 2,
+      "max_g": 10,
+      "usage_notes": "发汗解表宜生用，止咳平喘多炙用"
+    },
+    "cautions": [
+      "表虚自汗、阴虚盗汗及肾虚喘咳者慎用",
+      "高血压患者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_guizhi"], "purpose": "麻桂相须，增强发汗解表之力", "formula_ref": "formula_mahuangtang" }
+      {
+        "with": [
+          "herb_guizhi"
+        ],
+        "purpose": "麻桂相须，增强发汗解表之力",
+        "formula_ref": "formula_mahuangtang"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_guizhi", "key_points": "麻黄发汗力强，兼宣肺平喘、利水消肿；桂枝发汗力缓，兼温通经脉、助阳化气" }
+      {
+        "compare_with": "herb_guizhi",
+        "key_points": "麻黄发汗力强，兼宣肺平喘、利水消肿；桂枝发汗力缓，兼温通经脉、助阳化气"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_guizhi", "herb_xiangru"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_guizhi",
+        "herb_xiangru"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "麻黄 发散风寒药 辛苦温 归肺膀胱经 发汗解表 宣肺平喘 利水消肿 风寒表实证 咳嗽气喘 风水水肿"
@@ -38,26 +89,80 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛", "甘"],
-    "toxicity": "无毒",
-    "meridians": ["心", "肺", "膀胱"],
-    "effects": ["发汗解肌", "温通经脉", "助阳化气"],
-    "indications": [
-      { "syndrome": "风寒表证", "description": "外感风寒，恶寒发热、头痛、汗出或无汗" },
-      { "syndrome": "寒凝血滞诸痛证", "description": "胸痹心痛、脘腹冷痛、经闭痛经、关节痹痛" },
-      { "syndrome": "痰饮蓄水", "description": "心悸、水肿、小便不利等阳气不化之证" }
+    "flavor": [
+      "辛",
+      "甘"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "" },
-    "cautions": ["温热病、阴虚阳盛及血热妄行者忌用", "孕妇及月经过多者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肺",
+      "膀胱"
+    ],
+    "effects": [
+      "发汗解肌",
+      "温通经脉",
+      "助阳化气"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒表证",
+        "description": "外感风寒，恶寒发热、头痛、汗出或无汗"
+      },
+      {
+        "syndrome": "寒凝血滞诸痛证",
+        "description": "胸痹心痛、脘腹冷痛、经闭痛经、关节痹痛"
+      },
+      {
+        "syndrome": "痰饮蓄水",
+        "description": "心悸、水肿、小便不利等阳气不化之证"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "温热病、阴虚阳盛及血热妄行者忌用",
+      "孕妇及月经过多者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_baishao"], "purpose": "调和营卫", "formula_ref": "formula_guizhitang" },
-      { "with": ["herb_mahuang"], "purpose": "增强发汗解表之力", "formula_ref": "formula_mahuangtang" }
+      {
+        "with": [
+          "herb_baishao"
+        ],
+        "purpose": "调和营卫",
+        "formula_ref": "formula_guizhitang"
+      },
+      {
+        "with": [
+          "herb_mahuang"
+        ],
+        "purpose": "增强发汗解表之力",
+        "formula_ref": "formula_mahuangtang"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_mahuang", "key_points": "桂枝长于发汗解肌、温通经脉；麻黄长于发汗散寒、宣肺平喘" }
+      {
+        "compare_with": "herb_mahuang",
+        "key_points": "桂枝长于发汗解肌、温通经脉；麻黄长于发汗散寒、宣肺平喘"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_mahuang"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_mahuang"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "桂枝 发散风寒药 辛甘温 归心肺膀胱经 发汗解肌 温通经脉 助阳化气 风寒表证 寒凝血滞 痰饮蓄水"
@@ -66,29 +171,75 @@
     "id": "herb_zisuye",
     "name": "紫苏叶",
     "pinyin": "zi su ye",
-    "aliases": ["苏叶"],
+    "aliases": [
+      "苏叶"
+    ],
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "脾"],
-    "effects": ["解表散寒", "行气和胃"],
-    "indications": [
-      { "syndrome": "风寒感冒", "description": "恶寒发热、咳嗽、胸闷" },
-      { "syndrome": "脾胃气滞", "description": "胸闷呕吐，妊娠恶阻" },
-      { "syndrome": "鱼蟹中毒", "description": "食鱼蟹后腹痛吐泻" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "5~10g", "min_g": 5, "max_g": 10, "usage_notes": "不宜久煎" },
-    "cautions": ["气虚表虚者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "脾"
+    ],
+    "effects": [
+      "解表散寒",
+      "行气和胃"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒感冒",
+        "description": "恶寒发热、咳嗽、胸闷"
+      },
+      {
+        "syndrome": "脾胃气滞",
+        "description": "胸闷呕吐，妊娠恶阻"
+      },
+      {
+        "syndrome": "鱼蟹中毒",
+        "description": "食鱼蟹后腹痛吐泻"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": "不宜久煎"
+    },
+    "cautions": [
+      "气虚表虚者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_shengjiang"], "purpose": "增强解表散寒、和胃止呕之力", "formula_ref": "" }
+      {
+        "with": [
+          "herb_shengjiang"
+        ],
+        "purpose": "增强解表散寒、和胃止呕之力",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_shengjiang", "key_points": "紫苏叶偏行气宽中，生姜偏温胃止呕、温肺止咳" }
+      {
+        "compare_with": "herb_shengjiang",
+        "key_points": "紫苏叶偏行气宽中，生姜偏温胃止呕、温肺止咳"
+      }
     ],
-    "tags": { "learning_difficulty": 1, "high_frequency_exam": true, "common_confusions": ["herb_shengjiang"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 1,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shengjiang"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "紫苏叶 苏叶 发散风寒药 辛温 归肺脾经 解表散寒 行气和胃 风寒感冒 脾胃气滞 鱼蟹中毒"
@@ -101,26 +252,76 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "微温",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "脾", "胃"],
-    "effects": ["解表散寒", "温中止呕", "温肺止咳", "解鱼蟹毒"],
-    "indications": [
-      { "syndrome": "风寒感冒", "description": "恶寒发热、鼻塞头痛" },
-      { "syndrome": "胃寒呕吐", "description": "胃寒或多种呕吐证，尤宜胃寒呕吐" },
-      { "syndrome": "肺寒咳嗽", "description": "风寒客肺、痰多咳嗽" },
-      { "syndrome": "鱼蟹中毒", "description": "食鱼蟹中毒轻证" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "煎服或捣汁冲服" },
-    "cautions": ["阴虚内热及热盛者忌用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "脾",
+      "胃"
+    ],
+    "effects": [
+      "解表散寒",
+      "温中止呕",
+      "温肺止咳",
+      "解鱼蟹毒"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒感冒",
+        "description": "恶寒发热、鼻塞头痛"
+      },
+      {
+        "syndrome": "胃寒呕吐",
+        "description": "胃寒或多种呕吐证，尤宜胃寒呕吐"
+      },
+      {
+        "syndrome": "肺寒咳嗽",
+        "description": "风寒客肺、痰多咳嗽"
+      },
+      {
+        "syndrome": "鱼蟹中毒",
+        "description": "食鱼蟹中毒轻证"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": "煎服或捣汁冲服"
+    },
+    "cautions": [
+      "阴虚内热及热盛者忌用"
+    ],
     "combinations": [
-      { "with": ["herb_banxia"], "purpose": "和胃降逆止呕，并可制半夏毒性", "formula_ref": "" }
+      {
+        "with": [
+          "herb_banxia"
+        ],
+        "purpose": "和胃降逆止呕，并可制半夏毒性",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_zisuye", "key_points": "生姜偏温中止呕、温肺止咳；紫苏叶偏解表散寒、行气宽中" }
+      {
+        "compare_with": "herb_zisuye",
+        "key_points": "生姜偏温中止呕、温肺止咳；紫苏叶偏解表散寒、行气宽中"
+      }
     ],
-    "tags": { "learning_difficulty": 1, "high_frequency_exam": true, "common_confusions": ["herb_zisuye"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 1,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_zisuye"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "生姜 发散风寒药 辛微温 归肺脾胃经 解表散寒 温中止呕 温肺止咳 解鱼蟹毒 风寒感冒 胃寒呕吐 肺寒咳嗽"
@@ -133,24 +334,68 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "微温",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "胃", "脾"],
-    "effects": ["发汗解表", "化湿和中", "利水消肿"],
-    "indications": [
-      { "syndrome": "阴暑证", "description": "夏月乘凉饮冷，恶寒发热、头痛无汗、腹痛吐泻" },
-      { "syndrome": "水肿脚气", "description": "水湿内停之水肿、小便不利" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "利水退肿须浓煎" },
-    "cautions": ["表虚有汗者忌用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃",
+      "脾"
+    ],
+    "effects": [
+      "发汗解表",
+      "化湿和中",
+      "利水消肿"
+    ],
+    "indications": [
+      {
+        "syndrome": "阴暑证",
+        "description": "夏月乘凉饮冷，恶寒发热、头痛无汗、腹痛吐泻"
+      },
+      {
+        "syndrome": "水肿脚气",
+        "description": "水湿内停之水肿、小便不利"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": "利水退肿须浓煎"
+    },
+    "cautions": [
+      "表虚有汗者忌用"
+    ],
     "combinations": [
-      { "with": ["herb_houpo", "herb_biandou"], "purpose": "解表化湿和中，用于阴暑证", "formula_ref": "formula_xiangrusan" }
+      {
+        "with": [
+          "herb_houpo",
+          "herb_biandou"
+        ],
+        "purpose": "解表化湿和中，用于阴暑证",
+        "formula_ref": "formula_xiangrusan"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_mahuang", "key_points": "香薷为夏月解表化湿要药，兼利水；麻黄发汗散寒力强，兼宣肺平喘" }
+      {
+        "compare_with": "herb_mahuang",
+        "key_points": "香薷为夏月解表化湿要药，兼利水；麻黄发汗散寒力强，兼宣肺平喘"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_mahuang"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_mahuang"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "香薷 发散风寒药 辛微温 归肺胃脾经 发汗解表 化湿和中 利水消肿 阴暑 水肿脚气"
@@ -159,30 +404,82 @@
     "id": "herb_jingjie",
     "name": "荆芥",
     "pinyin": "jing jie",
-    "aliases": ["荆芥穗", "炒荆芥"],
+    "aliases": [
+      "荆芥穗",
+      "炒荆芥"
+    ],
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "微温",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "肝"],
-    "effects": ["祛风解表", "透疹消疮", "止血"],
-    "indications": [
-      { "syndrome": "外感表证", "description": "风寒或风热表证均可配伍应用" },
-      { "syndrome": "麻疹不透、风疹瘙痒", "description": "疹出不畅或风疹瘙痒" },
-      { "syndrome": "疮疡初起", "description": "兼有表证者尤宜" },
-      { "syndrome": "出血证", "description": "便血、崩漏等，常用炭品" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "5~10g", "min_g": 5, "max_g": 10, "usage_notes": "不宜久煎；止血宜炒炭用" },
-    "cautions": ["表虚自汗者慎用", "‘止血’为荆芥炭（炒炭）功效，生荆芥不止血"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝"
+    ],
+    "effects": [
+      "祛风解表",
+      "透疹消疮",
+      "止血"
+    ],
+    "indications": [
+      {
+        "syndrome": "外感表证",
+        "description": "风寒或风热表证均可配伍应用"
+      },
+      {
+        "syndrome": "麻疹不透、风疹瘙痒",
+        "description": "疹出不畅或风疹瘙痒"
+      },
+      {
+        "syndrome": "疮疡初起",
+        "description": "兼有表证者尤宜"
+      },
+      {
+        "syndrome": "出血证",
+        "description": "便血、崩漏等，常用炭品"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": "不宜久煎；止血宜炒炭用"
+    },
+    "cautions": [
+      "表虚自汗者慎用",
+      "‘止血’为荆芥炭（炒炭）功效，生荆芥不止血"
+    ],
     "combinations": [
-      { "with": ["herb_fangfeng"], "purpose": "相须祛风解表", "formula_ref": "" }
+      {
+        "with": [
+          "herb_fangfeng"
+        ],
+        "purpose": "相须祛风解表",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_fangfeng", "key_points": "荆芥质轻透散，兼透疹消疮止血；防风祛风胜湿止痛止痉" }
+      {
+        "compare_with": "herb_fangfeng",
+        "key_points": "荆芥质轻透散，兼透疹消疮止血；防风祛风胜湿止痛止痉"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_fangfeng"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_fangfeng"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "荆芥 发散风寒药 辛微温 归肺肝经 祛风解表 透疹消疮 止血 外感表证 麻疹不透 风疹瘙痒 疮疡初起"
@@ -195,25 +492,73 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "微温",
-    "flavor": ["辛", "甘"],
-    "toxicity": "无毒",
-    "meridians": ["膀胱", "肝", "脾"],
-    "effects": ["祛风解表", "胜湿止痛", "止痉"],
-    "indications": [
-      { "syndrome": "外感表证", "description": "风寒表证、风热表证及表虚外感均可配伍应用" },
-      { "syndrome": "风湿痹痛", "description": "风寒湿痹，肢节疼痛" },
-      { "syndrome": "破伤风证", "description": "角弓反张、牙关紧闭等风邪内动表现" }
+    "flavor": [
+      "辛",
+      "甘"
     ],
-    "dosage": { "text": "5~10g", "min_g": 5, "max_g": 10, "usage_notes": "" },
-    "cautions": ["阴血亏虚、热病动风者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "膀胱",
+      "肝",
+      "脾"
+    ],
+    "effects": [
+      "祛风解表",
+      "胜湿止痛",
+      "止痉"
+    ],
+    "indications": [
+      {
+        "syndrome": "外感表证",
+        "description": "风寒表证、风热表证及表虚外感均可配伍应用"
+      },
+      {
+        "syndrome": "风湿痹痛",
+        "description": "风寒湿痹，肢节疼痛"
+      },
+      {
+        "syndrome": "破伤风证",
+        "description": "角弓反张、牙关紧闭等风邪内动表现"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴血亏虚、热病动风者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_jingjie"], "purpose": "祛风解表常用配伍", "formula_ref": "" }
+      {
+        "with": [
+          "herb_jingjie"
+        ],
+        "purpose": "祛风解表常用配伍",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_jingjie", "key_points": "防风祛风兼胜湿止痛止痉，药性较缓；荆芥透散力较强，兼透疹消疮" }
+      {
+        "compare_with": "herb_jingjie",
+        "key_points": "防风祛风兼胜湿止痛止痉，药性较缓；荆芥透散力较强，兼透疹消疮"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_jingjie", "herb_qianghuo"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_jingjie",
+        "herb_qianghuo"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "防风 发散风寒药 辛甘微温 归膀胱肝脾经 祛风解表 胜湿止痛 止痉 外感表证 风湿痹痛 破伤风"
@@ -226,22 +571,74 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛", "苦"],
+    "flavor": [
+      "辛",
+      "苦"
+    ],
     "toxicity": "无毒",
-    "meridians": ["膀胱", "肾"],
-    "effects": ["解表散寒", "祛风胜湿", "止痛"],
+    "meridians": [
+      "膀胱",
+      "肾"
+    ],
+    "effects": [
+      "解表散寒",
+      "祛风胜湿",
+      "止痛"
+    ],
     "indications": [
-      { "syndrome": "风寒感冒", "description": "恶寒发热、头痛身痛，尤以上半身疼痛明显者" },
-      { "syndrome": "风寒湿痹", "description": "肩背肢节疼痛" }
+      {
+        "syndrome": "风寒感冒",
+        "description": "恶寒发热、头痛身痛，尤以上半身疼痛明显者"
+      },
+      {
+        "syndrome": "风寒湿痹",
+        "description": "肩背肢节疼痛"
+      }
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "" },
-    "cautions": ["阴血亏虚者慎用"],
-    "combinations": [],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴血亏虚者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_fangfeng"
+        ],
+        "purpose": "祛风散寒、胜湿止痛，用于风寒湿痹、肢节疼痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_duhuo"
+        ],
+        "purpose": "羌活偏治上半身风寒湿痹，独活偏治下半身风寒湿痹",
+        "formula_ref": ""
+      }
+    ],
     "differentiation": [
-      { "compare_with": "herb_baizhi", "key_points": "羌活偏治太阳经头项背痛及上半身风寒湿痹；白芷偏治阳明头痛、鼻渊、疮疡" }
+      {
+        "compare_with": "herb_baizhi",
+        "key_points": "羌活偏治太阳经头项背痛及上半身风寒湿痹；白芷偏治阳明头痛、鼻渊、疮疡"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_baizhi"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_baizhi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "羌活 发散风寒药 辛苦温 归膀胱肾经 解表散寒 祛风胜湿 止痛 风寒感冒 太阳头痛 风寒湿痹"
@@ -254,26 +651,78 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "胃", "大肠"],
-    "effects": ["解表散寒", "祛风止痛", "宣通鼻窍", "燥湿止带", "消肿排脓"],
-    "indications": [
-      { "syndrome": "风寒感冒", "description": "头痛、鼻塞等风寒表证" },
-      { "syndrome": "阳明头痛、牙痛、鼻渊", "description": "前额头痛、眉棱骨痛、鼻塞流涕" },
-      { "syndrome": "带下证", "description": "寒湿带下" },
-      { "syndrome": "疮痈肿毒", "description": "疮疡肿痛或脓成不溃" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "" },
-    "cautions": ["阴虚血热者忌服"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃",
+      "大肠"
+    ],
+    "effects": [
+      "解表散寒",
+      "祛风止痛",
+      "宣通鼻窍",
+      "燥湿止带",
+      "消肿排脓"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒感冒",
+        "description": "头痛、鼻塞等风寒表证"
+      },
+      {
+        "syndrome": "阳明头痛、牙痛、鼻渊",
+        "description": "前额头痛、眉棱骨痛、鼻塞流涕"
+      },
+      {
+        "syndrome": "带下证",
+        "description": "寒湿带下"
+      },
+      {
+        "syndrome": "疮痈肿毒",
+        "description": "疮疡肿痛或脓成不溃"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴虚血热者忌服"
+    ],
     "combinations": [
-      { "with": ["herb_xinyi"], "purpose": "宣通鼻窍，用于鼻渊鼻塞", "formula_ref": "" }
+      {
+        "with": [
+          "herb_xinyi"
+        ],
+        "purpose": "宣通鼻窍，用于鼻渊鼻塞",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_qianghuo", "key_points": "白芷入阳明，长于阳明头痛、鼻渊及消肿排脓；羌活偏太阳头痛、上半身痹痛" }
+      {
+        "compare_with": "herb_qianghuo",
+        "key_points": "白芷入阳明，长于阳明头痛、鼻渊及消肿排脓；羌活偏太阳头痛、上半身痹痛"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_qianghuo", "herb_xinyi"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_qianghuo",
+        "herb_xinyi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "白芷 发散风寒药 辛温 归肺胃大肠经 解表散寒 祛风止痛 宣通鼻窍 燥湿止带 消肿排脓 阳明头痛 鼻渊 带下 疮痈"
@@ -286,27 +735,84 @@
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛"],
-    "toxicity": "小毒",
-    "meridians": ["心", "肺", "肾"],
-    "effects": ["解表散寒", "祛风止痛", "通窍", "温肺化饮"],
-    "indications": [
-      { "syndrome": "风寒感冒", "description": "风寒表证，兼少阴头痛或鼻塞者" },
-      { "syndrome": "头痛、牙痛、痹痛", "description": "风寒湿邪所致疼痛" },
-      { "syndrome": "鼻渊", "description": "鼻塞流涕、头痛" },
-      { "syndrome": "寒饮伏肺", "description": "咳喘痰多清稀" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "1~3g", "min_g": 1, "max_g": 3, "usage_notes": "入汤剂用量宜小；入丸散每次用量按教材规范核定" },
-    "cautions": ["阴虚阳亢头痛、肺燥伤阴干咳者忌用", "不宜与藜芦同用"],
-    "incompatibility": { "shibafan": ["藜芦"], "shijiuwei": [] },
+    "toxicity": "小毒",
+    "meridians": [
+      "心",
+      "肺",
+      "肾"
+    ],
+    "effects": [
+      "解表散寒",
+      "祛风止痛",
+      "通窍",
+      "温肺化饮"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒感冒",
+        "description": "风寒表证，兼少阴头痛或鼻塞者"
+      },
+      {
+        "syndrome": "头痛、牙痛、痹痛",
+        "description": "风寒湿邪所致疼痛"
+      },
+      {
+        "syndrome": "鼻渊",
+        "description": "鼻塞流涕、头痛"
+      },
+      {
+        "syndrome": "寒饮伏肺",
+        "description": "咳喘痰多清稀"
+      }
+    ],
+    "dosage": {
+      "text": "1~3g",
+      "min_g": 1,
+      "max_g": 3,
+      "usage_notes": "入汤剂用量宜小；入丸散每次用量按教材规范核定"
+    },
+    "cautions": [
+      "阴虚阳亢头痛、肺燥伤阴干咳者忌用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
     "combinations": [
-      { "with": ["herb_ganjiang", "herb_wuweizi"], "purpose": "温肺化饮止咳", "formula_ref": "formula_xiaoqinglongtang" }
+      {
+        "with": [
+          "herb_ganjiang",
+          "herb_wuweizi"
+        ],
+        "purpose": "温肺化饮止咳",
+        "formula_ref": "formula_xiaoqinglongtang"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_baizhi", "key_points": "细辛通窍止痛兼温肺化饮，入少阴；白芷偏阳明头痛、鼻渊及消肿排脓" }
+      {
+        "compare_with": "herb_baizhi",
+        "key_points": "细辛通窍止痛兼温肺化饮，入少阴；白芷偏阳明头痛、鼻渊及消肿排脓"
+      }
     ],
-    "tags": { "learning_difficulty": 3, "high_frequency_exam": true, "common_confusions": ["herb_baizhi"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_baizhi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "细辛 发散风寒药 辛温 小毒 归心肺肾经 解表散寒 祛风止痛 通窍 温肺化饮 风寒感冒 头痛 牙痛 鼻渊 寒饮伏肺"
@@ -315,28 +821,75 @@
     "id": "herb_xinyi",
     "name": "辛夷",
     "pinyin": "xin yi",
-    "aliases": ["木笔花", "望春花"],
+    "aliases": [
+      "木笔花",
+      "望春花"
+    ],
     "category": "解表药",
     "subcategory": "发散风寒药",
     "nature": "温",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "胃"],
-    "effects": ["发散风寒", "宣通鼻窍"],
-    "indications": [
-      { "syndrome": "风寒头痛", "description": "外感风寒，头痛鼻塞" },
-      { "syndrome": "鼻渊", "description": "鼻塞、流浊涕、不闻香臭（鼻窦炎、过敏性鼻炎等）" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "有毛易刺激咽喉，入汤剂宜包煎" },
-    "cautions": ["阴虚火旺者忌服", "鼻病属热证者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃"
+    ],
+    "effects": [
+      "发散风寒",
+      "宣通鼻窍"
+    ],
+    "indications": [
+      {
+        "syndrome": "风寒头痛",
+        "description": "外感风寒，头痛鼻塞"
+      },
+      {
+        "syndrome": "鼻渊",
+        "description": "鼻塞、流浊涕、不闻香臭（鼻窦炎、过敏性鼻炎等）"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": "有毛易刺激咽喉，入汤剂宜包煎"
+    },
+    "cautions": [
+      "阴虚火旺者忌服",
+      "鼻病属热证者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_baizhi", "herb_cangerzi"], "purpose": "与白芷、苍耳子相须，宣通鼻窍治鼻渊", "formula_ref": "formula_cangerzisan" }
+      {
+        "with": [
+          "herb_baizhi",
+          "herb_cangerzi"
+        ],
+        "purpose": "与白芷、苍耳子相须，宣通鼻窍治鼻渊",
+        "formula_ref": "formula_cangerzisan"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_baizhi", "key_points": "辛夷专走鼻窍、长于通窍治鼻渊；白芷兼解表止痛、范围更广" }
+      {
+        "compare_with": "herb_baizhi",
+        "key_points": "辛夷专走鼻窍、长于通窍治鼻渊；白芷兼解表止痛、范围更广"
+      }
     ],
-    "tags": { "learning_difficulty": 1, "high_frequency_exam": true, "common_confusions": ["herb_baizhi", "herb_cangerzi"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风寒药" }],
+    "tags": {
+      "learning_difficulty": 1,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_baizhi",
+        "herb_cangerzi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风寒药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "辛夷 木笔花 发散风寒药 辛温 归肺胃经 发散风寒 宣通鼻窍 风寒头痛 鼻渊 鼻塞流涕"
@@ -349,27 +902,80 @@
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "凉",
-    "flavor": ["辛"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "肝"],
-    "effects": ["疏散风热", "清利头目", "利咽透疹", "疏肝行气"],
-    "indications": [
-      { "syndrome": "风热感冒", "description": "发热、微恶风寒、头痛、咽痛" },
-      { "syndrome": "温病初起", "description": "卫分发热、头痛口渴" },
-      { "syndrome": "风热头痛、目赤咽痛", "description": "头目不清、目赤、咽喉肿痛" },
-      { "syndrome": "麻疹不透、风疹瘙痒", "description": "疹出不畅或皮肤瘙痒" },
-      { "syndrome": "肝郁气滞", "description": "胸胁胀闷、情志不舒" }
+    "flavor": [
+      "辛"
     ],
-    "dosage": { "text": "3~6g", "min_g": 3, "max_g": 6, "usage_notes": "后下" },
-    "cautions": ["阴虚血燥、肝阳偏亢、表虚汗多者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝"
+    ],
+    "effects": [
+      "疏散风热",
+      "清利头目",
+      "利咽透疹",
+      "疏肝行气"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热感冒",
+        "description": "发热、微恶风寒、头痛、咽痛"
+      },
+      {
+        "syndrome": "温病初起",
+        "description": "卫分发热、头痛口渴"
+      },
+      {
+        "syndrome": "风热头痛、目赤咽痛",
+        "description": "头目不清、目赤、咽喉肿痛"
+      },
+      {
+        "syndrome": "麻疹不透、风疹瘙痒",
+        "description": "疹出不畅或皮肤瘙痒"
+      },
+      {
+        "syndrome": "肝郁气滞",
+        "description": "胸胁胀闷、情志不舒"
+      }
+    ],
+    "dosage": {
+      "text": "3~6g",
+      "min_g": 3,
+      "max_g": 6,
+      "usage_notes": "后下"
+    },
+    "cautions": [
+      "阴虚血燥、肝阳偏亢、表虚汗多者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_jingjie"], "purpose": "疏散风热、透疹止痒", "formula_ref": "" }
+      {
+        "with": [
+          "herb_jingjie"
+        ],
+        "purpose": "疏散风热、透疹止痒",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_niubangzi", "key_points": "薄荷质轻上浮，清利头目、疏肝行气；牛蒡子偏宣肺祛痰、利咽散肿" }
+      {
+        "compare_with": "herb_niubangzi",
+        "key_points": "薄荷质轻上浮，清利头目、疏肝行气；牛蒡子偏宣肺祛痰、利咽散肿"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_niubangzi", "herb_chantui"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_niubangzi",
+        "herb_chantui"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "薄荷 发散风热药 辛凉 归肺肝经 疏散风热 清利头目 利咽透疹 疏肝行气 风热感冒 温病初起 目赤咽痛 麻疹不透 肝郁气滞"
@@ -378,29 +984,79 @@
     "id": "herb_niubangzi",
     "name": "牛蒡子",
     "pinyin": "niu bang zi",
-    "aliases": ["大力子"],
+    "aliases": [
+      "大力子"
+    ],
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "寒",
-    "flavor": ["辛", "苦"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "胃"],
-    "effects": ["疏散风热", "宣肺祛痰", "利咽透疹", "解毒散肿"],
-    "indications": [
-      { "syndrome": "风热感冒、温病初起", "description": "发热咳嗽、咽喉肿痛" },
-      { "syndrome": "麻疹不透、风疹瘙痒", "description": "疹出不畅、风热瘙痒" },
-      { "syndrome": "痈肿疮毒、丹毒、痄腮", "description": "热毒壅盛之肿痛" }
+    "flavor": [
+      "辛",
+      "苦"
     ],
-    "dosage": { "text": "6~12g", "min_g": 6, "max_g": 12, "usage_notes": "炒用可缓和寒滑之性" },
-    "cautions": ["本品性寒滑利，气虚便溏者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃"
+    ],
+    "effects": [
+      "疏散风热",
+      "宣肺祛痰",
+      "利咽透疹",
+      "解毒散肿"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热感冒、温病初起",
+        "description": "发热咳嗽、咽喉肿痛"
+      },
+      {
+        "syndrome": "麻疹不透、风疹瘙痒",
+        "description": "疹出不畅、风热瘙痒"
+      },
+      {
+        "syndrome": "痈肿疮毒、丹毒、痄腮",
+        "description": "热毒壅盛之肿痛"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": "炒用可缓和寒滑之性"
+    },
+    "cautions": [
+      "本品性寒滑利，气虚便溏者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_bohe"], "purpose": "疏散风热、利咽透疹", "formula_ref": "" }
+      {
+        "with": [
+          "herb_bohe"
+        ],
+        "purpose": "疏散风热、利咽透疹",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_bohe", "key_points": "牛蒡子长于宣肺祛痰、利咽散肿；薄荷长于清利头目、疏肝行气" }
+      {
+        "compare_with": "herb_bohe",
+        "key_points": "牛蒡子长于宣肺祛痰、利咽散肿；薄荷长于清利头目、疏肝行气"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_bohe", "herb_chantui"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_bohe",
+        "herb_chantui"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "牛蒡子 大力子 发散风热药 辛苦寒 归肺胃经 疏散风热 宣肺祛痰 利咽透疹 解毒散肿 风热感冒 温病初起 麻疹不透 痈肿疮毒"
@@ -409,30 +1065,83 @@
     "id": "herb_chantui",
     "name": "蝉蜕",
     "pinyin": "chan tui",
-    "aliases": ["蝉衣"],
+    "aliases": [
+      "蝉衣"
+    ],
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "寒",
-    "flavor": ["甘"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "肝"],
-    "effects": ["疏散风热", "利咽开音", "透疹", "明目退翳", "息风止痉"],
-    "indications": [
-      { "syndrome": "风热感冒、温病初起", "description": "发热、咽痛、声音嘶哑" },
-      { "syndrome": "麻疹不透、风疹瘙痒", "description": "疹出不畅或皮肤瘙痒" },
-      { "syndrome": "目赤翳障", "description": "风热目赤、翳膜遮睛" },
-      { "syndrome": "惊风抽搐、破伤风", "description": "小儿惊风或风邪内动之痉证" }
+    "flavor": [
+      "甘"
     ],
-    "dosage": { "text": "3~6g", "min_g": 3, "max_g": 6, "usage_notes": "" },
-    "cautions": ["孕妇慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝"
+    ],
+    "effects": [
+      "疏散风热",
+      "利咽开音",
+      "透疹",
+      "明目退翳",
+      "息风止痉"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热感冒、温病初起",
+        "description": "发热、咽痛、声音嘶哑"
+      },
+      {
+        "syndrome": "麻疹不透、风疹瘙痒",
+        "description": "疹出不畅或皮肤瘙痒"
+      },
+      {
+        "syndrome": "目赤翳障",
+        "description": "风热目赤、翳膜遮睛"
+      },
+      {
+        "syndrome": "惊风抽搐、破伤风",
+        "description": "小儿惊风或风邪内动之痉证"
+      }
+    ],
+    "dosage": {
+      "text": "3~6g",
+      "min_g": 3,
+      "max_g": 6,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "孕妇慎用"
+    ],
     "combinations": [
-      { "with": ["herb_bohe"], "purpose": "疏风清热、利咽开音", "formula_ref": "" }
+      {
+        "with": [
+          "herb_bohe"
+        ],
+        "purpose": "疏风清热、利咽开音",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_bohe", "key_points": "蝉蜕甘寒质轻，兼明目退翳、息风止痉；薄荷辛凉芳香，兼清利头目、疏肝" }
+      {
+        "compare_with": "herb_bohe",
+        "key_points": "蝉蜕甘寒质轻，兼明目退翳、息风止痉；薄荷辛凉芳香，兼清利头目、疏肝"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_bohe", "herb_niubangzi"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_bohe",
+        "herb_niubangzi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "蝉蜕 蝉衣 发散风热药 甘寒 归肺肝经 疏散风热 利咽开音 透疹 明目退翳 息风止痉 风热感冒 麻疹不透 目赤翳障 惊风"
@@ -441,30 +1150,82 @@
     "id": "herb_sangye",
     "name": "桑叶",
     "pinyin": "sang ye",
-    "aliases": ["冬桑叶"],
+    "aliases": [
+      "冬桑叶"
+    ],
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "寒",
-    "flavor": ["甘", "苦"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "肝"],
-    "effects": ["疏散风热", "清肺润燥", "平抑肝阳", "清肝明目"],
-    "indications": [
-      { "syndrome": "风热感冒、温病初起", "description": "发热、咳嗽、头痛" },
-      { "syndrome": "肺热咳嗽、燥热咳嗽", "description": "咳嗽痰少、咽干" },
-      { "syndrome": "肝阳上亢", "description": "头痛眩晕" },
-      { "syndrome": "目赤昏花", "description": "肝经风热或肝肾不足所致目疾" }
+    "flavor": [
+      "甘",
+      "苦"
     ],
-    "dosage": { "text": "5~10g", "min_g": 5, "max_g": 10, "usage_notes": "" },
-    "cautions": ["脾胃虚寒者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝"
+    ],
+    "effects": [
+      "疏散风热",
+      "清肺润燥",
+      "平抑肝阳",
+      "清肝明目"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热感冒、温病初起",
+        "description": "发热、咳嗽、头痛"
+      },
+      {
+        "syndrome": "肺热咳嗽、燥热咳嗽",
+        "description": "咳嗽痰少、咽干"
+      },
+      {
+        "syndrome": "肝阳上亢",
+        "description": "头痛眩晕"
+      },
+      {
+        "syndrome": "目赤昏花",
+        "description": "肝经风热或肝肾不足所致目疾"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_juhua"], "purpose": "疏散风热、平肝明目", "formula_ref": "formula_sangjuyin" }
+      {
+        "with": [
+          "herb_juhua"
+        ],
+        "purpose": "疏散风热、平肝明目",
+        "formula_ref": "formula_sangjuyin"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_juhua", "key_points": "桑叶偏清肺润燥；菊花偏清热解毒，二者均能疏散风热、平肝明目" }
+      {
+        "compare_with": "herb_juhua",
+        "key_points": "桑叶偏清肺润燥；菊花偏清热解毒，二者均能疏散风热、平肝明目"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_juhua"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_juhua"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "桑叶 发散风热药 甘苦寒 归肺肝经 疏散风热 清肺润燥 平抑肝阳 清肝明目 风热感冒 肺热咳嗽 燥热咳嗽 肝阳上亢 目赤"
@@ -473,30 +1234,84 @@
     "id": "herb_juhua",
     "name": "菊花",
     "pinyin": "ju hua",
-    "aliases": ["杭菊花", "滁菊花"],
+    "aliases": [
+      "杭菊花",
+      "滁菊花"
+    ],
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "微寒",
-    "flavor": ["辛", "甘", "苦"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "肝"],
-    "effects": ["疏散风热", "平抑肝阳", "清肝明目", "清热解毒"],
-    "indications": [
-      { "syndrome": "风热感冒、温病初起", "description": "发热头痛、咳嗽" },
-      { "syndrome": "肝阳眩晕", "description": "头痛眩晕、烦躁易怒" },
-      { "syndrome": "目赤昏花", "description": "肝经风热或肝肾不足所致目疾" },
-      { "syndrome": "疮痈肿毒", "description": "热毒疮痈肿痛" }
+    "flavor": [
+      "辛",
+      "甘",
+      "苦"
     ],
-    "dosage": { "text": "5~10g", "min_g": 5, "max_g": 10, "usage_notes": "" },
-    "cautions": ["气虚胃寒、食少泄泻者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝"
+    ],
+    "effects": [
+      "疏散风热",
+      "平抑肝阳",
+      "清肝明目",
+      "清热解毒"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热感冒、温病初起",
+        "description": "发热头痛、咳嗽"
+      },
+      {
+        "syndrome": "肝阳眩晕",
+        "description": "头痛眩晕、烦躁易怒"
+      },
+      {
+        "syndrome": "目赤昏花",
+        "description": "肝经风热或肝肾不足所致目疾"
+      },
+      {
+        "syndrome": "疮痈肿毒",
+        "description": "热毒疮痈肿痛"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "气虚胃寒、食少泄泻者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_sangye"], "purpose": "疏散风热、清肝明目", "formula_ref": "formula_sangjuyin" }
+      {
+        "with": [
+          "herb_sangye"
+        ],
+        "purpose": "疏散风热、清肝明目",
+        "formula_ref": "formula_sangjuyin"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_sangye", "key_points": "菊花偏平肝明目、清热解毒；桑叶偏清肺润燥" }
+      {
+        "compare_with": "herb_sangye",
+        "key_points": "菊花偏平肝明目、清热解毒；桑叶偏清肺润燥"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": true, "common_confusions": ["herb_sangye"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_sangye"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "菊花 发散风热药 辛甘苦微寒 归肺肝经 疏散风热 平抑肝阳 清肝明目 清热解毒 风热感冒 肝阳眩晕 目赤昏花 疮痈肿毒"
@@ -509,25 +1324,72 @@
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "微寒",
-    "flavor": ["辛", "苦"],
-    "toxicity": "无毒",
-    "meridians": ["膀胱", "肝", "胃"],
-    "effects": ["疏散风热", "清利头目"],
-    "indications": [
-      { "syndrome": "风热感冒头痛", "description": "头痛、头昏、偏头痛" },
-      { "syndrome": "目赤肿痛、目昏多泪", "description": "风热上攻所致目疾" },
-      { "syndrome": "齿龈肿痛", "description": "风热或胃热上攻" }
+    "flavor": [
+      "辛",
+      "苦"
     ],
-    "dosage": { "text": "5~10g", "min_g": 5, "max_g": 10, "usage_notes": "" },
-    "cautions": ["血虚有火之头痛目眩者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "膀胱",
+      "肝",
+      "胃"
+    ],
+    "effects": [
+      "疏散风热",
+      "清利头目"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热感冒头痛",
+        "description": "头痛、头昏、偏头痛"
+      },
+      {
+        "syndrome": "目赤肿痛、目昏多泪",
+        "description": "风热上攻所致目疾"
+      },
+      {
+        "syndrome": "齿龈肿痛",
+        "description": "风热或胃热上攻"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "血虚有火之头痛目眩者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_juhua"], "purpose": "疏散风热、清利头目", "formula_ref": "" }
+      {
+        "with": [
+          "herb_juhua"
+        ],
+        "purpose": "疏散风热、清利头目",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_bohe", "key_points": "蔓荆子偏清利头目、止头面部风热疼痛；薄荷兼利咽透疹、疏肝行气" }
+      {
+        "compare_with": "herb_bohe",
+        "key_points": "蔓荆子偏清利头目、止头面部风热疼痛；薄荷兼利咽透疹、疏肝行气"
+      }
     ],
-    "tags": { "learning_difficulty": 2, "high_frequency_exam": false, "common_confusions": ["herb_bohe", "herb_juhua"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": false,
+      "common_confusions": [
+        "herb_bohe",
+        "herb_juhua"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "蔓荆子 发散风热药 辛苦微寒 归膀胱肝胃经 疏散风热 清利头目 风热感冒头痛 目赤肿痛 目昏多泪 齿龈肿痛"
@@ -536,30 +1398,87 @@
     "id": "herb_chaihu",
     "name": "柴胡",
     "pinyin": "chai hu",
-    "aliases": ["北柴胡", "南柴胡"],
+    "aliases": [
+      "北柴胡",
+      "南柴胡"
+    ],
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "微寒",
-    "flavor": ["辛", "苦"],
-    "toxicity": "无毒",
-    "meridians": ["肝", "胆", "肺"],
-    "effects": ["解表退热", "疏肝解郁", "升举阳气"],
-    "indications": [
-      { "syndrome": "表证发热、少阳证", "description": "寒热往来、胸胁苦满、口苦咽干" },
-      { "syndrome": "肝郁气滞", "description": "胸胁胀痛、月经不调" },
-      { "syndrome": "气虚下陷", "description": "久泻脱肛、子宫脱垂等中气下陷证" }
+    "flavor": [
+      "辛",
+      "苦"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "解表退热宜生用，疏肝解郁可醋炙，升阳可酒炙" },
-    "cautions": ["肝阳上亢、阴虚火旺及气机上逆者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胆",
+      "肺"
+    ],
+    "effects": [
+      "解表退热",
+      "疏肝解郁",
+      "升举阳气"
+    ],
+    "indications": [
+      {
+        "syndrome": "表证发热、少阳证",
+        "description": "寒热往来、胸胁苦满、口苦咽干"
+      },
+      {
+        "syndrome": "肝郁气滞",
+        "description": "胸胁胀痛、月经不调"
+      },
+      {
+        "syndrome": "气虚下陷",
+        "description": "久泻脱肛、子宫脱垂等中气下陷证"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": "解表退热宜生用，疏肝解郁可醋炙，升阳可酒炙"
+    },
+    "cautions": [
+      "肝阳上亢、阴虚火旺及气机上逆者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_huangqin"], "purpose": "和解少阳", "formula_ref": "formula_xiaochaihutang" },
-      { "with": ["herb_shengma"], "purpose": "升阳举陷", "formula_ref": "formula_buzhongyiqitang" }
+      {
+        "with": [
+          "herb_huangqin"
+        ],
+        "purpose": "和解少阳",
+        "formula_ref": "formula_xiaochaihutang"
+      },
+      {
+        "with": [
+          "herb_shengma"
+        ],
+        "purpose": "升阳举陷",
+        "formula_ref": "formula_buzhongyiqitang"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_shengma", "key_points": "柴胡主升肝胆清阳、疏肝解郁；升麻主升脾胃清阳、透疹解毒" }
+      {
+        "compare_with": "herb_shengma",
+        "key_points": "柴胡主升肝胆清阳、疏肝解郁；升麻主升脾胃清阳、透疹解毒"
+      }
     ],
-    "tags": { "learning_difficulty": 3, "high_frequency_exam": true, "common_confusions": ["herb_shengma", "herb_gegen"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shengma",
+        "herb_gegen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "柴胡 发散风热药 辛苦微寒 归肝胆肺经 解表退热 疏肝解郁 升举阳气 表证发热 少阳证 肝郁气滞 气虚下陷"
@@ -572,26 +1491,81 @@
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "微寒",
-    "flavor": ["辛", "甘"],
-    "toxicity": "无毒",
-    "meridians": ["肺", "脾", "胃", "大肠"],
-    "effects": ["发表透疹", "清热解毒", "升举阳气"],
-    "indications": [
-      { "syndrome": "风热头痛、麻疹不透", "description": "外感风热或麻疹初起透发不畅" },
-      { "syndrome": "热毒证", "description": "齿痛口疮、咽喉肿痛、温毒发斑" },
-      { "syndrome": "气虚下陷", "description": "久泻脱肛、子宫脱垂等中气下陷证" }
+    "flavor": [
+      "辛",
+      "甘"
     ],
-    "dosage": { "text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": "发表透疹、清热解毒宜生用；升阳举陷宜炙用" },
-    "cautions": ["阴虚阳浮、喘满气逆及麻疹已透者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "脾",
+      "胃",
+      "大肠"
+    ],
+    "effects": [
+      "发表透疹",
+      "清热解毒",
+      "升举阳气"
+    ],
+    "indications": [
+      {
+        "syndrome": "风热头痛、麻疹不透",
+        "description": "外感风热或麻疹初起透发不畅"
+      },
+      {
+        "syndrome": "热毒证",
+        "description": "齿痛口疮、咽喉肿痛、温毒发斑"
+      },
+      {
+        "syndrome": "气虚下陷",
+        "description": "久泻脱肛、子宫脱垂等中气下陷证"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": "发表透疹、清热解毒宜生用；升阳举陷宜炙用"
+    },
+    "cautions": [
+      "阴虚阳浮、喘满气逆及麻疹已透者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_chaihu"], "purpose": "升阳举陷", "formula_ref": "formula_buzhongyiqitang" },
-      { "with": ["herb_gegen"], "purpose": "解肌透疹、升阳止泻", "formula_ref": "" }
+      {
+        "with": [
+          "herb_chaihu"
+        ],
+        "purpose": "升阳举陷",
+        "formula_ref": "formula_buzhongyiqitang"
+      },
+      {
+        "with": [
+          "herb_gegen"
+        ],
+        "purpose": "解肌透疹、升阳止泻",
+        "formula_ref": ""
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_chaihu", "key_points": "升麻偏透疹解毒、升脾胃清阳；柴胡偏和解退热、疏肝解郁" }
+      {
+        "compare_with": "herb_chaihu",
+        "key_points": "升麻偏透疹解毒、升脾胃清阳；柴胡偏和解退热、疏肝解郁"
+      }
     ],
-    "tags": { "learning_difficulty": 3, "high_frequency_exam": true, "common_confusions": ["herb_chaihu", "herb_gegen"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_chaihu",
+        "herb_gegen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "升麻 发散风热药 辛甘微寒 归肺脾胃大肠经 发表透疹 清热解毒 升举阳气 风热头痛 麻疹不透 齿痛口疮 咽喉肿痛 气虚下陷"
@@ -604,26 +1578,79 @@
     "category": "解表药",
     "subcategory": "发散风热药",
     "nature": "凉",
-    "flavor": ["甘", "辛"],
-    "toxicity": "无毒",
-    "meridians": ["脾", "胃", "肺"],
-    "effects": ["解肌退热", "透疹", "生津止渴", "升阳止泻"],
-    "indications": [
-      { "syndrome": "表证发热、项背强痛", "description": "外感表证，项背拘急不舒" },
-      { "syndrome": "麻疹不透", "description": "麻疹初起透发不畅" },
-      { "syndrome": "热病口渴、阴虚消渴", "description": "津伤口渴或消渴证" },
-      { "syndrome": "热泻热痢、脾虚泄泻", "description": "泄泻、痢疾或脾虚清阳不升" }
+    "flavor": [
+      "甘",
+      "辛"
     ],
-    "dosage": { "text": "10~15g", "min_g": 10, "max_g": 15, "usage_notes": "解肌退热、透疹、生津宜生用；升阳止泻宜煨用" },
-    "cautions": ["胃寒呕吐者慎用"],
+    "toxicity": "无毒",
+    "meridians": [
+      "脾",
+      "胃",
+      "肺"
+    ],
+    "effects": [
+      "解肌退热",
+      "透疹",
+      "生津止渴",
+      "升阳止泻"
+    ],
+    "indications": [
+      {
+        "syndrome": "表证发热、项背强痛",
+        "description": "外感表证，项背拘急不舒"
+      },
+      {
+        "syndrome": "麻疹不透",
+        "description": "麻疹初起透发不畅"
+      },
+      {
+        "syndrome": "热病口渴、阴虚消渴",
+        "description": "津伤口渴或消渴证"
+      },
+      {
+        "syndrome": "热泻热痢、脾虚泄泻",
+        "description": "泄泻、痢疾或脾虚清阳不升"
+      }
+    ],
+    "dosage": {
+      "text": "10~15g",
+      "min_g": 10,
+      "max_g": 15,
+      "usage_notes": "解肌退热、透疹、生津宜生用；升阳止泻宜煨用"
+    },
+    "cautions": [
+      "胃寒呕吐者慎用"
+    ],
     "combinations": [
-      { "with": ["herb_mahuang", "herb_guizhi"], "purpose": "解肌发表、舒缓项背强痛", "formula_ref": "formula_gegentang" }
+      {
+        "with": [
+          "herb_mahuang",
+          "herb_guizhi"
+        ],
+        "purpose": "解肌发表、舒缓项背强痛",
+        "formula_ref": "formula_gegentang"
+      }
     ],
     "differentiation": [
-      { "compare_with": "herb_chaihu", "key_points": "葛根长于解肌退热、生津止渴、升阳止泻；柴胡长于和解少阳、疏肝解郁" }
+      {
+        "compare_with": "herb_chaihu",
+        "key_points": "葛根长于解肌退热、生津止渴、升阳止泻；柴胡长于和解少阳、疏肝解郁"
+      }
     ],
-    "tags": { "learning_difficulty": 3, "high_frequency_exam": true, "common_confusions": ["herb_chaihu", "herb_shengma"] },
-    "sources": [{ "type": "教材", "ref": "《中药学》规划教材·发散风热药" }],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_chaihu",
+        "herb_shengma"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·发散风热药"
+      }
+    ],
     "verified": true,
     "confidence": "high",
     "embedding_text": "葛根 发散风热药 甘辛凉 归脾胃肺经 解肌退热 透疹 生津止渴 升阳止泻 表证发热 项背强痛 麻疹不透 热病口渴 消渴 泄泻"

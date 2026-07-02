@@ -19,6 +19,7 @@ class Category(StrEnum):
 class Nature(StrEnum):
     """四气。"""
 
+    DA_HAN = "大寒"
     HAN = "寒"
     WEI_HAN = "微寒"
     LIANG = "凉"
@@ -26,15 +27,20 @@ class Nature(StrEnum):
     WEI_WEN = "微温"
     WEN = "温"
     RE = "热"
+    DA_RE = "大热"
 
 
 class Flavor(StrEnum):
     """五味及常用扩展味。"""
 
     SUAN = "酸"
+    WEI_KU = "微苦"
     KU = "苦"
+    WEI_GAN = "微甘"
     GAN = "甘"
+    WEI_XIN = "微辛"
     XIN = "辛"
+    WEI_XIAN = "微咸"
     XIAN = "咸"
     DAN = "淡"
     SE = "涩"

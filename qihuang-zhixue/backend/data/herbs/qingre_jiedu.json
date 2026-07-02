@@ -1,0 +1,911 @@
+[
+  {
+    "id": "herb_jinyinhua",
+    "name": "金银花",
+    "pinyin": "jin yin hua",
+    "aliases": [
+      "忍冬花",
+      "银花"
+    ],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "寒",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "心",
+      "胃"
+    ],
+    "effects": [
+      "清热解毒",
+      "疏散风热"
+    ],
+    "indications": [
+      {
+        "syndrome": "痈肿疔疮",
+        "description": "热毒壅盛，红肿热痛，常用于阳证疮疡"
+      },
+      {
+        "syndrome": "喉痹丹毒",
+        "description": "热毒上攻咽喉或外发肌肤"
+      },
+      {
+        "syndrome": "热毒血痢",
+        "description": "热毒蕴结肠道，下痢脓血"
+      },
+      {
+        "syndrome": "风热感冒温病初起",
+        "description": "风热外袭或温病初起，发热、微恶风寒、咽痛"
+      }
+    ],
+    "dosage": {
+      "text": "6~15g",
+      "min_g": 6,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒及气虚疮疡脓清者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_lianqiao"
+        ],
+        "purpose": "清热解毒、疏散风热，用于温病初起及痈肿疮毒",
+        "formula_ref": "formula_yinqiaosan"
+      },
+      {
+        "with": [
+          "herb_pugongying"
+        ],
+        "purpose": "清热解毒、消痈散结，用于疔疮肿毒、乳痈",
+        "formula_ref": "formula_wuwei_xiaoduyin"
+      },
+      {
+        "with": [
+          "herb_huangqin"
+        ],
+        "purpose": "清热解毒、凉血止痢，用于热毒血痢",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_lianqiao",
+        "key_points": "金银花甘寒芳香，既清热解毒又善疏散风热；连翘苦微寒，清热解毒并消痈散结、疏散风热"
+      },
+      {
+        "compare_with": "herb_pugongying",
+        "key_points": "金银花善治外感风热、温病初起及各类阳证疮疡；蒲公英长于乳痈、内痈，并兼利湿通淋"
+      },
+      {
+        "compare_with": "herb_daqingye",
+        "key_points": "金银花偏疏散风热、透达外邪；大青叶偏凉血消斑，主温毒发斑、丹毒痄腮"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_lianqiao",
+        "herb_pugongying",
+        "herb_daqingye"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "金银花 忍冬花 银花 清热解毒药 甘寒 归肺心胃经 清热解毒 疏散风热 痈肿疔疮 喉痹 丹毒 热毒血痢 风热感冒 温病初起"
+  },
+  {
+    "id": "herb_lianqiao",
+    "name": "连翘",
+    "pinyin": "lian qiao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "微寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "心",
+      "小肠"
+    ],
+    "effects": [
+      "清热解毒",
+      "消肿散结",
+      "疏散风热"
+    ],
+    "indications": [
+      {
+        "syndrome": "痈肿疮毒瘰疬痰核",
+        "description": "热毒壅结或痰火郁结，肿痛结块"
+      },
+      {
+        "syndrome": "风热感冒温病初起",
+        "description": "风热外感或温热病初起，发热咽痛"
+      },
+      {
+        "syndrome": "热淋涩痛",
+        "description": "心火下移小肠，小便短赤涩痛"
+      }
+    ],
+    "dosage": {
+      "text": "6~15g",
+      "min_g": 6,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_jinyinhua"
+        ],
+        "purpose": "清热解毒、疏散风热，用于温病初起、风热感冒及疮痈肿毒",
+        "formula_ref": "formula_yinqiaosan"
+      },
+      {
+        "with": [
+          "herb_niubangzi"
+        ],
+        "purpose": "疏散风热、利咽散肿，用于风热咽痛、温病初起",
+        "formula_ref": "formula_yinqiaosan"
+      },
+      {
+        "with": [
+          "herb_xiakucao"
+        ],
+        "purpose": "清热散结，用于瘰疬痰核、痈肿结块",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_jinyinhua",
+        "key_points": "连翘清热解毒之外，消肿散结力较突出；金银花甘寒透达，疏散风热和解毒止痢常考"
+      },
+      {
+        "compare_with": "herb_pugongying",
+        "key_points": "连翘善消痈散结、清心火利小便；蒲公英长于乳痈、内痈，并兼利湿通淋"
+      },
+      {
+        "compare_with": "herb_banlangen",
+        "key_points": "连翘偏疏散风热、消肿散结；板蓝根偏凉血利咽，主温疫时毒、咽喉肿痛"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_jinyinhua",
+        "herb_pugongying",
+        "herb_banlangen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "连翘 清热解毒药 苦微寒 归肺心小肠经 清热解毒 消肿散结 疏散风热 痈肿疮毒 瘰疬痰核 风热感冒 温病初起 热淋涩痛"
+  },
+  {
+    "id": "herb_pugongying",
+    "name": "蒲公英",
+    "pinyin": "pu gong ying",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "寒",
+    "flavor": [
+      "苦",
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胃"
+    ],
+    "effects": [
+      "清热解毒",
+      "消肿散结",
+      "利湿通淋"
+    ],
+    "indications": [
+      {
+        "syndrome": "痈肿疔毒乳痈内痈",
+        "description": "热毒壅滞，疮痈肿痛，尤常用于乳痈"
+      },
+      {
+        "syndrome": "咽痛目赤",
+        "description": "热毒上攻咽喉或肝火上炎目赤肿痛"
+      },
+      {
+        "syndrome": "湿热黄疸",
+        "description": "湿热蕴结肝胆，身目发黄"
+      },
+      {
+        "syndrome": "热淋涩痛",
+        "description": "湿热下注膀胱，小便短赤涩痛"
+      }
+    ],
+    "dosage": {
+      "text": "10~15g",
+      "min_g": 10,
+      "max_g": 15,
+      "usage_notes": "外用鲜品适量，捣敷"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_jinyinhua"
+        ],
+        "purpose": "清热解毒、消痈散结，用于痈肿疔毒、乳痈",
+        "formula_ref": "formula_wuwei_xiaoduyin"
+      },
+      {
+        "with": [
+          "herb_zihuadiding"
+        ],
+        "purpose": "清热解毒、消散疔疮，用于疔疮肿毒",
+        "formula_ref": "formula_wuwei_xiaoduyin"
+      },
+      {
+        "with": [
+          "herb_cheqianzi"
+        ],
+        "purpose": "清热利湿通淋，用于热淋涩痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_jinyinhua",
+        "key_points": "蒲公英苦甘寒，长于乳痈、内痈和利湿通淋；金银花善清热解毒、疏散风热，兼治热毒血痢"
+      },
+      {
+        "compare_with": "herb_lianqiao",
+        "key_points": "蒲公英偏消痈散结、利湿通淋；连翘偏消肿散结、疏散风热并清心火"
+      },
+      {
+        "compare_with": "herb_yuxingcao",
+        "key_points": "蒲公英多用于乳痈、疔毒、热淋；鱼腥草专长清肺痈、排脓，并兼利尿通淋"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_jinyinhua",
+        "herb_lianqiao",
+        "herb_yuxingcao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "蒲公英 清热解毒药 苦甘寒 归肝胃经 清热解毒 消肿散结 利湿通淋 痈肿疔毒 乳痈 内痈 咽痛 目赤 湿热黄疸 热淋涩痛"
+  },
+  {
+    "id": "herb_daqingye",
+    "name": "大青叶",
+    "pinyin": "da qing ye",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "胃"
+    ],
+    "effects": [
+      "清热解毒",
+      "凉血消斑"
+    ],
+    "indications": [
+      {
+        "syndrome": "温病高热神昏发斑",
+        "description": "温热毒盛入营血，壮热神昏、斑疹紫暗"
+      },
+      {
+        "syndrome": "痄腮喉痹",
+        "description": "温毒上攻，腮部肿痛或咽喉肿痛"
+      },
+      {
+        "syndrome": "丹毒痈肿",
+        "description": "热毒壅滞肌肤，丹毒、痈肿红热"
+      }
+    ],
+    "dosage": {
+      "text": "9~15g",
+      "min_g": 9,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_banlangen"
+        ],
+        "purpose": "清热解毒、凉血利咽，用于温毒发斑、痄腮喉痹",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_xijiao"
+        ],
+        "purpose": "清热解毒、凉血消斑，用于温毒发斑、高热神昏",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_jinyinhua"
+        ],
+        "purpose": "清热解毒、凉血消肿，用于丹毒痈肿",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_banlangen",
+        "key_points": "大青叶偏凉血消斑，主温毒发斑、高热神昏；板蓝根偏利咽散结，主咽喉肿痛、痄腮"
+      },
+      {
+        "compare_with": "herb_jinyinhua",
+        "key_points": "大青叶苦寒入营血，善凉血消斑；金银花甘寒透达，善疏散风热、解毒疮痈"
+      },
+      {
+        "compare_with": "herb_lianqiao",
+        "key_points": "大青叶重在凉血解毒；连翘重在消肿散结、疏散风热"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_banlangen",
+        "herb_jinyinhua",
+        "herb_lianqiao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "大青叶 清热解毒药 苦寒 归心胃经 清热解毒 凉血消斑 温病高热 神昏 发斑 痄腮 喉痹 丹毒 痈肿"
+  },
+  {
+    "id": "herb_banlangen",
+    "name": "板蓝根",
+    "pinyin": "ban lan gen",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "胃"
+    ],
+    "effects": [
+      "清热解毒",
+      "凉血",
+      "利咽"
+    ],
+    "indications": [
+      {
+        "syndrome": "温疫时毒",
+        "description": "温热疫毒，发热头痛、咽痛"
+      },
+      {
+        "syndrome": "发热咽痛",
+        "description": "热毒上攻咽喉，咽喉肿痛"
+      },
+      {
+        "syndrome": "温毒发斑",
+        "description": "热入营血，斑疹紫暗"
+      },
+      {
+        "syndrome": "痄腮丹毒痈肿",
+        "description": "热毒壅盛，腮肿、丹毒或痈肿"
+      }
+    ],
+    "dosage": {
+      "text": "9~15g",
+      "min_g": 9,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_daqingye"
+        ],
+        "purpose": "清热解毒、凉血利咽，用于温疫时毒、温毒发斑、痄腮咽痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_niubangzi"
+        ],
+        "purpose": "清热解毒、利咽散肿，用于热毒咽喉肿痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_lianqiao"
+        ],
+        "purpose": "清热解毒、散结利咽，用于痄腮、咽喉肿痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_daqingye",
+        "key_points": "板蓝根偏清热解毒、凉血利咽，咽痛痄腮常考；大青叶偏凉血消斑，温毒发斑更突出"
+      },
+      {
+        "compare_with": "herb_lianqiao",
+        "key_points": "板蓝根善利咽凉血；连翘善疏散风热、消肿散结"
+      },
+      {
+        "compare_with": "herb_shegan",
+        "key_points": "板蓝根清热解毒、利咽而偏凉血；射干清热解毒、利咽之外，祛痰作用突出"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_daqingye",
+        "herb_lianqiao",
+        "herb_shegan"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "板蓝根 清热解毒药 苦寒 归心胃经 清热解毒 凉血 利咽 温疫时毒 发热咽痛 温毒发斑 痄腮 丹毒 痈肿"
+  },
+  {
+    "id": "herb_yuxingcao",
+    "name": "鱼腥草",
+    "pinyin": "yu xing cao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "微寒",
+    "flavor": [
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺"
+    ],
+    "effects": [
+      "清热解毒",
+      "消痈排脓",
+      "利尿通淋"
+    ],
+    "indications": [
+      {
+        "syndrome": "肺痈吐脓肺热咳嗽",
+        "description": "肺热壅盛，咳吐腥臭脓痰或咳嗽痰黄"
+      },
+      {
+        "syndrome": "热毒疮痈",
+        "description": "热毒壅滞，疮痈肿痛"
+      },
+      {
+        "syndrome": "湿热淋证",
+        "description": "湿热下注，小便淋沥涩痛"
+      }
+    ],
+    "dosage": {
+      "text": "15~25g",
+      "min_g": 15,
+      "max_g": 25,
+      "usage_notes": "不宜久煎；鲜品用量加倍，水煎或捣汁服"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_lugen"
+        ],
+        "purpose": "清肺排脓、生津止渴，用于肺痈吐脓、肺热咳嗽",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_jiegeng"
+        ],
+        "purpose": "清肺解毒、祛痰排脓，用于肺痈咳吐脓痰",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_cheqianzi"
+        ],
+        "purpose": "清热利尿通淋，用于湿热淋证",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_pugongying",
+        "key_points": "鱼腥草专入肺经，长于清肺痈、排脓，并利尿通淋；蒲公英长于乳痈、内痈和热淋"
+      },
+      {
+        "compare_with": "herb_baijiangcao",
+        "key_points": "鱼腥草偏肺痈、肺热咳嗽；败酱草偏肠痈、腹痛下痢，并能祛瘀止痛"
+      },
+      {
+        "compare_with": "herb_lugen",
+        "key_points": "鱼腥草清热解毒、消痈排脓；芦根清热泻火、生津止渴、止呕利尿"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_pugongying",
+        "herb_baijiangcao",
+        "herb_lugen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "鱼腥草 清热解毒药 辛微寒 归肺经 清热解毒 消痈排脓 利尿通淋 肺痈吐脓 肺热咳嗽 热毒疮痈 湿热淋证 不宜久煎"
+  },
+  {
+    "id": "herb_shegan",
+    "name": "射干",
+    "pinyin": "she gan",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺"
+    ],
+    "effects": [
+      "清热解毒",
+      "消痰",
+      "利咽"
+    ],
+    "indications": [
+      {
+        "syndrome": "咽喉肿痛",
+        "description": "热毒痰火壅结咽喉，咽痛肿胀"
+      },
+      {
+        "syndrome": "痰盛咳喘",
+        "description": "痰热壅肺，咳喘痰多"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾虚便溏者慎用",
+      "孕妇慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_niubangzi"
+        ],
+        "purpose": "清热解毒、利咽散肿，用于热毒咽喉肿痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_jiegeng"
+        ],
+        "purpose": "宣肺祛痰、利咽，用于痰热壅肺之咽痛咳喘",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_banlangen"
+        ],
+        "purpose": "清热解毒、利咽，用于热毒咽喉肿痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_banlangen",
+        "key_points": "射干清热解毒利咽，并长于消痰治咳喘；板蓝根清热解毒、凉血利咽，常用于温疫时毒、痄腮"
+      },
+      {
+        "compare_with": "herb_niubangzi",
+        "key_points": "射干偏消痰利咽；牛蒡子偏疏散风热、宣肺透疹、解毒利咽"
+      },
+      {
+        "compare_with": "herb_yuxingcao",
+        "key_points": "射干主咽喉肿痛、痰盛咳喘；鱼腥草主肺痈吐脓、肺热咳嗽"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_banlangen",
+        "herb_niubangzi",
+        "herb_yuxingcao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "射干 清热解毒药 苦寒 归肺经 清热解毒 消痰 利咽 咽喉肿痛 痰盛咳喘"
+  },
+  {
+    "id": "herb_baitouweng",
+    "name": "白头翁",
+    "pinyin": "bai tou weng",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "胃",
+      "大肠"
+    ],
+    "effects": [
+      "清热解毒",
+      "凉血止痢"
+    ],
+    "indications": [
+      {
+        "syndrome": "热毒血痢",
+        "description": "热毒深陷血分，下痢脓血、里急后重"
+      },
+      {
+        "syndrome": "阴痒带下",
+        "description": "湿热毒邪下注，阴部瘙痒、带下"
+      }
+    ],
+    "dosage": {
+      "text": "9~15g",
+      "min_g": 9,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "虚寒泻痢者忌用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_huanglian",
+          "herb_huangbai"
+        ],
+        "purpose": "清热解毒、凉血止痢，用于热毒血痢",
+        "formula_ref": "formula_baitouwengtang"
+      },
+      {
+        "with": [
+          "herb_qinpi"
+        ],
+        "purpose": "清热燥湿、凉血止痢，用于热毒血痢、下痢脓血",
+        "formula_ref": "formula_baitouwengtang"
+      },
+      {
+        "with": [
+          "herb_kushen"
+        ],
+        "purpose": "清热燥湿、解毒止痒，用于湿热阴痒带下",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huanglian",
+        "key_points": "白头翁专长清热解毒、凉血止痢，热毒血痢为要药；黄连苦寒燥湿力强，广用于湿热泻痢、心胃火热"
+      },
+      {
+        "compare_with": "herb_jinyinhua",
+        "key_points": "白头翁偏入胃大肠，专治热毒血痢；金银花兼疏散风热、清解疮痈，也可治热毒血痢"
+      },
+      {
+        "compare_with": "herb_baijiangcao",
+        "key_points": "白头翁主热毒血痢；败酱草主肠痈腹痛、痈肿脓成，并能祛瘀止痛"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huanglian",
+        "herb_jinyinhua",
+        "herb_baijiangcao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "白头翁 清热解毒药 苦寒 归胃大肠经 清热解毒 凉血止痢 热毒血痢 阴痒带下"
+  },
+  {
+    "id": "herb_baijiangcao",
+    "name": "败酱草",
+    "pinyin": "bai jiang cao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热解毒药",
+    "nature": "微寒",
+    "flavor": [
+      "辛",
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "胃",
+      "大肠",
+      "肝"
+    ],
+    "effects": [
+      "清热解毒",
+      "消痈排脓",
+      "祛瘀止痛"
+    ],
+    "indications": [
+      {
+        "syndrome": "肠痈肺痈",
+        "description": "热毒瘀滞，肠痈腹痛或肺痈咳吐脓痰"
+      },
+      {
+        "syndrome": "痈肿疮毒",
+        "description": "热毒壅结，疮痈肿痛或脓成不溃"
+      },
+      {
+        "syndrome": "产后瘀阻腹痛",
+        "description": "瘀血内阻，产后腹痛"
+      }
+    ],
+    "dosage": {
+      "text": "6~15g",
+      "min_g": 6,
+      "max_g": 15,
+      "usage_notes": "外用适量"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_yuxingcao"
+        ],
+        "purpose": "清热解毒、消痈排脓，用于肺痈或痈肿脓成",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_dahuang"
+        ],
+        "purpose": "清热解毒、活血通腑，用于肠痈腹痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_chishao"
+        ],
+        "purpose": "清热凉血、祛瘀止痛，用于热毒瘀滞腹痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_yuxingcao",
+        "key_points": "败酱草善治肠痈、腹痛并祛瘀止痛；鱼腥草专长清肺痈、肺热咳嗽并利尿通淋"
+      },
+      {
+        "compare_with": "herb_baitouweng",
+        "key_points": "败酱草主肠痈肺痈、痈肿排脓；白头翁主热毒血痢、凉血止痢"
+      },
+      {
+        "compare_with": "herb_pugongying",
+        "key_points": "败酱草兼祛瘀止痛，偏肠痈腹痛；蒲公英偏乳痈、内痈和热淋"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_yuxingcao",
+        "herb_baitouweng",
+        "herb_pugongying"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热解毒药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "败酱草 清热解毒药 辛苦微寒 归胃大肠肝经 清热解毒 消痈排脓 祛瘀止痛 肠痈 肺痈 痈肿疮毒 产后瘀阻腹痛"
+  }
+]

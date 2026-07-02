@@ -32,6 +32,8 @@ class Settings(BaseSettings):
         },
         alias="LLM_TASK_MODEL_MAP",
     )
+    mock_stream_delay: float = Field(default=0.03, alias="MOCK_STREAM_DELAY")
+    retrieval_score_threshold: float = Field(default=0.35, alias="RETRIEVAL_SCORE_THRESHOLD")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -16,6 +16,7 @@ def _mock_settings() -> Settings:
             "generate": "deepseek-pro",
             "vision": "glm-4.5v",
         },
+        MOCK_STREAM_DELAY=0.0,
     )
 
 
@@ -42,5 +43,6 @@ async def _assert_predictable_mock_without_keys() -> None:
     stream_text = "".join([token async for token in router.chat_stream("reason", messages)])
 
     assert isinstance(client, MockClient)
+    assert client.stream_delay == 0.0
     assert text == "[MOCK:deepseek-pro] 你问的是：黄芪有什么功效？"
     assert stream_text == text

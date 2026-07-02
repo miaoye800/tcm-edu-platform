@@ -26,6 +26,16 @@ backend/.chroma/
 .chroma/
 **/backend/.chroma/
 **/.chroma/
+backend/.data/
+.data/
+**/backend/.data/
+**/.data/
+**/.pytest_cache/
+pytest-cache/
+pytest-tmp/
+**/app/agents/*.mmd
+**/app/profile/*.mmd
+*.mmd
 
 # Node / frontend
 node_modules/
@@ -37,6 +47,16 @@ dist/
 # Logs
 *.log
 logs/
+
+# Local scratch scripts
+qihuang-zhixue/backend/check_fix.py
+qihuang-zhixue/backend/cleanup_test.py
+qihuang-zhixue/backend/probe_write.py
+qihuang-zhixue/backend/set_verified.py
+qihuang-zhixue/backend/verify_*.py
+
+# Local reference documents
+*.pdf
 
 # IDE / system
 .idea/

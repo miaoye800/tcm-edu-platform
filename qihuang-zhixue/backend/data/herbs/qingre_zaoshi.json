@@ -1,0 +1,577 @@
+[
+  {
+    "id": "herb_huangqin",
+    "name": "黄芩",
+    "pinyin": "huang qin",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热燥湿药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胆",
+      "脾",
+      "大肠",
+      "小肠"
+    ],
+    "effects": [
+      "清热燥湿",
+      "泻火解毒",
+      "止血",
+      "安胎"
+    ],
+    "indications": [
+      {
+        "syndrome": "湿温暑湿",
+        "description": "湿热郁阻，胸闷呕恶、湿热痞满"
+      },
+      {
+        "syndrome": "湿热泻痢黄疸",
+        "description": "湿热下注或蕴结肠胃，泻痢、黄疸"
+      },
+      {
+        "syndrome": "肺热咳嗽",
+        "description": "肺热壅盛，咳嗽痰黄"
+      },
+      {
+        "syndrome": "热病烦渴",
+        "description": "气分热盛，高热烦渴"
+      },
+      {
+        "syndrome": "血热出血",
+        "description": "血热妄行之吐血、衄血、便血、崩漏"
+      },
+      {
+        "syndrome": "胎热胎动不安",
+        "description": "热扰冲任，胎动不安"
+      },
+      {
+        "syndrome": "痈肿疮毒",
+        "description": "火毒壅盛，疮疡肿痛"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": "清热多生用，安胎多炒用"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_huanglian"
+        ],
+        "purpose": "清热燥湿、解毒止痢，用于湿热泻痢",
+        "formula_ref": "formula_gegen_qinlian_tang"
+      },
+      {
+        "with": [
+          "herb_baizhu"
+        ],
+        "purpose": "清热安胎，兼顾脾虚胎动不安",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_zhizi"
+        ],
+        "purpose": "清泻郁热、除烦解毒，用于热盛烦躁或湿热黄疸",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huanglian",
+        "key_points": "黄芩偏清肺胆上焦湿热，兼止血安胎；黄连苦寒力峻，偏清心胃中焦火热与湿热痞痢"
+      },
+      {
+        "compare_with": "herb_huangbai",
+        "key_points": "黄芩长于清肺热、胆火并止血安胎；黄柏偏清下焦湿热，兼泻火除蒸"
+      },
+      {
+        "compare_with": "herb_longdan",
+        "key_points": "黄芩清热面较广，兼治肺热咳嗽；龙胆专入肝胆，泻肝胆实火、清肝胆湿热力强"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huanglian",
+        "herb_huangbai",
+        "herb_longdan"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热燥湿药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "黄芩 清热燥湿药 苦寒 归肺胆脾大肠小肠经 清热燥湿 泻火解毒 止血 安胎 湿温暑湿 湿热泻痢 黄疸 肺热咳嗽 热病烦渴 血热出血 胎动不安 痈肿疮毒"
+  },
+  {
+    "id": "herb_huanglian",
+    "name": "黄连",
+    "pinyin": "huang lian",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热燥湿药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "脾",
+      "胃",
+      "肝",
+      "胆",
+      "大肠"
+    ],
+    "effects": [
+      "清热燥湿",
+      "泻火解毒"
+    ],
+    "indications": [
+      {
+        "syndrome": "湿热痞满呕吐",
+        "description": "湿热中阻，脘痞呕恶，或胃热呕吐吞酸"
+      },
+      {
+        "syndrome": "湿热泻痢",
+        "description": "湿热蕴结肠胃，腹痛泻痢、里急后重"
+      },
+      {
+        "syndrome": "高热神昏心烦",
+        "description": "热入心包或心火亢盛，高热神昏、心烦不寐"
+      },
+      {
+        "syndrome": "血热出血",
+        "description": "血热妄行之吐血、衄血"
+      },
+      {
+        "syndrome": "胃火牙痛消渴",
+        "description": "胃火炽盛，牙龈肿痛或内热消渴"
+      },
+      {
+        "syndrome": "痈肿疔疮",
+        "description": "火毒炽盛，痈肿疔毒、目赤肿痛"
+      }
+    ],
+    "dosage": {
+      "text": "2~5g",
+      "min_g": 2,
+      "max_g": 5,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者忌用",
+      "阴虚津伤者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_wuzhuyu"
+        ],
+        "purpose": "清肝胃郁火、降逆止呕，用于肝火犯胃之呕吐吞酸",
+        "formula_ref": "formula_zuojinwan"
+      },
+      {
+        "with": [
+          "herb_huangqin"
+        ],
+        "purpose": "增强清热燥湿、解毒止痢之力，用于湿热泻痢",
+        "formula_ref": "formula_gegen_qinlian_tang"
+      },
+      {
+        "with": [
+          "herb_huangbai"
+        ],
+        "purpose": "三黄相合，清热燥湿、泻火解毒，用于三焦热毒或湿热壅盛",
+        "formula_ref": "formula_sanhuang_xiexin_tang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huangqin",
+        "key_points": "黄连苦寒力强，善清心胃火、燥中焦湿热；黄芩偏清肺胆上焦湿热，兼止血安胎"
+      },
+      {
+        "compare_with": "herb_huangbai",
+        "key_points": "黄连偏心胃中焦，主湿热痞痢、心烦神昏、胃火牙痛；黄柏偏下焦，主带下、热淋、脚气与骨蒸"
+      },
+      {
+        "compare_with": "herb_zhizi",
+        "key_points": "黄连长于苦燥湿热、清心胃火毒；栀子长于清三焦郁火、除烦并利湿退黄"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huangqin",
+        "herb_huangbai",
+        "herb_zhizi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热燥湿药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "黄连 清热燥湿药 苦寒 归心脾胃肝胆大肠经 清热燥湿 泻火解毒 湿热痞满 呕吐吞酸 湿热泻痢 高热神昏 心烦不寐 血热吐衄 胃火牙痛 消渴 痈肿疔疮"
+  },
+  {
+    "id": "herb_huangbai",
+    "name": "黄柏",
+    "pinyin": "huang bai",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热燥湿药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肾",
+      "膀胱",
+      "大肠"
+    ],
+    "effects": [
+      "清热燥湿",
+      "泻火除蒸",
+      "解毒疗疮"
+    ],
+    "indications": [
+      {
+        "syndrome": "湿热带下热淋",
+        "description": "下焦湿热，带下黄浊、热淋涩痛"
+      },
+      {
+        "syndrome": "湿热泻痢黄疸",
+        "description": "湿热蕴结肠胃或肝胆，泻痢、黄疸"
+      },
+      {
+        "syndrome": "脚气痿躄",
+        "description": "湿热下注，足膝肿痛、痿软无力"
+      },
+      {
+        "syndrome": "骨蒸劳热盗汗遗精",
+        "description": "阴虚火旺，骨蒸潮热、盗汗、遗精"
+      },
+      {
+        "syndrome": "疮疡肿毒湿疹湿疮",
+        "description": "湿热火毒壅滞肌肤"
+      }
+    ],
+    "dosage": {
+      "text": "3~12g",
+      "min_g": 3,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_zhimu"
+        ],
+        "purpose": "滋阴降火、退虚热，用于阴虚火旺之骨蒸潮热、盗汗",
+        "formula_ref": "formula_zhibaidihuangwan"
+      },
+      {
+        "with": [
+          "herb_cangzhu"
+        ],
+        "purpose": "清热燥湿、强筋除痹，用于湿热下注之痿证脚气",
+        "formula_ref": "formula_ermiaosan"
+      },
+      {
+        "with": [
+          "herb_huanglian"
+        ],
+        "purpose": "清热燥湿、泻火解毒，用于湿热热毒壅盛",
+        "formula_ref": "formula_sanhuang_xiexin_tang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huangqin",
+        "key_points": "黄柏偏入肾与膀胱，善清下焦湿热并除蒸；黄芩偏上焦肺胆，兼止血安胎"
+      },
+      {
+        "compare_with": "herb_huanglian",
+        "key_points": "黄柏主下焦湿热、骨蒸劳热和湿疮；黄连主心胃中焦火热、湿热痞痢和热毒疔疮"
+      },
+      {
+        "compare_with": "herb_kushen",
+        "key_points": "黄柏善泻火除蒸、解毒疗疮；苦参清热燥湿之外，杀虫止痒、利尿作用更突出"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huangqin",
+        "herb_huanglian",
+        "herb_kushen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热燥湿药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "黄柏 清热燥湿药 苦寒 归肾膀胱大肠经 清热燥湿 泻火除蒸 解毒疗疮 湿热带下 热淋涩痛 湿热泻痢 黄疸 脚气痿躄 骨蒸劳热 盗汗遗精 疮疡肿毒 湿疹湿疮"
+  },
+  {
+    "id": "herb_longdan",
+    "name": "龙胆",
+    "pinyin": "long dan",
+    "aliases": [
+      "龙胆草"
+    ],
+    "category": "清热药",
+    "subcategory": "清热燥湿药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胆"
+    ],
+    "effects": [
+      "清热燥湿",
+      "泻肝胆火"
+    ],
+    "indications": [
+      {
+        "syndrome": "湿热黄疸阴肿阴痒",
+        "description": "肝胆湿热下注，黄疸、阴肿阴痒、带下"
+      },
+      {
+        "syndrome": "湿疹瘙痒",
+        "description": "湿热蕴结肌肤，湿疹、瘙痒"
+      },
+      {
+        "syndrome": "肝火头痛目赤",
+        "description": "肝胆实火上炎，头痛、目赤、耳聋"
+      },
+      {
+        "syndrome": "胁痛口苦",
+        "description": "肝胆火盛或湿热郁蒸，胁痛口苦"
+      },
+      {
+        "syndrome": "惊风抽搐",
+        "description": "肝经热盛动风，小儿惊风抽搐"
+      }
+    ],
+    "dosage": {
+      "text": "3~6g",
+      "min_g": 3,
+      "max_g": 6,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用",
+      "阴虚津伤者慎用",
+      "苦寒败胃，不宜过量久服"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_huangqin",
+          "herb_zhizi"
+        ],
+        "purpose": "清泻肝胆实火、清利肝胆湿热，用于胁痛口苦、目赤耳聋、湿热下注",
+        "formula_ref": "formula_longdan_xiegan_tang"
+      },
+      {
+        "with": [
+          "herb_chaihu"
+        ],
+        "purpose": "疏清肝胆郁热，用于肝胆火郁之胁痛口苦",
+        "formula_ref": "formula_longdan_xiegan_tang"
+      },
+      {
+        "with": [
+          "herb_kushen"
+        ],
+        "purpose": "清热燥湿止痒，用于湿热阴痒、湿疹瘙痒",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huangqin",
+        "key_points": "龙胆专清肝胆湿热、泻肝胆实火，药力苦寒直折；黄芩清热面较广，兼肺热咳嗽、止血安胎"
+      },
+      {
+        "compare_with": "herb_xiakucao",
+        "key_points": "龙胆苦寒燥湿，善治肝胆湿热与实火；夏枯草偏清肝火明目、散结消肿"
+      },
+      {
+        "compare_with": "herb_kushen",
+        "key_points": "龙胆重在肝胆火与湿热；苦参重在湿热皮肤瘙痒、阴痒及利尿"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huangqin",
+        "herb_xiakucao",
+        "herb_kushen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热燥湿药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "龙胆 龙胆草 清热燥湿药 苦寒 归肝胆经 清热燥湿 泻肝胆火 湿热黄疸 阴肿阴痒 带下 湿疹瘙痒 肝火头痛 目赤耳聋 胁痛口苦 惊风抽搐"
+  },
+  {
+    "id": "herb_kushen",
+    "name": "苦参",
+    "pinyin": "ku shen",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热燥湿药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肝",
+      "胃",
+      "大肠",
+      "膀胱"
+    ],
+    "effects": [
+      "清热燥湿",
+      "杀虫",
+      "利尿"
+    ],
+    "indications": [
+      {
+        "syndrome": "湿热泻痢便血黄疸",
+        "description": "湿热蕴结肠胃或肝胆，泻痢、便血、黄疸"
+      },
+      {
+        "syndrome": "带下阴痒",
+        "description": "下焦湿热，带下黄浊、阴部瘙痒"
+      },
+      {
+        "syndrome": "湿疹湿疮皮肤瘙痒",
+        "description": "湿热蕴肤，湿疹、湿疮、皮肤瘙痒"
+      },
+      {
+        "syndrome": "疥癣麻风",
+        "description": "虫毒湿热蕴结肌肤"
+      },
+      {
+        "syndrome": "小便不利",
+        "description": "湿热下注，尿少涩痛或小便不利"
+      }
+    ],
+    "dosage": {
+      "text": "4.5~9g",
+      "min_g": 4.5,
+      "max_g": 9,
+      "usage_notes": "外用适量"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_huangbai"
+        ],
+        "purpose": "清热燥湿、杀虫止痒，用于湿热下注之带下阴痒、湿疹湿疮",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_longdan"
+        ],
+        "purpose": "清肝胆湿热、止痒，用于湿热阴痒或湿疹瘙痒",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_cheqianzi"
+        ],
+        "purpose": "清热利尿通淋，用于湿热下注小便不利",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_huangbai",
+        "key_points": "苦参清热燥湿兼杀虫、利尿，皮肤瘙痒与阴痒常考；黄柏偏下焦湿热，并善泻火除蒸、解毒疗疮"
+      },
+      {
+        "compare_with": "herb_longdan",
+        "key_points": "苦参重在湿热虫痒和小便不利；龙胆重在肝胆湿热与肝胆实火"
+      },
+      {
+        "compare_with": "herb_baixianpi",
+        "key_points": "苦参兼利尿并反藜芦；白鲜皮偏祛风解毒，常用于湿热疮毒、风疹疥癣"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_huangbai",
+        "herb_longdan",
+        "herb_baixianpi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热燥湿药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "苦参 清热燥湿药 苦寒 归心肝胃大肠膀胱经 清热燥湿 杀虫 利尿 湿热泻痢 便血 黄疸 带下 阴痒 湿疹湿疮 皮肤瘙痒 疥癣 麻风 小便不利"
+  }
+]

@@ -1,0 +1,584 @@
+[
+  {
+    "id": "herb_shigao",
+    "name": "石膏",
+    "pinyin": "shi gao",
+    "aliases": [
+      "生石膏",
+      "煅石膏"
+    ],
+    "category": "清热药",
+    "subcategory": "清热泻火药",
+    "nature": "大寒",
+    "flavor": [
+      "甘",
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃"
+    ],
+    "effects": [
+      "清热泻火",
+      "除烦止渴",
+      "收湿敛疮",
+      "生肌止血"
+    ],
+    "indications": [
+      {
+        "syndrome": "外感热病",
+        "description": "高热烦渴，常用于气分实热证"
+      },
+      {
+        "syndrome": "肺热喘咳",
+        "description": "肺热壅盛，咳喘气急"
+      },
+      {
+        "syndrome": "胃火亢盛",
+        "description": "头痛、牙痛、内热消渴"
+      },
+      {
+        "syndrome": "疮疡湿疹",
+        "description": "煅用外治溃疡不敛、湿疹、水火烫伤等"
+      }
+    ],
+    "dosage": {
+      "text": "15~60g",
+      "min_g": 15,
+      "max_g": 60,
+      "usage_notes": "生用宜先煎。生石膏：清热泻火、除烦止渴；煅石膏（外用）：收湿、敛疮、生肌、止血；煅用外用适量"
+    },
+    "cautions": [
+      "脾胃虚寒及阴虚内热者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_zhimu"
+        ],
+        "purpose": "清热泻火、除烦止渴，用于气分实热高热烦渴",
+        "formula_ref": "formula_baihutang"
+      },
+      {
+        "with": [
+          "herb_mahuang"
+        ],
+        "purpose": "清泄肺热、宣肺平喘，用于肺热喘咳",
+        "formula_ref": "formula_maxingshigantang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_zhimu",
+        "key_points": "石膏重在清肺胃气分实热，泻火力强，兼除烦止渴；知母清热之中兼滋阴润燥，适用于热盛伤阴、阴虚燥热"
+      },
+      {
+        "compare_with": "herb_lugen",
+        "key_points": "石膏清热泻火力强，偏治气分大热；芦根清热生津力较缓，兼止呕、利尿"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_zhimu",
+        "herb_lugen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热泻火药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "石膏 清热泻火药 辛甘大寒 归肺胃经 清热泻火 除烦止渴 收湿敛疮 生肌止血 气分实热 肺热喘咳 胃火牙痛"
+  },
+  {
+    "id": "herb_zhimu",
+    "name": "知母",
+    "pinyin": "zhi mu",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热泻火药",
+    "nature": "寒",
+    "flavor": [
+      "苦",
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃",
+      "肾"
+    ],
+    "effects": [
+      "清热泻火",
+      "滋阴润燥"
+    ],
+    "indications": [
+      {
+        "syndrome": "热病烦渴",
+        "description": "气分热盛，壮热烦渴"
+      },
+      {
+        "syndrome": "肺热燥咳",
+        "description": "肺热或阴虚燥咳"
+      },
+      {
+        "syndrome": "骨蒸潮热",
+        "description": "阴虚火旺，骨蒸潮热、盗汗"
+      },
+      {
+        "syndrome": "内热消渴",
+        "description": "热盛伤津或阴虚内热之消渴"
+      },
+      {
+        "syndrome": "肠燥便秘",
+        "description": "阴虚津亏，肠燥便秘"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾虚便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_shigao"
+        ],
+        "purpose": "清气分实热、除烦止渴，用于热病壮热烦渴",
+        "formula_ref": "formula_baihutang"
+      },
+      {
+        "with": [
+          "herb_huangbai"
+        ],
+        "purpose": "滋阴降火，用于阴虚火旺、骨蒸潮热",
+        "formula_ref": "formula_zhibaidihuangwan"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shigao",
+        "key_points": "知母清热泻火而兼滋阴润燥，善治肺胃肾热及阴虚燥热；石膏长于大清肺胃气分实热"
+      },
+      {
+        "compare_with": "herb_tianhuafen",
+        "key_points": "知母滋阴润燥，兼治骨蒸潮热、肠燥便秘；天花粉生津止渴力专，兼消肿排脓"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shigao",
+        "herb_tianhuafen"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热泻火药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "知母 清热泻火药 苦甘寒 归肺胃肾经 清热泻火 滋阴润燥 热病烦渴 肺热燥咳 骨蒸潮热 内热消渴 肠燥便秘"
+  },
+  {
+    "id": "herb_zhizi",
+    "name": "栀子",
+    "pinyin": "zhi zi",
+    "aliases": [
+      "山栀子"
+    ],
+    "category": "清热药",
+    "subcategory": "清热泻火药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "心",
+      "肺",
+      "三焦"
+    ],
+    "effects": [
+      "泻火除烦",
+      "清热利湿",
+      "凉血解毒",
+      "消肿止痛"
+    ],
+    "indications": [
+      {
+        "syndrome": "热病心烦",
+        "description": "热扰胸膈，烦闷不眠"
+      },
+      {
+        "syndrome": "湿热黄疸",
+        "description": "湿热郁蒸，身目发黄"
+      },
+      {
+        "syndrome": "热淋涩痛",
+        "description": "湿热下注，小便淋涩疼痛"
+      },
+      {
+        "syndrome": "血热吐衄",
+        "description": "血热妄行之吐血、衄血"
+      },
+      {
+        "syndrome": "火毒疮疡",
+        "description": "目赤肿痛、火毒疮疡；外用治扭挫伤痛"
+      }
+    ],
+    "dosage": {
+      "text": "6~10g",
+      "min_g": 6,
+      "max_g": 10,
+      "usage_notes": "外用生品适量"
+    },
+    "cautions": [
+      "脾虚便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_dandouchi"
+        ],
+        "purpose": "清宣郁热、除烦，用于热郁胸膈烦闷不眠",
+        "formula_ref": "formula_zhizichitang"
+      },
+      {
+        "with": [
+          "herb_yinchen"
+        ],
+        "purpose": "清利湿热、退黄，用于湿热黄疸",
+        "formula_ref": "formula_yinchenhaotang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_shigao",
+        "key_points": "栀子善清三焦郁火，除烦、利湿、凉血解毒；石膏偏清肺胃气分实热，除烦止渴"
+      },
+      {
+        "compare_with": "herb_xiakucao",
+        "key_points": "栀子泻三焦火而兼利湿凉血；夏枯草偏清肝胆火，兼散结消肿"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_shigao",
+        "herb_xiakucao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热泻火药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "栀子 清热泻火药 苦寒 归心肺三焦经 泻火除烦 清热利湿 凉血解毒 消肿止痛 热病心烦 湿热黄疸 热淋 血热吐衄"
+  },
+  {
+    "id": "herb_lugen",
+    "name": "芦根",
+    "pinyin": "lu gen",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热泻火药",
+    "nature": "寒",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃"
+    ],
+    "effects": [
+      "清热泻火",
+      "生津止渴",
+      "除烦",
+      "止呕",
+      "利尿"
+    ],
+    "indications": [
+      {
+        "syndrome": "热病烦渴",
+        "description": "热盛伤津，烦热口渴"
+      },
+      {
+        "syndrome": "胃热呕哕",
+        "description": "胃热上逆，呕吐呃逆"
+      },
+      {
+        "syndrome": "肺热咳嗽",
+        "description": "肺热咳嗽，或肺痈吐脓"
+      },
+      {
+        "syndrome": "热淋涩痛",
+        "description": "热淋小便短赤涩痛"
+      }
+    ],
+    "dosage": {
+      "text": "15~30g；鲜品30~60g",
+      "min_g": 15,
+      "max_g": 60,
+      "usage_notes": "鲜品用量较大"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_tianhuafen"
+        ],
+        "purpose": "清热生津止渴，用于热病津伤烦渴",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_zhuru"
+        ],
+        "purpose": "清胃热、止呕哕，用于胃热呕吐",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_tianhuafen",
+        "key_points": "芦根清热生津，兼止呕、利尿，药性较轻清；天花粉清热生津力较强，兼消肿排脓"
+      },
+      {
+        "compare_with": "herb_shigao",
+        "key_points": "芦根偏清肺胃热而生津止呕利尿；石膏泻肺胃气分实热力强，主治高热烦渴"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_tianhuafen",
+        "herb_shigao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热泻火药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "芦根 清热泻火药 甘寒 归肺胃经 清热泻火 生津止渴 除烦 止呕 利尿 热病烦渴 胃热呕哕 肺热咳嗽 肺痈 热淋"
+  },
+  {
+    "id": "herb_tianhuafen",
+    "name": "天花粉",
+    "pinyin": "tian hua fen",
+    "aliases": [
+      "瓜蒌根"
+    ],
+    "category": "清热药",
+    "subcategory": "清热泻火药",
+    "nature": "微寒",
+    "flavor": [
+      "甘",
+      "微苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃"
+    ],
+    "effects": [
+      "清热泻火",
+      "生津止渴",
+      "消肿排脓"
+    ],
+    "indications": [
+      {
+        "syndrome": "热病烦渴",
+        "description": "热盛伤津，口渴多饮"
+      },
+      {
+        "syndrome": "肺热燥咳",
+        "description": "肺热燥咳，痰少而黏"
+      },
+      {
+        "syndrome": "内热消渴",
+        "description": "胃热津伤或阴虚内热之消渴"
+      },
+      {
+        "syndrome": "疮疡肿毒",
+        "description": "热毒疮疡，红肿疼痛，或脓成不溃"
+      }
+    ],
+    "dosage": {
+      "text": "10~15g",
+      "min_g": 10,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "不宜与乌头类药材同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "乌头"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_lugen"
+        ],
+        "purpose": "清热生津止渴，用于热病津伤口渴",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_beimu"
+        ],
+        "purpose": "清肺润燥、化痰止咳，用于肺热燥咳",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_lugen",
+        "key_points": "天花粉清热生津力较强，兼消肿排脓；芦根清热生津较轻清，兼止呕、利尿"
+      },
+      {
+        "compare_with": "herb_zhimu",
+        "key_points": "天花粉偏生津止渴、消肿排脓；知母偏滋阴润燥，兼治骨蒸潮热、肠燥便秘"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_lugen",
+        "herb_zhimu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热泻火药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "天花粉 瓜蒌根 清热泻火药 甘微苦微寒 归肺胃经 清热泻火 生津止渴 消肿排脓 热病烦渴 肺热燥咳 内热消渴 疮疡肿毒"
+  },
+  {
+    "id": "herb_xiakucao",
+    "name": "夏枯草",
+    "pinyin": "xia ku cao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清热泻火药",
+    "nature": "寒",
+    "flavor": [
+      "辛",
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胆"
+    ],
+    "effects": [
+      "清肝泻火",
+      "明目",
+      "散结消肿"
+    ],
+    "indications": [
+      {
+        "syndrome": "肝火目赤",
+        "description": "目赤肿痛、目珠夜痛"
+      },
+      {
+        "syndrome": "肝阳眩晕",
+        "description": "头痛眩晕"
+      },
+      {
+        "syndrome": "痰火郁结",
+        "description": "瘰疬、瘿瘤"
+      },
+      {
+        "syndrome": "乳痈肿痛",
+        "description": "乳痈、乳癖肿痛"
+      }
+    ],
+    "dosage": {
+      "text": "9~15g",
+      "min_g": 9,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚弱者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_juemingzi"
+        ],
+        "purpose": "清肝明目，用于肝火上炎目赤肿痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_beimu"
+        ],
+        "purpose": "清热散结，用于瘰疬、瘿瘤、乳癖",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_zhizi",
+        "key_points": "夏枯草专清肝胆火，兼散结消肿，常考目赤、瘰疬、瘿瘤；栀子清三焦火，兼利湿、凉血解毒"
+      },
+      {
+        "compare_with": "herb_juhua",
+        "key_points": "夏枯草偏清肝火、散结；菊花偏疏散风热、平肝明目、清热解毒"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_zhizi",
+        "herb_juhua"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清热泻火药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "夏枯草 清热泻火药 辛苦寒 归肝胆经 清肝泻火 明目 散结消肿 肝火目赤 目珠夜痛 头痛眩晕 瘰疬 瘿瘤 乳痈"
+  }
+]

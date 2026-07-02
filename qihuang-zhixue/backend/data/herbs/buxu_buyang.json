@@ -1,0 +1,719 @@
+[
+  {
+    "id": "herb_lurong",
+    "name": "鹿茸",
+    "pinyin": "lu rong",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "温",
+    "flavor": [
+      "甘",
+      "咸"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肾",
+      "肝"
+    ],
+    "effects": [
+      "壮肾阳",
+      "益精血",
+      "强筋骨",
+      "调冲任",
+      "托疮毒"
+    ],
+    "indications": [
+      {
+        "syndrome": "肾阳不足精血亏虚",
+        "description": "阳痿滑精、宫冷不孕、神疲畏寒"
+      },
+      {
+        "syndrome": "小儿发育迟缓",
+        "description": "精血不足，筋骨痿软、囟门不合"
+      },
+      {
+        "syndrome": "冲任虚寒",
+        "description": "崩漏带下、月经不调"
+      },
+      {
+        "syndrome": "疮疡久溃不敛",
+        "description": "精血亏虚、阴疽内陷或久溃不敛"
+      }
+    ],
+    "dosage": {
+      "text": "1~2g",
+      "min_g": 1,
+      "max_g": 2,
+      "usage_notes": "研末吞服；入丸散"
+    },
+    "cautions": [
+      "阴虚阳亢、血分有热、胃火盛或痰热内盛者忌用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_shudihuang"
+        ],
+        "purpose": "补肾阳、益精血，用于肾阳不足精血亏虚",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_roucongrong"
+        ],
+        "purpose": "温肾助阳、益精血，用于阳痿不孕、腰膝酸软",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_huangqi"
+        ],
+        "purpose": "温补托毒生肌，用于疮疡久溃不敛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_yinyanghuo",
+        "key_points": "鹿茸补阳益精血力峻，兼调冲任、托疮毒；淫羊藿温肾壮阳兼祛风湿"
+      },
+      {
+        "compare_with": "herb_roucongrong",
+        "key_points": "鹿茸力峻而用量小，主肾阳精血大亏；肉苁蓉温补力缓，兼润肠通便"
+      },
+      {
+        "compare_with": "herb_dazao",
+        "key_points": "鹿茸为血肉有情之品，偏峻补肾阳精血；大枣平和补中养血安神"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_yinyanghuo",
+        "herb_roucongrong",
+        "herb_duzhong"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "鹿茸 补阳药 甘咸温 归肾肝经 壮肾阳 益精血 强筋骨 调冲任 托疮毒 肾阳不足 精血亏虚 阳痿滑精 宫冷不孕 小儿发育迟缓 冲任虚寒 疮疡久溃不敛"
+  },
+  {
+    "id": "herb_yinyanghuo",
+    "name": "淫羊藿",
+    "pinyin": "yin yang huo",
+    "aliases": [
+      "仙灵脾"
+    ],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "温",
+    "flavor": [
+      "辛",
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肾",
+      "肝"
+    ],
+    "effects": [
+      "补肾壮阳",
+      "祛风除湿"
+    ],
+    "indications": [
+      {
+        "syndrome": "肾阳虚衰",
+        "description": "阳痿遗精、筋骨痿软"
+      },
+      {
+        "syndrome": "风寒湿痹",
+        "description": "风寒湿痹，肢体麻木、筋骨疼痛"
+      },
+      {
+        "syndrome": "更年期高血压",
+        "description": "肝肾不足、冲任失调所致眩晕血压偏高"
+      }
+    ],
+    "dosage": {
+      "text": "6~10g",
+      "min_g": 6,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴虚火旺者忌用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_bajitian"
+        ],
+        "purpose": "补肾壮阳、祛风除湿，用于阳痿遗精、风湿痹痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_duzhong"
+        ],
+        "purpose": "补肝肾、强筋骨，用于腰膝酸软、筋骨痿软",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_xuduan"
+        ],
+        "purpose": "补肝肾、强筋骨、续伤止痛，用于肝肾不足痹痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_bajitian",
+        "key_points": "淫羊藿辛甘温，补肾壮阳兼祛风湿力较强；巴戟天甘辛微温，补肾助阳兼强筋骨、祛风湿，性较柔"
+      },
+      {
+        "compare_with": "herb_lurong",
+        "key_points": "淫羊藿偏温肾壮阳、祛风除湿；鹿茸峻补肾阳精血，兼调冲任托疮毒"
+      },
+      {
+        "compare_with": "herb_tusizi",
+        "key_points": "淫羊藿偏温燥助阳祛风湿；菟丝子平补肝肾脾，兼固精缩尿、安胎明目"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_bajitian",
+        "herb_lurong",
+        "herb_tusizi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "淫羊藿 仙灵脾 补阳药 辛甘温 归肾肝经 补肾壮阳 祛风除湿 肾阳虚衰 阳痿遗精 筋骨痿软 风寒湿痹 更年期高血压"
+  },
+  {
+    "id": "herb_bajitian",
+    "name": "巴戟天",
+    "pinyin": "ba ji tian",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "微温",
+    "flavor": [
+      "甘",
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肾",
+      "肝"
+    ],
+    "effects": [
+      "补肾助阳",
+      "祛风除湿"
+    ],
+    "indications": [
+      {
+        "syndrome": "肾阳不足",
+        "description": "阳痿不孕、月经不调、少腹冷痛"
+      },
+      {
+        "syndrome": "风湿痹痛",
+        "description": "肝肾不足兼风湿，腰膝疼痛、筋骨痿软"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴虚火旺或湿热下注者忌用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_yinyanghuo"
+        ],
+        "purpose": "补肾壮阳、祛风除湿，用于阳痿不孕、风湿痹痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_duzhong"
+        ],
+        "purpose": "补肝肾、强筋骨，用于腰膝酸软疼痛",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_tusizi"
+        ],
+        "purpose": "温补肾阳、固精助孕，用于肾虚不孕、遗精",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_yinyanghuo",
+        "key_points": "巴戟天补肾助阳较柔，兼强筋骨祛风湿；淫羊藿温肾壮阳、祛风湿力较强"
+      },
+      {
+        "compare_with": "herb_duzhong",
+        "key_points": "巴戟天偏补肾助阳、祛风湿；杜仲偏补肝肾、强筋骨、安胎"
+      },
+      {
+        "compare_with": "herb_roucongrong",
+        "key_points": "巴戟天兼祛风湿；肉苁蓉兼润肠通便"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_yinyanghuo",
+        "herb_duzhong",
+        "herb_roucongrong"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "巴戟天 补阳药 甘辛微温 归肾肝经 补肾助阳 祛风除湿 肾阳不足 阳痿不孕 月经不调 少腹冷痛 风湿痹痛 腰膝疼痛 筋骨痿软"
+  },
+  {
+    "id": "herb_duzhong",
+    "name": "杜仲",
+    "pinyin": "du zhong",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "温",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "补肝肾",
+      "强筋骨",
+      "安胎"
+    ],
+    "indications": [
+      {
+        "syndrome": "肾虚腰痛筋骨无力",
+        "description": "肝肾不足，腰膝酸痛、下肢痿软"
+      },
+      {
+        "syndrome": "阳痿尿频",
+        "description": "肾阳不足，阳痿、尿频"
+      },
+      {
+        "syndrome": "胎动不安习惯性堕胎",
+        "description": "肝肾亏虚，冲任不固"
+      }
+    ],
+    "dosage": {
+      "text": "6~10g",
+      "min_g": 6,
+      "max_g": 10,
+      "usage_notes": "盐炙可增强补肝肾作用"
+    },
+    "cautions": [
+      "阴虚火旺者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_xuduan"
+        ],
+        "purpose": "补肝肾、强筋骨、安胎，用于腰膝酸痛、胎动不安",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_tusizi"
+        ],
+        "purpose": "补肾固精安胎，用于肾虚胎漏胎动",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_niuxi"
+        ],
+        "purpose": "补肝肾、强筋骨，用于腰膝痿软疼痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_xuduan",
+        "key_points": "杜仲补肝肾、强筋骨、安胎，偏治肾虚腰痛；续断兼续折伤、止崩漏"
+      },
+      {
+        "compare_with": "herb_bajitian",
+        "key_points": "杜仲偏强筋骨安胎；巴戟天偏补肾助阳、祛风湿"
+      },
+      {
+        "compare_with": "herb_tusizi",
+        "key_points": "杜仲补肝肾强筋骨；菟丝子固精缩尿、明目止泻、安胎作用更全面"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_xuduan",
+        "herb_bajitian",
+        "herb_tusizi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "杜仲 补阳药 甘温 归肝肾经 补肝肾 强筋骨 安胎 肾虚腰痛 筋骨无力 阳痿尿频 胎动不安 习惯性堕胎"
+  },
+  {
+    "id": "herb_xuduan",
+    "name": "续断",
+    "pinyin": "xu duan",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "微温",
+    "flavor": [
+      "苦",
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "补肝肾",
+      "强筋骨",
+      "续折伤",
+      "止崩漏"
+    ],
+    "indications": [
+      {
+        "syndrome": "肝肾不足腰膝酸痛",
+        "description": "肝肾亏虚，腰膝酸软疼痛"
+      },
+      {
+        "syndrome": "风湿痹痛",
+        "description": "肝肾不足兼风湿，筋骨疼痛"
+      },
+      {
+        "syndrome": "跌扑损伤筋伤骨折",
+        "description": "跌打损伤、筋骨折伤"
+      },
+      {
+        "syndrome": "崩漏胎漏胎动不安",
+        "description": "肝肾不足，冲任不固"
+      }
+    ],
+    "dosage": {
+      "text": "9~15g",
+      "min_g": 9,
+      "max_g": 15,
+      "usage_notes": "补肝肾、安胎多盐炙用"
+    },
+    "cautions": [
+      "阴虚火旺者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_duzhong"
+        ],
+        "purpose": "补肝肾、强筋骨、安胎，用于腰膝酸痛、胎动不安",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_gusuibu"
+        ],
+        "purpose": "补肾续伤、接骨止痛，用于跌扑损伤、骨折",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_sangjisheng"
+        ],
+        "purpose": "补肝肾、祛风湿、安胎，用于肝肾不足风湿痹痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_duzhong",
+        "key_points": "续断兼续折伤、止崩漏；杜仲偏补肝肾强筋骨、安胎"
+      },
+      {
+        "compare_with": "herb_tusizi",
+        "key_points": "续断偏筋骨损伤和崩漏胎漏；菟丝子偏固精缩尿、明目止泻"
+      },
+      {
+        "compare_with": "herb_bajitian",
+        "key_points": "续断偏补肝肾、续伤止痛；巴戟天偏温肾助阳、祛风湿"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_duzhong",
+        "herb_tusizi",
+        "herb_bajitian"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "续断 补阳药 苦辛微温 归肝肾经 补肝肾 强筋骨 续折伤 止崩漏 肝肾不足 腰膝酸痛 风湿痹痛 跌扑损伤 筋伤骨折 崩漏 胎漏 胎动不安"
+  },
+  {
+    "id": "herb_roucongrong",
+    "name": "肉苁蓉",
+    "pinyin": "rou cong rong",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "温",
+    "flavor": [
+      "甘",
+      "咸"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肾",
+      "大肠"
+    ],
+    "effects": [
+      "补肾阳",
+      "益精血",
+      "润肠通便"
+    ],
+    "indications": [
+      {
+        "syndrome": "肾阳不足精血亏虚",
+        "description": "阳痿不孕、腰膝酸软、筋骨无力"
+      },
+      {
+        "syndrome": "肠燥便秘",
+        "description": "精血不足或老年津枯，肠燥便秘"
+      }
+    ],
+    "dosage": {
+      "text": "6~10g",
+      "min_g": 6,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴虚火旺、便溏泄泻、实热便秘者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_danggui"
+        ],
+        "purpose": "温补精血、润肠通便，用于精血亏虚肠燥便秘",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_tusizi"
+        ],
+        "purpose": "补肾助阳、益精固摄，用于肾虚阳痿不孕",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_bajitian"
+        ],
+        "purpose": "温补肾阳，用于阳痿腰膝酸软",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_lurong",
+        "key_points": "肉苁蓉补阳力缓，兼润肠通便；鹿茸峻补肾阳精血，兼调冲任托疮毒"
+      },
+      {
+        "compare_with": "herb_bajitian",
+        "key_points": "肉苁蓉润肠通便；巴戟天祛风除湿"
+      },
+      {
+        "compare_with": "herb_tusizi",
+        "key_points": "肉苁蓉偏温润补阳、润肠；菟丝子平补固涩、安胎明目"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_lurong",
+        "herb_bajitian",
+        "herb_tusizi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "肉苁蓉 补阳药 甘咸温 归肾大肠经 补肾阳 益精血 润肠通便 肾阳不足 精血亏虚 阳痿不孕 腰膝酸软 筋骨无力 肠燥便秘"
+  },
+  {
+    "id": "herb_tusizi",
+    "name": "菟丝子",
+    "pinyin": "tu si zi",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阳药",
+    "nature": "平",
+    "flavor": [
+      "辛",
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "肾",
+      "脾"
+    ],
+    "effects": [
+      "补益肝肾",
+      "固精缩尿",
+      "安胎",
+      "明目",
+      "止泻"
+    ],
+    "indications": [
+      {
+        "syndrome": "肝肾不足",
+        "description": "腰膝酸软、阳痿遗精、遗尿尿频"
+      },
+      {
+        "syndrome": "肾虚胎动不安",
+        "description": "肾虚冲任不固，胎漏胎动"
+      },
+      {
+        "syndrome": "肝肾不足目昏耳鸣",
+        "description": "精血不足，目暗不明、耳鸣"
+      },
+      {
+        "syndrome": "脾肾虚泻",
+        "description": "脾肾两虚，久泻便溏"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "阴虚火旺、大便燥结、小便短赤者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_duzhong",
+          "herb_xuduan"
+        ],
+        "purpose": "补肝肾、安胎，用于肾虚胎动不安",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_shanyao"
+        ],
+        "purpose": "补脾肾、固精止泻，用于脾肾虚泻、遗精",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_gouqizi"
+        ],
+        "purpose": "补肝肾、明目，用于目昏耳鸣",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_duzhong",
+        "key_points": "菟丝子平补肝肾脾，兼固精缩尿、止泻明目；杜仲偏强筋骨、安胎"
+      },
+      {
+        "compare_with": "herb_xuduan",
+        "key_points": "菟丝子固涩明目止泻；续断续折伤、止崩漏"
+      },
+      {
+        "compare_with": "herb_roucongrong",
+        "key_points": "菟丝子平补固涩；肉苁蓉温润补阳、润肠通便"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_duzhong",
+        "herb_xuduan",
+        "herb_roucongrong"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阳药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "菟丝子 补阳药 辛甘平 归肝肾脾经 补益肝肾 固精缩尿 安胎 明目 止泻 肝肾不足 腰膝酸软 阳痿遗精 遗尿尿频 胎动不安 目昏耳鸣 脾肾虚泻"
+  }
+]

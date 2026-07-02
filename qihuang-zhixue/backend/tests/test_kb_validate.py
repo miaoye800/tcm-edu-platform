@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.kb.ingest import load_herbs
 from app.kb.models import Flavor, Herb
 from app.kb.validate import validate_herb_files
 
@@ -29,10 +30,12 @@ def test_herb_model_rejects_invalid_flavor() -> None:
 
 
 def test_herb_seed_file_passes_validation() -> None:
-    report = validate_herb_files(Path("data/herbs"))
+    data_dir = Path("data/herbs")
+    report = validate_herb_files(data_dir)
+    expected_total = len(load_herbs(data_dir))
 
-    assert report.total == 20
-    assert report.passed == 20
+    assert report.total == expected_total
+    assert report.passed == expected_total
     assert report.issues == []
 
 
@@ -55,4 +58,3 @@ def test_herb_model_accepts_enum_values() -> None:
     )
 
     assert herb.flavor == [Flavor.XIN, Flavor.KU]
-

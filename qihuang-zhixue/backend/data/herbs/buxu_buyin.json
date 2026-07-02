@@ -1,0 +1,538 @@
+[
+  {
+    "id": "herb_beishashen",
+    "name": "北沙参",
+    "pinyin": "bei sha shen",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阴药",
+    "nature": "微寒",
+    "flavor": [
+      "甘",
+      "微苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "胃"
+    ],
+    "effects": [
+      "养阴清肺",
+      "益胃生津"
+    ],
+    "indications": [
+      {
+        "syndrome": "肺热燥咳",
+        "description": "肺阴不足或燥热伤肺，干咳少痰、咽干"
+      },
+      {
+        "syndrome": "阴虚劳嗽咯血",
+        "description": "肺阴亏虚，劳嗽咯血"
+      },
+      {
+        "syndrome": "胃阴不足",
+        "description": "热病伤津或胃阴不足，口干咽燥、饥不欲食"
+      },
+      {
+        "syndrome": "津伤口渴",
+        "description": "津液耗伤，口渴舌干"
+      }
+    ],
+    "dosage": {
+      "text": "5~12g",
+      "min_g": 5,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "风寒咳嗽及中寒便溏者慎用",
+      "不宜与藜芦同用"
+    ],
+    "incompatibility": {
+      "shibafan": [
+        "藜芦"
+      ],
+      "shijiuwei": []
+    },
+    "combinations": [
+      {
+        "with": [
+          "herb_maidong"
+        ],
+        "purpose": "养阴润肺、益胃生津，用于肺胃阴伤",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_sangye"
+        ],
+        "purpose": "清肺润燥，用于燥热伤肺干咳少痰",
+        "formula_ref": "formula_shashenmaidongtang"
+      },
+      {
+        "with": [
+          "herb_shengdihuang"
+        ],
+        "purpose": "养阴生津，用于热病伤津口渴",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_maidong",
+        "key_points": "北沙参偏养肺胃之阴、清肺益胃；麦冬兼清心除烦、润肠通便"
+      },
+      {
+        "compare_with": "herb_taizishen",
+        "key_points": "北沙参以养阴为主；太子参以补气为主兼生津润肺"
+      },
+      {
+        "compare_with": "herb_shihu",
+        "key_points": "北沙参偏肺胃阴伤；石斛偏胃阴不足、肾阴亏虚并明目强腰"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_maidong",
+        "herb_taizishen",
+        "herb_shihu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阴药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "北沙参 补阴药 甘微苦微寒 归肺胃经 养阴清肺 益胃生津 肺热燥咳 阴虚劳嗽咯血 胃阴不足 津伤口渴"
+  },
+  {
+    "id": "herb_maidong",
+    "name": "麦冬",
+    "pinyin": "mai dong",
+    "aliases": [
+      "麦门冬"
+    ],
+    "category": "补虚药",
+    "subcategory": "补阴药",
+    "nature": "微寒",
+    "flavor": [
+      "甘",
+      "微苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "胃",
+      "肺",
+      "心"
+    ],
+    "effects": [
+      "养阴润肺",
+      "益胃生津",
+      "清心除烦"
+    ],
+    "indications": [
+      {
+        "syndrome": "肺燥干咳",
+        "description": "肺阴不足或燥热伤肺，干咳少痰"
+      },
+      {
+        "syndrome": "阴虚劳嗽咯血",
+        "description": "肺肾阴虚，劳嗽咯血"
+      },
+      {
+        "syndrome": "胃阴不足津伤口渴",
+        "description": "胃阴不足，口干舌燥、津伤口渴"
+      },
+      {
+        "syndrome": "内热消渴",
+        "description": "阴虚内热，消渴多饮"
+      },
+      {
+        "syndrome": "心烦失眠",
+        "description": "心阴不足或热扰心神，心烦不眠"
+      },
+      {
+        "syndrome": "肠燥便秘",
+        "description": "阴虚津亏，肠燥便秘"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒泄泻、痰湿咳嗽者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_renshen",
+          "herb_wuweizi"
+        ],
+        "purpose": "益气养阴、生津敛汗，用于气阴两伤",
+        "formula_ref": "formula_shengmai_san"
+      },
+      {
+        "with": [
+          "herb_beishashen"
+        ],
+        "purpose": "养阴润肺、益胃生津，用于肺胃阴伤",
+        "formula_ref": "formula_shashenmaidongtang"
+      },
+      {
+        "with": [
+          "herb_xuanshen",
+          "herb_shengdihuang"
+        ],
+        "purpose": "增液润燥通便，用于津伤便秘",
+        "formula_ref": "formula_zengyetang"
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_beishashen",
+        "key_points": "麦冬养阴润肺、益胃生津之外，清心除烦、润肠通便；北沙参偏清肺益胃"
+      },
+      {
+        "compare_with": "herb_tianhuafen",
+        "key_points": "麦冬偏滋阴润燥、清心除烦；天花粉清热生津、消肿排脓"
+      },
+      {
+        "compare_with": "herb_ejiao",
+        "key_points": "麦冬养阴生津润肺；阿胶补血滋阴、润肺止血"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_beishashen",
+        "herb_tianhuafen",
+        "herb_ejiao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阴药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "麦冬 麦门冬 补阴药 甘微苦微寒 归胃肺心经 养阴润肺 益胃生津 清心除烦 肺燥干咳 阴虚劳嗽咯血 胃阴不足 津伤口渴 内热消渴 心烦失眠 肠燥便秘"
+  },
+  {
+    "id": "herb_shihu",
+    "name": "石斛",
+    "pinyin": "shi hu",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阴药",
+    "nature": "微寒",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "胃",
+      "肾"
+    ],
+    "effects": [
+      "益胃生津",
+      "滋阴清热"
+    ],
+    "indications": [
+      {
+        "syndrome": "胃阴不足",
+        "description": "热病伤津或胃阴不足，口干烦渴、食少干呕"
+      },
+      {
+        "syndrome": "病后虚热不退",
+        "description": "阴虚内热，低热不退"
+      },
+      {
+        "syndrome": "阴虚火旺骨蒸劳热",
+        "description": "肾阴不足，骨蒸潮热"
+      },
+      {
+        "syndrome": "肾阴亏虚目暗不明筋骨痿软",
+        "description": "肝肾阴亏，目暗不明、筋骨痿软"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": "鲜品15~30g；入汤剂宜先煎"
+    },
+    "cautions": [
+      "温热病早期阴未伤者慎用",
+      "湿温尚未化燥者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_maidong"
+        ],
+        "purpose": "益胃生津、滋阴清热，用于胃阴不足口干烦渴",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_gouqizi"
+        ],
+        "purpose": "滋补肝肾、明目，用于肝肾阴虚目暗不明",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_shengdihuang"
+        ],
+        "purpose": "养阴清热，用于病后虚热不退",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_beishashen",
+        "key_points": "石斛偏益胃生津、滋肾阴、明目强腰；北沙参偏养阴清肺、益胃生津"
+      },
+      {
+        "compare_with": "herb_maidong",
+        "key_points": "石斛长于胃阴不足和肾阴亏虚；麦冬兼清心除烦、润肠"
+      },
+      {
+        "compare_with": "herb_gouqizi",
+        "key_points": "石斛甘微寒，偏清胃热、养胃肾阴；枸杞子甘平，偏滋补肝肾、益精明目"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_beishashen",
+        "herb_maidong",
+        "herb_gouqizi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阴药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "石斛 补阴药 甘微寒 归胃肾经 益胃生津 滋阴清热 胃阴不足 病后虚热不退 阴虚火旺 骨蒸劳热 肾阴亏虚 目暗不明 筋骨痿软 先煎"
+  },
+  {
+    "id": "herb_gouqizi",
+    "name": "枸杞子",
+    "pinyin": "gou qi zi",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阴药",
+    "nature": "平",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "滋补肝肾",
+      "益精明目"
+    ],
+    "indications": [
+      {
+        "syndrome": "肝肾阴虚精血不足",
+        "description": "腰膝酸痛、眩晕耳鸣、遗精"
+      },
+      {
+        "syndrome": "目昏不明",
+        "description": "肝肾不足，视物昏花、目暗不明"
+      },
+      {
+        "syndrome": "内热消渴",
+        "description": "阴虚内热，消渴口干"
+      },
+      {
+        "syndrome": "血虚萎黄",
+        "description": "精血不足，面色萎黄"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "外邪实热、脾虚有湿及泄泻者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_juhua"
+        ],
+        "purpose": "滋补肝肾、清肝明目，用于目昏不明",
+        "formula_ref": "formula_qiju_dihuang_wan"
+      },
+      {
+        "with": [
+          "herb_shudihuang"
+        ],
+        "purpose": "滋补肝肾、益精血，用于肝肾阴虚",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_tusizi"
+        ],
+        "purpose": "补肝肾、益精明目，用于腰膝酸软、目暗不明",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_nvzhenzi",
+        "key_points": "枸杞子甘平，滋补肝肾、益精明目，兼补血；女贞子甘苦凉，滋肝肾阴、乌须明目并清虚热"
+      },
+      {
+        "compare_with": "herb_tusizi",
+        "key_points": "枸杞子偏滋阴益精明目；菟丝子平补固涩，兼止泻安胎"
+      },
+      {
+        "compare_with": "herb_shihu",
+        "key_points": "枸杞子偏肝肾精血不足；石斛偏胃肾阴伤、虚热不退"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_nvzhenzi",
+        "herb_tusizi",
+        "herb_shihu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阴药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "枸杞子 补阴药 甘平 归肝肾经 滋补肝肾 益精明目 肝肾阴虚 精血不足 腰膝酸痛 眩晕耳鸣 遗精 目昏不明 内热消渴 血虚萎黄"
+  },
+  {
+    "id": "herb_nvzhenzi",
+    "name": "女贞子",
+    "pinyin": "nv zhen zi",
+    "aliases": [],
+    "category": "补虚药",
+    "subcategory": "补阴药",
+    "nature": "凉",
+    "flavor": [
+      "甘",
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "滋补肝肾",
+      "明目乌发"
+    ],
+    "indications": [
+      {
+        "syndrome": "肝肾阴虚",
+        "description": "眩晕耳鸣、腰膝酸软、须发早白"
+      },
+      {
+        "syndrome": "目暗不明",
+        "description": "肝肾阴虚，视物昏花"
+      },
+      {
+        "syndrome": "阴虚发热",
+        "description": "阴虚内热，骨蒸潮热"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒泄泻及阳虚者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_mohanlian"
+        ],
+        "purpose": "滋补肝肾、凉血止血，用于肝肾阴虚、须发早白",
+        "formula_ref": "formula_erzhiwan"
+      },
+      {
+        "with": [
+          "herb_gouqizi"
+        ],
+        "purpose": "滋补肝肾、明目，用于目暗不明、眩晕耳鸣",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_heshouwu"
+        ],
+        "purpose": "补益肝肾、乌须发，用于须发早白",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_gouqizi",
+        "key_points": "女贞子甘苦凉，滋肝肾阴兼清虚热、乌须明目；枸杞子甘平，益精明目并补血"
+      },
+      {
+        "compare_with": "herb_heshouwu",
+        "key_points": "女贞子偏凉补肝肾阴；何首乌微温，制用补精血、生用解毒润肠截疟"
+      },
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "女贞子滋补肝肾、明目乌发；牡丹皮清热凉血、活血化瘀、退虚热"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_gouqizi",
+        "herb_heshouwu",
+        "herb_mudanpi"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·补阴药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "女贞子 补阴药 甘苦凉 归肝肾经 滋补肝肾 明目乌发 肝肾阴虚 眩晕耳鸣 腰膝酸软 须发早白 目暗不明 阴虚发热"
+  }
+]

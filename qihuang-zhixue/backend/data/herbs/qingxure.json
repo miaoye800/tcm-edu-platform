@@ -1,0 +1,527 @@
+[
+  {
+    "id": "herb_qinghao",
+    "name": "青蒿",
+    "pinyin": "qing hao",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清虚热药",
+    "nature": "寒",
+    "flavor": [
+      "苦",
+      "辛"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胆"
+    ],
+    "effects": [
+      "清虚热",
+      "除骨蒸",
+      "解暑热",
+      "截疟",
+      "退黄"
+    ],
+    "indications": [
+      {
+        "syndrome": "温邪伤阴",
+        "description": "夜热早凉、热退无汗"
+      },
+      {
+        "syndrome": "阴虚发热骨蒸劳热",
+        "description": "阴虚内热，骨蒸潮热"
+      },
+      {
+        "syndrome": "暑热外感",
+        "description": "暑热发热、头痛口渴"
+      },
+      {
+        "syndrome": "疟疾寒热",
+        "description": "疟疾寒热往来"
+      },
+      {
+        "syndrome": "湿热黄疸",
+        "description": "湿热郁蒸，身目发黄"
+      }
+    ],
+    "dosage": {
+      "text": "6~12g",
+      "min_g": 6,
+      "max_g": 12,
+      "usage_notes": "不宜久煎；鲜品用量加倍，水绞汁服"
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_mudanpi"
+        ],
+        "purpose": "清退虚热，用于温病后期夜热早凉、热退无汗",
+        "formula_ref": "formula_qinghaobiejiatang"
+      },
+      {
+        "with": [
+          "herb_biejia"
+        ],
+        "purpose": "养阴透热、除骨蒸，用于阴虚发热骨蒸劳热",
+        "formula_ref": "formula_qinghaobiejiatang"
+      },
+      {
+        "with": [
+          "herb_huangqin"
+        ],
+        "purpose": "清暑热、截疟，用于疟疾寒热",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "青蒿善透阴分伏热、退虚热并截疟；牡丹皮凉血活血，退虚热而兼散瘀"
+      },
+      {
+        "compare_with": "herb_digupi",
+        "key_points": "青蒿长于透热外出、解暑截疟；地骨皮长于凉血除蒸、清肺降火"
+      },
+      {
+        "compare_with": "herb_yinchaihu",
+        "key_points": "青蒿兼解暑热、截疟退黄；银柴胡专清虚热、除疳热，作用较平和"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_mudanpi",
+        "herb_digupi",
+        "herb_yinchaihu"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清虚热药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "青蒿 清虚热药 苦辛寒 归肝胆经 清虚热 除骨蒸 解暑热 截疟 退黄 温邪伤阴 夜热早凉 阴虚发热 骨蒸劳热 暑热外感 疟疾寒热 湿热黄疸 不宜久煎"
+  },
+  {
+    "id": "herb_digupi",
+    "name": "地骨皮",
+    "pinyin": "di gu pi",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清虚热药",
+    "nature": "寒",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肺",
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "凉血除蒸",
+      "清肺降火"
+    ],
+    "indications": [
+      {
+        "syndrome": "阴虚发热盗汗骨蒸",
+        "description": "阴虚内热，骨蒸潮热、盗汗"
+      },
+      {
+        "syndrome": "肺热咳嗽",
+        "description": "肺热壅盛或肺中伏火，咳嗽气喘"
+      },
+      {
+        "syndrome": "血热出血",
+        "description": "血热妄行，吐血、衄血、尿血"
+      },
+      {
+        "syndrome": "内热消渴",
+        "description": "肺胃热盛或阴虚内热，口渴多饮"
+      }
+    ],
+    "dosage": {
+      "text": "9~15g",
+      "min_g": 9,
+      "max_g": 15,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_zhimu"
+        ],
+        "purpose": "清退虚热、滋阴降火，用于骨蒸潮热盗汗",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_sangbaipi"
+        ],
+        "purpose": "清肺降火、止咳平喘，用于肺热咳喘",
+        "formula_ref": "formula_xiebaisan"
+      },
+      {
+        "with": [
+          "herb_shengdihuang"
+        ],
+        "purpose": "凉血止血，用于血热吐衄尿血",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_qinghao",
+        "key_points": "地骨皮善凉血除蒸、清肺降火；青蒿善透虚热、解暑热并截疟"
+      },
+      {
+        "compare_with": "herb_mudanpi",
+        "key_points": "地骨皮退虚热兼清肺热；牡丹皮凉血活血，兼散瘀止痛"
+      },
+      {
+        "compare_with": "herb_baiwei",
+        "key_points": "地骨皮偏肺肾虚热与肺热咳嗽；白薇兼利尿通淋、解毒疗疮"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_qinghao",
+        "herb_mudanpi",
+        "herb_baiwei"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清虚热药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "地骨皮 清虚热药 甘寒 归肺肝肾经 凉血除蒸 清肺降火 阴虚发热 盗汗骨蒸 肺热咳嗽 血热出血 内热消渴"
+  },
+  {
+    "id": "herb_baiwei",
+    "name": "白薇",
+    "pinyin": "bai wei",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清虚热药",
+    "nature": "寒",
+    "flavor": [
+      "苦",
+      "咸"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "胃",
+      "肝",
+      "肾"
+    ],
+    "effects": [
+      "清热凉血",
+      "利尿通淋",
+      "解毒疗疮"
+    ],
+    "indications": [
+      {
+        "syndrome": "阴虚发热骨蒸劳热",
+        "description": "阴虚内热，骨蒸潮热"
+      },
+      {
+        "syndrome": "产后血虚发热",
+        "description": "产后血虚或热伏阴分发热"
+      },
+      {
+        "syndrome": "温邪伤营发热",
+        "description": "温热病邪入营分，身热不退"
+      },
+      {
+        "syndrome": "热淋血淋",
+        "description": "湿热下注，小便涩痛或尿血"
+      },
+      {
+        "syndrome": "痈疽咽痛蛇虫咬伤",
+        "description": "热毒壅盛，疮痈咽痛或蛇虫咬伤"
+      }
+    ],
+    "dosage": {
+      "text": "5~10g",
+      "min_g": 5,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒、食少便溏者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_digupi"
+        ],
+        "purpose": "清虚热、除骨蒸，用于阴虚发热骨蒸劳热",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_cheqianzi"
+        ],
+        "purpose": "清热利尿通淋，用于热淋血淋",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_jinyinhua"
+        ],
+        "purpose": "清热解毒疗疮，用于痈疽咽痛",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_digupi",
+        "key_points": "白薇兼利尿通淋、解毒疗疮；地骨皮偏凉血除蒸、清肺降火"
+      },
+      {
+        "compare_with": "herb_yinchaihu",
+        "key_points": "白薇除虚热兼清实热、利尿解毒；银柴胡专清虚热、除疳热"
+      },
+      {
+        "compare_with": "herb_huhuanglian",
+        "key_points": "白薇兼热淋血淋和疮毒；胡黄连苦寒燥湿，除疳热并清湿热"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": false,
+      "common_confusions": [
+        "herb_digupi",
+        "herb_yinchaihu",
+        "herb_huhuanglian"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清虚热药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "白薇 清虚热药 苦咸寒 归胃肝肾经 清热凉血 利尿通淋 解毒疗疮 阴虚发热 骨蒸劳热 产后血虚发热 温邪伤营 热淋血淋 痈疽咽痛 蛇虫咬伤"
+  },
+  {
+    "id": "herb_yinchaihu",
+    "name": "银柴胡",
+    "pinyin": "yin chai hu",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清虚热药",
+    "nature": "微寒",
+    "flavor": [
+      "甘"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胃"
+    ],
+    "effects": [
+      "清虚热",
+      "除疳热"
+    ],
+    "indications": [
+      {
+        "syndrome": "阴虚发热",
+        "description": "阴虚内热，骨蒸潮热"
+      },
+      {
+        "syndrome": "疳积发热",
+        "description": "小儿疳积，低热消瘦、腹胀纳差"
+      }
+    ],
+    "dosage": {
+      "text": "3~10g",
+      "min_g": 3,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "外感风寒及血虚无热者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_digupi"
+        ],
+        "purpose": "清虚热、退骨蒸，用于阴虚发热",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_huhuanglian"
+        ],
+        "purpose": "除疳热，用于小儿疳积发热",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_biejia"
+        ],
+        "purpose": "滋阴清热，用于虚劳骨蒸",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_chaihu",
+        "key_points": "银柴胡清虚热、除疳热，不具解表升阳之功；柴胡疏散退热、疏肝解郁、升举阳气"
+      },
+      {
+        "compare_with": "herb_qinghao",
+        "key_points": "银柴胡退虚热作用平和，兼除疳热；青蒿透热外出，兼解暑截疟"
+      },
+      {
+        "compare_with": "herb_huhuanglian",
+        "key_points": "银柴胡甘微寒，专退虚热疳热；胡黄连苦寒，兼清湿热、解热毒"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 2,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_chaihu",
+        "herb_qinghao",
+        "herb_huhuanglian"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清虚热药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "银柴胡 清虚热药 甘微寒 归肝胃经 清虚热 除疳热 阴虚发热 骨蒸潮热 疳积发热"
+  },
+  {
+    "id": "herb_huhuanglian",
+    "name": "胡黄连",
+    "pinyin": "hu huang lian",
+    "aliases": [],
+    "category": "清热药",
+    "subcategory": "清虚热药",
+    "nature": "寒",
+    "flavor": [
+      "苦"
+    ],
+    "toxicity": "无毒",
+    "meridians": [
+      "肝",
+      "胃",
+      "大肠"
+    ],
+    "effects": [
+      "退虚热",
+      "除疳热",
+      "清湿热"
+    ],
+    "indications": [
+      {
+        "syndrome": "骨蒸潮热",
+        "description": "阴虚内热，骨蒸劳热"
+      },
+      {
+        "syndrome": "小儿疳热",
+        "description": "小儿疳积发热、消瘦腹胀"
+      },
+      {
+        "syndrome": "湿热泻痢",
+        "description": "湿热蕴结肠胃，泻痢腹痛"
+      },
+      {
+        "syndrome": "黄疸痔肿",
+        "description": "湿热郁蒸或下注，黄疸、痔肿疼痛"
+      }
+    ],
+    "dosage": {
+      "text": "1.5~10g",
+      "min_g": 1.5,
+      "max_g": 10,
+      "usage_notes": ""
+    },
+    "cautions": [
+      "脾胃虚寒者慎用"
+    ],
+    "combinations": [
+      {
+        "with": [
+          "herb_yinchaihu"
+        ],
+        "purpose": "退虚热、除疳热，用于阴虚发热、小儿疳热",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_huanglian"
+        ],
+        "purpose": "清湿热、止泻痢，用于湿热泻痢",
+        "formula_ref": ""
+      },
+      {
+        "with": [
+          "herb_yinchen"
+        ],
+        "purpose": "清利湿热退黄，用于湿热黄疸",
+        "formula_ref": ""
+      }
+    ],
+    "differentiation": [
+      {
+        "compare_with": "herb_yinchaihu",
+        "key_points": "胡黄连苦寒，退虚热兼清湿热；银柴胡甘微寒，专清虚热、除疳热而不燥湿"
+      },
+      {
+        "compare_with": "herb_huanglian",
+        "key_points": "胡黄连退虚热、除疳热，并治湿热泻痢；黄连苦寒力峻，偏清心胃火和湿热痞痢"
+      },
+      {
+        "compare_with": "herb_qinghao",
+        "key_points": "胡黄连兼湿热泻痢黄疸；青蒿兼解暑热、截疟、透阴分伏热"
+      }
+    ],
+    "tags": {
+      "learning_difficulty": 3,
+      "high_frequency_exam": true,
+      "common_confusions": [
+        "herb_yinchaihu",
+        "herb_huanglian",
+        "herb_qinghao"
+      ]
+    },
+    "sources": [
+      {
+        "type": "教材",
+        "ref": "《中药学》规划教材·清虚热药"
+      }
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "胡黄连 清虚热药 苦寒 归肝胃大肠经 退虚热 除疳热 清湿热 骨蒸潮热 小儿疳热 湿热泻痢 黄疸 痔肿"
+  }
+]

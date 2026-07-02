@@ -57,7 +57,7 @@ def validate_herb_files(data_dir: Path | None = None) -> ValidationReport:
         try:
             items = _load_items(path)
         except (OSError, json.JSONDecodeError, ValueError) as exc:
-            issues.append(ValidationIssue(path=path, index=0, item_id="", message=str(exc)))
+            issues.append(ValidationIssue(file=path, index=0, item_id="", message=str(exc)))
             continue
 
         for index, item in enumerate(items, start=1):
@@ -68,7 +68,7 @@ def validate_herb_files(data_dir: Path | None = None) -> ValidationReport:
             except ValidationError as exc:
                 issues.append(
                     ValidationIssue(
-                        path=path,
+                        file=path,
                         index=index,
                         item_id=item_id,
                         message=str(exc),
@@ -93,7 +93,7 @@ def validate_herb_files(data_dir: Path | None = None) -> ValidationReport:
 async def main() -> int:
     report = validate_herb_files()
     print(f"总数: {report.total}")
-    print(f"通过: {report.passed}")
+    print(f"格式通过数: {report.passed}")
     print(f"错误: {len(report.issues)}")
     print(f"verified=false: {report.verified_false}")
     print(f"confidence=low: {report.confidence_low}")

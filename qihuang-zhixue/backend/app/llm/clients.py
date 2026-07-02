@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
@@ -43,8 +44,9 @@ class BaseLLMClient(ABC):
 class MockClient(BaseLLMClient):
     """无 API Key 时使用的确定性客户端。"""
 
-    def __init__(self, model_name: str, provider: str = "mock") -> None:
+    def __init__(self, model_name: str, provider: str = "mock", stream_delay: float | None = None) -> None:
         super().__init__(model_name=model_name, provider=provider)
+        self.stream_delay = get_settings().mock_stream_delay if stream_delay is None else stream_delay
 
     async def chat(self, messages: Sequence[ChatMessage], **kw: Any) -> str:
         question = _last_user_content(messages)
@@ -54,6 +56,8 @@ class MockClient(BaseLLMClient):
         text = await self.chat(messages)
         for token in text:
             yield token
+            if self.stream_delay > 0:
+                await asyncio.sleep(self.stream_delay)
 
 
 class DeepSeekClient(BaseLLMClient):
