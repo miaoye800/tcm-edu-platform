@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sqlite3
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -13,7 +14,12 @@ from app.llm.clients import ChatMessage
 from app.main import app
 from app.profile.schema import EvidenceCard
 from app.profile.store import list_evidence
-from app.profile.update import get_latest_profile, update_profile_from_event
+from app.profile.update import (
+    DEFAULT_JURY_RESCORE_INTERVAL,
+    DEFAULT_JURY_WEIGHT_THRESHOLD,
+    get_latest_profile,
+    update_profile_from_event,
+)
 from tests.helpers import auth_headers_for_user_id
 
 
@@ -98,6 +104,100 @@ def test_user_view_profile_triggers_jury_rescore_and_resets_pending_weight(tmp_p
     )
 
     assert len(calls) == 1
+
+
+def test_get_latest_profile_throttle(tmp_path: Path) -> None:
+    db_path = _test_db_path(tmp_path)
+    calls: list[str] = []
+    now = _now()
+
+    asyncio.run(
+        update_profile_from_event(
+            "student-throttle",
+            {"type": "quiz", "payload": {"correct": True, "difficulty": "easy"}},
+            db_path=db_path,
+            jury_weight_threshold=DEFAULT_JURY_WEIGHT_THRESHOLD,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now,
+        )
+    )
+    assert calls == []
+
+    first = asyncio.run(
+        get_latest_profile(
+            "student-throttle",
+            db_path=db_path,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now,
+        )
+    )
+    first_score = first.knowledge_base.score
+    first_confidence = first.knowledge_base.confidence
+    assert len(calls) == 1
+    assert first_score == 66
+    assert first_confidence > 0
+
+    second = asyncio.run(
+        get_latest_profile(
+            "student-throttle",
+            db_path=db_path,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now + timedelta(hours=1),
+        )
+    )
+    assert len(calls) == 1
+    assert second.knowledge_base.score == first_score
+    assert second.knowledge_base.confidence == first_confidence
+
+    _set_update_state(
+        db_path,
+        "student-throttle",
+        "knowledge_base",
+        pending_weight=DEFAULT_JURY_WEIGHT_THRESHOLD + 0.1,
+        last_scored_at=now,
+    )
+    asyncio.run(
+        get_latest_profile(
+            "student-throttle",
+            db_path=db_path,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now + timedelta(hours=2),
+        )
+    )
+    assert len(calls) == 2
+
+    asyncio.run(
+        get_latest_profile(
+            "student-throttle",
+            db_path=db_path,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now + timedelta(hours=3),
+        )
+    )
+    assert len(calls) == 2
+
+    _set_update_state(
+        db_path,
+        "student-throttle",
+        "knowledge_base",
+        pending_weight=0,
+        last_scored_at=now - DEFAULT_JURY_RESCORE_INTERVAL - timedelta(minutes=1),
+    )
+    asyncio.run(
+        get_latest_profile(
+            "student-throttle",
+            db_path=db_path,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now + timedelta(hours=4),
+        )
+    )
+    assert len(calls) == 3
 
 
 def test_get_profile_endpoint_returns_latest_profile_and_confidence(tmp_path: Path) -> None:
@@ -210,3 +310,29 @@ def _test_db_path(tmp_path: Path) -> Path:
     root = tmp_path / ".data"
     root.mkdir(parents=True, exist_ok=True)
     return root / f"profile_update_test_{uuid4().hex}.db"
+
+
+def _set_update_state(
+    db_path: Path,
+    user_id: str,
+    dimension: str,
+    *,
+    pending_weight: float,
+    last_scored_at: datetime,
+) -> None:
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            UPDATE profile_update_state
+            SET pending_weight = ?, updated_at = ?, last_scored_at = ?
+            WHERE user_id = ? AND dimension = ?
+            """,
+            (
+                pending_weight,
+                datetime.now(UTC).isoformat(),
+                last_scored_at.astimezone(UTC).isoformat(),
+                user_id,
+                dimension,
+            ),
+        )
+        conn.commit()

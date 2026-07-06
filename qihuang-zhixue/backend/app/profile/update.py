@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from app.config import Settings
+from app.config import Settings, get_settings
 from app.llm.router import ModelRouter
 from app.profile.fusion import FusionResult, fuse_dimension, fuse_profile
 from app.profile.jury import LLMCall, ScoringResult, score_dimension
@@ -23,6 +23,7 @@ from app.profile.store import DB_PATH, add_evidence, get_profile, init_db, list_
 
 SHANGHAI_TZ = timezone(timedelta(hours=8))
 DEFAULT_JURY_WEIGHT_THRESHOLD = 2.0
+DEFAULT_JURY_RESCORE_INTERVAL = timedelta(hours=24)
 
 ProfileEventType = Literal["quiz", "prescription", "interaction"]
 JuryScorer = Callable[..., Awaitable[ScoringResult]]
@@ -93,7 +94,7 @@ async def update_profile_from_event(
                 llm_call=llm_call,
             )
             _apply_scoring_to_profile(profile, dimension, result, dimension_cards)
-            _reset_pending_weight(user_id, dimension, db_path)
+            _reset_pending_weight(user_id, dimension, db_path, now=now)
             jury_called.append(dimension)
 
     upsert_profile(profile, db_path=db_path)
@@ -119,29 +120,49 @@ async def get_latest_profile(
 ) -> Profile:
     """Return the current profile, applying decay and user-view jury refresh."""
 
+    active_settings = settings or get_settings()
     cards = list_evidence(user_id, db_path=db_path)
     profile = get_profile(user_id, db_path=db_path)
     _init_update_state(db_path)
     if not cards:
         return profile
 
+    dimensions_with_evidence = _dimensions_with_evidence(cards)
+    throttled_dimensions = {
+        dimension
+        for dimension in dimensions_with_evidence
+        if _should_throttle_jury_refresh(
+            user_id,
+            dimension,
+            db_path,
+            settings=active_settings,
+            force_llm=force_llm,
+            llm_call=llm_call,
+            now=now,
+        )
+    }
+
     fused = fuse_profile(cards, now=now)
     for dimension, fusion in fused.items():
+        if dimension in throttled_dimensions:
+            continue
         dimension_cards = [card for card in cards if card.dimension == dimension]
         _apply_fusion_to_profile(profile, dimension, fusion, dimension_cards)
 
-    for dimension in _dimensions_with_evidence(cards):
+    for dimension in dimensions_with_evidence:
+        if dimension in throttled_dimensions:
+            continue
         dimension_cards = [card for card in cards if card.dimension == dimension]
         result = await jury_scorer(
             dimension,
             dimension_cards,
             router=router,
-            settings=settings,
+            settings=active_settings,
             force_llm=force_llm,
             llm_call=llm_call,
         )
         _apply_scoring_to_profile(profile, dimension, result, dimension_cards)
-        _reset_pending_weight(user_id, dimension, db_path)
+        _reset_pending_weight(user_id, dimension, db_path, now=now)
 
     upsert_profile(profile, db_path=db_path)
     return profile
@@ -328,10 +349,17 @@ def _init_update_state(db_path: Path) -> None:
                 dimension TEXT NOT NULL,
                 pending_weight REAL NOT NULL DEFAULT 0,
                 updated_at TEXT NOT NULL,
+                last_scored_at TEXT,
                 PRIMARY KEY(user_id, dimension)
             )
             """
         )
+        columns = {
+            str(row[1])
+            for row in conn.execute("PRAGMA table_info(profile_update_state)").fetchall()
+        }
+        if "last_scored_at" not in columns:
+            conn.execute("ALTER TABLE profile_update_state ADD COLUMN last_scored_at TEXT")
         conn.commit()
 
 
@@ -356,19 +384,94 @@ def _increment_pending_weight(user_id: str, dimension: DimensionKey, weight: flo
     return float(row[0]) if row else 0.0
 
 
-def _reset_pending_weight(user_id: str, dimension: DimensionKey, db_path: Path) -> None:
+def _reset_pending_weight(
+    user_id: str,
+    dimension: DimensionKey,
+    db_path: Path,
+    *,
+    now: datetime | None = None,
+) -> None:
+    scored_at = _utc_now_iso(now)
     with closing(sqlite3.connect(db_path)) as conn:
         conn.execute(
             """
-            INSERT INTO profile_update_state(user_id, dimension, pending_weight, updated_at)
-            VALUES (?, ?, 0, ?)
+            INSERT INTO profile_update_state(user_id, dimension, pending_weight, updated_at, last_scored_at)
+            VALUES (?, ?, 0, ?, ?)
             ON CONFLICT(user_id, dimension) DO UPDATE SET
                 pending_weight = 0,
-                updated_at = excluded.updated_at
+                updated_at = excluded.updated_at,
+                last_scored_at = excluded.last_scored_at
             """,
-            (user_id, dimension, datetime.now(UTC).isoformat()),
+            (user_id, dimension, scored_at, scored_at),
         )
         conn.commit()
+
+
+def _should_throttle_jury_refresh(
+    user_id: str,
+    dimension: DimensionKey,
+    db_path: Path,
+    *,
+    settings: Settings,
+    force_llm: bool,
+    llm_call: LLMCall | None,
+    now: datetime | None,
+) -> bool:
+    if not _uses_llm_for_jury(settings=settings, force_llm=force_llm, llm_call=llm_call):
+        return False
+
+    pending_weight, last_scored_at = _get_update_state(user_id, dimension, db_path)
+    if pending_weight >= DEFAULT_JURY_WEIGHT_THRESHOLD:
+        return False
+    if last_scored_at is None:
+        return False
+
+    elapsed = _utc_now(now) - last_scored_at
+    return elapsed < DEFAULT_JURY_RESCORE_INTERVAL
+
+
+def _uses_llm_for_jury(*, settings: Settings, force_llm: bool, llm_call: LLMCall | None) -> bool:
+    return force_llm or llm_call is not None or _has_configured_llm_key(settings)
+
+
+def _has_configured_llm_key(settings: Settings) -> bool:
+    return bool(_str_or_none(settings.deepseek_api_key) or _str_or_none(settings.zhipu_api_key))
+
+
+def _get_update_state(user_id: str, dimension: DimensionKey, db_path: Path) -> tuple[float, datetime | None]:
+    with closing(sqlite3.connect(db_path)) as conn:
+        row = conn.execute(
+            """
+            SELECT pending_weight, last_scored_at
+            FROM profile_update_state
+            WHERE user_id = ? AND dimension = ?
+            """,
+            (user_id, dimension),
+        ).fetchone()
+    if row is None:
+        return 0.0, None
+    return float(row[0] or 0.0), _parse_datetime(row[1])
+
+
+def _utc_now(now: datetime | None = None) -> datetime:
+    if now is None:
+        return datetime.now(UTC)
+    if now.tzinfo is None:
+        return now.replace(tzinfo=UTC)
+    return now.astimezone(UTC)
+
+
+def _utc_now_iso(now: datetime | None = None) -> str:
+    return _utc_now(now).isoformat()
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 def _new_weight(cards: list[EvidenceCard], dimension: DimensionKey) -> float:
@@ -425,6 +528,7 @@ def _str_or_none(value: Any) -> str | None:
 
 
 __all__ = [
+    "DEFAULT_JURY_RESCORE_INTERVAL",
     "DEFAULT_JURY_WEIGHT_THRESHOLD",
     "ProfileUpdateEvent",
     "ProfileUpdateResult",
