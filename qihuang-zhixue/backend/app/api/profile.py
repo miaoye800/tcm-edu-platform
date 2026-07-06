@@ -125,13 +125,17 @@ async def cold_start(
 
 
 @router.post("/session/start")
-async def start(payload: StartSessionRequest, current_user: AuthUser = Depends(get_current_user)) -> dict[str, Any]:
+async def start(
+    payload: StartSessionRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
+) -> dict[str, Any]:
     """Start a profile evidence collection session."""
 
     user_id = payload.user_id or current_user.user_id
     if user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="cannot start a profile session for another user")
-    session = start_profile_session(user_id=user_id, mode=payload.mode)
+    session = start_profile_session(user_id=user_id, mode=payload.mode, db_path=db_path)
     return session_payload(session, status="start")
 
 
@@ -139,15 +143,14 @@ async def start(payload: StartSessionRequest, current_user: AuthUser = Depends(g
 async def answer(
     payload: AnswerSessionRequest,
     current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
 ) -> dict[str, Any]:
     """Advance a collection session and return newly emitted cards."""
 
     try:
-        existing = get_profile_session(payload.session_id)
+        existing = get_profile_session(payload.session_id, user_id=current_user.user_id, db_path=db_path)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
-    if existing.user_id != current_user.user_id:
-        raise HTTPException(status_code=404, detail="profile session not found")
 
     answer_payload = dict(payload.payload or payload.answer or {})
     if payload.response_time_ms is not None:
@@ -156,7 +159,13 @@ async def answer(
     if step_id is None:
         raise HTTPException(status_code=400, detail="profile session has no active step")
     try:
-        session, cards = await answer_profile_session(payload.session_id, step_id, answer_payload)
+        session, cards = await answer_profile_session(
+            payload.session_id,
+            user_id=current_user.user_id,
+            step_id=step_id,
+            payload=answer_payload,
+            db_path=db_path,
+        )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
     except ValueError as exc:
@@ -176,14 +185,12 @@ async def finish(
     """Finish a session and return all objective evidence cards."""
 
     try:
-        existing = get_profile_session(payload.session_id)
+        existing = get_profile_session(payload.session_id, user_id=current_user.user_id, db_path=db_path)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
-    if existing.user_id != current_user.user_id:
-        raise HTTPException(status_code=404, detail="profile session not found")
 
     try:
-        session = finish_profile_session(payload.session_id, db_path=db_path)
+        session = finish_profile_session(payload.session_id, user_id=current_user.user_id, db_path=db_path)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
     return {

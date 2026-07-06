@@ -1,5 +1,8 @@
+import inspect
+import sqlite3
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 import app.profile.modes as modes_module
@@ -23,8 +26,15 @@ client = TestClient(app)
 
 
 def setup_function() -> None:
-    reset_profile_sessions()
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def isolated_profile_session_db(tmp_path: Path):
+    db_path = tmp_path / "profile-sessions.db"
+    reset_profile_sessions(db_path=db_path)
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    yield
 
 
 def test_apprentice_flow_emits_cards_for_all_acts_without_scores(tmp_path: Path) -> None:
@@ -140,6 +150,86 @@ def test_passive_events_convert_to_evidence_cards() -> None:
     assert cards[1]["objective_signal"]["response_time_ms"] == 300
 
 
+def test_session_survives_restart(tmp_path: Path) -> None:
+    db_path = tmp_path / "restart.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    first = _start("apprentice", user_id="restart-user")
+    session_id = first["session_id"]
+
+    advanced = _answer(
+        session_id,
+        APPRENTICE_STEPS[0],
+        {"identity_card": "涓村簥瀛﹀緬", "response_time_ms": 1200},
+    )
+    assert advanced["step"]["id"] == APPRENTICE_STEPS[1]
+
+    with sqlite3.connect(db_path) as conn:
+        stored = conn.execute(
+            """
+            SELECT user_id, mode, current_step, step_index, finished, evidence_cards_json
+            FROM profile_sessions
+            WHERE session_id = ?
+            """,
+            (session_id,),
+        ).fetchone()
+    assert stored is not None
+    assert stored[0] == "restart-user"
+    assert stored[1] == "apprentice"
+    assert stored[2] == 1
+    assert stored[3] == 1
+    assert stored[4] == 0
+    assert stored[5] != "[]"
+
+    questions = advanced["step"]["payload"]["questions"]
+    resumed = _answer(
+        session_id,
+        APPRENTICE_STEPS[1],
+        {
+            "answers": [
+                {"question_id": questions[0]["id"], "selected": questions[0]["options"][0], "response_time_ms": 3000}
+            ]
+        },
+    )
+    finished = client.post("/api/profile/session/finish", json={"session_id": session_id})
+    stored_evidence = list_evidence("restart-user", db_path=db_path)
+
+    assert resumed["step"]["id"] == APPRENTICE_STEPS[2]
+    assert finished.status_code == 200
+    assert finished.json()["finished"] is True
+    assert len(stored_evidence) == len(finished.json()["evidence_cards"])
+    assert len(stored_evidence) >= 4
+
+
+def test_session_cross_user_404(tmp_path: Path) -> None:
+    db_path = tmp_path / "cross-user.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    first = _start("practice", user_id="owner-user")
+    _override_current_user("intruder-user")
+
+    answer = client.post(
+        "/api/profile/session/answer",
+        json={
+            "session_id": first["session_id"],
+            "step_id": "practice",
+            "payload": {"case": "鐑瘨鍜界棝", "prescription": "閲戦摱鑺?5g"},
+        },
+    )
+    finish = client.post("/api/profile/session/finish", json={"session_id": first["session_id"]})
+
+    assert answer.status_code == 404
+    assert answer.json()["detail"] == "profile session not found"
+    assert finish.status_code == 404
+    assert finish.json()["detail"] == "profile session not found"
+
+
+def test_session_not_in_memory() -> None:
+    source = inspect.getsource(modes_module)
+
+    assert not hasattr(modes_module, "_SESSIONS")
+    assert "_SESSIONS" not in source
+    assert "dict[str, ProfileSession]" not in source
+
+
 def test_prescription_signal_falls_back_to_rule_parser_without_key() -> None:
     import asyncio
 
@@ -193,10 +283,11 @@ def test_prescription_signal_llm_extract_uses_flash_with_thinking(monkeypatch) -
 
 def test_finish_defaults_to_persisting_cards_and_reads_back_from_temp_db(tmp_path: Path) -> None:
     db_path = tmp_path / "finish-default.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
     first = _start("practice", user_id="persist-user")
     _answer(first["session_id"], "practice", {"case": "热毒咽痛", "prescription": "金银花15g，连翘12g"})
 
-    session = finish_profile_session(first["session_id"], db_path=db_path)
+    session = finish_profile_session(first["session_id"], user_id="persist-user", db_path=db_path)
     stored = list_evidence("persist-user", db_path=db_path)
 
     assert session.persisted is True

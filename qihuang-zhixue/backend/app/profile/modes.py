@@ -18,8 +18,14 @@ from uuid import uuid4
 
 from app.config import get_settings
 from app.llm.router import ModelRouter
-from app.profile.schema import DimensionKey, EvidenceCard, evidence_card_to_json_dict
-from app.profile.store import DB_PATH, add_evidence
+from app.profile.schema import DimensionKey, EvidenceCard, evidence_card_from_dict, evidence_card_to_json_dict
+from app.profile.store import (
+    DB_PATH,
+    add_evidence,
+    delete_profile_session_rows,
+    get_profile_session_row,
+    upsert_profile_session_row,
+)
 
 
 class ProfileMode(str, Enum):
@@ -122,7 +128,7 @@ class ProfileStep:
 
 @dataclass
 class ProfileSession:
-    """In-memory state for a collection run."""
+    """State for a persisted collection run."""
 
     session_id: str
     user_id: str
@@ -142,10 +148,7 @@ class ProfileSession:
         return self.current_step.title if self.current_step else None
 
 
-_SESSIONS: dict[str, ProfileSession] = {}
-
-
-def start_profile_session(user_id: str, mode: ProfileMode | str) -> ProfileSession:
+def start_profile_session(user_id: str, mode: ProfileMode | str, db_path: Path = DB_PATH) -> ProfileSession:
     """Start a collection session and return the first step."""
 
     parsed_mode = ProfileMode(mode)
@@ -157,22 +160,25 @@ def start_profile_session(user_id: str, mode: ProfileMode | str) -> ProfileSessi
     )
     if session.current_step and _is_quiz_step(session.current_step.id):
         session.step_data["questions"] = session.current_step.private_payload.get("questions", [])
-    _SESSIONS[session.session_id] = session
+    _save_profile_session(session, db_path=db_path)
     return session
 
 
 async def answer_profile_session(
     session_id: str,
+    user_id: str,
     step_id: str,
     payload: dict[str, Any],
+    db_path: Path = DB_PATH,
 ) -> tuple[ProfileSession, list[EvidenceCard]]:
     """Convert one step answer into EvidenceCards and advance the session."""
 
-    session = get_profile_session(session_id)
+    session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
     if session.finished:
         return session, []
     if session.current_step is None:
         session.finished = True
+        _save_profile_session(session, db_path=db_path)
         return session, []
     if step_id != session.current_step.id:
         raise ValueError(f"expected step_id {session.current_step.id}, got {step_id}")
@@ -194,13 +200,14 @@ async def answer_profile_session(
         session.finished = True
     elif _is_quiz_step(session.current_step.id):
         session.step_data["questions"] = session.current_step.private_payload.get("questions", [])
+    _save_profile_session(session, db_path=db_path)
     return session, cards
 
 
-def finish_profile_session(session_id: str, db_path: Path = DB_PATH) -> ProfileSession:
+def finish_profile_session(session_id: str, user_id: str, db_path: Path = DB_PATH) -> ProfileSession:
     """Finish a session and persist cards once."""
 
-    session = get_profile_session(session_id)
+    session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
     session.finished = True
     session.current_step = None
     session.updated_at = datetime.now(UTC)
@@ -209,19 +216,72 @@ def finish_profile_session(session_id: str, db_path: Path = DB_PATH) -> ProfileS
             add_evidence(session.user_id, card, db_path=db_path)
         session.persisted = True
         session.persisted_db_path = str(db_path)
+    _save_profile_session(session, db_path=db_path)
     return session
 
 
-def get_profile_session(session_id: str) -> ProfileSession:
-    """Return a session or raise KeyError for API 404 handling."""
+def get_profile_session(session_id: str, user_id: str, db_path: Path = DB_PATH) -> ProfileSession:
+    """Return an owned session or raise KeyError for API 404 handling."""
 
-    return _SESSIONS[session_id]
+    return _session_from_row(get_profile_session_row(session_id, user_id, db_path=db_path))
 
 
-def reset_profile_sessions() -> None:
-    """Clear in-memory sessions for tests and demos."""
+def reset_profile_sessions(db_path: Path = DB_PATH) -> None:
+    """Clear persisted sessions for tests and demos."""
 
-    _SESSIONS.clear()
+    delete_profile_session_rows(db_path=db_path)
+
+
+def _save_profile_session(session: ProfileSession, db_path: Path = DB_PATH) -> None:
+    session.updated_at = datetime.now(UTC)
+    cards_payload = [evidence_card_to_json_dict(card) for card in session.evidence_cards]
+    upsert_profile_session_row(
+        {
+            "session_id": session.session_id,
+            "user_id": session.user_id,
+            "mode": session.mode.value,
+            "current_step": 1 if session.current_step is not None else 0,
+            "step_index": session.step_index,
+            "finished": 1 if session.persisted else 0,
+            "evidence_cards_json": json.dumps(cards_payload, ensure_ascii=False),
+            "created_at": session.created_at.isoformat(),
+            "updated_at": session.updated_at.isoformat(),
+        },
+        db_path=db_path,
+    )
+
+
+def _session_from_row(row: dict[str, Any]) -> ProfileSession:
+    mode = ProfileMode(str(row["mode"]))
+    step_index = int(row["step_index"] or 0)
+    persisted = bool(row["finished"])
+    current_step = _step_for_index(mode, step_index) if int(row["current_step"]) else None
+    evidence_payload = json.loads(str(row["evidence_cards_json"] or "[]"))
+    cards = [evidence_card_from_dict(item) for item in evidence_payload if isinstance(item, dict)]
+    session = ProfileSession(
+        session_id=str(row["session_id"]),
+        user_id=str(row["user_id"]),
+        mode=mode,
+        current_step=current_step,
+        step_index=step_index,
+        evidence_cards=cards,
+        created_at=datetime.fromisoformat(str(row["created_at"])),
+        updated_at=datetime.fromisoformat(str(row["updated_at"])),
+        finished=persisted or current_step is None,
+        persisted=persisted,
+        persisted_db_path=DB_PATH.as_posix() if persisted else None,
+    )
+    if current_step and _is_quiz_step(current_step.id):
+        session.step_data["questions"] = current_step.private_payload.get("questions", [])
+    return session
+
+
+def _step_for_index(mode: ProfileMode, step_index: int) -> ProfileStep | None:
+    if mode == ProfileMode.apprentice:
+        if 0 <= step_index < len(APPRENTICE_STEPS):
+            return _apprentice_step(step_index)
+        return None
+    return _initial_step(mode)
 
 
 def load_diagnostic_questions(limit: int = 5, data_dir: Path | None = None) -> list[dict[str, Any]]:
