@@ -33,6 +33,11 @@ backend/.data/
 **/.pytest_cache/
 pytest-cache/
 pytest-tmp/
+pytest-tmp*/
+**/pytest-tmp*/
+*.db
+*.db-shm
+*.db-wal
 **/app/agents/*.mmd
 **/app/profile/*.mmd
 *.mmd
@@ -42,6 +47,8 @@ node_modules/
 frontend/dist/
 dist/
 .vite/
+.vite-temp/
+**/.vite-temp/
 *.tsbuildinfo
 
 # Logs
@@ -50,6 +57,7 @@ logs/
 
 # Local scratch scripts
 qihuang-zhixue/backend/check_fix.py
+qihuang-zhixue/backend/check_store.py
 qihuang-zhixue/backend/cleanup_test.py
 qihuang-zhixue/backend/probe_write.py
 qihuang-zhixue/backend/set_verified.py

@@ -30,6 +30,36 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 curl http://127.0.0.1:8000/health
 ```
 
+初始化演示账号：
+
+```bash
+cd backend
+python -m app.auth.seed
+```
+
+默认预置账号密码均为 `demo1234`：
+
+```text
+disciple_a
+disciple_b
+disciple_c
+```
+
+注册、登录并携带 token 访问当前用户画像：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/auth/register ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\":\"demo_student\",\"password\":\"demo1234\",\"display_name\":\"演示学生\"}"
+
+curl -X POST http://127.0.0.1:8000/api/auth/login ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\":\"demo_student\",\"password\":\"demo1234\"}"
+
+curl http://127.0.0.1:8000/api/profile ^
+  -H "Authorization: Bearer <上一步返回的 token>"
+```
+
 ## 启动前端
 
 ```bash

@@ -14,27 +14,45 @@ warnings.filterwarnings("ignore", category=LangChainPendingDeprecationWarning)
 
 from langgraph.graph import END, StateGraph
 
+from app.agents.path_agent import run_path_planning
 from app.kb.ingest import load_herbs
 from app.kb.retriever import SearchHit, search
 from app.llm.clients import ChatMessage, MockClient
 from app.llm.router import ModelRouter
 from app.profile.agent import run_cold_start
 
-Intent = Literal["profile_setup", "knowledge_qa", "other"]
+Intent = Literal["profile_setup", "knowledge_qa", "resource_generation", "learning_path", "other"]
 GRAPH_DIR = Path(__file__).resolve().parent
 MAIN_GRAPH_PATH = GRAPH_DIR / "graph_main.mmd"
 LEGACY_GRAPH_PATH = GRAPH_DIR / "graph.mmd"
 NO_KB_HIT_ANSWER = "知识库暂未覆盖该内容，暂不能基于当前中药知识库给出可靠讲解。\n\nsources: []"
 
 
+class AgentTraceItem(dict[str, str]):
+    """结构化 trace 条目，同时兼容旧测试里的 startswith 断言。"""
+
+    def __init__(self, node: str, summary: str) -> None:
+        super().__init__(node=node, summary=summary)
+
+    def startswith(self, prefix: str) -> bool:
+        return str(self).startswith(prefix)
+
+    def __str__(self) -> str:
+        return f"{self['node']}: {self['summary']}"
+
+
 class State(TypedDict):
     user_id: str
+    session_id: str | None
     messages: list[ChatMessage]
     intent: Intent | None
     profile: dict[str, Any]
     retrieved_docs: list[dict[str, Any]]
+    skill_tree: list[dict[str, Any]]
+    recommendations: list[dict[str, Any]]
+    reviews: dict[str, Any]
     answer: str
-    trace: list[str]
+    trace: list[AgentTraceItem]
 
 
 class AgentStreamEvent(TypedDict):
@@ -90,12 +108,26 @@ async def explain_agent(state: State) -> State:
     return next_state
 
 
+async def path_agent(state: State) -> State:
+    path_state = await run_path_planning(user_id=state["user_id"])
+    next_state = _copy_state(state)
+    next_state["skill_tree"] = [dict(node) for node in path_state["skill_tree"]]
+    next_state["recommendations"] = [dict(item) for item in path_state["recommendations"]]
+    next_state["reviews"] = dict(path_state["reviews"])
+    next_state["answer"] = path_state["answer"]
+    _append_trace(next_state, "path_agent", "调用 PathAgent 子图完成掌握度追踪、路径规划与复习推荐")
+    for item in path_state["trace"]:
+        _append_trace(next_state, f"path_subgraph.{item['node']}", item["summary"])
+    return next_state
+
+
 def build_graph() -> Any:
     workflow = StateGraph(State)
     workflow.add_node("router", router_node)
     workflow.add_node("profile_agent", profile_agent)
     workflow.add_node("rag_agent", rag_agent)
     workflow.add_node("explain_agent", explain_agent)
+    workflow.add_node("path_agent", path_agent)
 
     workflow.set_entry_point("router")
     workflow.add_conditional_edges(
@@ -104,26 +136,51 @@ def build_graph() -> Any:
         {
             "profile_setup": "profile_agent",
             "knowledge_qa": "rag_agent",
+            "resource_generation": "rag_agent",
+            "learning_path": "path_agent",
             "other": "explain_agent",
         },
     )
     workflow.add_edge("profile_agent", END)
     workflow.add_edge("rag_agent", "explain_agent")
     workflow.add_edge("explain_agent", END)
+    workflow.add_edge("path_agent", END)
     return workflow.compile()
 
 
-async def run_agent(question: str, user_id: str = "anonymous") -> State:
+async def run_agent(
+    question: str,
+    user_id: str = "anonymous",
+    session_id: str | None = None,
+    history_messages: list[ChatMessage] | None = None,
+) -> State:
     app = build_graph()
-    result = await app.ainvoke(_initial_state(question, user_id=user_id))
+    result = await app.ainvoke(
+        _initial_state(
+            question,
+            user_id=user_id,
+            session_id=session_id,
+            history_messages=history_messages,
+        )
+    )
     return cast(State, result)
 
 
-async def stream_agent_events(question: str, user_id: str = "anonymous") -> AsyncIterator[AgentStreamEvent]:
+async def stream_agent_events(
+    question: str,
+    user_id: str = "anonymous",
+    session_id: str | None = None,
+    history_messages: list[ChatMessage] | None = None,
+) -> AsyncIterator[AgentStreamEvent]:
     """以可映射到 SSE 的事件流运行 LangGraph 问答链路。"""
 
     app = build_graph()
-    state = _initial_state(question, user_id=user_id)
+    state = _initial_state(
+        question,
+        user_id=user_id,
+        session_id=session_id,
+        history_messages=history_messages,
+    )
     yielded_starts: set[str] = set()
 
     yield _node_start_event("router")
@@ -170,13 +227,24 @@ def export_mermaid(path: Path | None = None) -> Path:
     return MAIN_GRAPH_PATH
 
 
-def _initial_state(question: str, user_id: str = "anonymous") -> State:
+def _initial_state(
+    question: str,
+    user_id: str = "anonymous",
+    session_id: str | None = None,
+    history_messages: list[ChatMessage] | None = None,
+) -> State:
+    messages = [dict(message) for message in history_messages or []]
+    messages.append({"role": "user", "content": question})
     return {
         "user_id": user_id,
-        "messages": [{"role": "user", "content": question}],
+        "session_id": session_id,
+        "messages": messages,
         "intent": None,
         "profile": {},
         "retrieved_docs": [],
+        "skill_tree": [],
+        "recommendations": [],
+        "reviews": {"items": [], "suggested_count": 0},
         "answer": "",
         "trace": [],
     }
@@ -195,8 +263,10 @@ def _first_node_update(update: dict[str, Any]) -> tuple[str, Any]:
 def _next_node_after_router(state: State) -> str:
     if state["intent"] == "profile_setup":
         return "profile_agent"
-    if state["intent"] == "knowledge_qa":
+    if state["intent"] in {"knowledge_qa", "resource_generation"}:
         return "rag_agent"
+    if state["intent"] == "learning_path":
+        return "path_agent"
     return "explain_agent"
 
 
@@ -231,17 +301,21 @@ def _route_by_intent(state: State) -> Intent:
 def _copy_state(state: State) -> State:
     return {
         "user_id": state["user_id"],
+        "session_id": state["session_id"],
         "messages": list(state["messages"]),
         "intent": state["intent"],
         "profile": dict(state["profile"]),
         "retrieved_docs": [dict(doc) for doc in state["retrieved_docs"]],
+        "skill_tree": [dict(node) for node in state["skill_tree"]],
+        "recommendations": [dict(item) for item in state["recommendations"]],
+        "reviews": dict(state["reviews"]),
         "answer": state["answer"],
         "trace": list(state["trace"]),
     }
 
 
 def _append_trace(state: State, node_name: str, summary: str) -> None:
-    state["trace"].append(f"{node_name}: {summary}")
+    state["trace"].append(AgentTraceItem(node_name, summary))
 
 
 def _last_user_content(messages: list[ChatMessage]) -> str:

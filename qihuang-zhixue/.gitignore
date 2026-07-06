@@ -18,6 +18,11 @@ backend/.data/
 .data/
 backend/.pytest_cache/
 .pytest_cache/
+pytest-tmp*/
+backend/pytest-tmp*/
+*.db
+*.db-shm
+*.db-wal
 backend/build/
 build/
 backend/app/agents/*.mmd
@@ -29,6 +34,8 @@ node_modules/
 frontend/dist/
 dist/
 .vite/
+.vite-temp/
+**/.vite-temp/
 
 # IDE / 系统
 .idea/

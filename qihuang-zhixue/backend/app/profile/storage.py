@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from contextlib import closing
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,24 @@ def init_db(db_path: Path = DB_PATH) -> None:
                 event_json TEXT NOT NULL,
                 created_at TEXT NOT NULL
             )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_session
+            ON chat_sessions(user_id, session_id, id)
             """
         )
         conn.commit()
@@ -105,3 +124,57 @@ def list_session_events(user_id: str, db_path: Path = DB_PATH) -> list[dict[str,
             (user_id,),
         ).fetchall()
     return [json.loads(str(row[0])) for row in rows]
+
+
+def append_chat_messages(
+    user_id: str,
+    session_id: str,
+    messages: list[dict[str, str]],
+    db_path: Path | None = None,
+) -> None:
+    """追加保存同一用户、同一会话的聊天消息。"""
+
+    if not messages:
+        return
+
+    target_db = db_path or DB_PATH
+    init_db(target_db)
+    now = datetime.now(UTC).isoformat()
+    rows = [
+        (user_id, session_id, message["role"], message["content"], now)
+        for message in messages
+        if message.get("role") and message.get("content")
+    ]
+    if not rows:
+        return
+
+    with closing(sqlite3.connect(target_db)) as conn:
+        conn.executemany(
+            """
+            INSERT INTO chat_sessions(user_id, session_id, role, content, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+        conn.commit()
+
+
+def list_chat_messages(
+    user_id: str,
+    session_id: str,
+    db_path: Path | None = None,
+) -> list[dict[str, str]]:
+    """读取同一用户、同一会话的历史聊天消息。"""
+
+    target_db = db_path or DB_PATH
+    init_db(target_db)
+    with closing(sqlite3.connect(target_db)) as conn:
+        rows = conn.execute(
+            """
+            SELECT role, content FROM chat_sessions
+            WHERE user_id = ? AND session_id = ?
+            ORDER BY id ASC
+            """,
+            (user_id, session_id),
+        ).fetchall()
+    return [{"role": str(role), "content": str(content)} for role, content in rows]
