@@ -10,6 +10,7 @@ import {
   MagicStick,
   MapLocation,
   Notebook,
+  Refresh,
   Timer,
   UserFilled,
 } from '@element-plus/icons-vue'
@@ -19,6 +20,7 @@ export type MenuItem = {
   icon: Component
   label: string
   route: string
+  dynamicLabel?: 'profileOnboarding'
   badge?: string | number
   assistantTrigger?: boolean
   disabled?: boolean
@@ -35,6 +37,7 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { icon: HomeFilled, label: '总览仪表盘', route: '/dashboard' },
       { icon: UserFilled, label: '弟子档案', route: '/profile' },
+      { icon: Refresh, label: '焕醒画像', dynamicLabel: 'profileOnboarding', route: '/onboarding' },
       { icon: ChatDotRound, label: '智能学习', route: '/learn' },
       { icon: MapLocation, label: '闯关地图', route: '/path' },
     ],

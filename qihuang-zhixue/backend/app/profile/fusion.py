@@ -19,8 +19,8 @@ HALF_LIFE_DAYS: dict[DimensionKey, float | None] = {
     "learning_goal": None,
     "learning_style": None,
     "weak_points": 30.0,
-    "pace": 30.0,
-    "motivation": 30.0,
+    "pace": None,
+    "motivation": None,
     "resource_preference": None,
 }
 

@@ -184,6 +184,88 @@ def test_guardrail_clamps_objectively_impossible_knowledge_score() -> None:
     assert "正确率为 0%" in result.warnings[0].reason
 
 
+def test_zero_percent_correct_knowledge_never_exceeds_35() -> None:
+    async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        return _jury_json((88, 95, 92), "高分必须被知识护栏拦截")
+
+    result = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [
+                _card("knowledge_base", {"correct": False, "topic": "解表药"}, 0.8),
+                _card("knowledge_base", {"对症": False, "配伍": False, "剂量": False, "误用毒烈": True}, 1.5),
+            ],
+            settings=_key_settings(),
+            llm_call=llm_call,
+        )
+    )
+
+    assert result.aggregated_score <= 35
+    assert result.warnings
+
+
+def test_full_correct_knowledge_is_at_least_60() -> None:
+    async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        return _jury_json((10, 20, 30), "低分必须被知识护栏抬升")
+
+    result = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [
+                _card("knowledge_base", {"correct": True, "topic": "解表药"}, 0.8),
+                _card("knowledge_base", {"对症": True, "配伍": True, "剂量": True, "误用毒烈": False}, 1.5),
+            ],
+            settings=_key_settings(),
+            llm_call=llm_call,
+        )
+    )
+
+    assert result.aggregated_score >= 60
+    assert result.warnings
+
+
+def test_large_jury_disagreement_substantially_lowers_confidence() -> None:
+    async def stable_call(messages: Sequence[ChatMessage]) -> str:
+        return _jury_json((64, 66, 65), "稳定三师")
+
+    async def divided_call(messages: Sequence[ChatMessage]) -> str:
+        return _jury_json((10, 90, 50), "分歧三师")
+
+    cards = [_card("knowledge_base", {"value": 65}, 1.0)]
+
+    stable = asyncio.run(score_dimension("knowledge_base", cards, settings=_key_settings(), llm_call=stable_call))
+    divided = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            cards,
+            settings=_key_settings(),
+            llm_call=divided_call,
+            variance_threshold=9999,
+        )
+    )
+
+    assert divided.variance > stable.variance
+    assert divided.confidence < stable.confidence * 0.2
+
+
+def test_high_score_without_evidence_is_clamped() -> None:
+    async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        return _jury_json((96, 99, 98), "没有证据也不应给高分")
+
+    result = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [],
+            settings=_key_settings(),
+            llm_call=llm_call,
+        )
+    )
+
+    assert result.aggregated_score <= 50
+    assert result.warnings
+    assert "缺少可追溯证据卡" in result.warnings[0].reason
+
+
 def test_guardrail_blocks_new_category_labels() -> None:
     cards = [
         _card("learning_goal", {"label": "临床实用"}, 1.0),
@@ -254,6 +336,21 @@ def _key_settings() -> Settings:
     settings = _no_key_settings()
     settings.deepseek_api_key = "test-key"
     return settings
+
+
+def _jury_json(scores: tuple[int, int, int], narrative: str) -> str:
+    return json.dumps(
+        {
+            "dimension": "知识基础",
+            "jury": {
+                "严师": {"score": scores[0], "reasoning_chain": ["严师依据证据卡"], "comment": "严师评语"},
+                "宽师": {"score": scores[1], "reasoning_chain": ["宽师依据证据卡"], "comment": "宽师评语"},
+                "中立": {"score": scores[2], "reasoning_chain": ["中立依据证据卡"], "comment": "中立评语"},
+            },
+            "narrative": narrative,
+        },
+        ensure_ascii=False,
+    )
 
 
 class CapturingRouter(ModelRouter):

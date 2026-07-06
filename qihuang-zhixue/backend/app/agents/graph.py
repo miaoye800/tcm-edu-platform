@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import warnings
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -20,6 +21,7 @@ from app.kb.retriever import SearchHit, search
 from app.llm.clients import ChatMessage, MockClient
 from app.llm.router import ModelRouter
 from app.profile.agent import run_cold_start
+from app.profile.update import ProfileUpdateEvent, get_latest_profile, profile_to_response, update_profile_from_event
 
 Intent = Literal["profile_setup", "knowledge_qa", "resource_generation", "learning_path", "other"]
 GRAPH_DIR = Path(__file__).resolve().parent
@@ -44,6 +46,7 @@ class AgentTraceItem(dict[str, str]):
 class State(TypedDict):
     user_id: str
     session_id: str | None
+    profile_cold_start: bool
     messages: list[ChatMessage]
     intent: Intent | None
     profile: dict[str, Any]
@@ -71,15 +74,33 @@ async def router_node(state: State) -> State:
 
 async def profile_agent(state: State) -> State:
     question = _last_user_content(state["messages"])
-    profile_state = await run_cold_start(user_id=state["user_id"], first_message=question)
     next_state = _copy_state(state)
-    next_state["profile"] = dict(profile_state["profile"])
-    next_state["answer"] = "已根据首轮对话和解表药诊断小测生成 7 维学生画像。"
-    _append_trace(next_state, "profile_agent", "调用 ProfileAgent 子图完成画像冷启动")
-    for item in profile_state["trace"]:
-        node = item.get("node", "profile_subgraph")
-        summary = item.get("summary", "")
-        _append_trace(next_state, f"profile_subgraph.{node}", summary)
+
+    if state["profile_cold_start"] or _is_active_profile_build(question):
+        profile_state = await run_cold_start(user_id=state["user_id"], first_message=question)
+        next_state["profile"] = dict(profile_state["profile"])
+        next_state["answer"] = "已根据首轮对话和诊断小测生成 7 维学生画像。"
+        _append_trace(next_state, "profile_agent", "触发首登/主动构建冷启动")
+        for item in profile_state["trace"]:
+            node = item.get("node", "profile_subgraph")
+            summary = item.get("summary", "")
+            _append_trace(next_state, f"profile_subgraph.{node}", summary)
+        return next_state
+
+    if _is_profile_read(question):
+        profile = await get_latest_profile(state["user_id"])
+        next_state["profile"] = profile_to_response(profile)
+        next_state["answer"] = "已读取最新学生画像，并在主动查看时完成必要复评。"
+        _append_trace(next_state, "profile_agent", "读取最新画像")
+        return next_state
+
+    result = await update_profile_from_event(
+        state["user_id"],
+        ProfileUpdateEvent(type="interaction", payload=_profile_interaction_payload(question)),
+    )
+    next_state["profile"] = profile_to_response(result.profile)
+    next_state["answer"] = "已把本次交互作为画像线索增量回写，未达到阈值的维度只走规则融合。"
+    _append_trace(next_state, "profile_agent", f"passive 增量更新：{','.join(result.affected_dimensions) or '无'}")
     return next_state
 
 
@@ -153,6 +174,7 @@ async def run_agent(
     user_id: str = "anonymous",
     session_id: str | None = None,
     history_messages: list[ChatMessage] | None = None,
+    profile_cold_start: bool = False,
 ) -> State:
     app = build_graph()
     result = await app.ainvoke(
@@ -161,6 +183,7 @@ async def run_agent(
             user_id=user_id,
             session_id=session_id,
             history_messages=history_messages,
+            profile_cold_start=profile_cold_start,
         )
     )
     return cast(State, result)
@@ -171,6 +194,7 @@ async def stream_agent_events(
     user_id: str = "anonymous",
     session_id: str | None = None,
     history_messages: list[ChatMessage] | None = None,
+    profile_cold_start: bool = False,
 ) -> AsyncIterator[AgentStreamEvent]:
     """以可映射到 SSE 的事件流运行 LangGraph 问答链路。"""
 
@@ -180,6 +204,7 @@ async def stream_agent_events(
         user_id=user_id,
         session_id=session_id,
         history_messages=history_messages,
+        profile_cold_start=profile_cold_start,
     )
     yielded_starts: set[str] = set()
 
@@ -232,12 +257,14 @@ def _initial_state(
     user_id: str = "anonymous",
     session_id: str | None = None,
     history_messages: list[ChatMessage] | None = None,
+    profile_cold_start: bool = False,
 ) -> State:
     messages = [dict(message) for message in history_messages or []]
     messages.append({"role": "user", "content": question})
     return {
         "user_id": user_id,
         "session_id": session_id,
+        "profile_cold_start": profile_cold_start,
         "messages": messages,
         "intent": None,
         "profile": {},
@@ -302,6 +329,7 @@ def _copy_state(state: State) -> State:
     return {
         "user_id": state["user_id"],
         "session_id": state["session_id"],
+        "profile_cold_start": state["profile_cold_start"],
         "messages": list(state["messages"]),
         "intent": state["intent"],
         "profile": dict(state["profile"]),
@@ -316,6 +344,51 @@ def _copy_state(state: State) -> State:
 
 def _append_trace(state: State, node_name: str, summary: str) -> None:
     state["trace"].append(AgentTraceItem(node_name, summary))
+
+
+def _is_active_profile_build(text: str) -> bool:
+    return _contains_any(text, ("建立画像", "构建画像", "冷启动", "首登", "初始化画像", "焕醒画像"))
+
+
+def _is_profile_read(text: str) -> bool:
+    return _contains_any(text, ("查看画像", "我的画像", "当前画像", "画像详情", "读取画像"))
+
+
+def _profile_interaction_payload(text: str) -> dict[str, Any]:
+    payload: dict[str, Any] = {"topic": text}
+    if _contains_any(text, ("考试", "期末", "考证")):
+        payload["learning_goal"] = "应试提分"
+    elif _contains_any(text, ("临床", "辨证", "坐诊")):
+        payload["learning_goal"] = "临床实用"
+    elif _contains_any(text, ("兴趣", "喜欢")):
+        payload["learning_goal"] = "兴趣科普"
+
+    if _contains_any(text, ("图谱", "图表", "画图")):
+        payload["learning_style"] = "视觉型"
+        payload["resource_preference"] = "知识图谱"
+    elif _contains_any(text, ("口诀", "歌诀")):
+        payload["learning_style"] = "记忆(口诀)型"
+        payload["resource_preference"] = "汤头歌诀"
+    elif _contains_any(text, ("医案", "案例")):
+        payload["resource_preference"] = "医案文选"
+
+    minutes = _minutes_from_text(text)
+    if minutes is not None:
+        payload["daily_minutes"] = minutes
+    return payload
+
+
+def _minutes_from_text(text: str) -> int | None:
+    if "半小时" in text:
+        return 30
+    if "一小时" in text or "1小时" in text:
+        return 60
+    match = re.search(r"(\d{1,3})\s*(?:分钟|min)", text, flags=re.I)
+    return int(match.group(1)) if match else None
+
+
+def _contains_any(text: str, keywords: tuple[str, ...]) -> bool:
+    return any(keyword in text for keyword in keywords)
 
 
 def _last_user_content(messages: list[ChatMessage]) -> str:

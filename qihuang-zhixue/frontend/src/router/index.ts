@@ -6,11 +6,14 @@ import DashboardView from '../views/DashboardView.vue'
 import LearnView from '../views/LearnView.vue'
 import LoginView from '../views/LoginView.vue'
 import MistakesView from '../views/MistakesView.vue'
+import OnboardingView from '../views/OnboardingView.vue'
 import PathView from '../views/PathView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import QuizView from '../views/QuizView.vue'
 import ReviewView from '../views/ReviewView.vue'
 import { useAuthStore } from '../stores/auth'
+import { useProfileStore } from '../stores/profile'
+import { readOnboardingState } from '../services/onboardingStorage'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -35,6 +38,12 @@ const routes: RouteRecordRaw[] = [
         name: 'profile',
         component: ProfileView,
         meta: { title: '弟子档案', group: '学习', mode: 'embedded' },
+      },
+      {
+        path: 'onboarding',
+        name: 'onboarding',
+        component: OnboardingView,
+        meta: { title: '焕醒画像', group: '学习', mode: 'embedded' },
       },
       {
         path: 'learn',
@@ -101,7 +110,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   const isPublic = Boolean(to.meta.public)
 
@@ -115,6 +124,24 @@ router.beforeEach((to) => {
   if (to.name === 'login' && auth.isAuthenticated) {
     const redirect = typeof to.query.redirect === 'string' ? to.query.redirect : '/dashboard'
     return redirect
+  }
+
+  if (!isPublic && auth.isAuthenticated && to.name !== 'onboarding') {
+    const profile = useProfileStore()
+    const userId = auth.user?.user_id ?? ''
+    const onboarding = readOnboardingState(userId)
+    const needsProfileCheck = !profile.loaded || profile.activeUserId !== userId
+
+    if (needsProfileCheck) {
+      await profile.loadProfile()
+    }
+
+    if (!profile.usingMock && !profile.hasBuiltProfile && !onboarding) {
+      return {
+        name: 'onboarding',
+        query: { redirect: to.fullPath },
+      }
+    }
   }
 
   return true

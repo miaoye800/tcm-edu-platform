@@ -128,3 +128,43 @@ export type ProfileStat = {
   value: string
   tone: 'jade' | 'blue' | 'gold' | 'coral'
 }
+
+export type ProfileBuildMode = 'apprentice' | 'quickcard' | 'practice' | 'passive'
+
+export type ProfileSessionQuestion = {
+  id: string
+  question: string
+  options: string[]
+  topic?: string
+  skill?: string
+}
+
+export type ProfileSessionStep = {
+  id: string
+  title: string
+  kind: 'identity' | 'identity_quiz' | 'diagnostic_quiz' | 'prescription' | 'resource_choice' | 'learning_rule' | 'events' | string
+  prompt: string
+  payload: {
+    identity_cards?: string[]
+    questions?: ProfileSessionQuestion[]
+    time_limit_seconds?: number
+    resource_types?: string[]
+    fields?: string[]
+    case?: string
+    objective_signal_fields?: string[]
+    event_types?: string[]
+  }
+  started_at?: string
+}
+
+export type ProfileSessionResponse = {
+  session_id: string
+  user_id: string
+  mode: ProfileBuildMode
+  status: 'start' | 'advanced' | 'finished' | string
+  step: ProfileSessionStep | null
+  current_stage?: string | null
+  finished: boolean
+  evidence_count: number
+  evidence_cards?: EvidenceCard[]
+}

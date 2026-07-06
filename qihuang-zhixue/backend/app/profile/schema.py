@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.profile.evidence import EvidenceCard
 
 DimensionKey = Literal[
     "knowledge_base",
@@ -43,35 +43,6 @@ MotivationLabel = Literal["内驱", "外驱", "内外混合", "被动"]
 ResourceTypeLabel = Literal["知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"]
 
 
-@dataclass(frozen=True)
-class EvidenceCard:
-    """Objective evidence emitted by rules, without scoring judgment."""
-
-    dimension: DimensionKey
-    source: str
-    fact: str
-    objective_signal: dict[str, Any]
-    weight: float
-    timestamp: datetime
-
-    @field_validator("weight")
-    @classmethod
-    def validate_weight(cls, value: float) -> float:
-        if value < 0:
-            raise ValueError("weight must be non-negative")
-        return value
-
-    @field_validator("timestamp", mode="before")
-    @classmethod
-    def normalize_timestamp(cls, value: object) -> object:
-        if isinstance(value, str):
-            return datetime.fromisoformat(value)
-        return value
-
-
-EvidenceCardAdapter = TypeAdapter(EvidenceCard)
-
-
 class ProfileDimensionBase(BaseModel):
     """Shared fields required by every profile dimension."""
 
@@ -93,6 +64,12 @@ class CategoricalDimension(ProfileDimensionBase):
 
     label: str | None = None
     distribution: dict[str, float] = Field(default_factory=dict)
+
+    @property
+    def derived_score(self) -> float | None:
+        if not self.distribution:
+            return None
+        return round(max(self.distribution.values()) * 100, 2)
 
     @field_validator("distribution")
     @classmethod
@@ -126,7 +103,7 @@ class MotivationDimension(ProfileDimensionBase):
     label: MotivationLabel | None = None
 
 
-class ResourcePreferenceDimension(ProfileDimensionBase):
+class ResourcePreferenceDimension(CategoricalDimension):
     """Resource preference distribution across allowed resource types."""
 
     label: ResourceTypeLabel | None = None
@@ -134,7 +111,7 @@ class ResourcePreferenceDimension(ProfileDimensionBase):
 
     @field_validator("distribution")
     @classmethod
-    def validate_distribution(cls, value: dict[ResourceTypeLabel, float]) -> dict[ResourceTypeLabel, float]:
+    def validate_resource_distribution(cls, value: dict[ResourceTypeLabel, float]) -> dict[ResourceTypeLabel, float]:
         for ratio in value.values():
             if ratio < 0 or ratio > 1:
                 raise ValueError("distribution values must be between 0 and 1")
@@ -164,22 +141,22 @@ def create_blank_profile(user_id: str) -> Profile:
     return Profile(user_id=user_id)
 
 
-def evidence_card_to_json_dict(card: EvidenceCard) -> dict[str, Any]:
-    """Serialize an evidence dataclass with JSON-compatible datetime output."""
+def evidence_card_to_json_dict(card: EvidenceCard) -> dict[str, object]:
+    """Serialize an evidence card with JSON-compatible datetime output."""
 
-    return EvidenceCardAdapter.dump_python(card, mode="json")
+    return card.model_dump(mode="json")
 
 
-def evidence_card_from_dict(payload: dict[str, Any]) -> EvidenceCard:
+def evidence_card_from_dict(payload: dict[str, object]) -> EvidenceCard:
     """Deserialize a stored evidence card payload."""
 
-    return EvidenceCardAdapter.validate_python(payload)
+    return EvidenceCard.model_validate(payload)
 
 
-def evidence_card_asdict(card: EvidenceCard) -> dict[str, Any]:
-    """Return a plain dataclass dict for callers that do not need JSON mode."""
+def evidence_card_asdict(card: EvidenceCard) -> dict[str, object]:
+    """Return a plain dict for callers that do not need JSON mode."""
 
-    return asdict(card)
+    return card.model_dump()
 
 
 __all__ = [

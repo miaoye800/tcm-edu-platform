@@ -60,5 +60,5 @@ def _add_weak_point(profile: StudentProfile, topic: str) -> None:
         profile.weak_points.items.append(topic)
 
 
-def _clamp(value: int) -> int:
-    return max(0, min(100, value))
+def _clamp(value: int | None) -> int:
+    return max(0, min(100, int(value or 0)))

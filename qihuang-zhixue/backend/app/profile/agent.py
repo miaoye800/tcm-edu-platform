@@ -21,10 +21,13 @@ from app.profile.nodes import (
     diagnostic_question_node,
     dialogue_extract_node,
     initial_state,
+    legacy_profile_from_profile,
     profile_synthesis_node,
     route_by_intent,
     router_node,
 )
+from app.profile.schema import Profile
+from app.profile.store import add_evidence, upsert_profile
 from app.profile.rules import update_from_event as apply_update_from_event
 from app.profile.storage import DB_PATH, get_profile, save_profile, save_session_event
 
@@ -38,14 +41,17 @@ async def noop_node(state: ProfileState) -> ProfileState:
 
 
 async def persist_profile_node(state: ProfileState) -> ProfileState:
-    """保存冷启动画像。"""
+    """保存冷启动画像和证据卡。"""
 
     next_state = copy_state(state)
     if next_state["profile"]:
-        profile = StudentProfile.model_validate(next_state["profile"])
+        profile = Profile.model_validate(next_state["profile"])
         db_path = Path(next_state["db_path"]) if next_state["db_path"] else DB_PATH
-        save_profile(profile, db_path=db_path)
-        append_trace(next_state, "profile_persist_agent", "画像已写入 SQLite")
+        for card in next_state["evidence_cards"]:
+            add_evidence(profile.user_id, card, db_path=db_path)
+        upsert_profile(profile, db_path=db_path)
+        save_profile(legacy_profile_from_profile(profile), db_path=db_path)
+        append_trace(next_state, "profile_persist_agent", f"画像与 {len(next_state['evidence_cards'])} 张证据卡已写入 SQLite")
     return next_state
 
 
@@ -93,7 +99,7 @@ async def cold_start_profile(
     state = cast(ProfileState, result)
     if not state["profile"]:
         return get_profile(user_id, db_path=db_path or DB_PATH)
-    return StudentProfile.model_validate(state["profile"])
+    return legacy_profile_from_profile(Profile.model_validate(state["profile"]))
 
 
 async def run_cold_start(

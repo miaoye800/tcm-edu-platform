@@ -103,6 +103,10 @@ def allowed_score_interval(dimension: DimensionKey, evidence_cards: list[Evidenc
 
     low, high = 0.0, 100.0
     reasons: list[str] = []
+    if dimension in {"knowledge_base", "pace", "motivation"} and not evidence_cards:
+        high = min(high, 50.0)
+        reasons.append("缺少可追溯证据卡，不允许给出高分")
+
     if dimension == "knowledge_base":
         correct, total = _knowledge_correctness(evidence_cards)
         if total > 0:
@@ -267,6 +271,8 @@ def _traceable_weak_labels(evidence_cards: list[EvidenceCard]) -> set[str]:
     labels: set[str] = set()
     for card in evidence_cards:
         signal = card.objective_signal
+        if not _is_error_signal(signal):
+            continue
         label = signal.get("label") or signal.get("topic") or signal.get("knowledge_point")
         if isinstance(label, str) and label.strip():
             labels.add(label.strip())
@@ -274,6 +280,21 @@ def _traceable_weak_labels(evidence_cards: list[EvidenceCard]) -> set[str]:
         if isinstance(weak_labels, list):
             labels.update(str(item).strip() for item in weak_labels if str(item).strip())
     return labels
+
+
+def _is_error_signal(signal: dict[str, Any]) -> bool:
+    if signal.get("gave_up") or signal.get("abandoned"):
+        return True
+    if isinstance(signal.get("correct"), bool):
+        return not bool(signal["correct"])
+    if isinstance(signal.get("is_correct"), bool):
+        return not bool(signal["is_correct"])
+    if any(signal.get(key) is False for key in ("对症", "配伍", "剂量")):
+        return True
+    if signal.get("误用毒烈") is True:
+        return True
+    weak_labels = signal.get("weak_labels")
+    return isinstance(weak_labels, list) and bool(weak_labels)
 
 
 def _weak_points_from_label(label: str | None) -> list[str]:

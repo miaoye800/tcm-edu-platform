@@ -11,34 +11,46 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import get_current_user
 from app.auth.models import AuthUser
 from app.config import Settings, get_settings
-from app.profile.modes_demo import (
+from app.profile.agent import run_cold_start
+from app.profile.modes import (
+    cards_to_json,
     ProfileMode,
     ProfileSession,
     answer_profile_session,
     finish_profile_session,
     get_profile_session,
+    session_payload,
     start_profile_session,
 )
-from app.profile.schema import evidence_card_to_json_dict
 from app.profile.store import DB_PATH
 from app.profile.narrative import synthesize_profile_narrative
+from app.profile.schema import Profile
 from app.profile.update import get_latest_profile, profile_to_response
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 
 class StartSessionRequest(BaseModel):
+    user_id: str | None = Field(default=None, min_length=1)
     mode: ProfileMode
 
 
 class AnswerSessionRequest(BaseModel):
     session_id: str = Field(min_length=1)
-    answer: dict[str, Any] = Field(default_factory=dict)
+    step_id: str | None = Field(default=None, min_length=1)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    answer: dict[str, Any] | None = None
     response_time_ms: int | None = Field(default=None, ge=0)
 
 
 class FinishSessionRequest(BaseModel):
     session_id: str = Field(min_length=1)
+
+
+class ColdStartRequest(BaseModel):
+    user_id: str | None = Field(default=None, min_length=1)
+    first_message: str = Field(min_length=1)
+    diagnostic_answers: dict[str, str] = Field(default_factory=dict)
 
 
 def get_profile_db_path() -> Path:
@@ -61,9 +73,21 @@ async def read_profile_narrative(
 ) -> dict[str, Any]:
     """Return a guarded structured narrative for the latest learning profile."""
 
-    profile = await get_latest_profile(current_user.user_id, db_path=db_path, settings=settings)
-    narrative = await synthesize_profile_narrative(profile, settings=settings)
-    return narrative.model_dump(mode="json")
+    return await _profile_narrative_payload(current_user.user_id, db_path=db_path, settings=settings)
+
+
+@router.get("/{user_id}/narrative")
+async def read_profile_narrative_by_user_id(
+    user_id: str,
+    current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
+    settings: Settings = Depends(get_profile_settings),
+) -> dict[str, Any]:
+    """Return a guarded structured narrative for the requested current user."""
+
+    if user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="cannot read another user's profile narrative")
+    return await _profile_narrative_payload(user_id, db_path=db_path, settings=settings)
 
 
 @router.get("")
@@ -77,12 +101,38 @@ async def read_profile(
     return profile_to_response(profile)
 
 
+@router.post("/cold-start")
+async def cold_start(
+    payload: ColdStartRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
+) -> dict[str, Any]:
+    """First-login or explicit profile-build entry."""
+
+    user_id = payload.user_id or current_user.user_id
+    if user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="cannot build a profile for another user")
+    state = await run_cold_start(
+        user_id=user_id,
+        first_message=payload.first_message,
+        diagnostic_answers=payload.diagnostic_answers,
+        db_path=db_path,
+    )
+    return {
+        "profile": profile_to_response(Profile.model_validate(state["profile"])),
+        "trace": state["trace"],
+    }
+
+
 @router.post("/session/start")
 async def start(payload: StartSessionRequest, current_user: AuthUser = Depends(get_current_user)) -> dict[str, Any]:
     """Start a profile evidence collection session."""
 
-    session = start_profile_session(user_id=current_user.user_id, mode=payload.mode)
-    return _session_payload(session, status="start")
+    user_id = payload.user_id or current_user.user_id
+    if user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="cannot start a profile session for another user")
+    session = start_profile_session(user_id=user_id, mode=payload.mode)
+    return session_payload(session, status="start")
 
 
 @router.post("/session/answer")
@@ -99,16 +149,21 @@ async def answer(
     if existing.user_id != current_user.user_id:
         raise HTTPException(status_code=404, detail="profile session not found")
 
-    answer_payload = dict(payload.answer)
+    answer_payload = dict(payload.payload or payload.answer or {})
     if payload.response_time_ms is not None:
         answer_payload.setdefault("response_time_ms", payload.response_time_ms)
+    step_id = payload.step_id or (existing.current_step.id if existing.current_step else None)
+    if step_id is None:
+        raise HTTPException(status_code=400, detail="profile session has no active step")
     try:
-        session, cards = await answer_profile_session(payload.session_id, answer_payload)
+        session, cards = await answer_profile_session(payload.session_id, step_id, answer_payload)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {
-        **_session_payload(session, status="finished" if session.finished else "advanced"),
-        "evidence_cards": [evidence_card_to_json_dict(card) for card in cards],
+        **session_payload(session, status="finished" if session.finished else "advanced"),
+        "evidence_cards": cards_to_json(cards),
     }
 
 
@@ -132,22 +187,30 @@ async def finish(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
     return {
-        **_session_payload(session, status="finished"),
-        "evidence_cards": [evidence_card_to_json_dict(card) for card in session.evidence_cards],
+        **session_payload(session, status="finished"),
+        "evidence_cards": cards_to_json(session.evidence_cards),
     }
+
+
+@router.get("/{user_id}")
+async def read_profile_by_user_id(
+    user_id: str,
+    current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
+) -> dict[str, Any]:
+    """Return the latest profile for the requested current user."""
+
+    if user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="cannot read another user's profile")
+    profile = await get_latest_profile(user_id, db_path=db_path)
+    return profile_to_response(profile)
 
 
 def _session_payload(session: ProfileSession, status: str) -> dict[str, Any]:
-    try:
-        current_stage = get_profile_session(session.session_id).current_stage
-    except KeyError:
-        current_stage = None
-    return {
-        "session_id": session.session_id,
-        "user_id": session.user_id,
-        "mode": session.mode.value,
-        "status": status,
-        "current_stage": current_stage,
-        "finished": session.finished,
-        "evidence_count": len(session.evidence_cards),
-    }
+    return session_payload(session, status=status)
+
+
+async def _profile_narrative_payload(user_id: str, *, db_path: Path, settings: Settings) -> dict[str, Any]:
+    profile = await get_latest_profile(user_id, db_path=db_path, settings=settings)
+    narrative = await synthesize_profile_narrative(profile, settings=settings)
+    return narrative.model_dump(mode="json")

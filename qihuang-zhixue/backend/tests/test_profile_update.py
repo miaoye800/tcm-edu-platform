@@ -1,7 +1,7 @@
 import asyncio
 import json
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -124,6 +124,63 @@ def test_get_profile_endpoint_returns_latest_profile_and_confidence(tmp_path: Pa
     assert payload["user_id"] == "student-api"
     assert payload["knowledge_base"]["score"] == 100
     assert payload["confidence"]["knowledge_base"] > 0
+
+
+def test_three_evidence_updates_score_confidence_and_decays_old_evidence(tmp_path: Path) -> None:
+    db_path = _test_db_path(tmp_path)
+    calls: list[str] = []
+    now = _now()
+
+    first = asyncio.run(
+        update_profile_from_event(
+            "student-decay",
+            {
+                "type": "quiz",
+                "timestamp": now - timedelta(days=60),
+                "payload": {"correct": False, "difficulty": "hard", "topic": "清热药·剂量"},
+            },
+            db_path=db_path,
+            jury_weight_threshold=99,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now,
+        )
+    )
+    initial_score = first.profile.knowledge_base.score
+    initial_confidence = first.profile.knowledge_base.confidence
+
+    second = asyncio.run(
+        update_profile_from_event(
+            "student-decay",
+            {"type": "quiz", "payload": {"correct": True, "difficulty": "easy", "topic": "清热药·剂量"}},
+            db_path=db_path,
+            jury_weight_threshold=99,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now,
+        )
+    )
+    third = asyncio.run(
+        update_profile_from_event(
+            "student-decay",
+            {"type": "quiz", "payload": {"correct": True, "difficulty": "easy", "topic": "清热药·剂量"}},
+            db_path=db_path,
+            jury_weight_threshold=99,
+            llm_call=_counting_llm(calls),
+            force_llm=True,
+            now=now,
+        )
+    )
+
+    assert calls == []
+    assert second.jury_call_count == 0
+    assert third.jury_call_count == 0
+    assert third.profile.knowledge_base.score is not None
+    assert initial_score is not None
+    assert third.profile.knowledge_base.score > initial_score
+    assert third.profile.knowledge_base.score > 75
+    assert third.profile.knowledge_base.confidence > initial_confidence
+    assert len(third.profile.knowledge_base.evidence) == 3
 
 
 def _counting_llm(calls: list[str]):

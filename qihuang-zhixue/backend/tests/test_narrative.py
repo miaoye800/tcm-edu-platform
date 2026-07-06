@@ -144,15 +144,21 @@ def test_profile_narrative_endpoint_returns_description_and_structured_fields(tm
             )
         )
         response = client.get("/api/profile/narrative", headers=headers)
+        user_response = client.get("/api/profile/student-narrative-api/narrative", headers=headers)
     finally:
         app.dependency_overrides.clear()
 
     assert response.status_code == 200
+    assert user_response.status_code == 200
     payload = response.json()
+    user_payload = user_response.json()
     assert payload["user_id"] == "student-narrative-api"
+    assert user_payload["user_id"] == "student-narrative-api"
     assert payload["description"]
+    assert user_payload["description"]
     assert payload["advice_intro"].startswith("学习建议引子")
     assert len(payload["dimensions"]) == 7
+    assert len(user_payload["dimensions"]) == 7
     assert payload["method"] == "template"
     assert payload["weak_points"]
     assert "清热药·剂量" in payload["description"]

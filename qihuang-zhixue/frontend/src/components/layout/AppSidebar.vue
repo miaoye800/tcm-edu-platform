@@ -28,7 +28,7 @@
 
     <nav class="sidebar-nav" aria-label="主导航">
       <NavGroup
-        v-for="group in menuGroups"
+        v-for="group in displayMenuGroups"
         :key="group.group"
         :group="group"
         :collapsed="collapsed"
@@ -39,13 +39,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { SwitchButton } from '@element-plus/icons-vue'
 import qihuangLogo from '../../assets/brand/qihuang-logo.png'
 import xiaoqi from '../../assets/mascot/xiaoqi-avatar.png'
 import { menuGroups } from '../../config/menu'
+import { readOnboardingState } from '../../services/onboardingStorage'
 import { useAssistantStore } from '../../stores/assistant'
 import { useAuthStore } from '../../stores/auth'
+import { useProfileStore } from '../../stores/profile'
 import NavGroup from './NavGroup.vue'
 
 defineProps<{
@@ -54,7 +57,23 @@ defineProps<{
 
 const assistant = useAssistantStore()
 const auth = useAuthStore()
+const profile = useProfileStore()
 const router = useRouter()
+
+const displayMenuGroups = computed(() =>
+  menuGroups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => {
+      if (item.dynamicLabel !== 'profileOnboarding') return item
+      const userId = auth.user?.user_id ?? ''
+      const state = readOnboardingState(userId)
+      return {
+        ...item,
+        label: profile.hasBuiltProfile || state?.status === 'completed' ? '重塑画像' : '焕醒画像',
+      }
+    }),
+  })),
+)
 
 const handleUserCommand = (command: string) => {
   if (command !== 'logout') return

@@ -8,7 +8,7 @@ import json
 import sys
 from datetime import datetime, timedelta, timezone
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.llm.clients import DeepSeekClient
 from app.profile.jury import build_jury_messages, score_dimension
 from app.profile.schema import EvidenceCard
@@ -16,7 +16,7 @@ from app.profile.schema import EvidenceCard
 SHANGHAI_TZ = timezone(timedelta(hours=8))
 
 
-async def _main(strict_llm: bool = False) -> None:
+async def _main(strict_llm: bool = False, mock: bool = False) -> None:
     cards = [
         EvidenceCard(
             dimension="knowledge_base",
@@ -47,7 +47,8 @@ async def _main(strict_llm: bool = False) -> None:
         await _strict_llm_probe(cards)
         return
 
-    result = await score_dimension("knowledge_base", cards, settings=get_settings())
+    settings = Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None, MOCK_STREAM_DELAY=0.0) if mock else get_settings()
+    result = await score_dimension("knowledge_base", cards, settings=settings)
     print(json.dumps(result.model_dump(mode="json"), ensure_ascii=False, indent=2))
 
 
@@ -96,9 +97,10 @@ def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Run profile scoring demo.")
+    parser.add_argument("--mock", action="store_true", help="Force no-key rule fusion branch.")
     parser.add_argument("--strict-llm", action="store_true", help="Probe real DeepSeek jury call without MOCK fallback.")
     args = parser.parse_args()
-    asyncio.run(_main(strict_llm=args.strict_llm))
+    asyncio.run(_main(strict_llm=args.strict_llm, mock=args.mock))
 
 
 if __name__ == "__main__":

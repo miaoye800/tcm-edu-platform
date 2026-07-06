@@ -17,6 +17,7 @@ from app.config import Settings
 from app.llm.router import ModelRouter
 from app.profile.fusion import FusionResult, fuse_dimension, fuse_profile
 from app.profile.jury import LLMCall, ScoringResult, score_dimension
+from app.profile.radar import to_radar
 from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, Profile, WeakPoint
 from app.profile.store import DB_PATH, add_evidence, get_profile, init_db, list_evidence, upsert_profile
 
@@ -164,25 +165,8 @@ def profile_to_response(profile: Profile) -> dict[str, Any]:
     payload["confidence"] = {
         dimension: getattr(profile, dimension).confidence for dimension in DIMENSION_LABELS
     }
-    payload["radar"] = _profile_radar(profile)
+    payload["radar"] = to_radar(profile)
     return payload
-
-
-def _profile_radar(profile: Profile) -> dict[str, list[int] | list[str]]:
-    """输出前端雷达图友好的七维数值，保留低置信维的可视占位。"""
-
-    values: list[int] = []
-    for dimension in DIMENSION_LABELS:
-        item = getattr(profile, dimension)
-        score = getattr(item, "score", None)
-        if isinstance(score, (int, float)):
-            values.append(int(max(0, min(100, round(score)))))
-            continue
-        values.append(int(max(0, min(100, round(float(item.confidence) * 100)))))
-    return {
-        "dimensions": list(DIMENSION_LABELS.values()),
-        "values": values,
-    }
 
 
 def _quiz_cards(payload: dict[str, Any], timestamp: datetime) -> list[EvidenceCard]:

@@ -47,6 +47,7 @@ node_modules/
 frontend/dist/
 dist/
 .vite/
+.vite-cache/
 .vite-temp/
 **/.vite-temp/
 *.tsbuildinfo

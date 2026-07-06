@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from statistics import median
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.config import Settings, get_settings
 from app.llm.clients import ChatMessage
@@ -53,8 +53,75 @@ class JurorAssessment(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     score: float = Field(ge=0.0, le=100.0)
-    reasoning_chain: list[str] = Field(default_factory=list)
-    comment: str = ""
+    reasoning_chain: list[str] = Field(min_length=1)
+    comment: str = Field(min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_keys(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        payload = dict(value)
+        if "reasoning_chain" not in payload:
+            payload["reasoning_chain"] = payload.get("推理链") or payload.get("reasoning") or payload.get("chain")
+        if "comment" not in payload:
+            payload["comment"] = payload.get("评语") or payload.get("commentary")
+        return payload
+
+    @field_validator("reasoning_chain", mode="before")
+    @classmethod
+    def normalize_reasoning_chain(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return [value]
+        return value
+
+
+class JuryPanel(BaseModel):
+    """The three mandatory teacher perspectives from one LLM call."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    strict_teacher: JurorAssessment = Field(alias="严师")
+    lenient_teacher: JurorAssessment = Field(alias="宽师")
+    neutral_teacher: JurorAssessment = Field(alias="中立")
+
+    def as_dict(self) -> dict[TeacherName, JurorAssessment]:
+        return {
+            "严师": self.strict_teacher,
+            "宽师": self.lenient_teacher,
+            "中立": self.neutral_teacher,
+        }
+
+
+class JuryStructuredOutput(BaseModel):
+    """Instructor/Pydantic-enforced structure for jury output."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    dimension: str | None = None
+    jury: JuryPanel
+    label: str | None = None
+    distribution: dict[str, float] = Field(default_factory=dict)
+    weak_points: list[str] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    narrative: str = Field(min_length=1)
+
+    @field_validator("distribution")
+    @classmethod
+    def validate_distribution(cls, value: dict[str, float]) -> dict[str, float]:
+        for label, ratio in value.items():
+            if not label:
+                raise ValueError("distribution label must be non-empty")
+            if ratio < 0:
+                raise ValueError("distribution values must be non-negative")
+        return value
+
+    @field_validator("weak_points", mode="before")
+    @classmethod
+    def normalize_weak_points(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return [value]
+        return value or []
 
 
 class ScoringResult(BaseModel):
@@ -68,6 +135,7 @@ class ScoringResult(BaseModel):
     aggregated_score: float | None = Field(default=None, ge=0.0, le=100.0)
     label: str | None = None
     distribution: dict[str, float] = Field(default_factory=dict)
+    weak_points: list[str] = Field(default_factory=list)
     variance: float = Field(default=0.0, ge=0.0)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     evidence_refs: list[str] = Field(default_factory=list)
@@ -194,6 +262,9 @@ def build_jury_messages(
         "aggregated_score": 66,
         "variance": 16.7,
         "confidence": 0.45,
+        "label": "仅类别维填写已定义标签，数值维可为 null",
+        "distribution": {"仅类别维填写": 1.0},
+        "weak_points": ["仅薄弱点维填写可追溯标签"],
         "evidence_refs": ["抓药实战#1"],
         "narrative": "自然语言画像叙述",
     }
@@ -212,7 +283,8 @@ def build_jury_messages(
                 f"锚点量表：{ANCHOR_SCALES[dimension]}\n"
                 f"证据卡：{evidence_json}\n"
                 "聚合规则：三师分数去极端取中位；方差越大置信度越低；类别型维度禁造新标签；"
-                "每位老师必须给 score、reasoning_chain、comment。\n"
+                "薄弱点必须来自错误证据卡的 label/topic/knowledge_point/weak_labels。"
+                "每位老师必须给 score、reasoning_chain、comment。类别维还要给 label 和 distribution，薄弱点维还要给 weak_points。\n"
                 f"{extra}\n"
                 f"输出 JSON 结构示例：{json.dumps(schema, ensure_ascii=False)}"
             ),
@@ -236,6 +308,7 @@ async def _call_and_parse_jury(
         raw = await (router or ModelRouter(settings=settings)).chat(
             "profile_jury",
             messages,
+            response_format={"type": "json_object"},
             temperature=0,
             thinking={"type": "enabled"},
             reasoning_effort="high",
@@ -252,10 +325,8 @@ def _parse_jury_output(
     *,
     self_check_sampled: bool = False,
 ) -> ScoringResult:
-    payload = _parse_json_object(raw)
-    if not isinstance(payload, dict):
-        raise ValueError("jury output must be a JSON object")
-    jury = _parse_jury(payload.get("jury"))
+    payload = JuryStructuredOutput.model_validate_json(_extract_json_object(raw))
+    jury = payload.jury.as_dict()
     scores = [jury[teacher].score for teacher in JURY_TEACHERS]
     aggregated = aggregate_jury_scores(scores)
     variance = jury_variance(scores)
@@ -264,32 +335,16 @@ def _parse_jury_output(
         dimension_key=dimension,
         jury=jury,
         aggregated_score=aggregated,
+        label=payload.label,
+        distribution=payload.distribution,
+        weak_points=payload.weak_points,
         variance=variance,
         confidence=confidence_from_variance(variance),
-        evidence_refs=_evidence_refs_from_payload(payload, evidence_cards),
-        narrative=str(payload.get("narrative") or ""),
+        evidence_refs=_evidence_refs_from_payload(payload.evidence_refs, evidence_cards),
+        narrative=payload.narrative,
         method="jury",
         self_check_sampled=self_check_sampled,
     )
-
-
-def _parse_jury(value: Any) -> dict[TeacherName, JurorAssessment]:
-    if not isinstance(value, dict):
-        raise ValueError("jury field is required")
-    parsed: dict[TeacherName, JurorAssessment] = {}
-    for teacher in JURY_TEACHERS:
-        raw_item = value.get(teacher)
-        if not isinstance(raw_item, dict):
-            raise ValueError(f"jury.{teacher} is required")
-        reasoning = raw_item.get("reasoning_chain") or raw_item.get("推理链") or raw_item.get("reasoning") or []
-        if isinstance(reasoning, str):
-            reasoning = [reasoning]
-        parsed[teacher] = JurorAssessment(
-            score=float(raw_item.get("score")),
-            reasoning_chain=[str(item) for item in reasoning],
-            comment=str(raw_item.get("comment") or raw_item.get("评语") or ""),
-        )
-    return parsed
 
 
 def _apply_score_guardrail(result: ScoringResult, evidence_cards: list[EvidenceCard]) -> ScoringResult:
@@ -300,10 +355,12 @@ def _apply_score_guardrail(result: ScoringResult, evidence_cards: list[EvidenceC
         score=result.aggregated_score,
         label=result.label,
         distribution=result.distribution,
+        weak_points=result.weak_points,
     )
     result.aggregated_score = guarded.score
     result.label = guarded.label
     result.distribution = guarded.distribution
+    result.weak_points = guarded.weak_points
     result.warnings = guarded.warnings
     if guarded.score != original_score and guarded.score is not None:
         result.narrative = f"{result.narrative} 护栏已将最终分纠偏为 {guarded.score:.1f}。".strip()
@@ -329,6 +386,7 @@ def _result_from_fusion(fusion: FusionResult, evidence_cards: list[EvidenceCard]
         aggregated_score=guarded.score,
         label=guarded.label,
         distribution=guarded.distribution,
+        weak_points=guarded.weak_points,
         variance=fusion.variance,
         confidence=fusion.confidence,
         evidence_refs=fusion.evidence_refs,
@@ -338,20 +396,22 @@ def _result_from_fusion(fusion: FusionResult, evidence_cards: list[EvidenceCard]
     )
 
 
-def _evidence_refs_from_payload(payload: dict[str, Any], evidence_cards: list[EvidenceCard]) -> list[str]:
-    refs = payload.get("evidence_refs")
-    if isinstance(refs, list) and all(isinstance(item, str) for item in refs):
-        return refs
-    return [evidence_ref(card, index) for index, card in enumerate(evidence_cards, start=1)]
+def _evidence_refs_from_payload(refs: list[str], evidence_cards: list[EvidenceCard]) -> list[str]:
+    fallback = [evidence_ref(card, index) for index, card in enumerate(evidence_cards, start=1)]
+    if not refs:
+        return fallback
+    known = set(fallback)
+    filtered = [ref for ref in refs if ref in known]
+    return filtered or fallback
 
 
-def _parse_json_object(text: str) -> Any:
+def _extract_json_object(text: str) -> str:
     stripped = text.strip()
     if stripped.startswith("```"):
         stripped = re.sub(r"^```(?:json)?", "", stripped).strip()
         stripped = re.sub(r"```$", "", stripped).strip()
     match = re.search(r"\{.*\}", stripped, flags=re.S)
-    return json.loads(match.group(0) if match else stripped)
+    return match.group(0) if match else stripped
 
 
 def _has_llm_key(settings: Settings) -> bool:

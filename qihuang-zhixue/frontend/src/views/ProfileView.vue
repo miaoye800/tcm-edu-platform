@@ -25,6 +25,19 @@
       :closable="false"
     />
 
+    <el-alert
+      v-if="showLowConfidenceHint"
+      class="profile-alert"
+      type="info"
+      title="当前多为待取证维度，去构建更准"
+      show-icon
+      :closable="false"
+    >
+      <template #default>
+        <el-button class="hint-action" size="small" type="primary" @click="goOnboarding">焕醒画像</el-button>
+      </template>
+    </el-alert>
+
     <section class="stats-grid" aria-label="画像概览">
       <StatCard v-for="stat in stats" :key="stat.label" v-bind="stat" />
     </section>
@@ -132,6 +145,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import xiaoqi from '../assets/mascot/xiaoqi-avatar.png'
 import DimRow from '../components/profile/DimRow.vue'
 import JuryCard from '../components/profile/JuryCard.vue'
@@ -155,6 +169,7 @@ import {
 
 const profileStore = useProfileStore()
 const auth = useAuthStore()
+const router = useRouter()
 
 const radarAxes = computed(() => buildRadarAxes(profileStore.profile, profileStore.narrative))
 const evidenceCards = computed(() => profileEvidenceCards(profileStore.profile))
@@ -170,6 +185,9 @@ const lowConfidenceNames = computed(() =>
   dimensionKeys
     .filter((key) => confidenceFor(profileStore.profile, profileStore.narrative, key) < lowConfidenceThreshold)
     .map((key) => dimensionLabels[key]),
+)
+const showLowConfidenceHint = computed(
+  () => !profileStore.loading && !profileStore.usingMock && (profileStore.isOverallLowConfidence || lowConfidenceNames.value.length >= 4),
 )
 
 const stats = computed(() => [
@@ -218,6 +236,10 @@ const teacherComments = computed(() =>
     }
   }),
 )
+
+const goOnboarding = async () => {
+  await router.push('/onboarding?redirect=/profile')
+}
 
 onMounted(() => {
   void profileStore.loadProfile()
@@ -326,6 +348,11 @@ h3 {
 
 .profile-alert {
   border-radius: 16px;
+}
+
+.hint-action {
+  margin-top: 8px;
+  font-weight: 900;
 }
 
 .stats-grid {
