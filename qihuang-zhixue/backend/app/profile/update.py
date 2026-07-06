@@ -247,7 +247,7 @@ def _prescription_cards(payload: dict[str, Any], timestamp: datetime) -> list[Ev
 
 def _interaction_cards(payload: dict[str, Any], timestamp: datetime) -> list[EvidenceCard]:
     cards: list[EvidenceCard] = []
-    if label := _str_or_none(payload.get("goal") or payload.get("learning_goal")):
+    if label := _str_or_none(payload.get("learning_goal")):
         cards.append(_card("learning_goal", "交互事件", f"学习目标选择：{label}", {"label": label}, 1.0, timestamp))
     if label := _str_or_none(payload.get("style") or payload.get("learning_style")):
         cards.append(_card("learning_style", "交互事件", f"学习风格线索：{label}", {"label": label}, 1.0, timestamp))

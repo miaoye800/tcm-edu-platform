@@ -1,21 +1,37 @@
-"""学生画像模块。"""
+"""Learning profile package."""
 
-from app.profile.agent import cold_start_profile, export_mermaid, get_profile, save_profile, update_from_event
+from app.profile.agent import cold_start_profile, export_mermaid, get_profile, run_cold_start
 from app.profile.evidence import EvidenceCard
-from app.profile.models import CategoricalDimension, ProfileDimension, ProfileEvent, StudentProfile, WeakPointDimension
 from app.profile.radar import to_radar
+from app.profile.schema import (
+    CategoricalDimension,
+    DimensionKey,
+    MotivationDimension,
+    NumericDimension,
+    Profile,
+    ResourcePreferenceDimension,
+    WeakPoint,
+    WeakPointsDimension,
+    create_blank_profile,
+)
+from app.profile.update import ProfileUpdateEvent, update_profile_from_event
 
 __all__ = [
     "CategoricalDimension",
+    "DimensionKey",
     "EvidenceCard",
-    "ProfileDimension",
-    "ProfileEvent",
-    "StudentProfile",
-    "WeakPointDimension",
+    "MotivationDimension",
+    "NumericDimension",
+    "Profile",
+    "ProfileUpdateEvent",
+    "ResourcePreferenceDimension",
+    "WeakPoint",
+    "WeakPointsDimension",
     "cold_start_profile",
+    "create_blank_profile",
     "export_mermaid",
     "get_profile",
-    "save_profile",
+    "run_cold_start",
     "to_radar",
-    "update_from_event",
+    "update_profile_from_event",
 ]

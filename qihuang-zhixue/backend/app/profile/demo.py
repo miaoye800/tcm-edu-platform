@@ -6,8 +6,8 @@ import asyncio
 import json
 
 from app.profile.agent import cold_start_profile, export_mermaid
-from app.profile.models import DIMENSION_KEYS, DIMENSION_LABELS
 from app.profile.radar import to_radar
+from app.profile.schema import DIMENSION_LABELS
 
 
 async def _main() -> None:
@@ -23,9 +23,10 @@ async def _main() -> None:
     )
     export_mermaid()
     print("示例画像 7 维分数：")
-    for key in DIMENSION_KEYS:
+    for key in DIMENSION_LABELS:
         dimension = getattr(profile, key)
-        print(f"- {DIMENSION_LABELS[key]}: {dimension.score} ({dimension.evidence})")
+        value = getattr(dimension, "score", None) if getattr(dimension, "score", None) is not None else getattr(dimension, "label", None)
+        print(f"- {DIMENSION_LABELS[key]}: {value} ({dimension.narrative})")
     print("to_radar 输出：")
     print(json.dumps(to_radar(profile), ensure_ascii=False, indent=2))
 

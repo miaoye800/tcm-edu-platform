@@ -77,6 +77,24 @@ def init_db(db_path: Path = DB_PATH) -> None:
             ON profile_sessions(user_id)
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_session
+            ON chat_sessions(user_id, session_id, id)
+            """
+        )
         conn.commit()
 
 
@@ -258,3 +276,57 @@ def delete_profile_session_rows(db_path: Path = DB_PATH) -> None:
     with closing(sqlite3.connect(db_path)) as conn:
         conn.execute("DELETE FROM profile_sessions")
         conn.commit()
+
+
+def append_chat_messages(
+    user_id: str,
+    session_id: str,
+    messages: list[dict[str, str]],
+    db_path: Path | None = None,
+) -> None:
+    """Append chat messages for a user/session pair."""
+
+    if not messages:
+        return
+
+    target_db = db_path or DB_PATH
+    init_db(target_db)
+    now = datetime.now(UTC).isoformat()
+    rows = [
+        (user_id, session_id, message["role"], message["content"], now)
+        for message in messages
+        if message.get("role") and message.get("content")
+    ]
+    if not rows:
+        return
+
+    with closing(sqlite3.connect(target_db)) as conn:
+        conn.executemany(
+            """
+            INSERT INTO chat_sessions(user_id, session_id, role, content, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+        conn.commit()
+
+
+def list_chat_messages(
+    user_id: str,
+    session_id: str,
+    db_path: Path | None = None,
+) -> list[dict[str, str]]:
+    """Read chat messages for a user/session pair."""
+
+    target_db = db_path or DB_PATH
+    init_db(target_db)
+    with closing(sqlite3.connect(target_db)) as conn:
+        rows = conn.execute(
+            """
+            SELECT role, content FROM chat_sessions
+            WHERE user_id = ? AND session_id = ?
+            ORDER BY id ASC
+            """,
+            (user_id, session_id),
+        ).fetchall()
+    return [{"role": str(role), "content": str(content)} for role, content in rows]

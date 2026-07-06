@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from app.agents.graph import stream_agent_events
 from app.auth.dependencies import get_current_user
 from app.auth.models import AuthUser
-from app.profile import storage as profile_storage
+from app.profile import store as profile_storage
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 DEFAULT_SESSION_ID = "default"

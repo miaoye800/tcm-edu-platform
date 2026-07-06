@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.api import chat as chat_api
 from app.main import app
 from app.profile.agent import run_cold_start as run_profile_cold_start
-from app.profile.storage import get_profile, list_chat_messages
+from app.profile.store import get_profile, list_chat_messages
 from tests.helpers import auth_session
 
 

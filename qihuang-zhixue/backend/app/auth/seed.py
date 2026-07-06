@@ -1,4 +1,4 @@
-"""演示账号与个性化数据种子。"""
+"""Seed demo accounts and new-stack profile data."""
 
 from __future__ import annotations
 
@@ -8,25 +8,23 @@ from pathlib import Path
 from app.auth.storage import upsert_seed_user
 from app.mastery.bkt import record_mastery_event
 from app.mastery.review import record_review_result
-from app.profile.models import ProfileDimension, WeakPointDimension, default_profile as legacy_default_profile
 from app.profile.schema import WeakPoint, create_blank_profile
-from app.profile.storage import save_profile as save_legacy_profile
 from app.profile.store import DB_PATH, upsert_profile
 
 DEMO_PASSWORD = "demo1234"
 
 
 def seed_demo_accounts(db_path: Path = DB_PATH) -> list[str]:
-    """初始化 3 个可演示账号及差异化画像。"""
+    """Create demo users with differentiated new-stack profile snapshots."""
 
     users = [
-        upsert_seed_user(username="disciple_a", password=DEMO_PASSWORD, display_name="弟子甲·清热待补", db_path=db_path),
-        upsert_seed_user(username="disciple_b", password=DEMO_PASSWORD, display_name="弟子乙·补虚待补", db_path=db_path),
-        upsert_seed_user(username="disciple_c", password=DEMO_PASSWORD, display_name="弟子丙·均衡样例", db_path=db_path),
+        upsert_seed_user(username="disciple_a", password=DEMO_PASSWORD, display_name="disciple_a", db_path=db_path),
+        upsert_seed_user(username="disciple_b", password=DEMO_PASSWORD, display_name="disciple_b", db_path=db_path),
+        upsert_seed_user(username="disciple_c", password=DEMO_PASSWORD, display_name="disciple_c", db_path=db_path),
     ]
-    _seed_profile(users[0].user_id, weak_label="清热药·剂量", resource_label="知识图谱", db_path=db_path)
-    _seed_profile(users[1].user_id, weak_label="补虚药·功效鉴别", resource_label="医案文选", db_path=db_path)
-    _seed_profile(users[2].user_id, weak_label="解表药·配伍", resource_label="汤头歌诀", db_path=db_path)
+    _seed_profile(users[0].user_id, weak_label="清热药-剂量", resource_label="知识图谱", db_path=db_path)
+    _seed_profile(users[1].user_id, weak_label="补虚药-功效鉴别", resource_label="医案文选", db_path=db_path)
+    _seed_profile(users[2].user_id, weak_label="解表药-配伍", resource_label="汤头歌诀", db_path=db_path)
     _seed_mastery(users[0].user_id, weak_kc="herb_jinyinhua", strong_kc="herb_huangqi", db_path=db_path)
     _seed_mastery(users[1].user_id, weak_kc="herb_huangqi", strong_kc="herb_jinyinhua", db_path=db_path)
     _seed_mastery(users[2].user_id, weak_kc="herb_mahuang", strong_kc="herb_guizhi", db_path=db_path)
@@ -54,12 +52,6 @@ def _seed_profile(user_id: str, *, weak_label: str, resource_label: str, db_path
     profile.resource_preference.distribution = {resource_label: 1.0}  # type: ignore[dict-item]
     profile.resource_preference.confidence = 0.78
     upsert_profile(profile, db_path=db_path)
-
-    legacy_profile = legacy_default_profile(user_id)
-    legacy_profile.knowledge_base = ProfileDimension(score=58, evidence=f"{weak_label}连续失分")
-    legacy_profile.weak_points = WeakPointDimension(score=42, evidence=weak_label, items=[weak_label])
-    legacy_profile.resource_preference = ProfileDimension(score=78, evidence=resource_label)
-    save_legacy_profile(legacy_profile, db_path=db_path)
 
 
 def _seed_mastery(user_id: str, *, weak_kc: str, strong_kc: str, db_path: Path) -> None:
@@ -96,7 +88,7 @@ def _seed_mastery(user_id: str, *, weak_kc: str, strong_kc: str, db_path: Path) 
 
 def main() -> None:
     usernames = seed_demo_accounts()
-    print("已创建演示账号：")
+    print("Created demo accounts:")
     for username in usernames:
         print(f"- {username} / {DEMO_PASSWORD}")
 

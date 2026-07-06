@@ -14,13 +14,6 @@ from app.llm.clients import ChatMessage
 from app.llm.router import ModelRouter
 from app.profile.jury import ScoringResult, score_profile
 from app.profile.modes import load_diagnostic_questions
-from app.profile.models import (
-    CategoricalDimension,
-    DiagnosticQuestion,
-    ProfileDimension,
-    StudentProfile,
-    WeakPointDimension,
-)
 from app.profile.schema import (
     DIMENSION_LABELS,
     DimensionKey,
@@ -76,6 +69,16 @@ class DiagnosticItemEvaluation(BaseModel):
     skill: str | None = None
     weak_label: str | None = None
     evidence: str
+
+
+class DiagnosticQuestion(BaseModel):
+    """Cold-start diagnostic question."""
+
+    id: str
+    question: str
+    answer: str
+    topic: str
+    skill: str
 
 
 class DiagnosticEvaluation(BaseModel):
@@ -225,31 +228,6 @@ def last_user_content(messages: list[ChatMessage]) -> str:
     if messages:
         return str(messages[-1].get("content", ""))
     return ""
-
-
-def legacy_profile_from_profile(profile: Profile) -> StudentProfile:
-    """Convert the new confidence-first Profile to legacy StudentProfile callers."""
-
-    weak_items = [item.label for item in profile.weak_points.items]
-    weak_score = max(20, min(100, 100 - len(weak_items) * 12)) if weak_items else 100
-    return StudentProfile(
-        user_id=profile.user_id,
-        knowledge_base=_legacy_numeric(profile.knowledge_base),
-        learning_style=_legacy_category(profile.learning_style),
-        weak_points=WeakPointDimension(
-            score=weak_score,
-            evidence=profile.weak_points.narrative,
-            confidence=profile.weak_points.confidence,
-            source="rule",
-            items=weak_items,
-            strengths={item.label: float(item.strength) for item in profile.weak_points.items},
-        ),
-        goal=_legacy_category(profile.learning_goal),
-        pace=_legacy_numeric(profile.pace),
-        motivation=_legacy_numeric(profile.motivation),
-        resource_preference=_legacy_category(profile.resource_preference),
-        updated_at=profile.updated_at,
-    )
 
 
 async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
@@ -433,7 +411,7 @@ def _profile_from_scoring_results(
 
 
 def _fallback_dialogue_extraction(text: str) -> DialogueExtraction:
-    goal = _first_match(
+    learning_goal_label = _first_match(
         text,
         [
             ("应试提分", ("考试", "期末", "考证")),
@@ -454,13 +432,13 @@ def _fallback_dialogue_extraction(text: str) -> DialogueExtraction:
     )
     motivation = "被动" if _contains_any(text, ("佛系", "被动", "随便")) else ("外驱" if _contains_any(text, ("考试", "考研")) else "内驱")
     evidence: dict[str, list[str]] = {
-        "learning_goal": [goal],
+        "learning_goal": [learning_goal_label],
         "learning_style": [style],
         "motivation_label": [motivation],
     }
     return DialogueExtraction(
         major="中药学" if "中药学" in text else ("中医学" if "中医学" in text else "中医药相关专业"),
-        learning_goal=goal,
+        learning_goal=learning_goal_label,
         base_level=_base_level_from_text(text),
         learning_style=style,
         motivation_label=motivation,
@@ -494,30 +472,6 @@ def _fallback_diagnostic_evaluation(
             )
         )
     return DiagnosticEvaluation(items=items, summary="本地规则完成诊断评估")
-
-
-def _legacy_numeric(value: Any) -> ProfileDimension:
-    score = getattr(value, "score", None)
-    return ProfileDimension(
-        score=int(round(score)) if score is not None else 1,
-        evidence=getattr(value, "narrative", ""),
-        confidence=getattr(value, "confidence", 0.0),
-        source="rule",
-    )
-
-
-def _legacy_category(value: Any) -> CategoricalDimension:
-    label = getattr(value, "label", None)
-    distribution = dict(getattr(value, "distribution", {}) or {})
-    if label and not distribution:
-        distribution = {label: 1.0}
-    return CategoricalDimension(
-        label=label,
-        distribution=distribution,
-        evidence=getattr(value, "narrative", ""),
-        confidence=getattr(value, "confidence", 0.0),
-        source="rule",
-    )
 
 
 def _cards_for_dimension(cards: list[EvidenceCard], dimension: DimensionKey) -> list[EvidenceCard]:

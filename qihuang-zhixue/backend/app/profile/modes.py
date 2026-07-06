@@ -57,10 +57,10 @@ STEP_LABELS: dict[str, str] = {
 }
 
 IDENTITY_CARDS: dict[str, dict[str, str]] = {
-    "考前冲刺": {"goal": "应试提分", "motivation": "外驱"},
-    "临床学徒": {"goal": "临床实用", "motivation": "内驱"},
-    "草木好奇者": {"goal": "兴趣科普", "motivation": "内驱"},
-    "研读派": {"goal": "学术深造", "motivation": "内外混合"},
+    "考前冲刺": {"learning_goal": "应试提分", "motivation": "外驱"},
+    "临床学徒": {"learning_goal": "临床实用", "motivation": "内驱"},
+    "草木好奇者": {"learning_goal": "兴趣科普", "motivation": "内驱"},
+    "研读派": {"learning_goal": "学术深造", "motivation": "内外混合"},
 }
 
 RESOURCE_TYPES = {"知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"}
@@ -479,7 +479,7 @@ def _identity_cards(payload: dict[str, Any], source: str, response_time_ms: int,
     meta = IDENTITY_CARDS.get(identity, IDENTITY_CARDS["草木好奇者"])
     signal = {"identity_card": identity or "未指定", "response_time_ms": response_time_ms}
     return [
-        _card("learning_goal", source, f"选择身份卡“{identity or '未指定'}”，目标标签为{meta['goal']}", {**signal, "label": meta["goal"]}, 1.0),
+        _card("learning_goal", source, f"选择身份卡“{identity or '未指定'}”，目标标签为{meta['learning_goal']}", {**signal, "label": meta["learning_goal"]}, 1.0),
         _card("motivation", source, f"选择身份卡“{identity or '未指定'}”，动机标签为{meta['motivation']}", {**signal, "label": meta["motivation"]}, prior_weight),
         _card("knowledge_base", source, "身份卡仅作为知识基础先验，不代表正确率", {**signal, "prior": True}, prior_weight),
     ]
