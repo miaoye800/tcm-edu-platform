@@ -66,6 +66,10 @@ qihuang-zhixue/backend/verify_*.py
 
 # Local reference documents
 *.pdf
+/qihuang-logo.png
+/xiaoqi.png
+/画像评分细则.md
+/作战计划.md
 
 # IDE / system
 .idea/
