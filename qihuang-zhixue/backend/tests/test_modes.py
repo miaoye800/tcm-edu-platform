@@ -159,7 +159,7 @@ def test_session_survives_restart(tmp_path: Path) -> None:
     advanced = _answer(
         session_id,
         APPRENTICE_STEPS[0],
-        {"identity_card": "涓村簥瀛﹀緬", "response_time_ms": 1200},
+        {"identity_card": "临床学徒", "response_time_ms": 1200},
     )
     assert advanced["step"]["id"] == APPRENTICE_STEPS[1]
 
@@ -211,7 +211,7 @@ def test_session_cross_user_404(tmp_path: Path) -> None:
         json={
             "session_id": first["session_id"],
             "step_id": "practice",
-            "payload": {"case": "鐑瘨鍜界棝", "prescription": "閲戦摱鑺?5g"},
+            "payload": {"case": "热毒咽痛", "prescription": "金银花15g"},
         },
     )
     finish = client.post("/api/profile/session/finish", json={"session_id": first["session_id"]})
