@@ -5,9 +5,10 @@ from app.api.auth import router as auth_router
 from app.api.chat import router as chat_router
 from app.api.learning import router as learning_router
 from app.api.profile import router as profile_router
-from app.config import get_settings
+from app.config import get_settings, warn_if_default_auth_secret
 
 settings = get_settings()
+warn_if_default_auth_secret(settings)
 
 app = FastAPI(title="岐黄智学 API", version="0.1.0")
 

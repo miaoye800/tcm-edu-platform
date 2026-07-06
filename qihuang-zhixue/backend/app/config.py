@@ -5,6 +5,10 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+DEFAULT_DEV_AUTH_SECRET = "qihuang-dev-auth-secret-change-me"
+_warned_default_auth_secret = False
+
+
 class Settings(BaseSettings):
     """应用配置，优先读取环境变量和 .env 文件。"""
 
@@ -45,7 +49,7 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(default=1, alias="LLM_MAX_RETRIES")
     llm_fallback_to_mock: bool = Field(default=True, alias="LLM_FALLBACK_TO_MOCK")
     retrieval_score_threshold: float = Field(default=0.35, alias="RETRIEVAL_SCORE_THRESHOLD")
-    auth_secret: str = Field(default="qihuang-dev-auth-secret-change-me", alias="AUTH_SECRET")
+    auth_secret: str = Field(default=DEFAULT_DEV_AUTH_SECRET, alias="AUTH_SECRET")
     auth_token_expire_days: int = Field(default=7, alias="AUTH_TOKEN_EXPIRE_DAYS")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -56,3 +60,16 @@ def get_settings() -> Settings:
     """缓存配置实例，避免重复解析环境变量。"""
 
     return Settings()
+
+
+def resolve_auth_secret(settings: Settings) -> str:
+    return settings.auth_secret.strip() or DEFAULT_DEV_AUTH_SECRET
+
+
+def warn_if_default_auth_secret(settings: Settings) -> None:
+    global _warned_default_auth_secret
+    if _warned_default_auth_secret:
+        return
+    if resolve_auth_secret(settings) == DEFAULT_DEV_AUTH_SECRET:
+        print("WARNING: AUTH_SECRET 未配置，正在使用开发默认密钥，请勿用于生产环境。")
+        _warned_default_auth_secret = True

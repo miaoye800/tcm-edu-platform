@@ -1,4 +1,4 @@
-import { requestJson } from './request'
+import { requestJson, type RequestOptions } from './request'
 import type { AuthSession, AuthUser } from './authStorage'
 
 type LoginPayload = {
@@ -41,4 +41,5 @@ export const guestApi = (): Promise<AuthSession> =>
     { skipAuthRedirect: true },
   )
 
-export const meApi = (): Promise<AuthUser> => requestJson<AuthUser>('/api/auth/me')
+export const meApi = (options?: RequestOptions): Promise<AuthUser> =>
+  requestJson<AuthUser>('/api/auth/me', undefined, options)

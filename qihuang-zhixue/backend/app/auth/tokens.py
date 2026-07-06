@@ -7,12 +7,10 @@ from typing import Any
 
 import jwt
 
-from app.config import Settings, get_settings
+from app.config import DEFAULT_DEV_AUTH_SECRET, Settings, get_settings, resolve_auth_secret, warn_if_default_auth_secret
 
-DEFAULT_DEV_SECRET = "qihuang-dev-auth-secret-change-me"
+DEFAULT_DEV_SECRET = DEFAULT_DEV_AUTH_SECRET
 JWT_ALGORITHM = "HS256"
-
-_warned_default_secret = False
 
 
 class AuthTokenError(ValueError):
@@ -57,9 +55,6 @@ def decode_token(token: str, *, settings: Settings | None = None) -> str:
 
 
 def _auth_secret(settings: Settings) -> str:
-    global _warned_default_secret
-    secret = settings.auth_secret.strip() or DEFAULT_DEV_SECRET
-    if secret == DEFAULT_DEV_SECRET and not _warned_default_secret:
-        print("WARNING: AUTH_SECRET 未配置，正在使用开发默认密钥，请勿用于生产环境。")
-        _warned_default_secret = True
+    secret = resolve_auth_secret(settings)
+    warn_if_default_auth_secret(settings)
     return secret

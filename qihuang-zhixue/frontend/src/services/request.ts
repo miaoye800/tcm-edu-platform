@@ -1,6 +1,6 @@
 import { clearStoredAuth, readStoredAuth } from './authStorage'
 
-type RequestOptions = {
+export type RequestOptions = {
   skipAuthRedirect?: boolean
 }
 

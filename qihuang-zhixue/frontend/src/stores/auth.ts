@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { guestApi, loginApi, meApi, registerApi } from '../services/authApi'
 import { clearStoredAuth, readStoredAuth, saveStoredAuth, type AuthSession, type AuthUser } from '../services/authStorage'
+import { resetUserScopedStores } from './userScopedStores'
 
 const stored = readStoredAuth()
 
@@ -18,6 +19,7 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     setSession(session: AuthSession) {
+      resetUserScopedStores()
       this.token = session.token
       this.user = session.user
       this.error = ''
@@ -64,11 +66,28 @@ export const useAuthStore = defineStore('auth', {
       this.user = await meApi()
       saveStoredAuth({ token: this.token, user: this.user })
     },
-    logout() {
+    async validateStoredSession() {
+      if (!this.token) return
+      this.loading = true
+      this.error = ''
+      try {
+        this.user = await meApi({ skipAuthRedirect: true })
+        saveStoredAuth({ token: this.token, user: this.user })
+      } catch {
+        this.clearSession()
+      } finally {
+        this.loading = false
+      }
+    },
+    clearSession() {
       this.token = ''
       this.user = null
       this.error = ''
       clearStoredAuth()
+      resetUserScopedStores()
+    },
+    logout() {
+      this.clearSession()
       ElMessage.success('已退出登录')
     },
   },
