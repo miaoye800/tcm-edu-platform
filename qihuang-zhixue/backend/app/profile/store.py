@@ -20,11 +20,23 @@ from app.profile.schema import (
 DB_PATH = Path(__file__).resolve().parents[2] / ".data" / "qihuang.db"
 
 
+def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
+    """Open a SQLite connection configured for concurrent profile writes."""
+
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(db_path, timeout=5.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=5000;")
+    conn.execute("PRAGMA foreign_keys=ON;")
+    return conn
+
+
 def init_db(db_path: Path = DB_PATH) -> None:
     """Create profile and evidence tables if missing."""
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS profile (
@@ -104,7 +116,7 @@ def upsert_profile(profile: Profile, db_path: Path = DB_PATH) -> Profile:
     init_db(db_path)
     profile.updated_at = datetime.now(UTC)
     payload = profile.model_dump_json()
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             INSERT INTO profile(user_id, profile_json, created_at, updated_at)
@@ -128,7 +140,7 @@ def get_profile(user_id: str, db_path: Path = DB_PATH) -> Profile:
     """Load a profile, returning a blank low-confidence profile when absent."""
 
     init_db(db_path)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         row = conn.execute(
             "SELECT profile_json FROM profile WHERE user_id = ?",
             (user_id,),
@@ -143,7 +155,7 @@ def add_evidence(user_id: str, card: EvidenceCard, db_path: Path = DB_PATH) -> E
 
     init_db(db_path)
     payload = evidence_card_to_json_dict(card)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             INSERT INTO evidence(
@@ -177,7 +189,7 @@ def list_evidence(user_id: str, db_path: Path = DB_PATH) -> list[EvidenceCard]:
     """List evidence cards for a user in insertion order."""
 
     init_db(db_path)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         rows = conn.execute(
             """
             SELECT evidence_json FROM evidence
@@ -193,7 +205,7 @@ def upsert_profile_session_row(row: dict[str, Any], db_path: Path = DB_PATH) -> 
     """Insert or replace one persisted profile collection session."""
 
     init_db(db_path)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             INSERT INTO profile_sessions(
@@ -236,7 +248,7 @@ def get_profile_session_row(session_id: str, user_id: str, db_path: Path = DB_PA
     """Load a profile collection session row for its owner or raise KeyError."""
 
     init_db(db_path)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         row = conn.execute(
             """
             SELECT
@@ -273,7 +285,7 @@ def delete_profile_session_rows(db_path: Path = DB_PATH) -> None:
     """Delete persisted session rows; used by tests and demos only."""
 
     init_db(db_path)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute("DELETE FROM profile_sessions")
         conn.commit()
 
@@ -300,7 +312,7 @@ def append_chat_messages(
     if not rows:
         return
 
-    with closing(sqlite3.connect(target_db)) as conn:
+    with closing(connect(target_db)) as conn:
         conn.executemany(
             """
             INSERT INTO chat_sessions(user_id, session_id, role, content, created_at)
@@ -320,7 +332,7 @@ def list_chat_messages(
 
     target_db = db_path or DB_PATH
     init_db(target_db)
-    with closing(sqlite3.connect(target_db)) as conn:
+    with closing(connect(target_db)) as conn:
         rows = conn.execute(
             """
             SELECT role, content FROM chat_sessions

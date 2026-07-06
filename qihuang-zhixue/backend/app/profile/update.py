@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from collections import Counter
 from collections.abc import Awaitable, Callable
 from contextlib import closing
@@ -19,7 +18,7 @@ from app.profile.fusion import FusionResult, fuse_dimension, fuse_profile
 from app.profile.jury import LLMCall, ScoringResult, score_dimension
 from app.profile.radar import to_radar
 from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, Profile, WeakPoint
-from app.profile.store import DB_PATH, add_evidence, get_profile, init_db, list_evidence, upsert_profile
+from app.profile.store import DB_PATH, add_evidence, connect, get_profile, init_db, list_evidence, upsert_profile
 
 SHANGHAI_TZ = timezone(timedelta(hours=8))
 DEFAULT_JURY_WEIGHT_THRESHOLD = 2.0
@@ -341,7 +340,7 @@ def _weak_points_from_cards(cards: list[EvidenceCard]) -> list[WeakPoint]:
 
 def _init_update_state(db_path: Path) -> None:
     init_db(db_path)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS profile_update_state (
@@ -365,7 +364,7 @@ def _init_update_state(db_path: Path) -> None:
 
 def _increment_pending_weight(user_id: str, dimension: DimensionKey, weight: float, db_path: Path) -> float:
     now = datetime.now(UTC).isoformat()
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             INSERT INTO profile_update_state(user_id, dimension, pending_weight, updated_at)
@@ -392,7 +391,7 @@ def _reset_pending_weight(
     now: datetime | None = None,
 ) -> None:
     scored_at = _utc_now_iso(now)
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         conn.execute(
             """
             INSERT INTO profile_update_state(user_id, dimension, pending_weight, updated_at, last_scored_at)
@@ -439,7 +438,7 @@ def _has_configured_llm_key(settings: Settings) -> bool:
 
 
 def _get_update_state(user_id: str, dimension: DimensionKey, db_path: Path) -> tuple[float, datetime | None]:
-    with closing(sqlite3.connect(db_path)) as conn:
+    with closing(connect(db_path)) as conn:
         row = conn.execute(
             """
             SELECT pending_weight, last_scored_at
