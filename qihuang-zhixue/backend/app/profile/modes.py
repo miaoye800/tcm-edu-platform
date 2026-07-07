@@ -18,7 +18,16 @@ from uuid import uuid4
 
 from app.config import get_settings
 from app.llm.router import ModelRouter
-from app.profile.schema import DimensionKey, EvidenceCard, evidence_card_from_dict, evidence_card_to_json_dict
+from app.profile.fusion import fuse_profile
+from app.profile.schema import (
+    DIMENSION_LABELS,
+    DimensionKey,
+    EvidenceCard,
+    Profile,
+    create_blank_profile,
+    evidence_card_from_dict,
+    evidence_card_to_json_dict,
+)
 from app.profile.store import (
     DB_PATH,
     add_evidence,
@@ -35,6 +44,7 @@ class ProfileMode(str, Enum):
     quickcard = "quickcard"
     practice = "practice"
     passive = "passive"
+    dialogue = "dialogue"
 
 
 APPRENTICE_STEPS: tuple[str, ...] = (
@@ -54,6 +64,8 @@ STEP_LABELS: dict[str, str] = {
     "quickcard": "身份卡+30秒速判",
     "practice": "开药实战",
     "passive": "纯被动埋点",
+    "dialogue": "对话式画像",
+    "dialogue_confirm": "确认画像线索",
 }
 
 IDENTITY_CARDS: dict[str, dict[str, str]] = {
@@ -74,6 +86,50 @@ STYLE_BY_CLUE = {
     "歌诀": "记忆(口诀)型",
 }
 TOXIC_OR_FIERCE_HERBS = {"附子", "川乌", "草乌", "马钱子", "巴豆", "雄黄", "朱砂"}
+
+DIALOGUE_OPENING_PROMPT = "先随便聊聊：你最近为什么想学中医药？是为了考试、临床、研究，还是单纯好奇？"
+DIALOGUE_MIN_TURNS = 3
+DIALOGUE_MAX_TURNS = 5
+DIALOGUE_CONFIDENCE_THRESHOLDS: dict[DimensionKey, float] = {
+    "learning_goal": 0.5,
+    "motivation": 0.5,
+    "knowledge_base": 0.3,
+}
+DIALOGUE_TARGET_LABELS: dict[DimensionKey, str] = {
+    "learning_goal": "学习目标",
+    "motivation": "动机",
+    "knowledge_base": "基础",
+    "learning_style": "学习风格",
+    "resource_preference": "资源偏好",
+    "pace": "学习节奏",
+    "weak_points": "薄弱点",
+}
+DIALOGUE_FALLBACK_QUESTIONS: dict[DimensionKey, tuple[str, ...]] = {
+    "learning_goal": (
+        "如果把这次学习当成一个小目标，你更想解决考试提分、临床应用、科研深造，还是兴趣入门？",
+        "你希望学完这一阶段后，最明显的变化是什么？",
+    ),
+    "motivation": (
+        "这件事对你来说更像是自己想弄明白，还是有考试、课程、实习之类的外部压力在推着？",
+        "什么时候你会觉得中医药学起来挺有劲？",
+    ),
+    "knowledge_base": (
+        "你现在大概学到哪一层了：刚入门、能记一些药性功效，还是已经能做简单辨证配伍？",
+        "随便举个你熟悉的中药或方药点也行，我想听听你现在的基础落点。",
+    ),
+    "learning_style": (
+        "平时你更吃哪种材料：图谱表格、条文文章、口诀歌诀，还是案例拆解？",
+    ),
+    "resource_preference": (
+        "如果给你一份学习材料，你会先打开知识图谱、短剧讲解、汤头歌诀，还是医案文选？",
+    ),
+    "pace": (
+        "接下来一两周，你每天大概能留多少分钟给这件事？",
+    ),
+    "weak_points": (
+        "现在最容易卡住的是药性功效、配伍剂量、辨证思路，还是背诵记忆？",
+    ),
+}
 
 FALLBACK_QUESTIONS: list[dict[str, Any]] = [
     {
@@ -182,6 +238,11 @@ async def answer_profile_session(
         return session, []
     if step_id != session.current_step.id:
         raise ValueError(f"expected step_id {session.current_step.id}, got {step_id}")
+    if session.current_step.kind == "confirm":
+        session.finished = True
+        session.current_step = None
+        _save_profile_session(session, db_path=db_path)
+        return session, []
 
     response_time_ms = _response_time_ms(payload, session.current_step.started_at)
     if session.mode == ProfileMode.apprentice:
@@ -190,6 +251,8 @@ async def answer_profile_session(
         cards = await _answer_quickcard(session, payload, response_time_ms)
     elif session.mode == ProfileMode.practice:
         cards = [await _prescription_card(payload, source=STEP_LABELS["practice"], weight=1.5, response_time_ms=response_time_ms)]
+    elif session.mode == ProfileMode.dialogue:
+        cards = await _answer_dialogue(session, payload)
     else:
         cards = _passive_cards(payload, response_time_ms)
 
@@ -255,9 +318,9 @@ def _session_from_row(row: dict[str, Any]) -> ProfileSession:
     mode = ProfileMode(str(row["mode"]))
     step_index = int(row["step_index"] or 0)
     persisted = bool(row["finished"])
-    current_step = _step_for_index(mode, step_index) if int(row["current_step"]) else None
     evidence_payload = json.loads(str(row["evidence_cards_json"] or "[]"))
     cards = [evidence_card_from_dict(item) for item in evidence_payload if isinstance(item, dict)]
+    current_step = _step_for_index(mode, step_index, cards) if int(row["current_step"]) else None
     session = ProfileSession(
         session_id=str(row["session_id"]),
         user_id=str(row["user_id"]),
@@ -276,11 +339,17 @@ def _session_from_row(row: dict[str, Any]) -> ProfileSession:
     return session
 
 
-def _step_for_index(mode: ProfileMode, step_index: int) -> ProfileStep | None:
+def _step_for_index(mode: ProfileMode, step_index: int, evidence_cards: list[EvidenceCard] | None = None) -> ProfileStep | None:
     if mode == ProfileMode.apprentice:
         if 0 <= step_index < len(APPRENTICE_STEPS):
             return _apprentice_step(step_index)
         return None
+    if mode == ProfileMode.dialogue:
+        cards = evidence_cards or []
+        if step_index > 0 and _dialogue_converged(step_index, cards):
+            return _dialogue_confirm_step(cards)
+        target = _dialogue_target(cards)
+        return _dialogue_turn_step(step_index + 1, _fallback_dialogue_question(target, step_index), target)
     return _initial_step(mode)
 
 
@@ -385,6 +454,8 @@ def _initial_step(mode: ProfileMode) -> ProfileStep:
             prompt="根据病例提交开药方案。",
             payload={"case": "外感或热毒类病例，可提交 prescription/herbs。"},
         )
+    if mode == ProfileMode.dialogue:
+        return _dialogue_turn_step(1, DIALOGUE_OPENING_PROMPT, "learning_goal")
     return ProfileStep(
         id="passive",
         title=STEP_LABELS["passive"],
@@ -400,6 +471,16 @@ def _next_step(session: ProfileSession) -> ProfileStep | None:
         if session.step_index >= len(APPRENTICE_STEPS):
             return None
         return _apprentice_step(session.step_index)
+    if session.mode == ProfileMode.dialogue:
+        session.step_index += 1
+        if _dialogue_converged(session.step_index, session.evidence_cards):
+            return _dialogue_confirm_step(session.evidence_cards)
+        target = _dialogue_target(session.evidence_cards)
+        return _dialogue_turn_step(
+            session.step_index + 1,
+            str(session.step_data.get("next_question") or _fallback_dialogue_question(target, session.step_index)),
+            target,
+        )
     return None
 
 
@@ -472,6 +553,240 @@ async def _answer_quickcard(session: ProfileSession, payload: dict[str, Any], re
         for card in quiz_cards:
             card.objective_signal["elapsed_seconds"] = elapsed
     return cards + quiz_cards
+
+
+async def _answer_dialogue(session: ProfileSession, payload: dict[str, Any]) -> list[EvidenceCard]:
+    utterance = str(payload.get("utterance") or payload.get("quick_reply") or payload.get("answer") or "").strip()
+    if not utterance:
+        utterance = "暂时说不清"
+    turn_index = session.step_index + 1
+    response_time_ms = _response_time_ms(payload, session.current_step.started_at if session.current_step else None)
+    target = _dialogue_target(session.evidence_cards)
+    extraction, next_question = await _dialogue_extract_and_question(
+        utterance=utterance,
+        target=target,
+        turn_index=turn_index,
+        evidence_cards=session.evidence_cards,
+    )
+    cards = _dialogue_cards_from_extraction(extraction)
+    for card in cards:
+        card.objective_signal["turn_index"] = turn_index
+        card.objective_signal["utterance"] = utterance
+        card.objective_signal["response_time_ms"] = response_time_ms
+        card.objective_signal["dialogue_target"] = target
+
+    projected_cards = [*session.evidence_cards, *cards]
+    next_target = _dialogue_target(projected_cards)
+    if _dialogue_converged(turn_index, projected_cards):
+        session.step_data.pop("next_question", None)
+    else:
+        session.step_data["next_question"] = next_question or _fallback_dialogue_question(next_target, turn_index)
+    session.step_data["dialogue_target"] = next_target
+    return cards
+
+
+async def _dialogue_extract_and_question(
+    *,
+    utterance: str,
+    target: DimensionKey,
+    turn_index: int,
+    evidence_cards: list[EvidenceCard],
+) -> tuple[Any, str]:
+    if _has_profile_extract_key():
+        combined = await _try_llm_dialogue_turn(utterance, target, turn_index, evidence_cards)
+        if combined is not None:
+            return combined
+        try:
+            from app.profile.nodes import _extract_dialogue_structured
+
+            extraction = await _extract_dialogue_structured(utterance)
+            return extraction, _fallback_dialogue_question(_dialogue_target(evidence_cards), turn_index)
+        except Exception:
+            pass
+    from app.profile.nodes import _fallback_dialogue_extraction
+
+    return _fallback_dialogue_extraction(utterance), _fallback_dialogue_question(target, turn_index)
+
+
+async def _try_llm_dialogue_turn(
+    utterance: str,
+    target: DimensionKey,
+    turn_index: int,
+    evidence_cards: list[EvidenceCard],
+) -> tuple[Any, str] | None:
+    prompt_payload = {
+        "turn_index": turn_index,
+        "target_dimension": target,
+        "target_label": DIALOGUE_TARGET_LABELS.get(target, target),
+        "user_utterance": utterance,
+        "current_confidences": _dialogue_confidences(evidence_cards),
+        "allowed_labels": {
+            "learning_goal": ["应试提分", "临床实用", "兴趣科普", "学术深造"],
+            "learning_style": ["视觉型", "文字型", "记忆(口诀)型"],
+            "motivation_label": ["内驱", "外驱", "内外混合", "被动"],
+            "resource_preference": sorted(RESOURCE_TYPES),
+        },
+    }
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "你是对话式学习画像采集器。只输出 JSON，不要 Markdown。"
+                "你只能抽取上轮回答里的结构化信号，并围绕 target_dimension 生成下一句自然问题。"
+                "不要给分、不要改画像分数、不要创造 allowed_labels 之外的新标签。"
+                "下一问可以闲聊、出小题或直问，允许自然铺垫。"
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                json.dumps(prompt_payload, ensure_ascii=False)
+                + "\n输出 JSON：{extraction:{major,learning_goal,base_level,learning_style,motivation_label,"
+                "motivation_score,resource_preference,daily_minutes,target_days,evidence}, next_question:string}"
+            ),
+        },
+    ]
+    try:
+        raw = await ModelRouter().chat("profile_extract", messages, response_format={"type": "json_object"}, temperature=0.7)
+        parsed = _parse_json_object(raw)
+        if not isinstance(parsed, dict):
+            return None
+        extraction_payload = parsed.get("extraction") if isinstance(parsed.get("extraction"), dict) else parsed
+        from app.profile.nodes import DialogueExtraction
+
+        extraction = DialogueExtraction.model_validate(extraction_payload)
+        next_question = str(parsed.get("next_question") or "").strip()
+        if not next_question:
+            next_question = _fallback_dialogue_question(target, turn_index)
+        return extraction, next_question
+    except Exception:
+        return None
+
+
+def _dialogue_cards_from_extraction(extraction: Any) -> list[EvidenceCard]:
+    from app.profile.nodes import _dialogue_cards
+
+    return _dialogue_cards(extraction)
+
+
+def _has_profile_extract_key() -> bool:
+    settings = get_settings()
+    return bool((settings.deepseek_api_key and settings.deepseek_api_key.strip()) or (settings.zhipu_api_key and settings.zhipu_api_key.strip()))
+
+
+def _dialogue_turn_step(turn_number: int, prompt: str, target: DimensionKey | str) -> ProfileStep:
+    return ProfileStep(
+        id=f"dialogue_turn_{turn_number}",
+        title=STEP_LABELS["dialogue"],
+        kind="dialogue",
+        prompt=prompt,
+        payload={
+            "turn_index": turn_number,
+            "target": target,
+            "quick_replies": _dialogue_quick_replies(target),
+        },
+    )
+
+
+def _dialogue_confirm_step(evidence_cards: list[EvidenceCard]) -> ProfileStep:
+    card_scores, inferred_card = _identity_card_scores(evidence_cards)
+    return ProfileStep(
+        id="dialogue_confirm",
+        title=STEP_LABELS["dialogue_confirm"],
+        kind="confirm",
+        prompt="我已经抓到一版画像线索了，确认后就可以生成并保存。",
+        payload={"card_scores": card_scores, "inferred_card": inferred_card},
+    )
+
+
+def _dialogue_converged(turn_index: int, evidence_cards: list[EvidenceCard]) -> bool:
+    if turn_index >= DIALOGUE_MAX_TURNS:
+        return True
+    if turn_index < DIALOGUE_MIN_TURNS:
+        return False
+    fusion = fuse_profile(evidence_cards)
+    return all(fusion[dimension].confidence >= threshold for dimension, threshold in DIALOGUE_CONFIDENCE_THRESHOLDS.items())
+
+
+def _dialogue_target(evidence_cards: list[EvidenceCard]) -> DimensionKey:
+    fusion = fuse_profile(evidence_cards)
+    return min(
+        DIALOGUE_CONFIDENCE_THRESHOLDS,
+        key=lambda dimension: fusion[dimension].confidence / max(DIALOGUE_CONFIDENCE_THRESHOLDS[dimension], 0.001),
+    )
+
+
+def _fallback_dialogue_question(target: DimensionKey | str, turn_index: int) -> str:
+    questions = DIALOGUE_FALLBACK_QUESTIONS.get(target, DIALOGUE_FALLBACK_QUESTIONS["learning_goal"])
+    return questions[turn_index % len(questions)]
+
+
+def _dialogue_quick_replies(target: DimensionKey | str) -> list[str]:
+    if target == "learning_goal":
+        return ["考试提分", "临床实用", "科研深造", "兴趣入门"]
+    if target == "motivation":
+        return ["自己想学", "考试推动", "实习需要", "先看看"]
+    if target == "knowledge_base":
+        return ["刚入门", "学过药性", "能做辨证", "基础不稳"]
+    return []
+
+
+def _dialogue_confidences(evidence_cards: list[EvidenceCard]) -> dict[str, float]:
+    fusion = fuse_profile(evidence_cards)
+    return {dimension: result.confidence for dimension, result in fusion.items()}
+
+
+def dialogue_session_summary(session: ProfileSession) -> dict[str, Any]:
+    profile = _profile_from_fusion(session.user_id, session.evidence_cards)
+    card_scores, inferred_card = _identity_card_scores(session.evidence_cards)
+    next_question = session.current_step.prompt if session.current_step and session.current_step.kind == "dialogue" else None
+    return {
+        "card_scores": card_scores,
+        "inferred_card": inferred_card,
+        "radar": _radar_payload(profile),
+        "turn_index": session.step_index,
+        "converged": session.finished
+        or (session.current_step is not None and session.current_step.kind == "confirm")
+        or _dialogue_converged(session.step_index, session.evidence_cards),
+        "next_question": next_question,
+    }
+
+
+def _identity_card_scores(evidence_cards: list[EvidenceCard]) -> tuple[dict[str, float], str | None]:
+    fusion = fuse_profile(evidence_cards)
+    goal_distribution = fusion["learning_goal"].distribution
+    motivation_distribution = fusion["motivation"].distribution
+    scores: dict[str, float] = {}
+    for card_name, meta in IDENTITY_CARDS.items():
+        goal_score = goal_distribution.get(meta["learning_goal"], 0.0)
+        motivation_score = motivation_distribution.get(meta["motivation"], 0.0)
+        scores[card_name] = round(max(0.0, min(1.0, (goal_score + motivation_score) / 2)), 4)
+    inferred = max(scores.items(), key=lambda item: item[1])[0] if any(scores.values()) else None
+    return scores, inferred
+
+
+def _profile_from_fusion(user_id: str, evidence_cards: list[EvidenceCard]) -> Profile:
+    profile = create_blank_profile(user_id)
+    fusion = fuse_profile(evidence_cards)
+    for dimension in DIMENSION_LABELS:
+        result = fusion[dimension]
+        target = getattr(profile, dimension)
+        target.confidence = result.confidence
+        target.evidence = [card for card in evidence_cards if card.dimension == dimension]
+        target.narrative = result.narrative
+        if hasattr(target, "score") and result.score is not None:
+            target.score = result.score
+        if hasattr(target, "label") and result.label is not None:
+            target.label = result.label
+        if hasattr(target, "distribution") and result.distribution:
+            target.distribution = result.distribution
+    return profile
+
+
+def _radar_payload(profile: Profile) -> dict[str, Any]:
+    from app.profile.radar import to_radar
+
+    return to_radar(profile)
 
 
 def _identity_cards(payload: dict[str, Any], source: str, response_time_ms: int, prior_weight: float) -> list[EvidenceCard]:
@@ -912,6 +1227,7 @@ __all__ = [
     "ProfileStep",
     "answer_profile_session",
     "cards_to_json",
+    "dialogue_session_summary",
     "extract_prescription_signal",
     "finish_profile_session",
     "get_profile_session",

@@ -42,6 +42,17 @@
       </GlassCard>
     </section>
 
+    <ProfileDialogue
+      v-else-if="session && !resultReady && activeMode === 'dialogue'"
+      :prompt="dialoguePrompt"
+      :card-scores="dialogueCardScores"
+      :inferred-card="dialogueInferredCard"
+      :radar="dialogueRadarAxes"
+      :converged="dialogueConverged"
+      @answer="answerDialogue"
+      @confirm="confirmDialogue"
+    />
+
     <GlassCard v-else-if="session && !resultReady" class="session-card" padding="lg">
       <div class="session-head">
         <div>
@@ -154,7 +165,9 @@ import { computed, defineComponent, h, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight, Check, Compass, FirstAidKit, MagicStick, Refresh, Tickets, View } from '@element-plus/icons-vue'
+import ProfileDialogue from '../components/profile/ProfileDialogue.vue'
 import RadarChart from '../components/profile/RadarChart.vue'
+import type { AnswerPayload, CardScores, ConfirmPayload } from '../components/profile/profileDialogueModel'
 import Badge from '../components/ui/Badge.vue'
 import GlassCard from '../components/ui/GlassCard.vue'
 import { answerProfileSession, finishProfileSession, startProfileSession } from '../services/profileApi'
@@ -252,11 +265,11 @@ const modeCards: ModeCard[] = [
     icon: MagicStick,
   },
   {
-    mode: 'quickcard',
-    kicker: '轻量式',
-    title: '身份卡速判',
-    description: '选一张身份卡，再用几道快题点亮初始画像。',
-    duration: '约 1 分钟',
+    mode: 'dialogue',
+    kicker: '问诊式',
+    title: '对话问诊(dialogue)',
+    description: '像和小岐聊天一样说目标、节奏和困惑，边聊边显影身份卡。',
+    duration: '约 2-4 分钟',
     icon: Tickets,
   },
   {
@@ -282,6 +295,11 @@ const questions = computed(() => activeStep.value?.payload.questions ?? [])
 const identityCards = computed(() => activeStep.value?.payload.identity_cards ?? ['考前冲刺', '临床学徒', '草木好奇者', '研读派'])
 const resourceTypes = computed(() => activeStep.value?.payload.resource_types ?? ['知识图谱', '拟人化短剧', '汤头歌诀', '医案文选'])
 const radarAxes = computed(() => buildRadarAxes(profileStore.profile, profileStore.narrative))
+const dialoguePrompt = computed(() => session.value?.next_question || activeStep.value?.prompt || '先从一个轻松问题开始：你最近最想解决的学习困惑是什么？')
+const dialogueCardScores = computed<CardScores>(() => session.value?.card_scores ?? activeStep.value?.payload.card_scores ?? {})
+const dialogueInferredCard = computed(() => session.value?.inferred_card ?? activeStep.value?.payload.inferred_card ?? null)
+const dialogueRadarAxes = computed(() => session.value?.radar?.axes ?? [])
+const dialogueConverged = computed(() => Boolean(session.value?.converged || activeStep.value?.kind === 'confirm'))
 const lowConfidenceCount = computed(() => radarAxes.value.filter((axis) => axis.lowConfidence).length)
 const narrativeText = computed(
   () => profileStore.narrative.description || '画像已写入。继续学习后，小岐会把更多证据补进档案卷。',
@@ -396,6 +414,44 @@ const submitStep = async () => {
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '本步提交失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+const answerDialogue = async (payload: AnswerPayload) => {
+  if (!session.value || !activeStep.value) return
+  busy.value = true
+  error.value = ''
+  try {
+    const next = await answerProfileSession(session.value.session_id, activeStep.value.id, {
+      ...payload,
+      response_time_ms: Date.now() - stepStartedAt.value,
+    })
+    session.value = next
+    stepStartedAt.value = Date.now()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '对话提交失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+const confirmDialogue = async (payload: ConfirmPayload) => {
+  if (!session.value || !activeStep.value) return
+  if (activeStep.value.kind !== 'confirm') {
+    error.value = '再回答一两轮，小岐收敛后就能确认画像。'
+    return
+  }
+  busy.value = true
+  error.value = ''
+  try {
+    const next = await answerProfileSession(session.value.session_id, activeStep.value.id, payload)
+    session.value = next
+    await finishCurrentSession()
+    await enterApp()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '画像确认失败'
   } finally {
     busy.value = false
   }

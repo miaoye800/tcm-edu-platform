@@ -43,6 +43,7 @@
         :x2="segment.end.x"
         :y2="segment.end.y"
         :class="['radar-data-segment', { 'is-low': segment.lowConfidence }]"
+        :style="{ '--segment-index': index }"
       />
       <circle
         v-for="(point, index) in radarPoints"

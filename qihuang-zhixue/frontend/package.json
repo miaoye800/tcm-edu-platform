@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --configLoader runner",
+    "test": "node tests/profile-dialogue.component.spec.mjs && node tests/onboarding-dialogue.component.spec.mjs",
     "build": "vue-tsc --noEmit && vite build --configLoader runner",
     "preview": "vite preview --host 127.0.0.1 --configLoader runner"
   },

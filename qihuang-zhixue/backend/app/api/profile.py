@@ -17,6 +17,7 @@ from app.profile.modes import (
     ProfileMode,
     ProfileSession,
     answer_profile_session,
+    dialogue_session_summary,
     finish_profile_session,
     get_profile_session,
     session_payload,
@@ -170,10 +171,13 @@ async def answer(
         raise HTTPException(status_code=404, detail="profile session not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {
+    response = {
         **session_payload(session, status="finished" if session.finished else "advanced"),
         "evidence_cards": cards_to_json(cards),
     }
+    if session.mode == ProfileMode.dialogue:
+        response.update(dialogue_session_summary(session))
+    return response
 
 
 @router.post("/session/finish")

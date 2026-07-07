@@ -129,7 +129,7 @@ export type ProfileStat = {
   tone: 'jade' | 'blue' | 'gold' | 'coral'
 }
 
-export type ProfileBuildMode = 'apprentice' | 'quickcard' | 'practice' | 'passive'
+export type ProfileBuildMode = 'apprentice' | 'quickcard' | 'practice' | 'passive' | 'dialogue'
 
 export type ProfileSessionQuestion = {
   id: string
@@ -153,6 +153,9 @@ export type ProfileSessionStep = {
     case?: string
     objective_signal_fields?: string[]
     event_types?: string[]
+    quick_replies?: string[]
+    card_scores?: Record<string, number>
+    inferred_card?: string | null
   }
   started_at?: string
 }
@@ -167,4 +170,14 @@ export type ProfileSessionResponse = {
   finished: boolean
   evidence_count: number
   evidence_cards?: EvidenceCard[]
+  card_scores?: Record<string, number>
+  inferred_card?: string | null
+  radar?: {
+    axes?: RadarAxis[]
+    dimensions?: string[]
+    values?: number[]
+  }
+  turn_index?: number
+  converged?: boolean
+  next_question?: string | null
 }

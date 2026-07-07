@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 import sqlite3
 from contextlib import closing
 from datetime import UTC, datetime
@@ -18,6 +20,45 @@ from app.profile.schema import (
 )
 
 DB_PATH = Path(__file__).resolve().parents[2] / ".data" / "qihuang.db"
+logger = logging.getLogger(__name__)
+
+
+PROFILE_COLUMNS: dict[str, str] = {
+    "user_id": "TEXT",
+    "profile_json": "TEXT NOT NULL DEFAULT '{}'",
+    "created_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+    "updated_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+}
+EVIDENCE_COLUMNS: dict[str, str] = {
+    "id": "INTEGER",
+    "user_id": "TEXT NOT NULL DEFAULT ''",
+    "dimension": "TEXT NOT NULL DEFAULT ''",
+    "source": "TEXT NOT NULL DEFAULT ''",
+    "fact": "TEXT NOT NULL DEFAULT ''",
+    "objective_signal_json": "TEXT NOT NULL DEFAULT '{}'",
+    "weight": "REAL NOT NULL DEFAULT 0",
+    "timestamp": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+    "evidence_json": "TEXT NOT NULL DEFAULT '{}'",
+}
+PROFILE_SESSION_COLUMNS: dict[str, str] = {
+    "session_id": "TEXT",
+    "user_id": "TEXT NOT NULL DEFAULT ''",
+    "mode": "TEXT NOT NULL DEFAULT 'apprentice'",
+    "current_step": "INTEGER NOT NULL DEFAULT 0",
+    "step_index": "INTEGER DEFAULT 0",
+    "finished": "INTEGER NOT NULL DEFAULT 0",
+    "evidence_cards_json": "TEXT NOT NULL DEFAULT '[]'",
+    "created_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+    "updated_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+}
+CHAT_SESSION_COLUMNS: dict[str, str] = {
+    "id": "INTEGER",
+    "user_id": "TEXT NOT NULL DEFAULT ''",
+    "session_id": "TEXT NOT NULL DEFAULT ''",
+    "role": "TEXT NOT NULL DEFAULT ''",
+    "content": "TEXT NOT NULL DEFAULT ''",
+    "created_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+}
 
 
 def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
@@ -33,7 +74,7 @@ def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
 
 
 def init_db(db_path: Path = DB_PATH) -> None:
-    """Create profile and evidence tables if missing."""
+    """Create and lightly migrate profile-owned SQLite tables."""
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with closing(connect(db_path)) as conn:
@@ -68,6 +109,8 @@ def init_db(db_path: Path = DB_PATH) -> None:
             ON evidence(user_id, id)
             """
         )
+        _migrate_table_columns(conn, "profile", PROFILE_COLUMNS)
+        _migrate_table_columns(conn, "evidence", EVIDENCE_COLUMNS)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS profile_sessions (
@@ -83,6 +126,7 @@ def init_db(db_path: Path = DB_PATH) -> None:
             )
             """
         )
+        _migrate_profile_sessions(conn)
         conn.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_profile_sessions_user_id
@@ -101,6 +145,7 @@ def init_db(db_path: Path = DB_PATH) -> None:
             )
             """
         )
+        _migrate_table_columns(conn, "chat_sessions", CHAT_SESSION_COLUMNS)
         conn.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_session
@@ -108,6 +153,92 @@ def init_db(db_path: Path = DB_PATH) -> None:
             """
         )
         conn.commit()
+
+
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+
+def _migrate_table_columns(conn: sqlite3.Connection, table: str, expected_columns: dict[str, str]) -> None:
+    columns = _table_columns(conn, table)
+    for name, definition in expected_columns.items():
+        if name not in columns:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+
+
+def _migrate_profile_sessions(conn: sqlite3.Connection) -> None:
+    columns = _table_columns(conn, "profile_sessions")
+    if not columns:
+        return
+    if "session_id" not in columns:
+        logger.warning(
+            "profile_sessions schema is missing primary key column session_id; dropping temporary session table"
+        )
+        conn.execute("DROP TABLE profile_sessions")
+        conn.execute(
+            """
+            CREATE TABLE profile_sessions (
+                session_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                current_step INTEGER NOT NULL,
+                step_index INTEGER,
+                finished INTEGER NOT NULL DEFAULT 0,
+                evidence_cards_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        return
+    _migrate_table_columns(conn, "profile_sessions", PROFILE_SESSION_COLUMNS)
+
+
+_MISSING_COLUMN_RE = re.compile(
+    r"(?:table (?P<table>\w+) has no column named|no such column:)\s+(?:(?P<table2>\w+)\.)?(?P<column>\w+)",
+    re.IGNORECASE,
+)
+
+
+def _diagnose_operational_error(
+    conn: sqlite3.Connection,
+    table: str,
+    exc: sqlite3.OperationalError,
+) -> tuple[str | None, str | None]:
+    message = str(exc)
+    match = _MISSING_COLUMN_RE.search(message)
+    error_table = (match.group("table") or match.group("table2")) if match else None
+    missing_column = match.group("column") if match else None
+    logger.exception(
+        "SQLite OperationalError while accessing table=%s missing_column=%s existing_columns=%s error=%s",
+        error_table or table,
+        missing_column,
+        sorted(_table_columns(conn, table)),
+        message,
+    )
+    return error_table or table, missing_column
+
+
+def _repair_table_after_operational_error(
+    conn: sqlite3.Connection,
+    table: str,
+    exc: sqlite3.OperationalError,
+) -> bool:
+    error_table, missing_column = _diagnose_operational_error(conn, table, exc)
+    if missing_column is None or error_table != table:
+        return False
+    if table == "profile_sessions":
+        _migrate_profile_sessions(conn)
+        return missing_column in _table_columns(conn, table)
+    migrations = {
+        "profile": PROFILE_COLUMNS,
+        "evidence": EVIDENCE_COLUMNS,
+        "chat_sessions": CHAT_SESSION_COLUMNS,
+    }
+    if table in migrations:
+        _migrate_table_columns(conn, table, migrations[table])
+        return missing_column in _table_columns(conn, table)
+    return False
 
 
 def upsert_profile(profile: Profile, db_path: Path = DB_PATH) -> Profile:
@@ -206,41 +337,12 @@ def upsert_profile_session_row(row: dict[str, Any], db_path: Path = DB_PATH) -> 
 
     init_db(db_path)
     with closing(connect(db_path)) as conn:
-        conn.execute(
-            """
-            INSERT INTO profile_sessions(
-                session_id,
-                user_id,
-                mode,
-                current_step,
-                step_index,
-                finished,
-                evidence_cards_json,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(session_id) DO UPDATE SET
-                user_id = excluded.user_id,
-                mode = excluded.mode,
-                current_step = excluded.current_step,
-                step_index = excluded.step_index,
-                finished = excluded.finished,
-                evidence_cards_json = excluded.evidence_cards_json,
-                updated_at = excluded.updated_at
-            """,
-            (
-                row["session_id"],
-                row["user_id"],
-                row["mode"],
-                row["current_step"],
-                row.get("step_index"),
-                row["finished"],
-                row["evidence_cards_json"],
-                row["created_at"],
-                row["updated_at"],
-            ),
-        )
+        try:
+            _execute_profile_session_upsert(conn, row)
+        except sqlite3.OperationalError as exc:
+            if not _repair_table_after_operational_error(conn, "profile_sessions", exc):
+                raise
+            _execute_profile_session_upsert(conn, row)
         conn.commit()
 
 
@@ -249,23 +351,12 @@ def get_profile_session_row(session_id: str, user_id: str, db_path: Path = DB_PA
 
     init_db(db_path)
     with closing(connect(db_path)) as conn:
-        row = conn.execute(
-            """
-            SELECT
-                session_id,
-                user_id,
-                mode,
-                current_step,
-                step_index,
-                finished,
-                evidence_cards_json,
-                created_at,
-                updated_at
-            FROM profile_sessions
-            WHERE session_id = ? AND user_id = ?
-            """,
-            (session_id, user_id),
-        ).fetchone()
+        try:
+            row = _execute_profile_session_select(conn, session_id, user_id)
+        except sqlite3.OperationalError as exc:
+            if not _repair_table_after_operational_error(conn, "profile_sessions", exc):
+                raise
+            row = _execute_profile_session_select(conn, session_id, user_id)
     if row is None:
         raise KeyError(session_id)
     return {
@@ -279,6 +370,68 @@ def get_profile_session_row(session_id: str, user_id: str, db_path: Path = DB_PA
         "created_at": row[7],
         "updated_at": row[8],
     }
+
+
+def _execute_profile_session_upsert(conn: sqlite3.Connection, row: dict[str, Any]) -> None:
+    conn.execute(
+        """
+        INSERT INTO profile_sessions(
+            session_id,
+            user_id,
+            mode,
+            current_step,
+            step_index,
+            finished,
+            evidence_cards_json,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(session_id) DO UPDATE SET
+            user_id = excluded.user_id,
+            mode = excluded.mode,
+            current_step = excluded.current_step,
+            step_index = excluded.step_index,
+            finished = excluded.finished,
+            evidence_cards_json = excluded.evidence_cards_json,
+            updated_at = excluded.updated_at
+        """,
+        (
+            row["session_id"],
+            row["user_id"],
+            row["mode"],
+            row["current_step"],
+            row.get("step_index"),
+            row["finished"],
+            row["evidence_cards_json"],
+            row["created_at"],
+            row["updated_at"],
+        ),
+    )
+
+
+def _execute_profile_session_select(
+    conn: sqlite3.Connection,
+    session_id: str,
+    user_id: str,
+) -> tuple[Any, ...] | None:
+    return conn.execute(
+        """
+        SELECT
+            session_id,
+            user_id,
+            mode,
+            current_step,
+            step_index,
+            finished,
+            evidence_cards_json,
+            created_at,
+            updated_at
+        FROM profile_sessions
+        WHERE session_id = ? AND user_id = ?
+        """,
+        (session_id, user_id),
+    ).fetchone()
 
 
 def delete_profile_session_rows(db_path: Path = DB_PATH) -> None:

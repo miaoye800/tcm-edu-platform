@@ -150,6 +150,59 @@ def test_passive_events_convert_to_evidence_cards() -> None:
     assert cards[1]["objective_signal"]["response_time_ms"] == 300
 
 
+def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    first = _start("dialogue", user_id="dialogue-user")
+    session_id = first["session_id"]
+
+    assert first["step"]["kind"] == "dialogue"
+    assert first["step"]["id"] == "dialogue_turn_1"
+
+    payload = _answer(
+        session_id,
+        "dialogue_turn_1",
+        {"utterance": "我是中药学学生，最近主要想准备期末考试，也想把基础补稳。"},
+    )
+    assert payload["turn_index"] == 1
+    assert payload["next_question"]
+    assert len(payload["evidence_cards"]) > 0
+    assert set(payload["card_scores"]) == {"考前冲刺", "临床学徒", "草木好奇者", "研读派"}
+    assert all(0 <= value <= 1 for value in payload["card_scores"].values())
+    assert payload["converged"] is False
+
+    payload = _answer(
+        session_id,
+        "dialogue_turn_2",
+        {"quick_reply": "考试推动，但我自己也想学明白，平时更喜欢文字材料和表格。"},
+    )
+    assert payload["turn_index"] == 2
+    assert len(payload["evidence_cards"]) > 0
+    assert payload["converged"] is False
+
+    payload = _answer(
+        session_id,
+        "dialogue_turn_3",
+        {"utterance": "我每天大概能学45分钟，目标是两周内先把解表药和清热药过一遍。"},
+    )
+
+    assert payload["turn_index"] == 3
+    assert payload["step"]["kind"] == "confirm"
+    assert payload["converged"] is True
+    assert payload["next_question"] is None
+    assert payload["inferred_card"] in payload["card_scores"]
+    assert max(payload["card_scores"].values()) > 0
+    assert "dimensions" in payload["radar"]
+
+    finished = client.post("/api/profile/session/finish", json={"session_id": session_id})
+    stored = list_evidence("dialogue-user", db_path=db_path)
+
+    assert finished.status_code == 200
+    assert finished.json()["finished"] is True
+    assert len(stored) == len(finished.json()["evidence_cards"])
+    assert len(stored) >= 3
+
+
 def test_session_survives_restart(tmp_path: Path) -> None:
     db_path = tmp_path / "restart.db"
     app.dependency_overrides[get_profile_db_path] = lambda: db_path
