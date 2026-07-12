@@ -46,6 +46,8 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
     confidence = _confidence(dimension)
     value, kind = _axis_value(key, dimension)
     raw_label = _raw_label(key, dimension)
+    lit = _is_lit(dimension)
+    status = _status(lit, confidence)
     return {
         "key": key,
         "label": RADAR_LABELS.get(key, source_label),
@@ -56,6 +58,9 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
         "raw_label": raw_label,
         "raw": raw_label,
         "confidence": confidence,
+        "lit": lit,
+        "status": status,
+        "anchor": _anchor_text(key, value),
         "confidence_status": "已取证" if confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
         "confidenceStatus": "已取证" if confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
         "low_confidence": confidence < LOW_CONFIDENCE_THRESHOLD,
@@ -95,6 +100,41 @@ def _raw_label(key: str, dimension: Any) -> str:
     return "待补充"
 
 
+def _anchor_text(key: str, score: int) -> str:
+    if key == "knowledge_base":
+        if score <= 20:
+            return "药名、性味与归经线索仍待建立"
+        if score <= 40:
+            return "能识别常见概念，但功效辨析还需补证"
+        if score <= 60:
+            return "常用药功效已有基础，配伍辨析待强化"
+        if score <= 80:
+            return "功效与配伍较熟，可进入病例迁移"
+        return "配伍加减与剂量判断已较稳定"
+
+    if key == "motivation":
+        if score <= 20:
+            return "当前动机线索较少，适合先用短目标牵引"
+        if score <= 40:
+            return "需要外部节奏推动与即时反馈"
+        if score <= 60:
+            return "有学习意愿，可通过阶段目标稳定投入"
+        if score <= 80:
+            return "主动性较强，适合安排挑战任务"
+        return "高度自驱，可进入拓展型任务"
+
+    if key == "pace":
+        if score <= 30:
+            return "慢节奏：适合小步复盘"
+        if score <= 70:
+            return "中节奏：可保持日常练习"
+        return "快节奏：适合密集冲刺与回顾"
+
+    if key == "weak_points":
+        return "由错题、问答和开药模拟共同取证"
+    return "由交互选择与资源使用分布派生"
+
+
 def _confidence(dimension: Any) -> float:
     try:
         return round(max(0.0, min(1.0, float(getattr(dimension, "confidence", 0.0) or 0.0))), 4)
@@ -121,6 +161,22 @@ def _is_placeholder(value: int, confidence: float, dimension: Any) -> bool:
         or getattr(dimension, "items", None)
         or getattr(dimension, "distribution", None)
     )
+
+
+def _is_lit(dimension: Any) -> bool:
+    return bool(
+        getattr(dimension, "evidence", None)
+        or getattr(dimension, "score", None) is not None
+        or getattr(dimension, "label", None)
+    )
+
+
+def _status(lit: bool, confidence: float) -> str:
+    if not lit:
+        return "dark"
+    if confidence < LOW_CONFIDENCE_THRESHOLD:
+        return "dashed"
+    return "solid"
 
 
 __all__ = ["LOW_CONFIDENCE_THRESHOLD", "to_radar"]

@@ -47,6 +47,8 @@ PROFILE_SESSION_COLUMNS: dict[str, str] = {
     "current_step": "INTEGER NOT NULL DEFAULT 0",
     "step_index": "INTEGER DEFAULT 0",
     "finished": "INTEGER NOT NULL DEFAULT 0",
+    "persisted": "INTEGER NOT NULL DEFAULT 0",
+    "step_data_json": "TEXT NOT NULL DEFAULT '{}'",
     "evidence_cards_json": "TEXT NOT NULL DEFAULT '[]'",
     "created_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
     "updated_at": "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
@@ -120,6 +122,8 @@ def init_db(db_path: Path = DB_PATH) -> None:
                 current_step INTEGER NOT NULL,
                 step_index INTEGER,
                 finished INTEGER NOT NULL DEFAULT 0,
+                persisted INTEGER NOT NULL DEFAULT 0,
+                step_data_json TEXT NOT NULL DEFAULT '{}',
                 evidence_cards_json TEXT NOT NULL DEFAULT '[]',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -184,6 +188,8 @@ def _migrate_profile_sessions(conn: sqlite3.Connection) -> None:
                 current_step INTEGER NOT NULL,
                 step_index INTEGER,
                 finished INTEGER NOT NULL DEFAULT 0,
+                persisted INTEGER NOT NULL DEFAULT 0,
+                step_data_json TEXT NOT NULL DEFAULT '{}',
                 evidence_cards_json TEXT NOT NULL DEFAULT '[]',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -192,6 +198,8 @@ def _migrate_profile_sessions(conn: sqlite3.Connection) -> None:
         )
         return
     _migrate_table_columns(conn, "profile_sessions", PROFILE_SESSION_COLUMNS)
+    if "persisted" not in columns and "finished" in columns:
+        conn.execute("UPDATE profile_sessions SET persisted = COALESCE(finished, 0)")
 
 
 _MISSING_COLUMN_RE = re.compile(
@@ -366,9 +374,11 @@ def get_profile_session_row(session_id: str, user_id: str, db_path: Path = DB_PA
         "current_step": row[3],
         "step_index": row[4],
         "finished": row[5],
-        "evidence_cards_json": row[6],
-        "created_at": row[7],
-        "updated_at": row[8],
+        "persisted": row[6],
+        "step_data_json": row[7],
+        "evidence_cards_json": row[8],
+        "created_at": row[9],
+        "updated_at": row[10],
     }
 
 
@@ -382,17 +392,21 @@ def _execute_profile_session_upsert(conn: sqlite3.Connection, row: dict[str, Any
             current_step,
             step_index,
             finished,
+            persisted,
+            step_data_json,
             evidence_cards_json,
             created_at,
             updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(session_id) DO UPDATE SET
             user_id = excluded.user_id,
             mode = excluded.mode,
             current_step = excluded.current_step,
             step_index = excluded.step_index,
             finished = excluded.finished,
+            persisted = excluded.persisted,
+            step_data_json = excluded.step_data_json,
             evidence_cards_json = excluded.evidence_cards_json,
             updated_at = excluded.updated_at
         """,
@@ -403,6 +417,8 @@ def _execute_profile_session_upsert(conn: sqlite3.Connection, row: dict[str, Any
             row["current_step"],
             row.get("step_index"),
             row["finished"],
+            row["persisted"],
+            row["step_data_json"],
             row["evidence_cards_json"],
             row["created_at"],
             row["updated_at"],
@@ -424,6 +440,8 @@ def _execute_profile_session_select(
             current_step,
             step_index,
             finished,
+            persisted,
+            step_data_json,
             evidence_cards_json,
             created_at,
             updated_at

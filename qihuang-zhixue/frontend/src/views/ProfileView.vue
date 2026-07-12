@@ -42,7 +42,16 @@
       <StatCard v-for="stat in stats" :key="stat.label" v-bind="stat" />
     </section>
 
-    <section class="profile-grid">
+    <el-alert
+      v-if="dialogueSummaryVisible"
+      class="profile-alert radar-change-banner"
+      type="success"
+      :title="profileStore.latestDialogueSummary"
+      show-icon
+      @close="dismissRadarHighlight"
+    />
+
+    <section class="profile-grid" @click="dismissRadarHighlight">
       <GlassCard class="radar-panel" padding="lg">
         <div class="panel-head">
           <div>
@@ -53,9 +62,18 @@
         </div>
 
         <div class="radar-layout">
-          <RadarChart :axes="radarAxes" />
+          <RadarChart :axes="radarAxes" :highlighted-keys="highlightedRadarKeys" />
           <div class="dim-list">
-            <DimRow v-for="axis in radarAxes" :key="axis.key" :axis="axis" />
+            <div
+              v-for="axis in radarAxes"
+              :key="axis.key"
+              :class="['dim-change-wrap', { 'is-highlighted': highlightedRadarKeys.includes(axis.key) }]"
+            >
+              <DimRow :axis="axis" />
+              <span v-if="profileStore.radarHighlightActive && radarChangeByKey.get(axis.key)" class="radar-change-note">
+                {{ radarChangeText(radarChangeByKey.get(axis.key)) }}
+              </span>
+            </div>
           </div>
         </div>
       </GlassCard>
@@ -66,60 +84,57 @@
             <p class="eyebrow">叙述画像</p>
             <h3>档案卷</h3>
           </div>
-          <Badge :tone="profileStore.narrative.method === 'llm' ? 'blue' : 'jade'" :label="narrativeMethodText" />
+          <Badge :tone="narrativeBadgeTone" :label="narrativeMethodText" />
         </div>
+        <el-alert
+          v-if="showNarrativeRetry"
+          class="narrative-alert"
+          type="warning"
+          :title="profileStore.narrativeError"
+          show-icon
+          :closable="false"
+        >
+          <template #default>
+            <el-button class="hint-action" size="small" type="primary" @click="retryNarrative">重新生成</el-button>
+          </template>
+        </el-alert>
 
-        <p class="narrative-text">{{ narrativeText }}</p>
+        <template v-if="showNarrativePlaceholder">
+          <p class="narrative-text narrative-pending">{{ narrativePendingText }}</p>
 
-        <div class="narrative-columns">
-          <section>
-            <span>所长</span>
-            <p v-if="!advantageItems.length">待补充。</p>
-            <p v-for="item in advantageItems" v-else :key="`adv-${item.dimension_key}`">{{ item.summary }}</p>
-          </section>
-          <section>
-            <span>所短</span>
-            <p v-if="!weaknessItems.length">暂无高置信薄弱点。</p>
-            <p v-for="item in weaknessItems" v-else :key="`weak-${item.dimension_key}`">{{ item.summary }}</p>
-          </section>
-        </div>
-      </GlassCard>
-    </section>
-
-    <section class="jury-grid" aria-label="三师会诊">
-      <JuryCard
-        v-for="teacher in teacherComments"
-        :key="teacher.name"
-        :title="teacher.name"
-        :role="teacher.role"
-        :pending="teacher.pending"
-        :entries="teacher.entries"
-      />
-    </section>
-
-    <section class="lower-grid">
-      <GlassCard padding="lg">
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">取证</p>
-            <h3>证据卡</h3>
+          <div class="narrative-columns">
+            <section class="narrative-placeholder-block">
+              <span>{{ narrativeLoadingText }}</span>
+              <i class="narrative-skeleton-line narrative-skeleton-line-lg"></i>
+              <i class="narrative-skeleton-line"></i>
+              <i class="narrative-skeleton-line narrative-skeleton-line-sm"></i>
+            </section>
+            <section class="narrative-placeholder-block">
+              <span>{{ narrativeLoadingText }}</span>
+              <i class="narrative-skeleton-line"></i>
+              <i class="narrative-skeleton-line narrative-skeleton-line-sm"></i>
+              <i class="narrative-skeleton-line narrative-skeleton-line-lg"></i>
+            </section>
           </div>
-          <Badge tone="blue" :label="`${evidenceCards.length} 张`" />
-        </div>
+        </template>
 
-        <div v-if="evidenceCards.length" class="evidence-list">
-          <article v-for="(card, index) in evidenceCards.slice(0, 8)" :key="`${card.dimension}-${index}`">
-            <div class="evidence-meta">
-              <strong>{{ card.dimensionName }}</strong>
-              <span>{{ card.source }} · 权重 {{ card.weight }} · {{ card.timestampText }}</span>
-            </div>
-            <p>{{ card.fact }}</p>
-            <div v-if="card.signals.length" class="signal-line">
-              <Badge v-for="signal in card.signals" :key="signal" tone="muted" :label="signal" />
-            </div>
-          </article>
-        </div>
-        <p v-else class="empty-line">暂无证据卡。</p>
+        <template v-else>
+          <p class="narrative-text">{{ narrativeText }}</p>
+          <p v-if="showTemplateSource" class="narrative-source">{{ narrativeMockSourceText }}</p>
+
+          <div class="narrative-columns">
+            <section>
+              <span>{{ narrativeStrengthLabel }}</span>
+              <p v-if="!advantageItems.length">{{ narrativeStrengthEmptyText }}</p>
+              <p v-for="item in advantageItems" v-else :key="`adv-${item.dimension_key}`">{{ item.summary }}</p>
+            </section>
+            <section>
+              <span>{{ narrativeWeaknessLabel }}</span>
+              <p v-if="!weaknessItems.length">{{ narrativeWeaknessEmptyText }}</p>
+              <p v-for="item in weaknessItems" v-else :key="`weak-${item.dimension_key}`">{{ item.summary }}</p>
+            </section>
+          </div>
+        </template>
       </GlassCard>
 
       <GlassCard padding="lg">
@@ -144,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import xiaoqi from '../assets/mascot/xiaoqi-avatar.png'
 import DimRow from '../components/profile/DimRow.vue'
@@ -155,7 +170,7 @@ import Badge from '../components/ui/Badge.vue'
 import GlassCard from '../components/ui/GlassCard.vue'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
-import type { TeacherName } from '../types/profile'
+import type { RadarChange, TeacherName } from '../types/profile'
 import { dimensionKeys } from '../types/profile'
 import {
   buildRadarAxes,
@@ -189,6 +204,24 @@ const lowConfidenceNames = computed(() =>
 const showLowConfidenceHint = computed(
   () => !profileStore.loading && !profileStore.usingMock && (profileStore.isOverallLowConfidence || lowConfidenceNames.value.length >= 4),
 )
+const dialogueSummaryVisible = computed(() => profileStore.radarHighlightActive && Boolean(profileStore.latestDialogueSummary))
+const highlightedRadarKeys = computed(() =>
+  profileStore.radarHighlightActive ? profileStore.latestRadarChanges.map((change) => change.key) : [],
+)
+const radarChangeByKey = computed(
+  () => new Map(profileStore.latestRadarChanges.map((change) => [change.key, change] as const)),
+)
+
+const retryNarrativeLabel = '\u91cd\u65b0\u751f\u6210'
+const narrativePendingText = '\u5c0f\u5c90\u6b63\u5728\u6574\u7406\u8bc1\u636e\u5e76\u751f\u6210\u753b\u50cf\u53d9\u8ff0\uff0c\u4f60\u73b0\u5728\u53ef\u4ee5\u7ee7\u7eed\u6d4f\u89c8\u5176\u4ed6\u5185\u5bb9\u3002'
+const narrativeLoadingText = '\u751f\u6210\u4e2d'
+const narrativeMockSourceText = '\u5f53\u524d\u5c55\u793a\u7684\u662f\u6a21\u677f\u53d9\u8ff0\uff08MOCK \u6f14\u793a\u6765\u6e90\uff09\u3002'
+const narrativeStrengthLabel = '\u6240\u957f'
+const narrativeStrengthEmptyText = '\u5f85\u8865\u5145\u3002'
+const narrativeWeaknessLabel = '\u6240\u77ed'
+const narrativeWeaknessEmptyText = '\u6682\u65e0\u9ad8\u7f6e\u4fe1\u8584\u5f31\u70b9\u3002'
+
+let radarFadeTimer: number | undefined
 
 const stats = computed(() => [
   { label: '高置信维度', value: `${readyDimensionCount.value}/7`, tone: 'jade' as const },
@@ -197,14 +230,33 @@ const stats = computed(() => [
   { label: '叙述方式', value: narrativeMethodText.value, tone: 'gold' as const },
 ])
 
-const narrativeMethodText = computed(() => (profileStore.narrative.method === 'llm' ? 'LLM 编排' : '模板渲染'))
+const showNarrativePlaceholder = computed(() => !profileStore.usingMock && !profileStore.narrativeLoaded)
+const showNarrativeRetry = computed(
+  () => !profileStore.usingMock && !profileStore.narrativeLoaded && !profileStore.narrativeLoading && Boolean(profileStore.narrativeError),
+)
+const showTemplateSource = computed(() => !showNarrativePlaceholder.value && profileStore.narrative.method === 'template')
+const narrativeBadgeTone = computed(() => {
+  if (profileStore.usingMock) return 'jade'
+  if (profileStore.narrativeLoading) return 'gold'
+  if (!profileStore.narrativeLoaded && profileStore.narrativeError) return 'coral'
+  return profileStore.narrative.method === 'llm' ? 'blue' : 'jade'
+})
+const narrativeMethodText = computed(() => {
+  if (profileStore.usingMock) return '模板演示'
+  if (profileStore.narrativeLoading) return '生成中'
+  if (!profileStore.narrativeLoaded && profileStore.narrativeError) return '待重试'
+  return profileStore.narrative.method === 'llm' ? 'LLM 编排' : '模板渲染'
+})
 const narrativeText = computed(() => {
+  if (!profileStore.usingMock && !profileStore.narrativeLoaded) {
+    return '小岐正在基于当前证据整理叙述，生成完成后会自动替换为真实画像。'
+  }
   if (profileStore.narrative.description) return profileStore.narrative.description
   return '当前暂无高置信维度。系统会先收集诊断小测、问答互动和资源偏好证据，再生成稳定叙述画像。'
 })
 
-const advantageItems = computed(() => profileStore.narrative.advantages ?? [])
-const weaknessItems = computed(() => profileStore.narrative.weak_points ?? [])
+const advantageItems = computed(() => ((profileStore.usingMock || profileStore.narrativeLoaded) ? (profileStore.narrative.advantages ?? []) : []))
+const weaknessItems = computed(() => ((profileStore.usingMock || profileStore.narrativeLoaded) ? (profileStore.narrative.weak_points ?? []) : []))
 
 const teacherRoles: Record<TeacherName, string> = {
   严师: '校准分数边界',
@@ -241,16 +293,54 @@ const goOnboarding = async () => {
   await router.push('/onboarding?redirect=/profile')
 }
 
+const radarChangeText = (change?: RadarChange): string => {
+  if (!change) return ''
+  const litText = change.newly_lit ? '新点亮' : '已更新'
+  const deltaText = change.delta > 0 ? `+${change.delta}` : String(change.delta)
+  return `${litText} · ${change.from_score} → ${change.to_score}（${deltaText}）`
+}
+
+const dismissRadarHighlight = () => {
+  profileStore.fadeDialogueRadarChanges()
+}
+
+const retryNarrative = () => {
+  void profileStore.loadNarrative(true)
+}
+
+const refreshProfileView = async () => {
+  await profileStore.loadProfile()
+  void profileStore.ensureNarrativeLoaded()
+}
+
+const scheduleRadarHighlightFade = () => {
+  if (radarFadeTimer !== undefined) window.clearTimeout(radarFadeTimer)
+  if (!profileStore.radarHighlightActive) return
+  radarFadeTimer = window.setTimeout(() => {
+    profileStore.fadeDialogueRadarChanges()
+  }, 5000)
+}
+
 onMounted(() => {
-  void profileStore.loadProfile()
+  void refreshProfileView()
+  scheduleRadarHighlightFade()
+})
+
+onBeforeUnmount(() => {
+  if (radarFadeTimer !== undefined) window.clearTimeout(radarFadeTimer)
 })
 
 watch(
   () => auth.user?.user_id,
   (userId, oldUserId) => {
     if (!userId || userId === oldUserId) return
-    void profileStore.loadProfile()
+    void refreshProfileView()
   },
+)
+
+watch(
+  () => [profileStore.radarHighlightActive, profileStore.latestRadarChanges.length],
+  () => scheduleRadarHighlightFade(),
 )
 </script>
 
@@ -350,6 +440,10 @@ h3 {
   border-radius: 16px;
 }
 
+.radar-change-banner {
+  border-color: rgba(231, 194, 116, 0.42);
+}
+
 .hint-action {
   margin-top: 8px;
   font-weight: 900;
@@ -388,6 +482,27 @@ h3 {
   gap: 10px;
 }
 
+.dim-change-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+.dim-change-wrap.is-highlighted :deep(.dim-row) {
+  border-color: rgba(231, 194, 116, 0.72);
+  box-shadow: 0 0 0 1px rgba(231, 194, 116, 0.32), 0 16px 42px rgba(231, 194, 116, 0.12);
+  animation: radar-axis-glow 900ms ease both;
+}
+
+.radar-change-note {
+  justify-self: end;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--qh-color-gold);
+  background: rgba(231, 194, 116, 0.12);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .narrative-panel {
   min-height: 100%;
 }
@@ -399,11 +514,47 @@ h3 {
   line-height: 1.95;
 }
 
+.narrative-pending {
+  color: var(--qh-text-muted);
+}
+
+.narrative-alert {
+  margin-bottom: 14px;
+  border-radius: 14px;
+}
+
+.narrative-source {
+  margin: 10px 0 0;
+  color: var(--qh-color-gold);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .narrative-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 18px;
+}
+
+.narrative-placeholder-block {
+  display: grid;
+  gap: 10px;
+}
+
+.narrative-skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(238, 245, 239, 0.08), rgba(238, 245, 239, 0.2), rgba(238, 245, 239, 0.08));
+}
+
+.narrative-skeleton-line-lg {
+  width: 92%;
+}
+
+.narrative-skeleton-line-sm {
+  width: 68%;
 }
 
 .narrative-columns section {
@@ -507,6 +658,18 @@ h3 {
   color: var(--qh-color-coral);
   font-family: var(--qh-font-display);
   font-weight: 900;
+}
+
+@keyframes radar-axis-glow {
+  from {
+    transform: translateY(4px);
+    opacity: 0.72;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 1200px) {

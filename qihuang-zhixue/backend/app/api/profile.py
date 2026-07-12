@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import get_current_user
@@ -18,10 +21,11 @@ from app.profile.modes import (
     ProfileSession,
     answer_profile_session,
     dialogue_session_summary,
-    finish_profile_session,
+    finish_profile_session_async,
     get_profile_session,
     session_payload,
     start_profile_session,
+    stream_dialogue_chat_events,
 )
 from app.profile.store import DB_PATH
 from app.profile.narrative import synthesize_profile_narrative
@@ -46,6 +50,11 @@ class AnswerSessionRequest(BaseModel):
 
 class FinishSessionRequest(BaseModel):
     session_id: str = Field(min_length=1)
+
+
+class DialogueChatRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+    utterance: str = Field(min_length=1)
 
 
 class ColdStartRequest(BaseModel):
@@ -194,13 +203,52 @@ async def finish(
         raise HTTPException(status_code=404, detail="profile session not found") from exc
 
     try:
-        session = finish_profile_session(payload.session_id, user_id=current_user.user_id, db_path=db_path)
+        session = await finish_profile_session_async(payload.session_id, user_id=current_user.user_id, db_path=db_path)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="profile session not found") from exc
-    return {
+    response = {
         **session_payload(session, status="finished"),
         "evidence_cards": cards_to_json(session.evidence_cards),
     }
+    if session.mode == ProfileMode.dialogue:
+        response.update(dialogue_session_summary(session))
+    return response
+
+
+@router.post("/dialogue/chat")
+async def dialogue_chat(
+    payload: DialogueChatRequest,
+    request: Request,
+    current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
+) -> StreamingResponse:
+    """Stream one dialogue-profile turn with visible chat and hidden extraction."""
+
+    utterance = payload.utterance.strip()
+    if not utterance:
+        raise HTTPException(status_code=422, detail="utterance cannot be empty")
+    try:
+        session = get_profile_session(payload.session_id, user_id=current_user.user_id, db_path=db_path)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="profile session not found") from exc
+    if session.mode != ProfileMode.dialogue:
+        raise HTTPException(status_code=400, detail="profile session is not dialogue mode")
+
+    return StreamingResponse(
+        _dialogue_sse_iter(
+            session_id=payload.session_id,
+            user_id=current_user.user_id,
+            utterance=utterance,
+            db_path=db_path,
+            request=request,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/{user_id}")
@@ -219,6 +267,30 @@ async def read_profile_by_user_id(
 
 def _session_payload(session: ProfileSession, status: str) -> dict[str, Any]:
     return session_payload(session, status=status)
+
+
+async def _dialogue_sse_iter(
+    *,
+    session_id: str,
+    user_id: str,
+    utterance: str,
+    db_path: Path,
+    request: Request,
+) -> AsyncIterator[str]:
+    async for event, data in stream_dialogue_chat_events(
+        session_id,
+        user_id=user_id,
+        utterance=utterance,
+        db_path=db_path,
+    ):
+        if await request.is_disconnected():
+            break
+        yield _format_sse(event, data)
+
+
+def _format_sse(event: str, data: dict[str, Any]) -> str:
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    return f"event: {event}\ndata: {payload}\n\n"
 
 
 async def _profile_narrative_payload(user_id: str, *, db_path: Path, settings: Settings) -> dict[str, Any]:

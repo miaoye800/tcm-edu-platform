@@ -147,4 +147,16 @@ router.beforeEach(async (to) => {
   return true
 })
 
+router.afterEach((to) => {
+  if (to.meta.public) return
+
+  const auth = useAuthStore()
+  if (!auth.isAuthenticated) return
+
+  const profile = useProfileStore()
+  window.setTimeout(() => {
+    void profile.ensureNarrativeLoaded()
+  }, 0)
+})
+
 export default router

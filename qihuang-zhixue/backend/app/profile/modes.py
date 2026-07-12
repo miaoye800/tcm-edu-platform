@@ -9,16 +9,20 @@ from __future__ import annotations
 import json
 import random
 import re
+import asyncio
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from app.config import get_settings
 from app.llm.router import ModelRouter
-from app.profile.fusion import fuse_profile
+from app.profile.fusion import ALLOWED_LABELS, BASE_LEVEL_SCORES, FusionResult, fuse_profile
+from app.profile.jury import ScoringResult, score_profile
+from app.profile.radar import LOW_CONFIDENCE_THRESHOLD
 from app.profile.schema import (
     DIMENSION_LABELS,
     DimensionKey,
@@ -31,8 +35,12 @@ from app.profile.schema import (
 from app.profile.store import (
     DB_PATH,
     add_evidence,
+    append_chat_messages,
     delete_profile_session_rows,
+    get_profile,
     get_profile_session_row,
+    list_chat_messages,
+    upsert_profile,
     upsert_profile_session_row,
 )
 
@@ -76,6 +84,37 @@ IDENTITY_CARDS: dict[str, dict[str, str]] = {
 }
 
 RESOURCE_TYPES = {"知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"}
+IDENTITY_CARD_SKINS: dict[DimensionKey, dict[str, str]] = {
+    "motivation": {
+        "内驱": "求道者",
+        "外驱": "赶考人",
+        "内外混合": "双修者",
+        "被动": "随缘客",
+    },
+    "resource_preference": {
+        "知识图谱": "观脉者",
+        "拟人化短剧": "入戏郎",
+        "汤头歌诀": "诵诀生",
+        "医案文选": "读案客",
+    },
+    "learning_style": {
+        "视觉型": "观象者",
+        "文字型": "研文客",
+        "记忆(口诀)型": "记颂客",
+    },
+}
+KNOWLEDGE_LEVEL_CARD_NAMES: dict[str, str] = {
+    "零基础": "药童",
+    "入门": "学徒",
+    "一般": "坐堂医",
+    "较好": "杏林手",
+    "熟练": "大医",
+}
+PACE_LEVEL_ANCHORS: tuple[tuple[float, str], ...] = (
+    (20.0, "文火慢炖"),
+    (55.0, "温火常煎"),
+    (85.0, "武火急煎"),
+)
 STYLE_BY_CLUE = {
     "图": "视觉型",
     "图片": "视觉型",
@@ -89,12 +128,13 @@ TOXIC_OR_FIERCE_HERBS = {"附子", "川乌", "草乌", "马钱子", "巴豆", "�
 
 DIALOGUE_OPENING_PROMPT = "先随便聊聊：你最近为什么想学中医药？是为了考试、临床、研究，还是单纯好奇？"
 DIALOGUE_MIN_TURNS = 3
-DIALOGUE_MAX_TURNS = 5
+DIALOGUE_MAX_TURNS = 5  # Legacy display hint only; dialogue no longer ends by turn count.
+DIALOGUE_CONFIDENCE_WEIGHT_K = 1.5
+DIALOGUE_TARGET_RETRY_LIMIT = 2
 DIALOGUE_CONFIDENCE_THRESHOLDS: dict[DimensionKey, float] = {
-    "learning_goal": 0.5,
-    "motivation": 0.5,
-    "knowledge_base": 0.3,
+    dimension: LOW_CONFIDENCE_THRESHOLD for dimension in DIMENSION_LABELS
 }
+DIALOGUE_PRIMARY_DIMENSIONS: tuple[DimensionKey, ...] = ("learning_goal", "motivation")
 DIALOGUE_TARGET_LABELS: dict[DimensionKey, str] = {
     "learning_goal": "学习目标",
     "motivation": "动机",
@@ -103,6 +143,36 @@ DIALOGUE_TARGET_LABELS: dict[DimensionKey, str] = {
     "resource_preference": "资源偏好",
     "pace": "学习节奏",
     "weak_points": "薄弱点",
+}
+DIALOGUE_TARGET_EXTRACTABLE_QUESTIONS: dict[DimensionKey, tuple[str, ...]] = {
+    "learning_goal": (
+        "你这阶段更偏应试提分、临床实用、兴趣科普，还是学术深造？",
+        "如果只选一个学习目标，你最想先解决考试、临床、兴趣入门还是科研深造？",
+    ),
+    "learning_style": (
+        "你更吃视觉图表、文字条理，还是口诀记忆这一类材料？",
+        "同样一味药，你通常靠图像、文字解释，还是歌诀口诀记得更牢？",
+    ),
+    "pace": (
+        "接下来你每天大概能留多少分钟学中医药，想坚持多少天？",
+        "如果按一个小周期来定，你希望每天学几分钟、连续学几天比较舒服？",
+    ),
+    "motivation": (
+        "这件事更像你自己想弄明白，还是考试、课程、实习在推着你？",
+        "你的学习动力更偏内驱、外驱、内外混合，还是目前有点被动？",
+    ),
+    "resource_preference": (
+        "给你材料的话，你会先打开知识图谱、拟人化短剧、汤头歌诀，还是医案文选？",
+        "这几类资源里，知识图谱、短剧讲解、汤头歌诀、医案文选，你最愿意从哪个开始？",
+    ),
+    "knowledge_base": (
+        "你现在中医药基础大概自评到哪：零基础、入门、一般、较好，还是熟练？",
+        "要不要用一句话自评一下基础，或者愿意之后做个很短的小测来校准？",
+    ),
+    "weak_points": (
+        "现在最容易卡住的是药性功效、配伍剂量、辨证思路，还是背诵记忆？",
+        "最近学中药时，哪个知识点最常让你不确定？",
+    ),
 }
 DIALOGUE_FALLBACK_QUESTIONS: dict[DimensionKey, tuple[str, ...]] = {
     "learning_goal": (
@@ -216,6 +286,11 @@ def start_profile_session(user_id: str, mode: ProfileMode | str, db_path: Path =
     )
     if session.current_step and _is_quiz_step(session.current_step.id):
         session.step_data["questions"] = session.current_step.private_payload.get("questions", [])
+    if parsed_mode == ProfileMode.dialogue and session.current_step:
+        session.step_data["radar_baseline"] = _compact_radar_axes(_radar_payload(get_profile(user_id, db_path=db_path)))
+        asked_questions = _dialogue_step_list(session.step_data, "asked_questions")
+        _dialogue_remember(asked_questions, session.current_step.prompt)
+        session.step_data["next_question"] = session.current_step.prompt
     _save_profile_session(session, db_path=db_path)
     return session
 
@@ -271,6 +346,21 @@ def finish_profile_session(session_id: str, user_id: str, db_path: Path = DB_PAT
     """Finish a session and persist cards once."""
 
     session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
+    if session.mode == ProfileMode.dialogue:
+        return asyncio.run(_finish_dialogue_profile_session(session, db_path=db_path))
+    return _finish_profile_session(session, db_path=db_path)
+
+
+async def finish_profile_session_async(session_id: str, user_id: str, db_path: Path = DB_PATH) -> ProfileSession:
+    """Async finish path used by FastAPI endpoints."""
+
+    session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
+    if session.mode == ProfileMode.dialogue:
+        return await _finish_dialogue_profile_session(session, db_path=db_path)
+    return _finish_profile_session(session, db_path=db_path)
+
+
+def _finish_profile_session(session: ProfileSession, *, db_path: Path = DB_PATH) -> ProfileSession:
     session.finished = True
     session.current_step = None
     session.updated_at = datetime.now(UTC)
@@ -305,7 +395,9 @@ def _save_profile_session(session: ProfileSession, db_path: Path = DB_PATH) -> N
             "mode": session.mode.value,
             "current_step": 1 if session.current_step is not None else 0,
             "step_index": session.step_index,
-            "finished": 1 if session.persisted else 0,
+            "finished": 1 if session.finished else 0,
+            "persisted": 1 if session.persisted else 0,
+            "step_data_json": json.dumps(_persistable_step_data(session.step_data), ensure_ascii=False),
             "evidence_cards_json": json.dumps(cards_payload, ensure_ascii=False),
             "created_at": session.created_at.isoformat(),
             "updated_at": session.updated_at.isoformat(),
@@ -317,20 +409,23 @@ def _save_profile_session(session: ProfileSession, db_path: Path = DB_PATH) -> N
 def _session_from_row(row: dict[str, Any]) -> ProfileSession:
     mode = ProfileMode(str(row["mode"]))
     step_index = int(row["step_index"] or 0)
-    persisted = bool(row["finished"])
+    finished = bool(row["finished"])
+    persisted = bool(row.get("persisted", 0))
+    step_data = _load_step_data(str(row.get("step_data_json") or "{}"))
     evidence_payload = json.loads(str(row["evidence_cards_json"] or "[]"))
     cards = [evidence_card_from_dict(item) for item in evidence_payload if isinstance(item, dict)]
-    current_step = _step_for_index(mode, step_index, cards) if int(row["current_step"]) else None
+    current_step = _step_for_index(mode, step_index, cards, step_data=step_data) if int(row["current_step"]) else None
     session = ProfileSession(
         session_id=str(row["session_id"]),
         user_id=str(row["user_id"]),
         mode=mode,
         current_step=current_step,
         step_index=step_index,
+        step_data=step_data,
         evidence_cards=cards,
         created_at=datetime.fromisoformat(str(row["created_at"])),
         updated_at=datetime.fromisoformat(str(row["updated_at"])),
-        finished=persisted or current_step is None,
+        finished=finished,
         persisted=persisted,
         persisted_db_path=DB_PATH.as_posix() if persisted else None,
     )
@@ -339,17 +434,51 @@ def _session_from_row(row: dict[str, Any]) -> ProfileSession:
     return session
 
 
-def _step_for_index(mode: ProfileMode, step_index: int, evidence_cards: list[EvidenceCard] | None = None) -> ProfileStep | None:
+def _persistable_step_data(step_data: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in step_data.items() if not key.startswith("_")}
+
+
+def _load_step_data(raw: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw or "{}")
+    except (TypeError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _step_for_index(
+    mode: ProfileMode,
+    step_index: int,
+    evidence_cards: list[EvidenceCard] | None = None,
+    *,
+    step_data: dict[str, Any] | None = None,
+) -> ProfileStep | None:
     if mode == ProfileMode.apprentice:
         if 0 <= step_index < len(APPRENTICE_STEPS):
             return _apprentice_step(step_index)
         return None
     if mode == ProfileMode.dialogue:
         cards = evidence_cards or []
-        if step_index > 0 and _dialogue_converged(step_index, cards):
-            return _dialogue_confirm_step(cards)
-        target = _dialogue_target(cards)
-        return _dialogue_turn_step(step_index + 1, _fallback_dialogue_question(target, step_index), target)
+        data = step_data if step_data is not None else {}
+        fusion = _dialogue_fusion(cards)
+        asked_dimensions = _dialogue_step_list(data, "asked_dimensions")
+        asked_questions = _dialogue_step_list(data, "asked_questions")
+        target = _as_dialogue_dimension(data.get("dialogue_target")) or _dialogue_target(
+            cards,
+            fusion=fusion,
+            asked_dimensions=asked_dimensions,
+        )
+        prompt = str(data.get("next_question") or "")
+        if not prompt:
+            prompt = _fallback_dialogue_question(
+                target,
+                step_index,
+                asked_questions=asked_questions,
+                asked_dimensions=asked_dimensions,
+            )
+            data["next_question"] = prompt
+        _dialogue_remember(asked_questions, prompt)
+        return _dialogue_turn_step(step_index + 1, prompt, target)
     return _initial_step(mode)
 
 
@@ -473,12 +602,27 @@ def _next_step(session: ProfileSession) -> ProfileStep | None:
         return _apprentice_step(session.step_index)
     if session.mode == ProfileMode.dialogue:
         session.step_index += 1
-        if _dialogue_converged(session.step_index, session.evidence_cards):
-            return _dialogue_confirm_step(session.evidence_cards)
-        target = _dialogue_target(session.evidence_cards)
+        fusion = session.step_data.get("_dialogue_fusion")
+        if not isinstance(fusion, dict):
+            fusion = _dialogue_fusion(session.evidence_cards)
+        asked_dimensions = _dialogue_step_list(session.step_data, "asked_dimensions")
+        asked_questions = _dialogue_step_list(session.step_data, "asked_questions")
+        target = _as_dialogue_dimension(session.step_data.get("dialogue_target")) or _dialogue_target(
+            session.evidence_cards,
+            fusion=cast(dict[DimensionKey, FusionResult], fusion),
+            asked_dimensions=asked_dimensions,
+        )
+        prompt = str(session.step_data.get("next_question") or "")
+        if not prompt:
+            prompt = _fallback_dialogue_question(
+                target,
+                session.step_index,
+                asked_questions=asked_questions,
+                asked_dimensions=asked_dimensions,
+            )
         return _dialogue_turn_step(
             session.step_index + 1,
-            str(session.step_data.get("next_question") or _fallback_dialogue_question(target, session.step_index)),
+            prompt,
             target,
         )
     return None
@@ -561,51 +705,89 @@ async def _answer_dialogue(session: ProfileSession, payload: dict[str, Any]) -> 
         utterance = "暂时说不清"
     turn_index = session.step_index + 1
     response_time_ms = _response_time_ms(payload, session.current_step.started_at if session.current_step else None)
-    target = _dialogue_target(session.evidence_cards)
+    asked_dimensions = _dialogue_step_list(session.step_data, "asked_dimensions")
+    if not asked_dimensions:
+        asked_dimensions.extend(_dialogue_targets_from_cards(session.evidence_cards))
+    asked_questions = _dialogue_step_list(session.step_data, "asked_questions")
+    if not asked_questions:
+        asked_questions.extend(_dialogue_questions_from_cards(session.evidence_cards))
+    current_prompt = session.current_step.prompt if session.current_step else ""
+    _dialogue_remember(asked_questions, current_prompt)
+    fusion_before = _dialogue_fusion(session.evidence_cards)
+    target = _dialogue_target(session.evidence_cards, fusion=fusion_before)
+    dialogue_history = _dialogue_history_for_turn(session.step_data, current_prompt=current_prompt, utterance=utterance)
+    asked_dimensions.append(target)
     extraction, next_question = await _dialogue_extract_and_question(
         utterance=utterance,
+        dialogue_history=dialogue_history,
         target=target,
         turn_index=turn_index,
         evidence_cards=session.evidence_cards,
+        current_confidences=_dialogue_confidences(session.evidence_cards, fusion=fusion_before),
     )
     cards = _dialogue_cards_from_extraction(extraction)
     for card in cards:
         card.objective_signal["turn_index"] = turn_index
-        card.objective_signal["utterance"] = utterance
         card.objective_signal["response_time_ms"] = response_time_ms
         card.objective_signal["dialogue_target"] = target
+        card.objective_signal["asked_question"] = current_prompt
 
     projected_cards = [*session.evidence_cards, *cards]
-    next_target = _dialogue_target(projected_cards)
-    if _dialogue_converged(turn_index, projected_cards):
-        session.step_data.pop("next_question", None)
-    else:
-        session.step_data["next_question"] = next_question or _fallback_dialogue_question(next_target, turn_index)
+    fusion = _dialogue_fusion(projected_cards)
+    next_target = _dialogue_target(projected_cards, fusion=fusion, asked_dimensions=asked_dimensions)
+    selected_next_question = next_question if next_question and next_question not in asked_questions else ""
+    if not selected_next_question and _has_profile_extract_key():
+        selected_next_question = await _try_llm_dialogue_question(
+            utterance=utterance,
+            current_target=target,
+            next_target=next_target,
+            turn_index=turn_index,
+            evidence_cards=projected_cards,
+            current_confidences=_dialogue_confidences(projected_cards, fusion=fusion),
+        )
+        if selected_next_question in asked_questions:
+            selected_next_question = ""
+    if not selected_next_question:
+        selected_next_question = _fallback_dialogue_question(
+            next_target,
+            turn_index,
+            asked_questions=asked_questions,
+            asked_dimensions=asked_dimensions,
+        )
+    _dialogue_remember(asked_questions, selected_next_question)
+    session.step_data["next_question"] = selected_next_question
+    _store_dialogue_history(session.step_data, dialogue_history, assistant_text=selected_next_question)
+    for card in cards:
+        card.objective_signal["next_question"] = selected_next_question
     session.step_data["dialogue_target"] = next_target
+    session.step_data["_dialogue_fusion"] = fusion
     return cards
 
 
 async def _dialogue_extract_and_question(
     *,
     utterance: str,
+    dialogue_history: str | None = None,
     target: DimensionKey,
     turn_index: int,
     evidence_cards: list[EvidenceCard],
+    current_confidences: dict[str, float] | None = None,
 ) -> tuple[Any, str]:
+    source_text = dialogue_history or utterance
     if _has_profile_extract_key():
-        combined = await _try_llm_dialogue_turn(utterance, target, turn_index, evidence_cards)
+        combined = await _try_llm_dialogue_turn(utterance, target, turn_index, evidence_cards, current_confidences or {}, dialogue_history=source_text)
         if combined is not None:
             return combined
         try:
             from app.profile.nodes import _extract_dialogue_structured
 
-            extraction = await _extract_dialogue_structured(utterance)
-            return extraction, _fallback_dialogue_question(_dialogue_target(evidence_cards), turn_index)
+            extraction = await _extract_dialogue_structured(source_text)
+            return extraction, ""
         except Exception:
             pass
     from app.profile.nodes import _fallback_dialogue_extraction
 
-    return _fallback_dialogue_extraction(utterance), _fallback_dialogue_question(target, turn_index)
+    return _fallback_dialogue_extraction(utterance), ""
 
 
 async def _try_llm_dialogue_turn(
@@ -613,17 +795,23 @@ async def _try_llm_dialogue_turn(
     target: DimensionKey,
     turn_index: int,
     evidence_cards: list[EvidenceCard],
+    current_confidences: dict[str, float],
+    *,
+    dialogue_history: str | None = None,
 ) -> tuple[Any, str] | None:
+    source_text = dialogue_history or utterance
     prompt_payload = {
         "turn_index": turn_index,
         "target_dimension": target,
         "target_label": DIALOGUE_TARGET_LABELS.get(target, target),
-        "user_utterance": utterance,
-        "current_confidences": _dialogue_confidences(evidence_cards),
+        "latest_user_utterance": utterance,
+        "dialogue_history": source_text,
+        "current_confidences": current_confidences,
         "allowed_labels": {
-            "learning_goal": ["应试提分", "临床实用", "兴趣科普", "学术深造"],
+            "learning_goal": list(ALLOWED_LABELS["learning_goal"]),
+            "base_level": ["零基础", "入门", "一般", "较好", "熟练"],
             "learning_style": ["视觉型", "文字型", "记忆(口诀)型"],
-            "motivation_label": ["内驱", "外驱", "内外混合", "被动"],
+            "motivation": ["内驱", "外驱", "内外混合", "被动"],
             "resource_preference": sorted(RESOURCE_TYPES),
         },
     }
@@ -631,18 +819,82 @@ async def _try_llm_dialogue_turn(
         {
             "role": "system",
             "content": (
-                "你是对话式学习画像采集器。只输出 JSON，不要 Markdown。"
-                "你只能抽取上轮回答里的结构化信号，并围绕 target_dimension 生成下一句自然问题。"
-                "不要给分、不要改画像分数、不要创造 allowed_labels 之外的新标签。"
-                "下一问可以闲聊、出小题或直问，允许自然铺垫。"
+                "你是学习画像证据抽取器，只输出 JSON。阅读整段对话，为每个维度抽取标签/数值，"
+                "并给出用户【原话片段】作为 evidence。没有依据的维度必须 value=null，禁止猜测或填默认。"
+                "confidence 反映证据强度：明确陈述→高，含糊暗示→低。不得创造 allowed_labels 之外的新标签。"
+                "learning_goal 落不进应试提分/临床实用/兴趣科普/学术深造时，使用“其他”，并仍需原话 evidence。"
             ),
         },
         {
             "role": "user",
             "content": (
                 json.dumps(prompt_payload, ensure_ascii=False)
-                + "\n输出 JSON：{extraction:{major,learning_goal,base_level,learning_style,motivation_label,"
-                "motivation_score,resource_preference,daily_minutes,target_days,evidence}, next_question:string}"
+                + "\n输出 JSON：{extraction:{major,learning_goal,base_level,learning_style,weak_points,motivation,"
+                "motivation_score,resource_preference,daily_minutes,target_days,mastery_hint}}。"
+                "其中每个字段都是 {value,confidence,basis,evidence}；learning_goal/motivation 的 value 可为标签分布对象。"
+                "weak_points 只抽用户自述的易错、薄弱、困惑知识点原文短句，没有原文证据则 value=null。"
+            ),
+        },
+    ]
+    try:
+        raw = await ModelRouter().chat(
+            "profile_extract",
+            messages,
+            response_format={"type": "json_object"},
+            temperature=0,
+            thinking={"type": "disabled"},
+        )
+        parsed = _parse_json_object(raw)
+        if not isinstance(parsed, dict):
+            return None
+        extraction_payload = parsed.get("extraction") if isinstance(parsed.get("extraction"), dict) else parsed
+        from app.profile.nodes import DialogueExtraction, _validate_dialogue_evidence
+
+        extraction = _validate_dialogue_evidence(DialogueExtraction.model_validate(extraction_payload), source_text)
+        return extraction, ""
+    except Exception:
+        return None
+
+
+async def _try_llm_dialogue_question(
+    *,
+    utterance: str,
+    current_target: DimensionKey,
+    next_target: DimensionKey,
+    turn_index: int,
+    evidence_cards: list[EvidenceCard],
+    current_confidences: dict[str, float],
+) -> str:
+    prompt_payload = {
+        "turn_index": turn_index,
+        "previous_target_dimension": current_target,
+        "next_target_dimension": next_target,
+        "next_target_label": DIALOGUE_TARGET_LABELS.get(next_target, next_target),
+        "current_confidences": current_confidences,
+        "recent_evidence": [
+            {
+                "dimension": card.dimension,
+                "signal": card.objective_signal,
+                "weight": card.weight,
+            }
+            for card in evidence_cards[-8:]
+        ],
+        "last_user_utterance": utterance,
+    }
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a dialogue-based learning profile interviewer. "
+                "Generate exactly one concise, natural next question. "
+                "Ask about next_target_dimension only. Do not output analysis."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                json.dumps(prompt_payload, ensure_ascii=False)
+                + "\nOutput JSON only: {\"next_question\": string}"
             ),
         },
     ]
@@ -650,17 +902,10 @@ async def _try_llm_dialogue_turn(
         raw = await ModelRouter().chat("profile_extract", messages, response_format={"type": "json_object"}, temperature=0.7)
         parsed = _parse_json_object(raw)
         if not isinstance(parsed, dict):
-            return None
-        extraction_payload = parsed.get("extraction") if isinstance(parsed.get("extraction"), dict) else parsed
-        from app.profile.nodes import DialogueExtraction
-
-        extraction = DialogueExtraction.model_validate(extraction_payload)
-        next_question = str(parsed.get("next_question") or "").strip()
-        if not next_question:
-            next_question = _fallback_dialogue_question(target, turn_index)
-        return extraction, next_question
+            return ""
+        return str(parsed.get("next_question") or "").strip()
     except Exception:
-        return None
+        return ""
 
 
 def _dialogue_cards_from_extraction(extraction: Any) -> list[EvidenceCard]:
@@ -688,8 +933,8 @@ def _dialogue_turn_step(turn_number: int, prompt: str, target: DimensionKey | st
     )
 
 
-def _dialogue_confirm_step(evidence_cards: list[EvidenceCard]) -> ProfileStep:
-    card_scores, inferred_card = _identity_card_scores(evidence_cards)
+def _dialogue_confirm_step(evidence_cards: list[EvidenceCard], *, fusion: dict[DimensionKey, FusionResult] | None = None) -> ProfileStep:
+    card_scores, inferred_card = _identity_card_scores(evidence_cards, fusion=fusion)
     return ProfileStep(
         id="dialogue_confirm",
         title=STEP_LABELS["dialogue_confirm"],
@@ -699,26 +944,154 @@ def _dialogue_confirm_step(evidence_cards: list[EvidenceCard]) -> ProfileStep:
     )
 
 
-def _dialogue_converged(turn_index: int, evidence_cards: list[EvidenceCard]) -> bool:
-    if turn_index >= DIALOGUE_MAX_TURNS:
-        return True
+def _dialogue_fusion(evidence_cards: list[EvidenceCard]) -> dict[DimensionKey, FusionResult]:
+    return fuse_profile(evidence_cards, confidence_weight_k=DIALOGUE_CONFIDENCE_WEIGHT_K)
+
+
+# Dialogue can stop once learning target and motivation are stable: they drive the next
+# learning route, while knowledge_base is lightweight self-report in this mode
+# and should not block a useful early confirmation.
+def _dialogue_converged(
+    turn_index: int,
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> bool:
     if turn_index < DIALOGUE_MIN_TURNS:
         return False
-    fusion = fuse_profile(evidence_cards)
-    return all(fusion[dimension].confidence >= threshold for dimension, threshold in DIALOGUE_CONFIDENCE_THRESHOLDS.items())
-
-
-def _dialogue_target(evidence_cards: list[EvidenceCard]) -> DimensionKey:
-    fusion = fuse_profile(evidence_cards)
-    return min(
-        DIALOGUE_CONFIDENCE_THRESHOLDS,
-        key=lambda dimension: fusion[dimension].confidence / max(DIALOGUE_CONFIDENCE_THRESHOLDS[dimension], 0.001),
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    return all(
+        fused[dimension].confidence >= DIALOGUE_CONFIDENCE_THRESHOLDS[dimension]
+        for dimension in DIALOGUE_PRIMARY_DIMENSIONS
     )
 
 
-def _fallback_dialogue_question(target: DimensionKey | str, turn_index: int) -> str:
-    questions = DIALOGUE_FALLBACK_QUESTIONS.get(target, DIALOGUE_FALLBACK_QUESTIONS["learning_goal"])
-    return questions[turn_index % len(questions)]
+def _dialogue_target(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+    asked_dimensions: list[str] | None = None,
+) -> DimensionKey:
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    asked = asked_dimensions or []
+    recent = _as_dialogue_dimension(asked[-1]) if asked else None
+    asked_counts = {dimension: asked.count(dimension) for dimension in DIALOGUE_CONFIDENCE_THRESHOLDS}
+    below_threshold = [
+        dimension
+        for dimension, threshold in DIALOGUE_CONFIDENCE_THRESHOLDS.items()
+        if fused[dimension].confidence < threshold
+    ]
+    if not below_threshold:
+        below_threshold = list(DIALOGUE_CONFIDENCE_THRESHOLDS)
+    stale_dimensions = [
+        dimension
+        for dimension in below_threshold
+        if asked_counts.get(dimension, 0) >= DIALOGUE_TARGET_RETRY_LIMIT
+    ]
+    if stale_dimensions:
+        fresh_below = [dimension for dimension in below_threshold if dimension not in stale_dimensions]
+        if fresh_below:
+            below_threshold = fresh_below
+        else:
+            fallback_dimensions = [
+                dimension
+                for dimension in DIALOGUE_CONFIDENCE_THRESHOLDS
+                if dimension not in stale_dimensions
+            ]
+            if fallback_dimensions:
+                below_threshold = fallback_dimensions
+
+    return min(
+        below_threshold,
+        key=lambda dimension: (
+            fused[dimension].confidence / max(DIALOGUE_CONFIDENCE_THRESHOLDS[dimension], 0.001),
+            asked_counts.get(dimension, 0),
+            1 if dimension == recent else 0,
+            list(DIALOGUE_CONFIDENCE_THRESHOLDS).index(dimension),
+        ),
+    )
+
+
+def _fallback_dialogue_question(
+    target: DimensionKey | str,
+    turn_index: int,
+    *,
+    asked_questions: list[str] | None = None,
+    asked_dimensions: list[str] | None = None,
+) -> str:
+    asked = asked_questions if asked_questions is not None else []
+    asked_set = set(asked)
+    recent_question = asked[-1] if asked else ""
+    target_dimension = _as_dialogue_dimension(target) or "learning_goal"
+    question = _first_unused_dialogue_question(target_dimension, turn_index, asked_set)
+    if question is None:
+        covered = set(asked_dimensions or [])
+        dimensions = [
+            dimension
+            for dimension in DIALOGUE_FALLBACK_QUESTIONS
+            if dimension != target_dimension and dimension not in covered
+        ]
+        dimensions.extend(dimension for dimension in DIALOGUE_FALLBACK_QUESTIONS if dimension != target_dimension and dimension not in dimensions)
+        for dimension in dimensions:
+            question = _first_unused_dialogue_question(dimension, turn_index, asked_set)
+            if question is not None:
+                break
+    if question is None:
+        all_questions = [item for questions in DIALOGUE_FALLBACK_QUESTIONS.values() for item in questions]
+        question = next((item for item in all_questions if item != recent_question), all_questions[0])
+    _dialogue_remember(asked, question)
+    return question
+
+
+def _first_unused_dialogue_question(dimension: DimensionKey, turn_index: int, asked_questions: set[str]) -> str | None:
+    questions = DIALOGUE_FALLBACK_QUESTIONS.get(dimension, ())
+    if not questions:
+        return None
+    for offset in range(len(questions)):
+        question = questions[(turn_index + offset) % len(questions)]
+        if question not in asked_questions:
+            return question
+    return None
+
+
+def _as_dialogue_dimension(value: Any) -> DimensionKey | None:
+    text = str(value or "")
+    if text in DIALOGUE_TARGET_LABELS:
+        return cast(DimensionKey, text)
+    return None
+
+
+def _dialogue_step_list(step_data: dict[str, Any], key: str) -> list[str]:
+    value = step_data.get(key)
+    if isinstance(value, list):
+        cleaned = [str(item) for item in value if str(item)]
+    else:
+        cleaned = []
+    step_data[key] = cleaned
+    return cleaned
+
+
+def _dialogue_remember(items: list[str], item: str | None) -> None:
+    text = str(item or "").strip()
+    if text and text not in items:
+        items.append(text)
+
+
+def _dialogue_targets_from_cards(evidence_cards: list[EvidenceCard]) -> list[str]:
+    targets: list[str] = []
+    for card in evidence_cards:
+        target = _as_dialogue_dimension(card.objective_signal.get("dialogue_target"))
+        if target is not None:
+            targets.append(target)
+    return targets
+
+
+def _dialogue_questions_from_cards(evidence_cards: list[EvidenceCard]) -> list[str]:
+    questions: list[str] = []
+    for card in evidence_cards:
+        _dialogue_remember(questions, str(card.objective_signal.get("asked_question") or ""))
+        _dialogue_remember(questions, str(card.objective_signal.get("next_question") or ""))
+    return questions
 
 
 def _dialogue_quick_replies(target: DimensionKey | str) -> list[str]:
@@ -731,31 +1104,834 @@ def _dialogue_quick_replies(target: DimensionKey | str) -> list[str]:
     return []
 
 
-def _dialogue_confidences(evidence_cards: list[EvidenceCard]) -> dict[str, float]:
-    fusion = fuse_profile(evidence_cards)
-    return {dimension: result.confidence for dimension, result in fusion.items()}
+def _dialogue_confidences(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> dict[str, float]:
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    return {dimension: result.confidence for dimension, result in fused.items()}
 
 
 def dialogue_session_summary(session: ProfileSession) -> dict[str, Any]:
-    profile = _profile_from_fusion(session.user_id, session.evidence_cards)
-    card_scores, inferred_card = _identity_card_scores(session.evidence_cards)
+    fusion = _dialogue_fusion(session.evidence_cards)
+    profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion)
+    card_scores, inferred_card = _identity_card_scores(session.evidence_cards, fusion=fusion)
+    identity_cards = _dialogue_identity_cards_view(
+        session.evidence_cards,
+        fusion=fusion,
+        revealed_flags=_dialogue_identity_card_revealed_flags(session.step_data),
+    )
     next_question = session.current_step.prompt if session.current_step and session.current_step.kind == "dialogue" else None
+    radar_changes = session.step_data.get("radar_changes")
+    summary_text = session.step_data.get("summary_text")
     return {
         "card_scores": card_scores,
         "inferred_card": inferred_card,
         "radar": _radar_payload(profile),
         "turn_index": session.step_index,
-        "converged": session.finished
-        or (session.current_step is not None and session.current_step.kind == "confirm")
-        or _dialogue_converged(session.step_index, session.evidence_cards),
+        "converged": _dialogue_converged(session.step_index, session.evidence_cards, fusion=fusion),
         "next_question": next_question,
+        "radar_changes": radar_changes if isinstance(radar_changes, list) else [],
+        "summary_text": summary_text if isinstance(summary_text, str) else "",
+        "profile_progress": _dialogue_profile_progress(session.evidence_cards, fusion=fusion),
+        "evidence_panel": _dialogue_evidence_panel(session.evidence_cards, fusion=fusion),
+        "identity_cards": identity_cards,
     }
 
 
-def _identity_card_scores(evidence_cards: list[EvidenceCard]) -> tuple[dict[str, float], str | None]:
-    fusion = fuse_profile(evidence_cards)
-    goal_distribution = fusion["learning_goal"].distribution
-    motivation_distribution = fusion["motivation"].distribution
+async def stream_dialogue_chat_events(
+    session_id: str,
+    *,
+    user_id: str,
+    utterance: str,
+    db_path: Path = DB_PATH,
+) -> AsyncIterator[tuple[str, dict[str, Any]]]:
+    """Run the visible companion stream, then hidden extraction/fusion updates."""
+
+    session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
+    if session.mode != ProfileMode.dialogue:
+        raise ValueError("profile session is not dialogue mode")
+    if session.current_step is None:
+        yield "state", _dialogue_state_payload(session, target=None, converged=False)
+        yield "done", {}
+        return
+
+    utterance = utterance.strip()
+    turn_index = session.step_index + 1
+    current_prompt = session.current_step.prompt
+    fusion_before = _dialogue_fusion(session.evidence_cards)
+    target = _dialogue_target(session.evidence_cards, fusion=fusion_before)
+    current_confidences = _dialogue_confidences(session.evidence_cards, fusion=fusion_before)
+    history_messages = list_chat_messages(user_id=user_id, session_id=session.session_id, db_path=db_path)
+    companion_messages = _dialogue_companion_messages(
+        history_messages=history_messages,
+        utterance=utterance,
+        target=target,
+        evidence_cards=session.evidence_cards,
+        fusion=fusion_before,
+        current_confidences=current_confidences,
+        pure_chat_streak=_dialogue_pure_chat_streak(session.step_data),
+    )
+
+    thinking_parts: list[str] = []
+    assistant_parts: list[str] = []
+    yield "thinking", {"delta": ""}
+    try:
+        async for kind, delta in ModelRouter().chat_stream(
+            "reason",
+            companion_messages,
+            thinking={"type": "enabled"},
+            reasoning_effort="medium",
+            temperature=0.7,
+        ):
+            if kind == "thinking":
+                thinking_parts.append(delta)
+                yield "thinking", {"delta": delta}
+            elif kind == "message":
+                assistant_parts.append(delta)
+                yield "message", {"delta": delta}
+    except Exception as exc:
+        _log_dialogue_stream_fulltext(session.session_id, turn_index, thinking_parts, assistant_parts)
+        yield "error", {"message": f"visible dialogue stream failed: {exc.__class__.__name__}"}
+        yield "message_done", {}
+        yield "done", {}
+        return
+
+    assistant_text = "".join(assistant_parts)
+    asked_dimension = await _dialogue_classify_visible_reply_asked_dimension(assistant_text, target)
+    if _dialogue_user_asked_evidence(utterance) and not _dialogue_visible_reply_addresses_evidence(assistant_text):
+        evidence_tail = " 你问得对，画像旁边的「证据清单」会按维度列出分/标签、置信度和你的原文引用；我不会编证据，只按你说过的话更新。"
+        assistant_parts.append(evidence_tail)
+        assistant_text = "".join(assistant_parts)
+        yield "message", {"delta": evidence_tail}
+    _log_dialogue_stream_fulltext(session.session_id, turn_index, thinking_parts, assistant_parts)
+    yield "message_done", {}
+
+    try:
+        append_chat_messages(
+            user_id=user_id,
+            session_id=session.session_id,
+            messages=[
+                {"role": "user", "content": utterance},
+                {"role": "assistant", "content": assistant_text},
+            ],
+            db_path=db_path,
+        )
+
+        response_time_ms = _response_time_ms({"utterance": utterance}, session.current_step.started_at)
+        cards = await _dialogue_extract_cards_for_chat(
+            session=session,
+            utterance=utterance,
+            assistant_text=assistant_text,
+            history_messages=history_messages,
+            target=target,
+            turn_index=turn_index,
+            response_time_ms=response_time_ms,
+            current_prompt=current_prompt,
+        )
+
+        session.evidence_cards.extend(cards)
+        session.step_index = turn_index
+        asked_dimensions = _dialogue_step_list(session.step_data, "asked_dimensions")
+        _dialogue_remember(asked_dimensions, target)
+        asked_questions = _dialogue_step_list(session.step_data, "asked_questions")
+        _dialogue_remember(asked_questions, current_prompt)
+        _dialogue_remember(asked_questions, assistant_text)
+        hit_target = asked_dimension == target
+        pure_chat_streak = 0 if hit_target else _dialogue_pure_chat_streak(session.step_data) + 1
+        _store_dialogue_pure_chat_streak(
+            session.step_data,
+            pure_chat_streak,
+        )
+
+        fusion_after = _dialogue_fusion(session.evidence_cards)
+        identity_cards = _dialogue_identity_cards_view(
+            session.evidence_cards,
+            fusion=fusion_after,
+            revealed_flags=_dialogue_identity_card_revealed_flags(session.step_data),
+        )
+        converged = _dialogue_converged(turn_index, session.evidence_cards, fusion=fusion_after)
+        profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion_after)
+        if hit_target or pure_chat_streak >= DIALOGUE_TARGET_RETRY_LIMIT:
+            next_target = _dialogue_target(session.evidence_cards, fusion=fusion_after, asked_dimensions=asked_dimensions)
+        else:
+            next_target = target
+        session.finished = False
+        session.current_step = _dialogue_turn_step(turn_index + 1, assistant_text, next_target)
+        session.step_data["next_question"] = assistant_text
+        session.step_data["dialogue_target"] = next_target
+        session.step_data["_dialogue_fusion"] = fusion_after
+        _persist_dialogue_live_update(session, cards=cards, profile=profile, db_path=db_path)
+
+        yield "evidence", {"cards": cards_to_json(cards)}
+        yield "identity_cards", {"items": identity_cards}
+        yield "radar", _radar_payload(profile)
+        yield "state", _dialogue_state_payload(session, target=next_target, converged=converged)
+    except Exception as exc:
+        yield "error", {"message": f"profile update delayed: {exc.__class__.__name__}"}
+        yield "state", _dialogue_state_payload(session, target=target, converged=False, error="profile_update_failed")
+    finally:
+        yield "done", {}
+
+
+def _log_dialogue_stream_fulltext(
+    session_id: str,
+    turn_index: int,
+    thinking_parts: list[str],
+    message_parts: list[str],
+) -> None:
+    thinking_text = "".join(thinking_parts)
+    message_text = "".join(message_parts)
+    print(
+        "[profile.dialogue.stream.fulltext]",
+        {
+            "session_id": session_id,
+            "turn_index": turn_index,
+            "thinking_len": len(thinking_text),
+            "message_len": len(message_text),
+            "thinking": thinking_text,
+            "message": message_text,
+        },
+    )
+
+
+def _dialogue_companion_messages(
+    *,
+    history_messages: list[dict[str, str]],
+    utterance: str,
+    target: DimensionKey,
+    evidence_cards: list[EvidenceCard],
+    fusion: dict[DimensionKey, FusionResult],
+    current_confidences: dict[str, float],
+    pure_chat_streak: int = 0,
+) -> list[dict[str, str]]:
+    low_confidence_dims = _dialogue_low_confidence_dims(evidence_cards, fusion=fusion, target=target)
+    steering_payload = {
+        "target_dimension": target,
+        "target_label": DIALOGUE_TARGET_LABELS.get(target, target),
+        "current_confidences": current_confidences,
+        "low_confidence_dimensions": low_confidence_dims,
+        "pure_chat_streak": pure_chat_streak,
+        "profile_question_examples": list(DIALOGUE_TARGET_EXTRACTABLE_QUESTIONS.get(target, ())),
+    }
+    private_prompt = (
+        "你是岐黄智学里热情、懂中医药的学长「小岐」。"
+        "语气保持温暖、生活化，可以先接住用户的养生或日常话题。"
+        "但你有一个陪聊预算：连续纯寒暄/纯养生闲聊不得超过 2 轮；每 2-3 轮必须自然问 1 个能被抽取器识别的画像问题。"
+        "本轮优先照顾 profile_steering.target_dimension，不要整轮完全不碰这个目标维度。"
+        "目标维度的问题必须落到可抽取答案：学习目标=应试提分/临床实用/兴趣科普/学术深造；"
+        "风格=视觉/文字/记忆(口诀)；动机=内驱/外驱/内外混合/被动；"
+        "资源=知识图谱/拟人化短剧/汤头歌诀/医案文选；节奏=每天学习分钟数/目标天数；"
+        "知识基础=中医知识自评或是否愿意做小测；薄弱点=药性功效/配伍剂量/辨证思路/背诵记忆等卡点。"
+        "不要为了取证破坏温暖感：先回应情绪和生活语境，再用一句自然追问推进。"
+        "用户问“证据、凭什么打分、为什么这么判断”时，不要回避；简短说明会按原话引用，并引导查看雷达旁的「证据清单」面板。"
+        "不要声称看不到证据，也不要把证据塞成聊天气泡长列表。"
+        "禁止表单式提问，禁止罗列大段选项。一次只聊一个话题。"
+    )
+    private_prompt += "正文必须是连贯完整的中文句子，使用正常中文标点；保持单段自然口吻，不要一节一节拆开。"
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": private_prompt},
+        {"role": "user", "content": "profile_steering=" + json.dumps(steering_payload, ensure_ascii=False)},
+    ]
+    for item in history_messages[-10:]:
+        role = item.get("role")
+        content = item.get("content")
+        if role in {"user", "assistant"} and content:
+            messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": utterance})
+    return messages
+
+
+async def _dialogue_classify_visible_reply_asked_dimension(text: str, target: DimensionKey) -> DimensionKey | None:
+    content = str(text or "")
+    if _has_profile_extract_key() and content.strip():
+        payload = {
+            "assistant_reply": content,
+            "target_dimension": target,
+            "dimension_options": list(DIALOGUE_CONFIDENCE_THRESHOLDS),
+            "instruction": "Return the single profile dimension the visible reply actually asks the user about, or null.",
+        }
+        messages = [
+            {
+                "role": "system",
+                "content": "Classify the user-facing reply. Output JSON only. Do not infer evidence; classify the asked profile dimension.",
+            },
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False) + '\nOutput JSON: {"asked_dimension": string|null}'},
+        ]
+        try:
+            raw = await ModelRouter().chat(
+                "profile_extract",
+                messages,
+                response_format={"type": "json_object"},
+                temperature=0,
+                thinking={"type": "disabled"},
+            )
+            parsed = _parse_json_object(raw)
+            if isinstance(parsed, dict):
+                dimension = _as_dialogue_dimension(parsed.get("asked_dimension"))
+                if dimension is not None:
+                    return dimension
+        except Exception:
+            pass
+    return _dialogue_visible_reply_asked_dimension(content, target)
+
+
+def _dialogue_visible_reply_asked_dimension(text: str, target: DimensionKey | str | None = None) -> DimensionKey | None:
+    content = str(text or "")
+    if not content.strip():
+        return None
+    if "？" not in content and "?" not in content:
+        return None
+    question_text = content.rsplit("？", 1)[0].rsplit("?", 1)[0] + "？"
+    candidates = _dialogue_visible_reply_dimension_candidates(question_text)
+    target_dimension = _as_dialogue_dimension(target)
+    if target_dimension in candidates:
+        return target_dimension
+    return candidates[0] if candidates else None
+
+
+def _dialogue_visible_reply_dimension_candidates(text: str) -> list[DimensionKey]:
+    content = str(text or "")
+    patterns: tuple[tuple[DimensionKey, tuple[str, ...]], ...] = (
+        ("knowledge_base", ("基础", "自评", "刚入门", "学到哪", "掌握", "熟悉", "会做")),
+        ("learning_goal", ("目标", "想先解决", "考试", "提分", "临床", "科研", "兴趣", "深造")),
+        ("learning_style", ("呈现方式", "材料", "图", "图表", "关系图", "文字", "口诀", "歌诀", "记忆句", "案例拆解")),
+        ("weak_points", ("卡住", "薄弱", "易错", "老错", "不确定", "分不清", "记不住", "困惑", "混淆")),
+        ("pace", ("每天", "多久", "多长时间", "几分钟", "一小段", "安排", "节奏", "坚持", "周期")),
+        ("motivation", ("动力", "动机", "自己想", "推着", "压力", "内驱", "外驱", "为什么想学")),
+        ("resource_preference", ("资源", "知识图谱", "短剧", "汤头歌诀", "医案", "文选", "打开哪")),
+    )
+    candidates: list[DimensionKey] = []
+    for dimension, markers in patterns:
+        if any(marker in content for marker in markers):
+            candidates.append(dimension)
+    return candidates
+
+
+def _dialogue_visible_reply_hits_target(text: str, target: DimensionKey) -> bool:
+    return _dialogue_visible_reply_asked_dimension(text, target) == target
+
+
+def _dialogue_user_asked_evidence(utterance: str) -> bool:
+    text = str(utterance or "")
+    return any(keyword in text for keyword in ("证据", "凭什么", "为什么这么打分", "依据", "原文", "引用"))
+
+
+def _dialogue_visible_reply_addresses_evidence(text: str) -> bool:
+    content = str(text or "")
+    return any(keyword in content for keyword in ("证据清单", "原文引用", "引用", "证据"))
+
+
+def _dialogue_pure_chat_streak(step_data: dict[str, Any]) -> int:
+    try:
+        return max(0, int(step_data.get("dialogue_pure_chat_streak") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _store_dialogue_pure_chat_streak(step_data: dict[str, Any], value: int) -> None:
+    step_data["dialogue_pure_chat_streak"] = max(0, int(value))
+
+
+def _dialogue_low_confidence_dims(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult],
+    target: DimensionKey,
+) -> list[str]:
+    dims: list[DimensionKey] = []
+    for dimension, threshold in DIALOGUE_CONFIDENCE_THRESHOLDS.items():
+        if fusion[dimension].confidence < threshold:
+            dims.append(dimension)
+    if target not in dims:
+        dims.insert(0, target)
+    return [f"{dimension}({DIALOGUE_TARGET_LABELS.get(dimension, dimension)})" for dimension in dims[:3]]
+
+
+async def _dialogue_extract_cards_for_chat(
+    *,
+    session: ProfileSession,
+    utterance: str,
+    assistant_text: str,
+    history_messages: list[dict[str, str]],
+    target: DimensionKey,
+    turn_index: int,
+    response_time_ms: int,
+    current_prompt: str,
+) -> list[EvidenceCard]:
+    transcript = _dialogue_transcript(history_messages, utterance=utterance, assistant_text=assistant_text)
+    extraction_text = transcript if _has_profile_extract_key() else utterance
+    extraction, _ = await _dialogue_extract_and_question(
+        utterance=utterance,
+        dialogue_history=extraction_text,
+        target=target,
+        turn_index=turn_index,
+        evidence_cards=session.evidence_cards,
+        current_confidences={},
+    )
+    cards = _dialogue_cards_from_extraction(extraction)
+    for card in cards:
+        card.objective_signal["turn_index"] = turn_index
+        card.objective_signal["response_time_ms"] = response_time_ms
+        card.objective_signal["dialogue_target"] = target
+        card.objective_signal["asked_question"] = current_prompt
+    return cards
+
+
+def _dialogue_transcript(
+    history_messages: list[dict[str, str]],
+    *,
+    utterance: str,
+    assistant_text: str,
+) -> str:
+    rows = [
+        f"{item.get('role', 'unknown')}: {item.get('content', '')}"
+        for item in history_messages[-12:]
+        if item.get("content")
+    ]
+    rows.append(f"user: {utterance}")
+    if assistant_text:
+        rows.append(f"assistant: {assistant_text}")
+    return "\n".join(rows)
+
+
+def _dialogue_history_for_turn(step_data: dict[str, Any], *, current_prompt: str, utterance: str) -> str:
+    messages = _dialogue_history_messages(step_data)
+    if current_prompt and (not messages or messages[-1].get("content") != current_prompt):
+        messages.append({"role": "assistant", "content": current_prompt})
+    messages.append({"role": "user", "content": utterance})
+    return _dialogue_messages_text(messages)
+
+
+def _store_dialogue_history(step_data: dict[str, Any], dialogue_history: str, *, assistant_text: str | None = None) -> None:
+    messages = _messages_from_dialogue_text(dialogue_history)
+    if assistant_text:
+        messages.append({"role": "assistant", "content": assistant_text})
+    step_data["dialogue_history"] = messages[-12:]
+
+
+def _dialogue_history_messages(step_data: dict[str, Any]) -> list[dict[str, str]]:
+    raw = step_data.get("dialogue_history")
+    if not isinstance(raw, list):
+        return []
+    messages: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        role = str(item.get("role") or "")
+        content = str(item.get("content") or "").strip()
+        if role in {"user", "assistant"} and content:
+            messages.append({"role": role, "content": content})
+    return messages
+
+
+def _messages_from_dialogue_text(text: str) -> list[dict[str, str]]:
+    messages: list[dict[str, str]] = []
+    for line in text.splitlines():
+        role, sep, content = line.partition(":")
+        role = role.strip()
+        content = content.strip() if sep else line.strip()
+        if role in {"user", "assistant"} and content:
+            messages.append({"role": role, "content": content})
+    return messages
+
+
+def _dialogue_messages_text(messages: list[dict[str, str]]) -> str:
+    return "\n".join(
+        f"{item.get('role', 'unknown')}: {item.get('content', '')}"
+        for item in messages[-12:]
+        if item.get("content")
+    )
+
+
+async def _profile_from_dialogue_scoring(user_id: str, evidence_cards: list[EvidenceCard]) -> Profile:
+    from app.profile.nodes import _profile_from_scoring_results
+
+    scoring: dict[DimensionKey, ScoringResult] = await score_profile(evidence_cards)
+    return _profile_from_scoring_results(user_id=user_id, scoring=scoring, evidence_cards=evidence_cards)
+
+
+async def _finish_dialogue_profile_session(session: ProfileSession, *, db_path: Path) -> ProfileSession:
+    baseline = _dialogue_radar_baseline(session, db_path=db_path)
+    profile = await _profile_from_dialogue_scoring(session.user_id, session.evidence_cards)
+    final_radar = _radar_payload(profile)
+    changes = _radar_changes(
+        baseline,
+        final_radar,
+        evidence_cards=session.evidence_cards,
+    )
+
+    session.finished = True
+    session.current_step = None
+    session.updated_at = datetime.now(UTC)
+    session.step_data["radar_changes"] = changes
+    session.step_data["summary_text"] = _radar_summary_text(changes)
+    if not session.persisted:
+        for card in session.evidence_cards:
+            add_evidence(session.user_id, card, db_path=db_path)
+        session.persisted = True
+        session.persisted_db_path = str(db_path)
+    upsert_profile(profile, db_path=db_path)
+    _save_profile_session(session, db_path=db_path)
+    return session
+
+
+def _persist_dialogue_live_update(
+    session: ProfileSession,
+    *,
+    cards: list[EvidenceCard],
+    profile: Profile,
+    db_path: Path,
+) -> None:
+    for card in cards:
+        add_evidence(session.user_id, card, db_path=db_path)
+    if cards:
+        session.persisted = True
+        session.persisted_db_path = str(db_path)
+    upsert_profile(profile, db_path=db_path)
+    _save_profile_session(session, db_path=db_path)
+
+
+def _dialogue_state_payload(
+    session: ProfileSession,
+    *,
+    target: DimensionKey | None,
+    converged: bool,
+    error: str | None = None,
+) -> dict[str, Any]:
+    fusion = _dialogue_fusion(session.evidence_cards)
+    payload: dict[str, Any] = {
+        "session_id": session.session_id,
+        "turn_index": session.step_index,
+        "target": target,
+        "target_label": DIALOGUE_TARGET_LABELS.get(target, target) if target else None,
+        "converged": converged,
+        "finished": False,
+        "profile_progress": _dialogue_profile_progress(session.evidence_cards, fusion=fusion),
+        "evidence_panel": _dialogue_evidence_panel(session.evidence_cards, fusion=fusion),
+        "identity_cards": _dialogue_identity_cards_view(
+            session.evidence_cards,
+            fusion=fusion,
+            revealed_flags=_dialogue_identity_card_revealed_flags(session.step_data),
+        ),
+    }
+    if error:
+        payload["error"] = error
+    return payload
+
+
+def _dialogue_profile_progress(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> dict[str, Any]:
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    dimensions = [
+        {
+            "key": dimension,
+            "label": DIALOGUE_TARGET_LABELS.get(dimension, DIMENSION_LABELS[dimension]),
+            "confidence": fused[dimension].confidence,
+            "collected": fused[dimension].confidence >= LOW_CONFIDENCE_THRESHOLD,
+            "status": "已取证" if fused[dimension].confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
+        }
+        for dimension in DIMENSION_LABELS
+    ]
+    collected = sum(1 for item in dimensions if item["collected"])
+    return {
+        "collected": collected,
+        "total": len(dimensions),
+        "threshold": LOW_CONFIDENCE_THRESHOLD,
+        "dimensions": dimensions,
+    }
+
+
+def _dialogue_evidence_panel(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> list[dict[str, Any]]:
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    return [
+        {
+            "key": dimension,
+            "label": DIALOGUE_TARGET_LABELS.get(dimension, DIMENSION_LABELS[dimension]),
+            "score": fused[dimension].score,
+            "value": _dialogue_fusion_value(fused[dimension]),
+            "tag": fused[dimension].label,
+            "distribution": fused[dimension].distribution,
+            "confidence": fused[dimension].confidence,
+            "status": "已取证" if fused[dimension].confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
+            "evidence_refs": fused[dimension].evidence_refs,
+            "narrative": fused[dimension].narrative,
+            "quotes": _dialogue_dimension_quotes(dimension, evidence_cards),
+        }
+        for dimension in DIMENSION_LABELS
+    ]
+
+
+def _dialogue_fusion_value(result: FusionResult) -> str:
+    if result.label:
+        return result.label
+    if result.score is not None:
+        return f"{round(result.score)} 分"
+    if result.distribution:
+        return max(result.distribution.items(), key=lambda item: item[1])[0]
+    return "待取证"
+
+
+def _dialogue_dimension_quotes(dimension: DimensionKey, evidence_cards: list[EvidenceCard]) -> list[dict[str, Any]]:
+    quotes: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, card in enumerate((item for item in evidence_cards if item.dimension == dimension), start=1):
+        raw_quotes = _evidence_quote_texts(card)
+        if not raw_quotes:
+            raw_quotes = [card.fact]
+        for quote in raw_quotes:
+            text = str(quote or "").strip()
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            quotes.append(
+                {
+                    "text": text,
+                    "fact": card.fact,
+                    "source": card.source,
+                    "ref": f"{card.source}#{index}",
+                }
+            )
+    return quotes
+
+
+def _evidence_quote_texts(card: EvidenceCard) -> list[str]:
+    value = card.objective_signal.get("evidence")
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def _dialogue_identity_card_revealed_flags(step_data: dict[str, Any]) -> dict[str, bool]:
+    raw = step_data.get("identity_cards_revealed")
+    if isinstance(raw, dict):
+        flags = {str(key): bool(value) for key, value in raw.items()}
+    else:
+        flags = {}
+    step_data["identity_cards_revealed"] = flags
+    return flags
+
+
+def _dialogue_identity_cards_view(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+    revealed_flags: dict[str, bool] | None = None,
+    keep_revealed: bool = True,
+) -> list[dict[str, Any]]:
+    """Build the seven-dimension identity-card view from already-fused evidence."""
+
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    flags = revealed_flags if revealed_flags is not None else {}
+    return [
+        _identity_distribution_item(dimension, fused[dimension], evidence_cards, flags, keep_revealed=keep_revealed)
+        for dimension in ("learning_goal", "motivation", "resource_preference", "learning_style")
+    ] + [
+        _identity_level_item("knowledge_base", fused["knowledge_base"], evidence_cards, flags, keep_revealed=keep_revealed),
+        _identity_level_item("pace", fused["pace"], evidence_cards, flags, keep_revealed=keep_revealed),
+        _identity_tags_item("weak_points", fused["weak_points"], evidence_cards, flags, keep_revealed=keep_revealed),
+    ]
+
+
+def _identity_distribution_item(
+    dimension: DimensionKey,
+    result: FusionResult,
+    evidence_cards: list[EvidenceCard],
+    revealed_flags: dict[str, bool],
+    *,
+    keep_revealed: bool,
+) -> dict[str, Any]:
+    distribution = _normalize_identity_distribution(result.distribution)
+    cards = [
+        {
+            "canonical_label": label,
+            "display_name": _identity_distribution_display_name(dimension, label, evidence_cards),
+            "ratio": ratio,
+            "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
+        }
+        for label, ratio in distribution.items()
+    ]
+    return {
+        "key": dimension,
+        "kind": "distribution",
+        "revealed": _identity_revealed(dimension, result.confidence, revealed_flags, keep_revealed=keep_revealed),
+        "confidence": result.confidence,
+        "cards": cards,
+    }
+
+
+def _identity_level_item(
+    dimension: DimensionKey,
+    result: FusionResult,
+    evidence_cards: list[EvidenceCard],
+    revealed_flags: dict[str, bool],
+    *,
+    keep_revealed: bool,
+) -> dict[str, Any]:
+    return {
+        "key": dimension,
+        "kind": "level",
+        "revealed": _identity_revealed(dimension, result.confidence, revealed_flags, keep_revealed=keep_revealed),
+        "confidence": result.confidence,
+        "cards": [
+            {
+                "level_name": _identity_level_name(dimension, result.score),
+                "score": result.score,
+                "quotes": [quote["text"] for quote in _dialogue_dimension_quotes(dimension, evidence_cards)],
+            }
+        ],
+    }
+
+
+def _identity_tags_item(
+    dimension: DimensionKey,
+    result: FusionResult,
+    evidence_cards: list[EvidenceCard],
+    revealed_flags: dict[str, bool],
+    *,
+    keep_revealed: bool,
+) -> dict[str, Any]:
+    distribution = _normalize_identity_distribution(result.distribution)
+    cards = [
+        {
+            "label": label,
+            "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
+        }
+        for label in distribution
+    ]
+    return {
+        "key": dimension,
+        "kind": "tags",
+        "revealed": _identity_revealed(dimension, result.confidence, revealed_flags, keep_revealed=keep_revealed),
+        "confidence": result.confidence,
+        "cards": cards,
+    }
+
+
+def _identity_revealed(
+    dimension: DimensionKey,
+    confidence: float,
+    revealed_flags: dict[str, bool],
+    *,
+    keep_revealed: bool,
+) -> bool:
+    current = confidence >= LOW_CONFIDENCE_THRESHOLD
+    previous = bool(revealed_flags.get(dimension))
+    revealed = current or (keep_revealed and previous)
+    if revealed:
+        revealed_flags[dimension] = True
+    return revealed
+
+
+def _normalize_identity_distribution(distribution: dict[str, float]) -> dict[str, float]:
+    weighted = {str(label): max(0.0, float(weight)) for label, weight in distribution.items() if float(weight) > 0}
+    total = sum(weighted.values())
+    if total <= 0:
+        return {}
+    normalized = {label: round(weight / total, 4) for label, weight in weighted.items()}
+    drift = round(1.0 - sum(normalized.values()), 4)
+    if normalized and drift:
+        top = max(weighted.items(), key=lambda item: item[1])[0]
+        normalized[top] = round(max(0.0, normalized[top] + drift), 4)
+    return dict(sorted(normalized.items(), key=lambda item: (-item[1], item[0])))
+
+
+def _identity_distribution_display_name(dimension: DimensionKey, label: str, evidence_cards: list[EvidenceCard]) -> str:
+    if dimension == "learning_goal":
+        return _learning_goal_display_name(label, evidence_cards)
+    return IDENTITY_CARD_SKINS.get(dimension, {}).get(label, label)
+
+
+def _learning_goal_display_name(label: str, evidence_cards: list[EvidenceCard]) -> str:
+    quotes = _weighted_identity_quotes_for_label("learning_goal", label, evidence_cards)
+    if not quotes:
+        return label
+    limit = 2 if label == "其他" else 1
+    return " / ".join(quote for quote, _ in quotes[:limit])
+
+
+def _identity_level_name(dimension: DimensionKey, score: float | None) -> str:
+    if score is None:
+        return "待取证"
+    if dimension == "knowledge_base":
+        label = _nearest_anchor_label(score, BASE_LEVEL_SCORES)
+        return KNOWLEDGE_LEVEL_CARD_NAMES.get(label, label)
+    if dimension == "pace":
+        return _nearest_anchor_name(score, PACE_LEVEL_ANCHORS)
+    return "待取证"
+
+
+def _nearest_anchor_label(score: float, anchors: dict[str, float]) -> str:
+    ordered = sorted(anchors.items(), key=lambda item: item[1])
+    return min(ordered, key=lambda item: (abs(score - item[1]), item[1]))[0]
+
+
+def _nearest_anchor_name(score: float, anchors: tuple[tuple[float, str], ...]) -> str:
+    return min(anchors, key=lambda item: (abs(score - item[0]), item[0]))[1]
+
+
+def _identity_quotes_for_label(dimension: DimensionKey, label: str, evidence_cards: list[EvidenceCard]) -> list[str]:
+    return [quote for quote, _ in _weighted_identity_quotes_for_label(dimension, label, evidence_cards)]
+
+
+def _weighted_identity_quotes_for_label(
+    dimension: DimensionKey,
+    label: str,
+    evidence_cards: list[EvidenceCard],
+) -> list[tuple[str, float]]:
+    weighted: dict[str, float] = {}
+    for card in evidence_cards:
+        if card.dimension != dimension:
+            continue
+        vote_weight = _identity_label_vote_weight(card.objective_signal, label, dimension=dimension)
+        if vote_weight <= 0:
+            continue
+        quotes = _evidence_quote_texts(card) or [card.fact]
+        for quote in quotes:
+            text = str(quote or "").strip()
+            if not text:
+                continue
+            weighted[text] = max(weighted.get(text, 0.0), card.weight * vote_weight)
+    return sorted(weighted.items(), key=lambda item: (-item[1], item[0]))
+
+
+def _identity_label_vote_weight(signal: dict[str, Any], label: str, *, dimension: DimensionKey) -> float:
+    weight = 0.0
+    if signal.get("label") == label:
+        weight += 1.0
+    distribution = signal.get("distribution")
+    if isinstance(distribution, dict):
+        try:
+            weight += max(0.0, float(distribution.get(label, 0.0) or 0.0))
+        except (TypeError, ValueError):
+            pass
+    if dimension == "weak_points":
+        weak_labels = signal.get("weak_labels")
+        if isinstance(weak_labels, list) and label in {str(item).strip() for item in weak_labels}:
+            weight += 1.0
+        if signal.get("topic") == label or signal.get("knowledge_point") == label:
+            weight += 1.0
+    return weight
+
+
+def _identity_card_scores(
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> tuple[dict[str, float], str | None]:
+    fused = fusion or _dialogue_fusion(evidence_cards)
+    goal_distribution = fused["learning_goal"].distribution
+    motivation_distribution = fused["motivation"].distribution
     scores: dict[str, float] = {}
     for card_name, meta in IDENTITY_CARDS.items():
         goal_score = goal_distribution.get(meta["learning_goal"], 0.0)
@@ -765,11 +1941,16 @@ def _identity_card_scores(evidence_cards: list[EvidenceCard]) -> tuple[dict[str,
     return scores, inferred
 
 
-def _profile_from_fusion(user_id: str, evidence_cards: list[EvidenceCard]) -> Profile:
+def _profile_from_fusion(
+    user_id: str,
+    evidence_cards: list[EvidenceCard],
+    *,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> Profile:
     profile = create_blank_profile(user_id)
-    fusion = fuse_profile(evidence_cards)
+    fused = fusion or fuse_profile(evidence_cards)
     for dimension in DIMENSION_LABELS:
-        result = fusion[dimension]
+        result = fused[dimension]
         target = getattr(profile, dimension)
         target.confidence = result.confidence
         target.evidence = [card for card in evidence_cards if card.dimension == dimension]
@@ -787,6 +1968,110 @@ def _radar_payload(profile: Profile) -> dict[str, Any]:
     from app.profile.radar import to_radar
 
     return to_radar(profile)
+
+
+def _compact_radar_axes(radar: dict[str, Any]) -> list[dict[str, Any]]:
+    axes = radar.get("axes")
+    if not isinstance(axes, list):
+        return []
+    compact: list[dict[str, Any]] = []
+    for axis in axes:
+        if not isinstance(axis, dict):
+            continue
+        compact.append(
+            {
+                "key": str(axis.get("key") or ""),
+                "label": str(axis.get("label") or axis.get("source_label") or axis.get("sourceLabel") or axis.get("key") or ""),
+                "score": _int_axis_value(axis.get("value")),
+                "lit": bool(axis.get("lit")),
+                "status": str(axis.get("status") or "dark"),
+                "confidence": _float_axis_value(axis.get("confidence")),
+            }
+        )
+    return [axis for axis in compact if axis["key"]]
+
+
+def _dialogue_radar_baseline(session: ProfileSession, *, db_path: Path) -> list[dict[str, Any]]:
+    baseline = session.step_data.get("radar_baseline")
+    if isinstance(baseline, list):
+        return [axis for axis in baseline if isinstance(axis, dict)]
+    baseline = _compact_radar_axes(_radar_payload(get_profile(session.user_id, db_path=db_path)))
+    session.step_data["radar_baseline"] = baseline
+    return baseline
+
+
+def _radar_changes(
+    baseline: list[dict[str, Any]],
+    final_radar: dict[str, Any],
+    *,
+    evidence_cards: list[EvidenceCard],
+) -> list[dict[str, Any]]:
+    before = {str(axis.get("key")): axis for axis in baseline if isinstance(axis, dict)}
+    after = {axis["key"]: axis for axis in _compact_radar_axes(final_radar)}
+    counts: dict[str, int] = {}
+    for card in evidence_cards:
+        counts[card.dimension] = counts.get(card.dimension, 0) + 1
+
+    changes: list[dict[str, Any]] = []
+    for key, final_axis in after.items():
+        initial_axis = before.get(key, {})
+        from_score = _int_axis_value(initial_axis.get("score", initial_axis.get("value")))
+        to_score = _int_axis_value(final_axis.get("score", final_axis.get("value")))
+        from_status = str(initial_axis.get("status") or "dark")
+        to_status = str(final_axis.get("status") or "dark")
+        from_lit = bool(initial_axis.get("lit"))
+        to_lit = bool(final_axis.get("lit"))
+        newly_lit = to_lit and not from_lit
+        delta = to_score - from_score
+        if not newly_lit and delta == 0 and from_status == to_status:
+            continue
+        changes.append(
+            {
+                "key": key,
+                "label": str(final_axis.get("label") or key),
+                "newly_lit": newly_lit,
+                "from_score": from_score,
+                "to_score": to_score,
+                "delta": delta,
+                "from_status": from_status,
+                "to_status": to_status,
+                "evidence_count": counts.get(key, 0),
+            }
+        )
+    return changes
+
+
+def _radar_summary_text(changes: list[dict[str, Any]]) -> str:
+    if not changes:
+        return "本次对话已完成定稿，画像暂未出现新的雷达分数变化。"
+    lit_labels = [str(change["label"]) for change in changes if change.get("newly_lit")]
+    changed = [
+        f"{change['label']}从{change['from_score']}升到{change['to_score']}"
+        if int(change.get("delta") or 0) > 0
+        else f"{change['label']}从{change['from_score']}调整到{change['to_score']}"
+        for change in changes
+        if int(change.get("delta") or 0) != 0
+    ]
+    parts: list[str] = []
+    if lit_labels:
+        parts.append(f"本次为你点亮了{'、'.join(lit_labels)}")
+    if changed:
+        parts.append("，".join(changed))
+    return "；".join(parts) + "。"
+
+
+def _int_axis_value(value: Any) -> int:
+    try:
+        return int(max(0, min(100, round(float(value)))))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _float_axis_value(value: Any) -> float:
+    try:
+        return round(max(0.0, min(1.0, float(value))), 4)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _identity_cards(payload: dict[str, Any], source: str, response_time_ms: int, prior_weight: float) -> list[EvidenceCard]:
@@ -1119,12 +2404,12 @@ def _int_or_none(value: Any) -> int | None:
 
 
 def _parse_json_object(text: str) -> Any:
-    stripped = text.strip()
-    if stripped.startswith("```"):
-        stripped = re.sub(r"^```(?:json)?", "", stripped).strip()
-        stripped = re.sub(r"```$", "", stripped).strip()
-    match = re.search(r"\{.*\}", stripped, flags=re.S)
-    return json.loads(match.group(0) if match else stripped)
+    from app.profile.nodes import _json_object
+
+    try:
+        return _json_object(text)
+    except (ValueError, json.JSONDecodeError):
+        return None
 
 
 def _validate_prescription_signal(value: Any) -> dict[str, bool] | None:
@@ -1230,9 +2515,11 @@ __all__ = [
     "dialogue_session_summary",
     "extract_prescription_signal",
     "finish_profile_session",
+    "finish_profile_session_async",
     "get_profile_session",
     "load_diagnostic_questions",
     "reset_profile_sessions",
     "session_payload",
     "start_profile_session",
+    "stream_dialogue_chat_events",
 ]

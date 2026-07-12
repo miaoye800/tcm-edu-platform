@@ -9,9 +9,17 @@ from fastapi.testclient import TestClient
 
 from app.api.profile import get_profile_db_path, get_profile_settings
 from app.config import Settings
-from app.llm.clients import ChatMessage
+from app.llm.clients import BaseLLMClient, ChatMessage, StreamToken
+from app.llm.router import ModelRouter, ModelSpec
 from app.main import app
-from app.profile.narrative import build_dimension_facts, synthesize_profile_narrative
+from app.profile.narrative import (
+    NARRATIVE_MAX_TOKENS,
+    NARRATIVE_RESPONSE_FORMAT,
+    NARRATIVE_THINKING,
+    NARRATIVE_TIMEOUT_SECONDS,
+    build_dimension_facts,
+    synthesize_profile_narrative,
+)
 from app.profile.schema import WeakPoint
 from app.profile.update import update_profile_from_event
 from tests.helpers import auth_headers_for_user_id
@@ -163,6 +171,55 @@ def test_profile_narrative_endpoint_returns_description_and_structured_fields(tm
     assert payload["weak_points"]
     assert "清热药·剂量" in payload["description"]
     assert payload["dimensions"][0]["evidence_refs"]
+
+
+def test_narrative_llm_call_disables_thinking_and_uses_short_timeout() -> None:
+    profile = _profile_with_manual_dimensions()
+    settings = _key_settings()
+    settings.llm_timeout_seconds = 60.0
+    calls: list[dict[str, object]] = []
+
+    class CaptureClient(BaseLLMClient):
+        async def chat(self, messages: Sequence[ChatMessage], **kw: object) -> str:
+            calls.append({"messages": list(messages), "kw": dict(kw)})
+            return json.dumps(
+                {
+                    "strength_dimension_keys": ["knowledge_base"],
+                    "weakness_dimension_keys": ["weak_points"],
+                    "weak_point_labels": ["清热药·剂量"],
+                    "advice_dimension_keys": ["weak_points"],
+                },
+                ensure_ascii=False,
+            )
+
+        async def chat_stream(self, messages: Sequence[ChatMessage], **kw: object):
+            if False:
+                yield ("message", "")
+
+    router = ModelRouter(
+        settings=settings,
+        client_factory=lambda spec, api_key: CaptureClient(model_name=spec.model_name, provider=spec.provider),
+    )
+
+    narrative = asyncio.run(
+        synthesize_profile_narrative(
+            profile,
+            settings=settings,
+            router=router,
+        )
+    )
+
+    assert narrative.method == "llm"
+    assert len(calls) == 1
+    assert settings.llm_timeout_seconds == 60.0
+    assert calls[0]["kw"] == {
+        "temperature": 0,
+        "max_tokens": NARRATIVE_MAX_TOKENS,
+        "thinking": NARRATIVE_THINKING,
+        "response_format": NARRATIVE_RESPONSE_FORMAT,
+        "timeout_seconds": NARRATIVE_TIMEOUT_SECONDS,
+        "prefer_reasoning_content": True,
+    }
 
 
 def _profile_with_manual_dimensions():

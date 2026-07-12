@@ -24,6 +24,10 @@ LLMCall = Callable[[Sequence[ChatMessage]], Awaitable[str]]
 DEFAULT_LOW_CONFIDENCE_THRESHOLD = 0.5
 WEAK_SCORE_THRESHOLD = 40  # 数值维分数低于此值且 status=="ready" 才算真·薄弱
 NARRATIVE_TASK_TYPE = "profile_narrative"
+NARRATIVE_TIMEOUT_SECONDS = 2.5
+NARRATIVE_MAX_TOKENS = 320
+NARRATIVE_THINKING = {"type": "disabled"}
+NARRATIVE_RESPONSE_FORMAT = {"type": "json_object"}
 MOCK_FALLBACK_PREFIX = "[MOCK:"
 
 
@@ -290,12 +294,25 @@ async def _call_llm_for_plan(
     if llm_call is not None:
         return await llm_call(messages)
     active_router = router or ModelRouter(settings=settings)
+    client = _select_narrative_client(active_router)
+    return await client.chat(
+        messages,
+        temperature=0,
+        max_tokens=NARRATIVE_MAX_TOKENS,
+        thinking=NARRATIVE_THINKING,
+        response_format=NARRATIVE_RESPONSE_FORMAT,
+        timeout_seconds=NARRATIVE_TIMEOUT_SECONDS,
+        prefer_reasoning_content=True,
+    )
+
+
+def _select_narrative_client(router: ModelRouter):
     try:
-        return await active_router.chat(NARRATIVE_TASK_TYPE, messages, temperature=0, max_tokens=800)
+        return router.select(NARRATIVE_TASK_TYPE)
     except ValueError as exc:
         if NARRATIVE_TASK_TYPE not in str(exc):
             raise
-        return await active_router.chat("generate", messages, temperature=0, max_tokens=800)
+        return router.select("generate")
 
 
 def _render_narrative(

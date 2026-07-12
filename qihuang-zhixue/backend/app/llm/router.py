@@ -1,10 +1,21 @@
 import asyncio
+import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
+import httpx
+
 from app.config import Settings, get_settings
-from app.llm.clients import BaseLLMClient, ChatMessage, DeepSeekClient, MockClient, ZhipuClient
+from app.llm.clients import (
+    BaseLLMClient,
+    ChatMessage,
+    DeepSeekClient,
+    LLMClientError,
+    MockClient,
+    StreamToken,
+    ZhipuClient,
+)
 
 DEEPSEEK_PRO_SLOT = "deepseek_model_pro"
 DEEPSEEK_FLASH_SLOT = "deepseek_model_flash"
@@ -126,10 +137,37 @@ class ModelRouter:
             return "learning_path"
         return "other"
 
-    async def chat_stream(self, task_type: str, messages: Sequence[ChatMessage]) -> AsyncIterator[str]:
-        text = await self._call_with_retry(task_type, lambda client: _collect_stream(client, messages))
-        for token in text:
-            yield token
+    async def chat_stream(self, task_type: str, messages: Sequence[ChatMessage], **kw: Any) -> AsyncIterator[StreamToken]:
+        client = self.select(task_type)
+        if isinstance(client, MockClient):
+            async for token in client.chat_stream(messages, **kw):
+                yield token
+            return
+
+        attempts = max(0, self.settings.llm_max_retries) + 1
+        last_exc: Exception | None = None
+        timeout = max(self.settings.llm_timeout_seconds, 0.001)
+        for attempt in range(1, attempts + 1):
+            try:
+                async with asyncio.timeout(timeout):
+                    async for token in client.chat_stream(messages, **kw):
+                        yield token
+                return
+            except Exception as exc:
+                last_exc = exc
+                if not self._should_retry(exc) or attempt >= attempts:
+                    break
+
+        detail = self._fallback_reason(last_exc)
+        if self.settings.llm_fallback_to_mock:
+            self._log_fallback_reason(last_exc)
+            mock_client = self._mock_client_for_task(task_type)
+            async for token in mock_client.chat_stream(messages, **kw):
+                yield token
+            yield ("message", f"\n[FallbackReason:{detail}]")
+            return
+
+        yield ("message", f"模型服务暂时不可用，已触发容错保护（{detail}），请稍后重试。")
 
     def _api_key_for_provider(self, provider: str) -> str | None:
         if provider == "deepseek":
@@ -150,19 +188,22 @@ class ModelRouter:
         attempts = max(0, self.settings.llm_max_retries) + 1
         last_exc: Exception | None = None
         timeout = max(self.settings.llm_timeout_seconds, 0.001)
-        for _ in range(attempts):
+        for attempt in range(1, attempts + 1):
             try:
                 return await asyncio.wait_for(operation(client), timeout=timeout)
             except Exception as exc:
                 last_exc = exc
+                if not self._should_retry(exc) or attempt >= attempts:
+                    break
 
         if self.settings.llm_fallback_to_mock:
             mock_client = self._mock_client_for_task(task_type)
             mock_text = await operation(mock_client)
-            detail = last_exc.__class__.__name__ if last_exc else "UnknownError"
+            detail = self._fallback_reason(last_exc)
+            self._log_fallback_reason(last_exc)
             return f"{mock_text}\n[FallbackReason:{detail}]"
 
-        detail = last_exc.__class__.__name__ if last_exc else "UnknownError"
+        detail = self._fallback_reason(last_exc)
         return f"模型服务暂时不可用，已触发容错保护（{detail}），请稍后重试。"
 
     def _mock_client_for_task(self, task_type: str) -> MockClient:
@@ -172,6 +213,44 @@ class ModelRouter:
             provider=spec.provider,
             stream_delay=self.settings.mock_stream_delay,
         )
+
+    def _should_retry(self, exc: Exception) -> bool:
+        if isinstance(exc, LLMClientError):
+            return bool(getattr(exc, "retryable", False))
+        if isinstance(exc, asyncio.TimeoutError):
+            return True
+        if isinstance(exc, (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout, httpx.ConnectError)):
+            return True
+        if isinstance(exc, httpx.HTTPStatusError):
+            status_code = exc.response.status_code if exc.response is not None else 0
+            return status_code == 429 or 500 <= status_code < 600
+        if isinstance(exc, json.JSONDecodeError):
+            return False
+        return False
+
+    def _fallback_reason(self, exc: Exception | None) -> str:
+        if exc is None:
+            return "UnknownError"
+        if isinstance(exc, LLMClientError):
+            return exc.fallback_reason
+        if isinstance(exc, httpx.HTTPStatusError) and exc.response is not None:
+            return f"HTTP{exc.response.status_code}"
+        if isinstance(exc, json.JSONDecodeError):
+            return exc.__class__.__name__
+        return exc.__class__.__name__
+
+    def _log_fallback_reason(self, exc: Exception | None) -> None:
+        if self.settings.env == "dev":
+            reason = self._fallback_reason(exc)
+            if exc is None:
+                print(f"FallbackReason:{reason}")
+                return
+            chain = [f"{exc.__class__.__name__}: {exc}"]
+            current = exc.__cause__ or exc.__context__
+            while current is not None:
+                chain.append(f"{current.__class__.__name__}: {current}")
+                current = current.__cause__ or current.__context__
+            print(f"FallbackReason:{reason} | " + " <- ".join(chain))
 
     def _resolve_model_slot(self, model_name: str) -> str:
         if model_name == DEEPSEEK_PRO_SLOT:
@@ -199,10 +278,3 @@ def _non_empty(value: str | None) -> str | None:
         return None
     stripped = value.strip()
     return stripped or None
-
-
-async def _collect_stream(client: BaseLLMClient, messages: Sequence[ChatMessage]) -> str:
-    parts: list[str] = []
-    async for token in client.chat_stream(messages):
-        parts.append(token)
-    return "".join(parts)

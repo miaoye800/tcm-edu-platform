@@ -2,6 +2,22 @@ import { clearStoredAuth, readStoredAuth } from './authStorage'
 
 export type RequestOptions = {
   skipAuthRedirect?: boolean
+  timeoutMs?: number
+  timeoutMessage?: string
+  abortMessage?: string
+  networkMessage?: string
+}
+
+export const DEFAULT_REQUEST_TIMEOUT_MS = 10_000
+
+export class RequestError extends Error {
+  kind: 'timeout' | 'aborted' | 'network'
+
+  constructor(message: string, kind: 'timeout' | 'aborted' | 'network') {
+    super(message)
+    this.name = 'RequestError'
+    this.kind = kind
+  }
 }
 
 export const authHeaders = (init?: HeadersInit): Headers => {
@@ -13,15 +29,44 @@ export const authHeaders = (init?: HeadersInit): Headers => {
   return headers
 }
 
-export const requestJson = async <T>(url: string, init?: RequestInit, options?: RequestOptions): Promise<T> => {
+export const requestResponse = async (url: string, init?: RequestInit, options?: RequestOptions): Promise<Response> => {
   const headers = authHeaders(init?.headers)
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
 
-  const response = await fetch(url, {
-    ...init,
-    headers,
+  const controller = new AbortController()
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS
+  let timedOut = false
+  let abortedByCaller = false
+  const cleanupExternalAbort = forwardAbort(init?.signal, controller, () => {
+    abortedByCaller = true
   })
+  const timeoutId = window.setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
 
+  try {
+    return await fetch(url, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (timedOut) {
+      throw new RequestError(options?.timeoutMessage || `请求超时（${timeoutMs}ms）`, 'timeout')
+    }
+    if (abortedByCaller) {
+      throw new RequestError(options?.abortMessage || '请求已取消', 'aborted')
+    }
+    throw new RequestError(options?.networkMessage || readFetchErrorMessage(error), 'network')
+  } finally {
+    cleanupExternalAbort()
+    window.clearTimeout(timeoutId)
+  }
+}
+
+export const requestJson = async <T>(url: string, init?: RequestInit, options?: RequestOptions): Promise<T> => {
+  const response = await requestResponse(url, init, options)
   await handleUnauthorized(response, options)
 
   if (!response.ok) {
@@ -49,4 +94,29 @@ const readErrorMessage = async (response: Response): Promise<string> => {
   } catch {
     return ''
   }
+}
+
+const forwardAbort = (
+  signal: AbortSignal | null | undefined,
+  controller: AbortController,
+  onAbort: () => void,
+): (() => void) => {
+  if (!signal) return () => undefined
+  if (signal.aborted) {
+    onAbort()
+    controller.abort()
+    return () => undefined
+  }
+
+  const abort = () => {
+    onAbort()
+    controller.abort()
+  }
+  signal.addEventListener('abort', abort, { once: true })
+  return () => signal.removeEventListener('abort', abort)
+}
+
+const readFetchErrorMessage = (error: unknown): string => {
+  if (error instanceof Error && error.message) return error.message
+  return '网络请求失败，请稍后重试'
 }

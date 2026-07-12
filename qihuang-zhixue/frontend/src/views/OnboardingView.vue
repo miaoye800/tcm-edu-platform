@@ -1,5 +1,5 @@
 <template>
-  <section v-loading="busy || profileStore.loading" class="onboarding-view">
+  <section v-loading="pageLoading" class="onboarding-view">
     <div class="onboarding-hero">
       <div>
         <p class="eyebrow">画像入口</p>
@@ -48,7 +48,16 @@
       :card-scores="dialogueCardScores"
       :inferred-card="dialogueInferredCard"
       :radar="dialogueRadarAxes"
+      :profile-progress="dialogueProfileProgress"
+      :evidence-panel="dialogueEvidencePanel"
+      :identity-cards-view="dialogueIdentityCards"
+      :active-target="dialogueActiveTarget"
+      :active-target-label="dialogueActiveTargetLabel"
       :converged="dialogueConverged"
+      :quick-replies="dialogueQuickReplies"
+      :stream-events="dialogueStreamEvents"
+      :pending="dialoguePending"
+      :disabled="!activeStep"
       @answer="answerDialogue"
       @confirm="confirmDialogue"
     />
@@ -142,9 +151,36 @@
             <p class="eyebrow">弟子档案卷</p>
             <h3>{{ auth.displayName }}</h3>
           </div>
-          <Badge tone="jade" label="已更新" />
+          <Badge :tone="resultNarrativeBadgeTone" :label="resultNarrativeBadgeText" />
         </div>
-        <p>{{ narrativeText }}</p>
+        <el-alert
+          v-if="showNarrativeRetry"
+          class="onboarding-alert"
+          type="warning"
+          :title="profileStore.narrativeError"
+          show-icon
+          :closable="false"
+        >
+          <template #default>
+            <el-button size="small" type="primary" @click="retryNarrative">重新生成</el-button>
+          </template>
+        </el-alert>
+
+        <template v-if="showNarrativePlaceholder">
+          <p>小岐正在整理本轮证据并生成画像档案，你现在可以继续进入主页。</p>
+          <div class="resource-grid narrative-loading-grid">
+            <article v-for="index in 3" :key="`narrative-loading-${index}`">
+              <strong>生成中</strong>
+              <span>画像叙述完成后，这里会替换成真实内容。</span>
+            </article>
+          </div>
+        </template>
+
+        <template v-else>
+          <p>{{ narrativeText }}</p>
+          <p v-if="showTemplateSource" class="narrative-source">当前展示的是模板叙述（MOCK 演示来源）。</p>
+        </template>
+
         <div class="resource-grid">
           <article v-for="card in resourceCards" :key="card.title">
             <strong>{{ card.title }}</strong>
@@ -170,11 +206,11 @@ import RadarChart from '../components/profile/RadarChart.vue'
 import type { AnswerPayload, CardScores, ConfirmPayload } from '../components/profile/profileDialogueModel'
 import Badge from '../components/ui/Badge.vue'
 import GlassCard from '../components/ui/GlassCard.vue'
-import { answerProfileSession, finishProfileSession, startProfileSession } from '../services/profileApi'
+import { answerProfileSession, finishProfileSession, startProfileSession, streamProfileDialogueChat } from '../services/profileApi'
 import { saveOnboardingState } from '../services/onboardingStorage'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
-import type { ProfileBuildMode, ProfileSessionQuestion, ProfileSessionResponse } from '../types/profile'
+import type { ProfileBuildMode, ProfileDialogueStreamUiEvent, ProfileSessionQuestion, ProfileSessionResponse } from '../types/profile'
 import { buildRadarAxes } from '../utils/profileMath'
 
 type ModeCard = {
@@ -237,12 +273,22 @@ const route = useRoute()
 const auth = useAuthStore()
 const profileStore = useProfileStore()
 
+const retryNarrativeLabel = '\u91cd\u65b0\u751f\u6210'
+const resultNarrativePendingText = '\u5c0f\u5c90\u6b63\u5728\u6574\u7406\u672c\u8f6e\u8bc1\u636e\u5e76\u751f\u6210\u753b\u50cf\u6863\u6848\uff0c\u4f60\u73b0\u5728\u53ef\u4ee5\u7ee7\u7eed\u8fdb\u5165\u4e3b\u9875\u3002'
+const resultNarrativeLoadingTitle = '\u751f\u6210\u4e2d'
+const resultNarrativeLoadingBody = '\u753b\u50cf\u53d9\u8ff0\u5b8c\u6210\u540e\uff0c\u8fd9\u91cc\u4f1a\u66ff\u6362\u6210\u771f\u5b9e\u5185\u5bb9\u3002'
+const narrativeMockSourceText = '\u5f53\u524d\u5c55\u793a\u7684\u662f\u6a21\u677f\u53d9\u8ff0\uff08MOCK \u6f14\u793a\u6765\u6e90\uff09\u3002'
+
 const busy = ref(false)
+const dialoguePending = ref(false)
+const dialogueStreamEvents = ref<ProfileDialogueStreamUiEvent[]>([])
 const error = ref('')
 const session = ref<ProfileSessionResponse | null>(null)
 const activeMode = ref<ProfileBuildMode | null>(null)
 const resultReady = ref(false)
 const stepStartedAt = ref(Date.now())
+let dialogueStreamEventId = 0
+let dialogueStreamInFlight: Promise<void> | null = null
 
 const form = reactive({
   identityCard: '临床学徒',
@@ -299,10 +345,36 @@ const dialoguePrompt = computed(() => session.value?.next_question || activeStep
 const dialogueCardScores = computed<CardScores>(() => session.value?.card_scores ?? activeStep.value?.payload.card_scores ?? {})
 const dialogueInferredCard = computed(() => session.value?.inferred_card ?? activeStep.value?.payload.inferred_card ?? null)
 const dialogueRadarAxes = computed(() => session.value?.radar?.axes ?? [])
+const dialogueProfileProgress = computed(() => session.value?.profile_progress ?? null)
+const dialogueEvidencePanel = computed(() => session.value?.evidence_panel ?? [])
+const dialogueIdentityCards = computed(() => session.value?.identity_cards ?? [])
+const dialogueActiveTarget = computed(() => session.value?.target ?? activeStep.value?.payload.target ?? null)
+const dialogueActiveTargetLabel = computed(() => session.value?.target_label ?? null)
 const dialogueConverged = computed(() => Boolean(session.value?.converged || activeStep.value?.kind === 'confirm'))
+const dialogueQuickReplies = computed(() => activeStep.value?.payload.quick_replies ?? [])
 const lowConfidenceCount = computed(() => radarAxes.value.filter((axis) => axis.lowConfidence).length)
+const showNarrativePlaceholder = computed(() => !profileStore.usingMock && !profileStore.narrativeLoaded)
+const showNarrativeRetry = computed(
+  () => !profileStore.usingMock && !profileStore.narrativeLoaded && !profileStore.narrativeLoading && Boolean(profileStore.narrativeError),
+)
+const showTemplateSource = computed(() => !showNarrativePlaceholder.value && profileStore.narrative.method === 'template')
+const resultNarrativeBadgeTone = computed(() => {
+  if (profileStore.usingMock) return 'jade'
+  if (profileStore.narrativeLoading) return 'gold'
+  if (!profileStore.narrativeLoaded && profileStore.narrativeError) return 'coral'
+  return 'jade'
+})
+const resultNarrativeBadgeText = computed(() => {
+  if (profileStore.usingMock) return '模板演示'
+  if (profileStore.narrativeLoading) return '生成中'
+  if (!profileStore.narrativeLoaded && profileStore.narrativeError) return '待重试'
+  return '已更新'
+})
 const narrativeText = computed(
-  () => profileStore.narrative.description || '画像已写入。继续学习后，小岐会把更多证据补进档案卷。',
+  () =>
+    (!profileStore.usingMock && !profileStore.narrativeLoaded)
+      ? '小岐正在基于本轮证据生成画像叙述，完成后会自动替换为真实内容。'
+      : (profileStore.narrative.description || '画像已写入。继续学习后，小岐会把更多证据补进档案卷。'),
 )
 const progressPercent = computed(() => {
   if (!activeMode.value) return 0
@@ -331,6 +403,7 @@ const resourceCards = computed(() => [
   { title: '题库测评', desc: lowConfidenceCount.value > 0 ? '把虚线维度变成实线，最快来自小测取证。' : '保持手感，继续校准薄弱标签。' },
   { title: '智能学习', desc: '让小岐按当前档案卷生成解释、练习和复盘。' },
 ])
+const pageLoading = computed(() => profileStore.loading || (busy.value && !(activeMode.value === 'dialogue' && session.value && !resultReady.value)))
 
 const redirectTarget = (): string => {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
@@ -346,9 +419,12 @@ const resetStepForm = () => {
 
 const startMode = async (mode: ProfileBuildMode) => {
   busy.value = true
+  dialoguePending.value = false
   error.value = ''
   try {
     activeMode.value = mode
+    profileStore.clearDialogueRadarChanges()
+    dialogueStreamEvents.value = []
     session.value = await startProfileSession(mode)
     resultReady.value = false
     resetStepForm()
@@ -419,37 +495,96 @@ const submitStep = async () => {
   }
 }
 
+const pushDialogueStreamEvent = (type: ProfileDialogueStreamUiEvent['type'], delta = '') => {
+  dialogueStreamEvents.value.push({ id: ++dialogueStreamEventId, type, delta })
+}
+
+const dialogueUtteranceFromPayload = (payload: AnswerPayload): string =>
+  String('utterance' in payload ? payload.utterance : payload.quick_reply || '').trim()
+
 const answerDialogue = async (payload: AnswerPayload) => {
-  if (!session.value || !activeStep.value) return
+  if (!session.value) {
+    error.value = '对话尚未就绪，请稍候重试'
+    return
+  }
+  const utterance = dialogueUtteranceFromPayload(payload)
+  if (!utterance) return
   busy.value = true
+  dialoguePending.value = true
   error.value = ''
+  pushDialogueStreamEvent('reset')
+  const streamPromise = streamProfileDialogueChat(session.value.session_id, utterance, ({ event, data }) => {
+    if (event === 'thinking') {
+      pushDialogueStreamEvent('thinking', String(data.delta ?? ''))
+      return
+    }
+    if (event === 'message') {
+      pushDialogueStreamEvent('message', String(data.delta ?? ''))
+      return
+    }
+    if (event === 'message_done') {
+      pushDialogueStreamEvent('done')
+      dialoguePending.value = false
+      busy.value = false
+      return
+    }
+    if (event === 'evidence' && session.value) {
+      const cards = Array.isArray(data.cards) ? data.cards : []
+      session.value = {
+        ...session.value,
+        evidence_count: session.value.evidence_count + cards.length,
+        evidence_cards: [...(session.value.evidence_cards ?? []), ...(cards as NonNullable<ProfileSessionResponse['evidence_cards']>)],
+      }
+      return
+    }
+    if (event === 'identity_cards' && session.value) {
+      const items = Array.isArray(data.items) ? data.items : []
+      session.value = { ...session.value, identity_cards: items as NonNullable<ProfileSessionResponse['identity_cards']> }
+      return
+    }
+    if (event === 'radar' && session.value) {
+      session.value = { ...session.value, radar: data as ProfileSessionResponse['radar'] }
+      return
+    }
+    if (event === 'state' && session.value) {
+      session.value = {
+        ...session.value,
+        ...data,
+        converged: Boolean(data.converged),
+        finished: Boolean(data.finished ?? session.value.finished),
+      } as ProfileSessionResponse
+      return
+    }
+    if (event === 'error') {
+      error.value = String(data.message ?? '画像后台更新暂时延迟')
+      return
+    }
+    if (event === 'done') pushDialogueStreamEvent('done')
+  })
+  dialogueStreamInFlight = streamPromise
   try {
-    const next = await answerProfileSession(session.value.session_id, activeStep.value.id, {
-      ...payload,
-      response_time_ms: Date.now() - stepStartedAt.value,
-    })
-    session.value = next
+    await streamPromise
     stepStartedAt.value = Date.now()
   } catch (err) {
+    pushDialogueStreamEvent('done')
     error.value = err instanceof Error ? err.message : '对话提交失败'
   } finally {
+    if (dialogueStreamInFlight === streamPromise) dialogueStreamInFlight = null
+    dialoguePending.value = false
     busy.value = false
   }
 }
 
-const confirmDialogue = async (payload: ConfirmPayload) => {
-  if (!session.value || !activeStep.value) return
-  if (activeStep.value.kind !== 'confirm') {
-    error.value = '再回答一两轮，小岐收敛后就能确认画像。'
+const confirmDialogue = async (_payload: ConfirmPayload) => {
+  if (!session.value) {
+    error.value = '对话尚未就绪，请稍候重试'
     return
   }
   busy.value = true
   error.value = ''
   try {
-    const next = await answerProfileSession(session.value.session_id, activeStep.value.id, payload)
-    session.value = next
     await finishCurrentSession()
-    await enterApp()
+    await router.replace('/profile')
   } catch (err) {
     error.value = err instanceof Error ? err.message : '画像确认失败'
   } finally {
@@ -459,11 +594,20 @@ const confirmDialogue = async (payload: ConfirmPayload) => {
 
 const finishCurrentSession = async () => {
   if (!session.value || !auth.user) return
+  if (activeMode.value === 'dialogue' && dialogueStreamInFlight) {
+    await dialogueStreamInFlight.catch(() => undefined)
+  }
   const finished = await finishProfileSession(session.value.session_id)
   session.value = finished
   saveOnboardingState(auth.user.user_id, { status: 'completed', mode: activeMode.value ?? finished.mode })
   await profileStore.loadProfile()
-  resultReady.value = true
+  void profileStore.ensureNarrativeLoaded()
+  if (finished.mode === 'dialogue') {
+    profileStore.setDialogueRadarChanges(finished.radar_changes ?? [], finished.summary_text ?? '')
+  } else {
+    profileStore.clearDialogueRadarChanges()
+  }
+  resultReady.value = finished.mode !== 'dialogue'
   ElMessage.success('画像已更新')
 }
 
@@ -491,8 +635,14 @@ const resetFlow = () => {
   session.value = null
   activeMode.value = null
   resultReady.value = false
+  dialoguePending.value = false
+  dialogueStreamEvents.value = []
   error.value = ''
   resetStepForm()
+}
+
+const retryNarrative = () => {
+  void profileStore.loadNarrative(true)
 }
 
 const enterApp = async () => {
@@ -718,6 +868,10 @@ h3 {
   margin-top: 20px;
 }
 
+.narrative-loading-grid {
+  margin-top: 16px;
+}
+
 .resource-grid article {
   display: grid;
   gap: 7px;
@@ -736,6 +890,12 @@ h3 {
   color: var(--qh-text-muted);
   font-size: 13px;
   line-height: 1.7;
+}
+
+.narrative-source {
+  color: var(--qh-color-gold);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .result-actions {

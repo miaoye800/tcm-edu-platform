@@ -81,3 +81,10 @@ Thumbs.db
 # Local automation / agent state
 .agents/
 .codex/
+
+# Local scratch / snapshots
+*.utf8.md
+*-before/
+*-nokey/
+tmp-playwright/
+tmp-step*-logs/

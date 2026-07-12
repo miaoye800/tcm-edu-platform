@@ -5,7 +5,10 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
+from app.config import Settings
 from app.profile.agent import cold_start_profile, export_mermaid, run_cold_start
+from app.profile.jury import score_profile
+from app.profile.nodes import DialogueExtraction, _dialogue_cards, _fallback_dialogue_extraction, _profile_from_scoring_results
 from app.profile.radar import to_radar
 from app.profile.schema import DIMENSION_LABELS, WeakPoint
 from app.profile.store import get_profile, upsert_profile
@@ -30,6 +33,131 @@ def test_cold_start_builds_complete_7_dimension_profile(tmp_path: Path) -> None:
     assert profile.user_id == "test-cold-start"
     assert len(to_radar(profile)["dimensions"]) == 7
     assert len(to_radar(profile)["values"]) == 7
+
+
+def test_unknown_dialogue_only_scores_knowledge_and_leaves_other_axes_dark() -> None:
+    extraction = _fallback_dialogue_extraction("我完全不知道，没接触过中药")
+    cards = _dialogue_cards(extraction)
+    scoring = asyncio.run(score_profile(cards, settings=Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None)))
+    profile = _profile_from_scoring_results(
+        user_id="test-unknown-dialogue",
+        scoring=scoring,
+        evidence_cards=cards,
+    )
+    radar = to_radar(profile)
+    axes = {axis["key"]: axis for axis in radar["axes"]}
+
+    assert extraction.base_level.value == "零基础"
+    assert extraction.learning_goal.value is None
+    assert extraction.learning_style.value is None
+    assert extraction.motivation.value is None
+    assert extraction.major.value is None
+    assert extraction.resource_preference.value is None
+    assert extraction.base_level.evidence == ["没接触"]
+    assert profile.knowledge_base.score == 10
+    assert profile.knowledge_base.score != 50
+    assert profile.learning_goal.label is None
+    assert profile.learning_style.label is None
+    assert profile.motivation.score is None
+    assert profile.motivation.label is None
+    assert profile.weak_points.items == []
+    assert profile.pace.score is None
+    assert profile.resource_preference.label is None
+    assert axes["knowledge_base"]["status"] != "dark"
+    for key in ("learning_goal", "learning_style", "weak_points", "pace", "motivation", "resource_preference"):
+        assert axes[key]["lit"] is False
+        assert axes[key]["status"] == "dark"
+
+
+def test_dialogue_extraction_drops_fabricated_evidence_and_null_value() -> None:
+    extraction = DialogueExtraction.model_validate(
+        {
+            "learning_goal": {
+                "value": "应试提分",
+                "confidence": 0.9,
+                "basis": "explicit",
+                "evidence": ["我准备期末考试", "编造的原话"],
+            },
+            "learning_style": {
+                "value": "视觉型",
+                "confidence": 0.4,
+                "basis": "inferred",
+                "evidence": ["喜欢图表"],
+            },
+        }
+    )
+
+    from app.profile.nodes import _validate_dialogue_evidence
+
+    validated = _validate_dialogue_evidence(extraction, "user: 我准备期末考试，也喜欢图表")
+    cards = _dialogue_cards(validated)
+
+    assert validated.learning_goal.value is None
+    assert validated.learning_goal.evidence == []
+    assert validated.learning_style.value == "视觉型"
+    assert [card.dimension for card in cards] == ["learning_style"]
+    assert cards[0].weight == 0.4
+
+
+def test_dialogue_low_confidence_becomes_low_weight_and_dashed_radar() -> None:
+    extraction = DialogueExtraction.model_validate(
+        {
+            "learning_goal": {
+                "value": "应试提分",
+                "confidence": 0.2,
+                "basis": "inferred",
+                "evidence": ["可能要考试"],
+            }
+        }
+    )
+
+    cards = _dialogue_cards(extraction)
+    assert cards[0].weight == 0.2
+
+    import app.profile.modes as modes_module
+
+    fusion = modes_module._dialogue_fusion(cards)
+    profile = modes_module._profile_from_fusion("low-confidence-user", cards, fusion=fusion)
+    axes = {axis["key"]: axis for axis in to_radar(profile)["axes"]}
+
+    assert axes["learning_goal"]["status"] == "dashed"
+
+
+def test_dialogue_extraction_does_not_card_unknown_statement() -> None:
+    extraction = DialogueExtraction.model_validate(
+        {
+            "base_level": {
+                "value": None,
+                "confidence": 0,
+                "basis": "explicit",
+                "evidence": ["不知道"],
+            },
+            "learning_goal": {
+                "value": None,
+                "confidence": 0,
+                "basis": "explicit",
+                "evidence": ["不知道"],
+            },
+        }
+    )
+
+    assert _dialogue_cards(extraction) == []
+
+
+def test_pure_wellness_chat_does_not_fabricate_dialogue_profile_scores() -> None:
+    extraction = _fallback_dialogue_extraction("最近换季容易犯困，想喝点温水早点睡，先聊聊养生就好。")
+    cards = _dialogue_cards(extraction)
+    scoring = asyncio.run(score_profile(cards, settings=Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None)))
+    profile = _profile_from_scoring_results(
+        user_id="test-pure-wellness-dialogue",
+        scoring=scoring,
+        evidence_cards=cards,
+    )
+    axes = {axis["key"]: axis for axis in to_radar(profile)["axes"]}
+
+    assert cards == []
+    assert all(axis["confidence"] < 0.5 for axis in axes.values())
+    assert all(axis["status"] == "dark" for axis in axes.values())
 
 
 def test_wrong_differentiation_event_adds_weak_point_and_updates_scores(tmp_path: Path) -> None:

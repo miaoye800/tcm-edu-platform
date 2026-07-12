@@ -312,6 +312,36 @@ def test_category_fusion_keeps_allowed_labels_only() -> None:
     assert result.label in {"知识图谱", "拟人化短剧"}
 
 
+def test_learning_goal_other_bucket_is_allowed_by_fusion_and_guardrail() -> None:
+    cards = [
+        _card("learning_goal", {"label": "其他"}, 1.0),
+    ]
+
+    fused = fuse_dimension("learning_goal", cards)
+    guarded = apply_guardrail(
+        "learning_goal",
+        evidence_cards=cards,
+        label="其他",
+        distribution={"其他": 1.0},
+    )
+
+    assert fused.label == "其他"
+    assert fused.distribution == {"其他": 1.0}
+    assert guarded.label == "其他"
+    assert guarded.distribution == {"其他": 1.0}
+    assert guarded.warnings == []
+
+
+def test_knowledge_prior_without_score_uses_base_level_mapping_only() -> None:
+    low = fuse_dimension("knowledge_base", [_card("knowledge_base", {"prior": True, "label": "零基础"}, 0.3)])
+    unknown = fuse_dimension("knowledge_base", [_card("knowledge_base", {"prior": True, "label": "未知基础"}, 0.3)])
+    scored = fuse_dimension("knowledge_base", [_card("knowledge_base", {"prior": True, "prior_score": 64}, 0.3)])
+
+    assert low.score == 10
+    assert unknown.score is None
+    assert scored.score == 64
+
+
 def _card(
     dimension: str,
     signal: dict[str, Any],

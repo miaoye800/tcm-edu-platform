@@ -43,3 +43,16 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# Local snapshots and temporary work
+*-before/
+*-nokey/
+tmp-playwright/
+tmp-step*-logs/
+tmp-*.py
+frontend/.vite-cache-step2/
+frontend/apprentice_story_assets/
+frontend/vite.step2.proxy.config.ts
+backend/app/llm/*副本.py
+dialogue-radar-change-list.md
+batch2-evidence-extractor-v2-code-update.md

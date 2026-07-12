@@ -1,6 +1,8 @@
 import { requestJson, type RequestOptions } from './request'
 import type { AuthSession, AuthUser } from './authStorage'
 
+const AUTH_CHECK_TIMEOUT_MS = 1_500
+
 type LoginPayload = {
   username: string
   password: string
@@ -42,4 +44,8 @@ export const guestApi = (): Promise<AuthSession> =>
   )
 
 export const meApi = (options?: RequestOptions): Promise<AuthUser> =>
-  requestJson<AuthUser>('/api/auth/me', undefined, options)
+  requestJson<AuthUser>('/api/auth/me', undefined, {
+    timeoutMs: AUTH_CHECK_TIMEOUT_MS,
+    timeoutMessage: '登录状态校验超时，请稍后重试',
+    ...options,
+  })

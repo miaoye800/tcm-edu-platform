@@ -104,12 +104,73 @@ export type RadarAxis = {
   sourceLabel: string
   metric: string
   value: number
+  status?: 'dark' | 'dashed' | 'solid' | string
+  lit?: boolean
+  placeholder?: boolean
   raw: string
   confidence: number
   confidenceStatus: ConfidenceStatus
   lowConfidence: boolean
   anchor: string
   kind: 'numeric' | 'derived' | 'hotspot'
+}
+
+export type ProfileProgressDimension = {
+  key: DimensionKey
+  label: string
+  confidence: number
+  collected: boolean
+  status: ConfidenceStatus
+}
+
+export type ProfileProgress = {
+  collected: number
+  total: number
+  threshold: number
+  dimensions: ProfileProgressDimension[]
+}
+
+export type EvidenceQuote = {
+  text: string
+  fact: string
+  source: string
+  ref: string
+}
+
+export type EvidencePanelDimension = {
+  key: DimensionKey
+  label: string
+  score?: number | null
+  value: string
+  tag?: string | null
+  distribution?: Record<string, number>
+  confidence: number
+  status: ConfidenceStatus
+  evidence_refs: string[]
+  narrative?: string
+  quotes: EvidenceQuote[]
+}
+
+export type IdentityCardKind = 'distribution' | 'level' | 'tags'
+
+export type IdentityDimensionCard = {
+  canonical_label?: string
+  display_name?: string
+  ratio?: number
+  level_name?: string
+  score?: number | null
+  label?: string
+  quotes?: string[]
+  placeholder?: boolean
+}
+
+export type IdentityCardsDimensionView = {
+  key: DimensionKey
+  kind: IdentityCardKind
+  revealed: boolean
+  confidence: number
+  cards: IdentityDimensionCard[]
+  target_label?: string | null
 }
 
 export type DimensionRow = {
@@ -156,6 +217,8 @@ export type ProfileSessionStep = {
     quick_replies?: string[]
     card_scores?: Record<string, number>
     inferred_card?: string | null
+    target?: DimensionKey | string | null
+    target_label?: string | null
   }
   started_at?: string
 }
@@ -177,7 +240,44 @@ export type ProfileSessionResponse = {
     dimensions?: string[]
     values?: number[]
   }
+  profile_progress?: ProfileProgress
+  evidence_panel?: EvidencePanelDimension[]
+  identity_cards?: IdentityCardsDimensionView[]
+  target?: DimensionKey | null
+  target_label?: string | null
   turn_index?: number
   converged?: boolean
   next_question?: string | null
+  radar_changes?: RadarChange[]
+  summary_text?: string
+}
+
+export type RadarChange = {
+  key: string
+  label: string
+  newly_lit: boolean
+  from_score: number
+  to_score: number
+  delta: number
+  from_status: string
+  to_status: string
+  evidence_count: number
+}
+
+export type ProfileDialogueChatMessage = {
+  id: number
+  role: 'assistant' | 'user'
+  text: string
+  typing?: boolean
+  reasoning: string
+  reasoningStreaming: boolean
+  reasoningCollapsed: boolean
+  reasoningStartedAt?: number
+  reasoningDurationMs?: number
+}
+
+export type ProfileDialogueStreamUiEvent = {
+  id: number
+  type: 'thinking' | 'message' | 'done' | 'reset'
+  delta?: string
 }

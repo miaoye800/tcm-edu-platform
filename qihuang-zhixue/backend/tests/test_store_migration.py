@@ -5,7 +5,7 @@ from pathlib import Path
 from app.profile.evidence import EvidenceCard
 from app.profile.modes import APPRENTICE_STEPS, answer_profile_session, finish_profile_session, start_profile_session
 from app.profile.schema import create_blank_profile
-from app.profile.store import add_evidence, get_profile, init_db, list_evidence
+from app.profile.store import add_evidence, get_profile, get_profile_session_row, init_db, list_evidence
 
 
 def test_init_db_migrates_old_profile_sessions_and_flow_round_trips(tmp_path: Path) -> None:
@@ -17,14 +17,21 @@ def test_init_db_migrates_old_profile_sessions_and_flow_round_trips(tmp_path: Pa
                 session_id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 mode TEXT NOT NULL,
-                current_step INTEGER NOT NULL
+                current_step INTEGER NOT NULL,
+                finished INTEGER NOT NULL DEFAULT 0
             )
             """
         )
         conn.execute(
             """
-            INSERT INTO profile_sessions(session_id, user_id, mode, current_step)
-            VALUES ('legacy-session', 'legacy-user', 'apprentice', 1)
+            INSERT INTO profile_sessions(session_id, user_id, mode, current_step, finished)
+            VALUES ('legacy-session', 'legacy-user', 'apprentice', 1, 0)
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO profile_sessions(session_id, user_id, mode, current_step, finished)
+            VALUES ('legacy-persisted-session', 'legacy-user', 'apprentice', 0, 1)
             """
         )
         conn.commit()
@@ -36,14 +43,32 @@ def test_init_db_migrates_old_profile_sessions_and_flow_round_trips(tmp_path: Pa
         columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(profile_sessions)").fetchall()}
         legacy = conn.execute(
             """
-            SELECT user_id, step_index, finished, evidence_cards_json, created_at, updated_at
+            SELECT user_id, step_index, finished, persisted, step_data_json, evidence_cards_json, created_at, updated_at
             FROM profile_sessions
             WHERE session_id = 'legacy-session'
             """
         ).fetchone()
+        legacy_persisted = conn.execute(
+            """
+            SELECT finished, persisted, step_data_json
+            FROM profile_sessions
+            WHERE session_id = 'legacy-persisted-session'
+            """
+        ).fetchone()
 
-    assert {"step_index", "evidence_cards_json", "finished", "created_at", "updated_at"} <= columns
-    assert legacy == ("legacy-user", 0, 0, "[]", "1970-01-01T00:00:00+00:00", "1970-01-01T00:00:00+00:00")
+    assert {"step_index", "evidence_cards_json", "finished", "persisted", "step_data_json", "created_at", "updated_at"} <= columns
+    assert legacy == (
+        "legacy-user",
+        0,
+        0,
+        0,
+        "{}",
+        "[]",
+        "1970-01-01T00:00:00+00:00",
+        "1970-01-01T00:00:00+00:00",
+    )
+    assert get_profile_session_row("legacy-session", "legacy-user", db_path=db_path)["step_data_json"] == "{}"
+    assert legacy_persisted == (1, 1, "{}")
 
     session = start_profile_session("student-001", "apprentice", db_path=db_path)
     session, cards = asyncio.run(
@@ -63,6 +88,10 @@ def test_init_db_migrates_old_profile_sessions_and_flow_round_trips(tmp_path: Pa
     assert finished.persisted is True
     assert len(stored) == len(finished.evidence_cards)
     assert stored == finished.evidence_cards
+    row = get_profile_session_row(session.session_id, "student-001", db_path=db_path)
+    assert row["finished"] == 1
+    assert row["persisted"] == 1
+    assert row["step_data_json"]
 
 
 def test_init_db_migrates_profile_and_evidence_without_dropping_old_rows(tmp_path: Path) -> None:

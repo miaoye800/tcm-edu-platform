@@ -6,7 +6,9 @@ import type {
   ResourceType,
   ReviewsResponse,
 } from '../types/learning'
-import { authHeaders, handleUnauthorized, requestJson } from './request'
+import { authHeaders, handleUnauthorized, requestJson, requestResponse } from './request'
+
+const RESOURCE_STREAM_CONNECT_TIMEOUT_MS = 10_000
 
 export const readLearningPath = (): Promise<PathResponse> => requestJson<PathResponse>('/api/path')
 
@@ -30,12 +32,20 @@ export const streamResources = async (
     Accept: 'text/event-stream',
     'Content-Type': 'application/json',
   })
-  const response = await fetch('/api/resources/generate', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-    signal,
-  })
+  const response = await requestResponse(
+    '/api/resources/generate',
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal,
+    },
+    {
+      timeoutMs: RESOURCE_STREAM_CONNECT_TIMEOUT_MS,
+      timeoutMessage: '资源生成连接超时，请稍后重试',
+      abortMessage: '资源生成已取消',
+    },
+  )
 
   await handleUnauthorized(response)
 

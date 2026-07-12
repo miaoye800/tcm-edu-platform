@@ -37,7 +37,7 @@ DIMENSION_LABELS: dict[DimensionKey, str] = {
     "resource_preference": "资源类型偏好",
 }
 
-LearningGoalLabel = Literal["应试提分", "临床实用", "兴趣科普", "学术深造"]
+LearningGoalLabel = Literal["应试提分", "临床实用", "兴趣科普", "学术深造", "其他"]
 LearningStyleLabel = Literal["视觉型", "文字型", "记忆(口诀)型"]
 MotivationLabel = Literal["内驱", "外驱", "内外混合", "被动"]
 ResourceTypeLabel = Literal["知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"]

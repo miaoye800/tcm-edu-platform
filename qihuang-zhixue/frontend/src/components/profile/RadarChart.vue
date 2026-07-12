@@ -21,14 +21,14 @@
         :y1="center"
         :x2="item.end.x"
         :y2="item.end.y"
-        :class="['radar-axis-line', { 'is-low': item.axis.lowConfidence }]"
+        :class="['radar-axis-line', axisStatusClass(item.axis), { 'is-highlighted': isHighlighted(item.axis) }]"
       />
       <text
         v-for="item in axisEnds"
         :key="`label-${item.axis.key}`"
         :x="item.labelPoint.x"
         :y="item.labelPoint.y"
-        :class="['radar-label', { 'is-low': item.axis.lowConfidence }]"
+        :class="['radar-label', axisStatusClass(item.axis), { 'is-highlighted': isHighlighted(item.axis) }]"
         text-anchor="middle"
         dominant-baseline="middle"
       >
@@ -42,7 +42,7 @@
         :y1="segment.start.y"
         :x2="segment.end.x"
         :y2="segment.end.y"
-        :class="['radar-data-segment', { 'is-low': segment.lowConfidence }]"
+        :class="['radar-data-segment', { 'is-dashed': segment.dashed, 'is-dark': segment.dark }]"
         :style="{ '--segment-index': index }"
       />
       <circle
@@ -51,7 +51,7 @@
         :cx="point.x"
         :cy="point.y"
         r="5"
-        :class="['radar-point', { 'is-low': axes[index].lowConfidence }]"
+        :class="['radar-point', axisStatusClass(axes[index]), { 'is-highlighted': isHighlighted(axes[index]) }]"
       />
       <circle :cx="center" :cy="center" r="4" class="radar-center" />
     </svg>
@@ -68,13 +68,28 @@ type Point = {
   y: number
 }
 
-const props = defineProps<{
-  axes: RadarAxis[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    axes: RadarAxis[]
+    highlightedKeys?: string[]
+  }>(),
+  {
+    highlightedKeys: () => [],
+  },
+)
 
 const center = 210
 const radius = 132
 const labelRadius = 173
+
+const axisStatus = (axis: RadarAxis): 'dark' | 'dashed' | 'solid' => {
+  if (axis.status === 'dark' || axis.placeholder || axis.lit === false) return 'dark'
+  if (axis.status === 'dashed' || axis.lowConfidence) return 'dashed'
+  return 'solid'
+}
+
+const axisStatusClass = (axis: RadarAxis) => `is-${axisStatus(axis)}`
+const isHighlighted = (axis: RadarAxis) => props.highlightedKeys.includes(axis.key)
 
 const pointFor = (index: number, value: number, activeRadius = radius): Point => {
   const angle = -Math.PI / 2 + (Math.PI * 2 * index) / props.axes.length
@@ -99,7 +114,7 @@ const axisEnds = computed(() =>
   })),
 )
 
-const radarPoints = computed(() => props.axes.map((axis, index) => pointFor(index, axis.value)))
+const radarPoints = computed(() => props.axes.map((axis, index) => pointFor(index, axisStatus(axis) === 'dark' ? 0 : axis.value)))
 const fillPoints = computed(() => radarPoints.value.map(pointString).join(' '))
 const segments = computed(() =>
   props.axes.map((axis, index) => {
@@ -107,7 +122,8 @@ const segments = computed(() =>
     return {
       start: radarPoints.value[index],
       end: radarPoints.value[nextIndex],
-      lowConfidence: axis.lowConfidence || props.axes[nextIndex].lowConfidence,
+      dashed: axisStatus(axis) === 'dashed' || axisStatus(props.axes[nextIndex]) === 'dashed',
+      dark: axisStatus(axis) === 'dark' || axisStatus(props.axes[nextIndex]) === 'dark',
     }
   }),
 )
@@ -149,9 +165,19 @@ const segments = computed(() =>
   stroke-width: 1.1;
 }
 
-.radar-axis-line.is-low {
+.radar-axis-line.is-dashed {
   stroke: rgba(223, 236, 228, 0.18);
   stroke-dasharray: 5 5;
+}
+
+.radar-axis-line.is-dark {
+  stroke: rgba(223, 236, 228, 0.1);
+}
+
+.radar-axis-line.is-highlighted {
+  stroke: var(--qh-color-gold);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 8px rgba(231, 194, 116, 0.75));
 }
 
 .radar-label {
@@ -161,8 +187,16 @@ const segments = computed(() =>
   font-weight: 900;
 }
 
-.radar-label.is-low {
+.radar-label.is-dashed {
   fill: rgba(223, 236, 228, 0.42);
+}
+
+.radar-label.is-dark {
+  fill: rgba(223, 236, 228, 0.28);
+}
+
+.radar-label.is-highlighted {
+  fill: var(--qh-color-gold);
 }
 
 .radar-fill {
@@ -176,10 +210,17 @@ const segments = computed(() =>
   filter: drop-shadow(0 0 8px rgba(143, 208, 173, 0.36));
 }
 
-.radar-data-segment.is-low {
+.radar-data-segment.is-dashed {
   stroke: rgba(159, 182, 214, 0.38);
   stroke-dasharray: 7 7;
   stroke-width: 2.5;
+}
+
+.radar-data-segment.is-dark {
+  stroke: rgba(159, 182, 214, 0.16);
+  stroke-dasharray: 2 9;
+  stroke-width: 1.8;
+  filter: none;
 }
 
 .radar-point {
@@ -188,12 +229,38 @@ const segments = computed(() =>
   stroke-width: 2;
 }
 
-.radar-point.is-low {
+.radar-point.is-dashed {
   fill: rgba(223, 236, 228, 0.4);
+}
+
+.radar-point.is-dark {
+  fill: rgba(223, 236, 228, 0.2);
+}
+
+.radar-point.is-highlighted {
+  fill: var(--qh-color-gold);
+  stroke: rgba(238, 245, 239, 0.96);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(0 0 10px rgba(231, 194, 116, 0.9));
+  animation: highlight-pop 900ms ease both;
 }
 
 .radar-center {
   fill: var(--qh-color-gold);
   filter: drop-shadow(0 0 10px rgba(231, 194, 116, 0.8));
+}
+
+@keyframes highlight-pop {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.82);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

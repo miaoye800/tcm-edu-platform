@@ -25,7 +25,10 @@ HALF_LIFE_DAYS: dict[DimensionKey, float | None] = {
 }
 
 ALLOWED_LABELS: dict[DimensionKey, tuple[str, ...]] = {
-    "learning_goal": ("应试提分", "临床实用", "兴趣科普", "学术深造"),
+    # Assumption for dialogue cards: "其他" is only a traceable fallback bucket for
+    # goals outside the four canonical classes; fusion still uses the same vote
+    # and confidence formula and does not infer any new semantic score.
+    "learning_goal": ("应试提分", "临床实用", "兴趣科普", "学术深造", "其他"),
     "learning_style": ("视觉型", "文字型", "记忆(口诀)型"),
     "motivation": ("内驱", "外驱", "内外混合", "被动"),
     "resource_preference": ("知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"),
@@ -33,6 +36,13 @@ ALLOWED_LABELS: dict[DimensionKey, tuple[str, ...]] = {
 
 DEFAULT_CONFIDENCE_WEIGHT_K = 3.0
 NUMERIC_VARIANCE_NORMALIZER = 2500.0
+BASE_LEVEL_SCORES: dict[str, float] = {
+    "零基础": 10.0,
+    "入门": 30.0,
+    "一般": 50.0,
+    "较好": 70.0,
+    "熟练": 85.0,
+}
 
 
 @dataclass(frozen=True)
@@ -338,9 +348,13 @@ def _knowledge_value(signal: dict[str, Any]) -> float | None:
     if checks:
         return round(sum(1 for item in checks if item) / len(checks) * 100, 2)
 
-    if signal.get("prior"):
-        prior = _first_numeric(signal, ("prior_score", "base_score"))
-        return _clamp_score(prior) if prior is not None else 50.0
+    prior = _first_numeric(signal, ("prior_score", "base_score"))
+    if prior is not None:
+        return _clamp_score(prior)
+
+    label = str(signal.get("label") or signal.get("base_level") or "").strip()
+    if label in BASE_LEVEL_SCORES:
+        return BASE_LEVEL_SCORES[label]
     return None
 
 

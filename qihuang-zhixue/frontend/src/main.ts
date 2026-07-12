@@ -7,6 +7,7 @@ import './styles/reset.scss'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
+import { useProfileStore } from './stores/profile'
 
 const showBootLoading = () => {
   const root = document.getElementById('app')
@@ -41,6 +42,13 @@ const bootstrap = async () => {
   app.use(router).use(ElementPlus)
   await router.isReady()
   app.mount('#app')
+
+  if (auth.isAuthenticated) {
+    const profile = useProfileStore(pinia)
+    window.setTimeout(() => {
+      void profile.ensureNarrativeLoaded()
+    }, 0)
+  }
 }
 
 void bootstrap()

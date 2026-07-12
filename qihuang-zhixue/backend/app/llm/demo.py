@@ -13,7 +13,7 @@ async def main() -> None:
         print(f"{task_type} -> {client.model_name} ({client.provider}, {mode})")
 
     print("stream -> ", end="")
-    async for token in router.chat_stream("reason", messages):
+    async for _, token in router.chat_stream("reason", messages):
         print(token, end="", flush=True)
     print()
 
