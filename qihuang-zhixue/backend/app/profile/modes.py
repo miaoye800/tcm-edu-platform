@@ -7,9 +7,11 @@ scores or synthesizes profile judgments.
 from __future__ import annotations
 
 import json
+import hashlib
+import asyncio
+import logging
 import random
 import re
-import asyncio
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -19,14 +21,18 @@ from typing import Any, cast
 from uuid import uuid4
 
 from app.config import get_settings
+from app.llm.clients import MockClient
 from app.llm.router import ModelRouter
+from app.profile.anchors import SCORE_ANCHOR_INTERVALS, interval_midpoint
 from app.profile.fusion import ALLOWED_LABELS, BASE_LEVEL_SCORES, FusionResult, fuse_profile
 from app.profile.jury import ScoringResult, score_profile
+from app.profile.prescription import evaluate_prescription
 from app.profile.radar import LOW_CONFIDENCE_THRESHOLD
 from app.profile.schema import (
     DIMENSION_LABELS,
     DimensionKey,
     EvidenceCard,
+    IdentityCardView,
     Profile,
     create_blank_profile,
     evidence_card_from_dict,
@@ -40,9 +46,14 @@ from app.profile.store import (
     get_profile,
     get_profile_session_row,
     list_chat_messages,
+    claim_dialogue_turn,
+    complete_dialogue_turn,
+    release_dialogue_turn,
     upsert_profile,
     upsert_profile_session_row,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileMode(str, Enum):
@@ -111,9 +122,9 @@ KNOWLEDGE_LEVEL_CARD_NAMES: dict[str, str] = {
     "熟练": "大医",
 }
 PACE_LEVEL_ANCHORS: tuple[tuple[float, str], ...] = (
-    (20.0, "文火慢炖"),
-    (55.0, "温火常煎"),
-    (85.0, "武火急煎"),
+    (interval_midpoint(SCORE_ANCHOR_INTERVALS["pace"]["daily_minutes"]["lt_15"]), "文火慢炖"),
+    (interval_midpoint(SCORE_ANCHOR_INTERVALS["pace"]["daily_minutes"]["15_to_40"]), "温火常煎"),
+    (interval_midpoint(SCORE_ANCHOR_INTERVALS["pace"]["daily_minutes"]["gt_40"]), "武火急煎"),
 )
 STYLE_BY_CLUE = {
     "图": "视觉型",
@@ -129,6 +140,26 @@ TOXIC_OR_FIERCE_HERBS = {"附子", "川乌", "草乌", "马钱子", "巴豆", "�
 DIALOGUE_OPENING_PROMPT = "先随便聊聊：你最近为什么想学中医药？是为了考试、临床、研究，还是单纯好奇？"
 DIALOGUE_MIN_TURNS = 3
 DIALOGUE_MAX_TURNS = 5  # Legacy display hint only; dialogue no longer ends by turn count.
+
+# Process-local protection for a session while a streaming turn is being
+# committed. SQLite remains the source of truth across processes; this lock
+# prevents the common duplicate-submit race within one API worker.
+_DIALOGUE_SESSION_LOCKS: dict[tuple[str, str], asyncio.Lock] = {}
+
+
+def _dialogue_session_lock(session_id: str, db_path: Path) -> asyncio.Lock:
+    key = (str(db_path), session_id)
+    lock = _DIALOGUE_SESSION_LOCKS.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _DIALOGUE_SESSION_LOCKS[key] = lock
+    return lock
+
+
+def dialogue_session_busy(session_id: str, db_path: Path = DB_PATH) -> bool:
+    """Return whether a dialogue turn is currently being committed."""
+
+    return _dialogue_session_lock(session_id, db_path).locked()
 DIALOGUE_CONFIDENCE_WEIGHT_K = 1.5
 DIALOGUE_TARGET_RETRY_LIMIT = 2
 DIALOGUE_CONFIDENCE_THRESHOLDS: dict[DimensionKey, float] = {
@@ -338,6 +369,13 @@ async def answer_profile_session(
         session.finished = True
     elif _is_quiz_step(session.current_step.id):
         session.step_data["questions"] = session.current_step.private_payload.get("questions", [])
+    if session.mode == ProfileMode.dialogue:
+        _dialogue_identity_cards_view(
+            session.evidence_cards,
+            fusion=_dialogue_fusion(session.evidence_cards),
+            step_data=session.step_data,
+            consume_revealed_now=False,
+        )
     _save_profile_session(session, db_path=db_path)
     return session, cards
 
@@ -427,7 +465,7 @@ def _session_from_row(row: dict[str, Any]) -> ProfileSession:
         updated_at=datetime.fromisoformat(str(row["updated_at"])),
         finished=finished,
         persisted=persisted,
-        persisted_db_path=DB_PATH.as_posix() if persisted else None,
+        persisted_db_path=str(row.get("db_path") or DB_PATH) if persisted else None,
     )
     if current_step and _is_quiz_step(current_step.id):
         session.step_data["questions"] = current_step.private_payload.get("questions", [])
@@ -535,18 +573,20 @@ def load_diagnostic_questions(limit: int = 5, data_dir: Path | None = None) -> l
 
 
 async def extract_prescription_signal(payload: dict[str, Any]) -> dict[str, bool]:
-    """Extract prescription objective signals; rules are the no-key fallback."""
+    """Return deterministic prescription checks for backwards-compatible callers."""
 
     llm_signal = await _try_llm_prescription_extract(payload)
     if llm_signal is not None:
         return llm_signal
-    return _rule_prescription_extract(payload)
+    evaluation = evaluate_prescription(payload)
+    signal = evaluation.signal()
+    return {key: bool(signal[key]) for key in ("\u5bf9\u75c7", "\u914d\u4f0d", "\u5242\u91cf", "\u8bef\u7528\u6bd2\u70c8")}
 
 
 def session_payload(session: ProfileSession, status: str) -> dict[str, Any]:
     """Stable API shape for session responses."""
 
-    return {
+    payload = {
         "session_id": session.session_id,
         "user_id": session.user_id,
         "mode": session.mode.value,
@@ -556,6 +596,9 @@ def session_payload(session: ProfileSession, status: str) -> dict[str, Any]:
         "finished": session.finished,
         "evidence_count": len(session.evidence_cards),
     }
+    if session.mode == ProfileMode.dialogue and session.step_data.get("goal_proposal"):
+        payload["goal_proposal"] = session.step_data["goal_proposal"]
+    return payload
 
 
 def cards_to_json(cards: list[EvidenceCard]) -> list[dict[str, Any]]:
@@ -774,6 +817,7 @@ async def _dialogue_extract_and_question(
     current_confidences: dict[str, float] | None = None,
 ) -> tuple[Any, str]:
     source_text = dialogue_history or utterance
+    user_source_text = _dialogue_user_source_text(source_text, latest_utterance=utterance)
     if _has_profile_extract_key():
         combined = await _try_llm_dialogue_turn(utterance, target, turn_index, evidence_cards, current_confidences or {}, dialogue_history=source_text)
         if combined is not None:
@@ -782,12 +826,20 @@ async def _dialogue_extract_and_question(
             from app.profile.nodes import _extract_dialogue_structured
 
             extraction = await _extract_dialogue_structured(source_text)
-            return extraction, ""
+            if _has_profile_extract_key() and extraction.extraction_method == "no_key_rule_fallback":
+                extraction.extraction_method = "rule_fallback"
+            return _validate_dialogue_extraction(extraction, user_source_text), ""
         except Exception:
             pass
     from app.profile.nodes import _fallback_dialogue_extraction
 
-    return _fallback_dialogue_extraction(utterance), ""
+    fallback = _fallback_dialogue_extraction(utterance)
+    # A configured provider that failed or returned invalid JSON is distinct from
+    # the deliberate no-key path. Keep this provenance visible to downstream
+    # fusion/jury/guardrail consumers without exposing provider details.
+    if _has_profile_extract_key():
+        fallback.extraction_method = "rule_fallback"
+    return fallback, ""
 
 
 async def _try_llm_dialogue_turn(
@@ -800,6 +852,7 @@ async def _try_llm_dialogue_turn(
     dialogue_history: str | None = None,
 ) -> tuple[Any, str] | None:
     source_text = dialogue_history or utterance
+    user_source_text = _dialogue_user_source_text(source_text, latest_utterance=utterance)
     prompt_payload = {
         "turn_index": turn_index,
         "target_dimension": target,
@@ -850,7 +903,7 @@ async def _try_llm_dialogue_turn(
         extraction_payload = parsed.get("extraction") if isinstance(parsed.get("extraction"), dict) else parsed
         from app.profile.nodes import DialogueExtraction, _validate_dialogue_evidence
 
-        extraction = _validate_dialogue_evidence(DialogueExtraction.model_validate(extraction_payload), source_text)
+        extraction = _validate_dialogue_evidence(DialogueExtraction.model_validate(extraction_payload), user_source_text)
         return extraction, ""
     except Exception:
         return None
@@ -886,6 +939,7 @@ async def _try_llm_dialogue_question(
             "role": "system",
             "content": (
                 "You are a dialogue-based learning profile interviewer. "
+                "Extract evidence only; never assign final profile scores. "
                 "Generate exactly one concise, natural next question. "
                 "Ask about next_target_dimension only. Do not output analysis."
             ),
@@ -945,7 +999,11 @@ def _dialogue_confirm_step(evidence_cards: list[EvidenceCard], *, fusion: dict[D
 
 
 def _dialogue_fusion(evidence_cards: list[EvidenceCard]) -> dict[DimensionKey, FusionResult]:
-    return fuse_profile(evidence_cards, confidence_weight_k=DIALOGUE_CONFIDENCE_WEIGHT_K)
+    return fuse_profile(
+        evidence_cards,
+        confidence_weight_k=DIALOGUE_CONFIDENCE_WEIGHT_K,
+        confidence_weight_dimensions=DIALOGUE_PRIMARY_DIMENSIONS,
+    )
 
 
 # Dialogue can stop once learning target and motivation are stable: they drive the next
@@ -1101,7 +1159,38 @@ def _dialogue_quick_replies(target: DimensionKey | str) -> list[str]:
         return ["自己想学", "考试推动", "实习需要", "先看看"]
     if target == "knowledge_base":
         return ["刚入门", "学过药性", "能做辨证", "基础不稳"]
-    return []
+    if target == "learning_style":
+        return ["先看图谱", "读教材条文", "用口诀记忆", "结合案例理解"]
+    if target == "pace":
+        return ["每天15分钟", "每天30分钟", "每天45分钟", "周末集中学习"]
+    if target == "resource_preference":
+        return ["知识图谱", "短剧讲解", "汤头歌诀", "医案拆解"]
+    return ["我想具体说说", "先从基础开始", "帮我找薄弱点"]
+
+
+def _dialogue_quick_replies_for_question(question: str, target: DimensionKey | str) -> list[str]:
+    """Return chips that answer the visible question, before dimension defaults.
+
+    A profile dimension is too broad for questions such as “四诊合参还是套证型”.
+    These narrowly scoped patterns keep one-tap answers honest; an unmatched
+    conversational question deliberately has no chips rather than stale ones.
+    """
+    text = str(question or "")
+    if any(term in text for term in ("四诊", "合参", "证型", "辨证")):
+        return ["会四诊合参", "常按证型判断", "两种都会一些", "还在练习"]
+    if any(term in text for term in ("药性", "功效", "归经")):
+        return ["能说出功效", "能联系归经", "记忆还不稳", "想从例子学"]
+    if any(term in text for term in ("病例", "医案", "临床")):
+        return ["愿意拆病例", "先学辨证思路", "想练方药配伍", "还没接触过"]
+    if any(term in text for term in ("分钟", "每天", "节奏", "时间")):
+        return ["每天15分钟", "每天30分钟", "每天45分钟", "周末集中学习"]
+    if any(term in text for term in ("图谱", "教材", "口诀", "资源")):
+        return ["知识图谱", "教材条文", "口诀歌诀", "案例拆解"]
+    # A casual acknowledgement without a concrete profile question should not
+    # pretend that generic chips are an answer to it.
+    if "？" not in text and "?" not in text:
+        return []
+    return _dialogue_quick_replies(target)
 
 
 def _dialogue_confidences(
@@ -1113,15 +1202,17 @@ def _dialogue_confidences(
     return {dimension: result.confidence for dimension, result in fused.items()}
 
 
-def dialogue_session_summary(session: ProfileSession) -> dict[str, Any]:
+def dialogue_session_summary(session: ProfileSession, *, db_path: Path | None = None) -> dict[str, Any]:
     fusion = _dialogue_fusion(session.evidence_cards)
     profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion)
     card_scores, inferred_card = _identity_card_scores(session.evidence_cards, fusion=fusion)
     identity_cards = _dialogue_identity_cards_view(
         session.evidence_cards,
         fusion=fusion,
-        revealed_flags=_dialogue_identity_card_revealed_flags(session.step_data),
+        step_data=session.step_data,
     )
+    if db_path is not None:
+        _save_profile_session(session, db_path=db_path)
     next_question = session.current_step.prompt if session.current_step and session.current_step.kind == "dialogue" else None
     radar_changes = session.step_data.get("radar_changes")
     summary_text = session.step_data.get("summary_text")
@@ -1145,6 +1236,7 @@ async def stream_dialogue_chat_events(
     *,
     user_id: str,
     utterance: str,
+    client_turn_id: str | None = None,
     db_path: Path = DB_PATH,
 ) -> AsyncIterator[tuple[str, dict[str, Any]]]:
     """Run the visible companion stream, then hidden extraction/fusion updates."""
@@ -1152,9 +1244,44 @@ async def stream_dialogue_chat_events(
     session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
     if session.mode != ProfileMode.dialogue:
         raise ValueError("profile session is not dialogue mode")
+    # Legacy callers cannot replay a generated request id after refresh. Keep
+    # a stable, user/session-scoped compatibility boundary rather than tying
+    # it to mutable step_index; identical legacy text is conservatively
+    # treated as the same request for this session.
+    legacy_client_turn_id = client_turn_id or hashlib.sha256(
+        f"legacy:{user_id}:{session_id}:{utterance}".encode("utf-8")
+    ).hexdigest()
+    claim = claim_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
+    if claim == "completed":
+        session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
+        yield "state", _dialogue_state_payload(session, target=session.step_data.get("dialogue_target"), converged=False)
+        yield "done", {}
+        return
+    if claim == "processing":
+        if session.step_data.get("last_client_turn_id") == legacy_client_turn_id:
+            complete_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
+            yield "state", _dialogue_state_payload(session, target=session.step_data.get("dialogue_target"), converged=False)
+            yield "done", {}
+            return
+        yield "error", {"message": "本轮对话正在处理中，请勿重复提交"}
+        yield "state", _dialogue_state_payload(session, target=None, converged=False, error="turn_in_progress")
+        yield "done", {}
+        return
+    lock = _dialogue_session_lock(session_id, db_path)
+    if lock.locked():
+        # A second request must not interleave step_index/chat/evidence writes.
+        if claim == "claimed":
+            release_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
+        yield "error", {"message": "本轮对话正在处理中，请勿重复提交"}
+        yield "state", _dialogue_state_payload(session, target=None, converged=False, error="turn_in_progress")
+        yield "done", {}
+        return
+    await lock.acquire()
     if session.current_step is None:
+        complete_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
         yield "state", _dialogue_state_payload(session, target=None, converged=False)
         yield "done", {}
+        lock.release()
         return
 
     utterance = utterance.strip()
@@ -1174,31 +1301,71 @@ async def stream_dialogue_chat_events(
         pure_chat_streak=_dialogue_pure_chat_streak(session.step_data),
     )
 
+    # Do not expose a provider's raw chain-of-thought.  The UI receives only
+    # short, user-facing Chinese progress summaries while the model reasons.
     thinking_parts: list[str] = []
     assistant_parts: list[str] = []
-    yield "thinking", {"delta": ""}
-    try:
-        async for kind, delta in ModelRouter().chat_stream(
-            "reason",
-            companion_messages,
-            thinking={"type": "enabled"},
-            reasoning_effort="medium",
-            temperature=0.7,
-        ):
-            if kind == "thinking":
-                thinking_parts.append(delta)
-                yield "thinking", {"delta": delta}
-            elif kind == "message":
-                assistant_parts.append(delta)
-                yield "message", {"delta": delta}
-    except Exception as exc:
-        _log_dialogue_stream_fulltext(session.session_id, turn_index, thinking_parts, assistant_parts)
-        yield "error", {"message": f"visible dialogue stream failed: {exc.__class__.__name__}"}
-        yield "message_done", {}
-        yield "done", {}
-        return
+    thinking_status = "已读取本轮回答，正在结合前面的对话内容。"
+    thinking_parts.append(thinking_status)
+    yield "thinking", {"delta": thinking_status}
+    router = ModelRouter()
+    use_rule_reply = _dialogue_router_uses_mock_client(router)
+    if use_rule_reply:
+        thinking_delta = "正在生成小岐的回应。"
+        thinking_parts.append(thinking_delta)
+        yield "thinking", {"delta": thinking_delta}
+    else:
+        mock_prefix = "[MOCK:"
+        pending_prefix = ""
+        prefix_released = False
+        try:
+            async for kind, delta in router.chat_stream(
+                "reason",
+                companion_messages,
+                thinking={"type": "enabled"},
+                reasoning_effort="medium",
+                temperature=0.7,
+            ):
+                if kind == "thinking":
+                    # `delta` can contain the model's private reasoning. Keep
+                    # it out of the SSE/UI and retain only a safe status above.
+                    continue
+                elif kind == "message" and not use_rule_reply:
+                    if not prefix_released:
+                        pending_prefix += delta
+                        if len(pending_prefix) >= len(mock_prefix) and pending_prefix.startswith(mock_prefix):
+                            use_rule_reply = True
+                            continue
+                        if mock_prefix.startswith(pending_prefix):
+                            continue
+                        prefix_released = True
+                        assistant_parts.append(pending_prefix)
+                        yield "message", {"delta": pending_prefix}
+                        pending_prefix = ""
+                    else:
+                        assistant_parts.append(delta)
+                        yield "message", {"delta": delta}
+            if pending_prefix and not use_rule_reply:
+                assistant_parts.append(pending_prefix)
+                yield "message", {"delta": pending_prefix}
+        except Exception:
+            use_rule_reply = True
+
+    if use_rule_reply:
+        assistant_parts.clear()
+        assistant_text = _fallback_visible_dialogue_reply(session, target=target, turn_index=turn_index, utterance=utterance)
+        # Keep the fallback path visually streaming as well.
+        assistant_parts.extend(assistant_text)
+        for index in range(0, len(assistant_text), 2):
+            yield "message", {"delta": assistant_text[index:index + 2]}
+            await asyncio.sleep(max(0.055, get_settings().mock_stream_delay))
+    else:
+        sanitized = _sanitize_visible_dialogue_text("".join(assistant_parts))
+        if sanitized != "".join(assistant_parts):
+            assistant_parts[:] = [sanitized]
 
     assistant_text = "".join(assistant_parts)
+
     asked_dimension = await _dialogue_classify_visible_reply_asked_dimension(assistant_text, target)
     if _dialogue_user_asked_evidence(utterance) and not _dialogue_visible_reply_addresses_evidence(assistant_text):
         evidence_tail = " 你问得对，画像旁边的「证据清单」会按维度列出分/标签、置信度和你的原文引用；我不会编证据，只按你说过的话更新。"
@@ -1219,6 +1386,9 @@ async def stream_dialogue_chat_events(
             db_path=db_path,
         )
 
+        extraction_status = "正在提取本轮可用线索。"
+        thinking_parts.append(extraction_status)
+        yield "thinking", {"delta": "\n" + extraction_status}
         response_time_ms = _response_time_ms({"utterance": utterance}, session.current_step.started_at)
         cards = await _dialogue_extract_cards_for_chat(
             session=session,
@@ -1231,6 +1401,9 @@ async def stream_dialogue_chat_events(
             current_prompt=current_prompt,
         )
 
+        fusion_status = "正在融合证据，校准画像维度。"
+        thinking_parts.append(fusion_status)
+        yield "thinking", {"delta": "\n" + fusion_status}
         session.evidence_cards.extend(cards)
         session.step_index = turn_index
         asked_dimensions = _dialogue_step_list(session.step_data, "asked_dimensions")
@@ -1249,7 +1422,7 @@ async def stream_dialogue_chat_events(
         identity_cards = _dialogue_identity_cards_view(
             session.evidence_cards,
             fusion=fusion_after,
-            revealed_flags=_dialogue_identity_card_revealed_flags(session.step_data),
+            step_data=session.step_data,
         )
         converged = _dialogue_converged(turn_index, session.evidence_cards, fusion=fusion_after)
         profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion_after)
@@ -1261,18 +1434,75 @@ async def stream_dialogue_chat_events(
         session.current_step = _dialogue_turn_step(turn_index + 1, assistant_text, next_target)
         session.step_data["next_question"] = assistant_text
         session.step_data["dialogue_target"] = next_target
+        session.step_data["last_client_turn_id"] = legacy_client_turn_id
         session.step_data["_dialogue_fusion"] = fusion_after
+        persist_status = "正在保存本轮对话与画像更新。"
+        thinking_parts.append(persist_status)
+        yield "thinking", {"delta": "\n" + persist_status}
         _persist_dialogue_live_update(session, cards=cards, profile=profile, db_path=db_path)
+        complete_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
 
         yield "evidence", {"cards": cards_to_json(cards)}
         yield "identity_cards", {"items": identity_cards}
         yield "radar", _radar_payload(profile)
-        yield "state", _dialogue_state_payload(session, target=next_target, converged=converged)
+        # The chips answer the question the user can see now, not the internal
+        # dimension selected for the following turn.
+        yield "state", _dialogue_state_payload(
+            session,
+            target=next_target,
+            quick_replies=_dialogue_quick_replies_for_question(assistant_text, asked_dimension or target),
+            converged=converged,
+        )
     except Exception as exc:
-        yield "error", {"message": f"profile update delayed: {exc.__class__.__name__}"}
+        release_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
+        logger.warning(
+            "profile dialogue update failed session_suffix=%s turn_index=%s error_type=%s",
+            session.session_id[-8:],
+            turn_index,
+            exc.__class__.__name__,
+        )
+        yield "error", {"message": "本轮证据整理暂时不可用，已保留对话内容，请稍后重试"}
         yield "state", _dialogue_state_payload(session, target=target, converged=False, error="profile_update_failed")
     finally:
+        if lock.locked():
+            lock.release()
         yield "done", {}
+
+
+def _dialogue_router_uses_mock_client(router: Any) -> bool:
+    try:
+        return isinstance(router.select("reason"), MockClient)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return False
+
+
+def _fallback_visible_dialogue_reply(
+    session: ProfileSession,
+    *,
+    target: DimensionKey,
+    turn_index: int,
+    utterance: str,
+) -> str:
+    asked_questions = list(_dialogue_step_list(session.step_data, "asked_questions"))
+    if session.current_step is not None:
+        _dialogue_remember(asked_questions, session.current_step.prompt)
+    question = _fallback_dialogue_question(
+        target,
+        turn_index,
+        asked_questions=asked_questions,
+        asked_dimensions=list(_dialogue_step_list(session.step_data, "asked_dimensions")),
+    )
+    if _dialogue_user_asked_evidence(utterance):
+        return f"画像只会引用你说过的原话，并在证据清单中标明来源和置信度。{question}"
+    return f"我记下了。{question}"
+
+
+def _sanitize_visible_dialogue_text(text: str) -> str:
+    """Remove internal mock/fallback diagnostics from visible assistant text."""
+
+    cleaned = re.sub(r"\[MOCK:[^\]]*\]", "", str(text or ""))
+    cleaned = re.sub(r"\s*\[FallbackReason:[^\]]*\]", "", cleaned)
+    return cleaned.strip()
 
 
 def _log_dialogue_stream_fulltext(
@@ -1283,16 +1513,12 @@ def _log_dialogue_stream_fulltext(
 ) -> None:
     thinking_text = "".join(thinking_parts)
     message_text = "".join(message_parts)
-    print(
-        "[profile.dialogue.stream.fulltext]",
-        {
-            "session_id": session_id,
-            "turn_index": turn_index,
-            "thinking_len": len(thinking_text),
-            "message_len": len(message_text),
-            "thinking": thinking_text,
-            "message": message_text,
-        },
+    logger.info(
+        "profile dialogue stream completed session_suffix=%s turn_index=%s thinking_len=%s message_len=%s",
+        session_id[-8:],
+        turn_index,
+        len(thinking_text),
+        len(message_text),
     )
 
 
@@ -1462,14 +1688,20 @@ async def _dialogue_extract_cards_for_chat(
 ) -> list[EvidenceCard]:
     transcript = _dialogue_transcript(history_messages, utterance=utterance, assistant_text=assistant_text)
     extraction_text = transcript if _has_profile_extract_key() else utterance
-    extraction, _ = await _dialogue_extract_and_question(
-        utterance=utterance,
-        dialogue_history=extraction_text,
-        target=target,
-        turn_index=turn_index,
-        evidence_cards=session.evidence_cards,
-        current_confidences={},
-    )
+    try:
+        extraction, _ = await _dialogue_extract_and_question(
+            utterance=utterance,
+            dialogue_history=extraction_text,
+            target=target,
+            turn_index=turn_index,
+            evidence_cards=session.evidence_cards,
+            current_confidences={},
+        )
+    except Exception:
+        from app.profile.nodes import _fallback_dialogue_extraction
+
+        extraction = _fallback_dialogue_extraction(utterance)
+        extraction.extraction_method = "rule_fallback" if _has_profile_extract_key() else "no_key_rule_fallback"
     cards = _dialogue_cards_from_extraction(extraction)
     for card in cards:
         card.objective_signal["turn_index"] = turn_index
@@ -1494,6 +1726,26 @@ def _dialogue_transcript(
     if assistant_text:
         rows.append(f"assistant: {assistant_text}")
     return "\n".join(rows)
+
+
+def _dialogue_user_source_text(dialogue_text: str, *, latest_utterance: str) -> str:
+    """Return only user-authored text for quote validation."""
+
+    user_texts = [
+        content.strip()
+        for line in dialogue_text.splitlines()
+        for role, separator, content in [line.partition(":")]
+        if separator and role.strip() == "user" and content.strip()
+    ]
+    if latest_utterance.strip() and latest_utterance.strip() not in user_texts:
+        user_texts.append(latest_utterance.strip())
+    return "\n".join(user_texts)
+
+
+def _validate_dialogue_extraction(extraction: Any, user_source_text: str) -> Any:
+    from app.profile.nodes import _validate_dialogue_evidence
+
+    return _validate_dialogue_evidence(extraction, user_source_text)
 
 
 def _dialogue_history_for_turn(step_data: dict[str, Any], *, current_prompt: str, utterance: str) -> str:
@@ -1553,6 +1805,8 @@ async def _profile_from_dialogue_scoring(user_id: str, evidence_cards: list[Evid
 
 
 async def _finish_dialogue_profile_session(session: ProfileSession, *, db_path: Path) -> ProfileSession:
+    if session.finished:
+        return session
     baseline = _dialogue_radar_baseline(session, db_path=db_path)
     profile = await _profile_from_dialogue_scoring(session.user_id, session.evidence_cards)
     final_radar = _radar_payload(profile)
@@ -1567,6 +1821,23 @@ async def _finish_dialogue_profile_session(session: ProfileSession, *, db_path: 
     session.updated_at = datetime.now(UTC)
     session.step_data["radar_changes"] = changes
     session.step_data["summary_text"] = _radar_summary_text(changes)
+    _dialogue_identity_cards_view(
+        session.evidence_cards,
+        fusion=_dialogue_fusion(session.evidence_cards),
+        step_data=session.step_data,
+        consume_revealed_now=False,
+    )
+    # The dialogue entry only stages a proposal; confirmation remains explicit.
+    from app.profile.goal_agent import run_goal_agent
+
+    user_goal_text = "\n".join(
+        str(item.get("content") or "")
+        for item in _dialogue_history_messages(session.step_data)
+        if item.get("role") == "user"
+    ).strip()
+    if user_goal_text:
+        proposal = await run_goal_agent(user_goal_text, profile=profile)
+        session.step_data["goal_proposal"] = proposal.model_dump(mode="json")
     if not session.persisted:
         for card in session.evidence_cards:
             add_evidence(session.user_id, card, db_path=db_path)
@@ -1597,6 +1868,8 @@ def _dialogue_state_payload(
     session: ProfileSession,
     *,
     target: DimensionKey | None,
+    quick_reply_target: DimensionKey | None = None,
+    quick_replies: list[str] | None = None,
     converged: bool,
     error: str | None = None,
 ) -> dict[str, Any]:
@@ -1606,14 +1879,15 @@ def _dialogue_state_payload(
         "turn_index": session.step_index,
         "target": target,
         "target_label": DIALOGUE_TARGET_LABELS.get(target, target) if target else None,
+        "quick_replies": quick_replies if quick_replies is not None else (_dialogue_quick_replies(quick_reply_target or target) if (quick_reply_target or target) else []),
         "converged": converged,
-        "finished": False,
+        "finished": session.finished,
         "profile_progress": _dialogue_profile_progress(session.evidence_cards, fusion=fusion),
         "evidence_panel": _dialogue_evidence_panel(session.evidence_cards, fusion=fusion),
         "identity_cards": _dialogue_identity_cards_view(
             session.evidence_cards,
             fusion=fusion,
-            revealed_flags=_dialogue_identity_card_revealed_flags(session.step_data),
+            step_data=session.step_data,
         ),
     }
     if error:
@@ -1632,8 +1906,12 @@ def _dialogue_profile_progress(
             "key": dimension,
             "label": DIALOGUE_TARGET_LABELS.get(dimension, DIMENSION_LABELS[dimension]),
             "confidence": fused[dimension].confidence,
-            "collected": fused[dimension].confidence >= LOW_CONFIDENCE_THRESHOLD,
-            "status": "已取证" if fused[dimension].confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
+            "collected": _dialogue_evidence_collected(dimension, fused[dimension], evidence_cards),
+            "status": (
+                "已取证"
+                if _dialogue_evidence_collected(dimension, fused[dimension], evidence_cards)
+                else "待取证"
+            ),
         }
         for dimension in DIMENSION_LABELS
     ]
@@ -1661,13 +1939,29 @@ def _dialogue_evidence_panel(
             "tag": fused[dimension].label,
             "distribution": fused[dimension].distribution,
             "confidence": fused[dimension].confidence,
-            "status": "已取证" if fused[dimension].confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
+            "status": (
+                "已取证"
+                if _dialogue_evidence_collected(dimension, fused[dimension], evidence_cards)
+                else "待取证"
+            ),
             "evidence_refs": fused[dimension].evidence_refs,
             "narrative": fused[dimension].narrative,
             "quotes": _dialogue_dimension_quotes(dimension, evidence_cards),
         }
         for dimension in DIMENSION_LABELS
     ]
+
+
+def _dialogue_evidence_collected(
+    dimension: DimensionKey,
+    result: FusionResult,
+    evidence_cards: list[EvidenceCard],
+) -> bool:
+    if result.confidence >= LOW_CONFIDENCE_THRESHOLD:
+        return True
+    has_cards = any(card.dimension == dimension for card in evidence_cards)
+    has_result = result.score is not None or result.label is not None or bool(result.distribution)
+    return has_cards and has_result
 
 
 def _dialogue_fusion_value(result: FusionResult) -> str:
@@ -1685,8 +1979,6 @@ def _dialogue_dimension_quotes(dimension: DimensionKey, evidence_cards: list[Evi
     seen: set[str] = set()
     for index, card in enumerate((item for item in evidence_cards if item.dimension == dimension), start=1):
         raw_quotes = _evidence_quote_texts(card)
-        if not raw_quotes:
-            raw_quotes = [card.fact]
         for quote in raw_quotes:
             text = str(quote or "").strip()
             if not text or text in seen:
@@ -1704,6 +1996,8 @@ def _dialogue_dimension_quotes(dimension: DimensionKey, evidence_cards: list[Evi
 
 
 def _evidence_quote_texts(card: EvidenceCard) -> list[str]:
+    if card.quote:
+        return [card.quote]
     value = card.objective_signal.get("evidence")
     if isinstance(value, list):
         return [str(item).strip() for item in value if str(item).strip()]
@@ -1722,25 +2016,45 @@ def _dialogue_identity_card_revealed_flags(step_data: dict[str, Any]) -> dict[st
     return flags
 
 
+def _dialogue_identity_card_revealed_now_flags(step_data: dict[str, Any]) -> set[str]:
+    raw = step_data.get("identity_cards_revealed_now")
+    flags = {str(key) for key in raw} if isinstance(raw, list) else set()
+    step_data["identity_cards_revealed_now"] = sorted(flags)
+    return flags
+
+
 def _dialogue_identity_cards_view(
     evidence_cards: list[EvidenceCard],
     *,
     fusion: dict[DimensionKey, FusionResult] | None = None,
     revealed_flags: dict[str, bool] | None = None,
     keep_revealed: bool = True,
+    step_data: dict[str, Any] | None = None,
+    consume_revealed_now: bool = True,
 ) -> list[dict[str, Any]]:
     """Build the seven-dimension identity-card view from already-fused evidence."""
 
     fused = fusion or _dialogue_fusion(evidence_cards)
-    flags = revealed_flags if revealed_flags is not None else {}
-    return [
-        _identity_distribution_item(dimension, fused[dimension], evidence_cards, flags, keep_revealed=keep_revealed)
+    flags = _dialogue_identity_card_revealed_flags(step_data) if step_data is not None else (revealed_flags if revealed_flags is not None else {})
+    revealed_now_flags = _dialogue_identity_card_revealed_now_flags(step_data) if step_data is not None else set()
+    items = [
+        _identity_distribution_item(
+            dimension,
+            fused[dimension],
+            evidence_cards,
+            flags,
+            revealed_now_flags,
+            keep_revealed=keep_revealed,
+        )
         for dimension in ("learning_goal", "motivation", "resource_preference", "learning_style")
     ] + [
-        _identity_level_item("knowledge_base", fused["knowledge_base"], evidence_cards, flags, keep_revealed=keep_revealed),
-        _identity_level_item("pace", fused["pace"], evidence_cards, flags, keep_revealed=keep_revealed),
-        _identity_tags_item("weak_points", fused["weak_points"], evidence_cards, flags, keep_revealed=keep_revealed),
+        _identity_level_item("knowledge_base", fused["knowledge_base"], evidence_cards, flags, revealed_now_flags, keep_revealed=keep_revealed),
+        _identity_level_item("pace", fused["pace"], evidence_cards, flags, revealed_now_flags, keep_revealed=keep_revealed),
+        _identity_tags_item("weak_points", fused["weak_points"], evidence_cards, flags, revealed_now_flags, keep_revealed=keep_revealed),
     ]
+    if step_data is not None:
+        step_data["identity_cards_revealed_now"] = [] if consume_revealed_now else sorted(revealed_now_flags)
+    return items
 
 
 def _identity_distribution_item(
@@ -1748,6 +2062,7 @@ def _identity_distribution_item(
     result: FusionResult,
     evidence_cards: list[EvidenceCard],
     revealed_flags: dict[str, bool],
+    revealed_now_flags: set[str],
     *,
     keep_revealed: bool,
 ) -> dict[str, Any]:
@@ -1758,16 +2073,25 @@ def _identity_distribution_item(
             "display_name": _identity_distribution_display_name(dimension, label, evidence_cards),
             "ratio": ratio,
             "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
+            "evidence_refs": _identity_evidence_refs_for_label(dimension, label, evidence_cards),
         }
         for label, ratio in distribution.items()
     ]
-    return {
-        "key": dimension,
-        "kind": "distribution",
-        "revealed": _identity_revealed(dimension, result.confidence, revealed_flags, keep_revealed=keep_revealed),
-        "confidence": result.confidence,
-        "cards": cards,
-    }
+    revealable, revealed, revealed_now = _identity_reveal_state(
+        dimension, result.confidence, revealed_flags, revealed_now_flags, keep_revealed=keep_revealed
+    )
+    return _identity_card_view(
+        dimension=dimension,
+        kind="distribution",
+        result=result,
+        evidence_cards=evidence_cards,
+        items=cards,
+        revealable=revealable,
+        revealed=revealed,
+        revealed_now=revealed_now,
+        display_value=_dialogue_fusion_value(result),
+        distribution=distribution,
+    )
 
 
 def _identity_level_item(
@@ -1775,22 +2099,36 @@ def _identity_level_item(
     result: FusionResult,
     evidence_cards: list[EvidenceCard],
     revealed_flags: dict[str, bool],
+    revealed_now_flags: set[str],
     *,
     keep_revealed: bool,
 ) -> dict[str, Any]:
-    return {
-        "key": dimension,
-        "kind": "level",
-        "revealed": _identity_revealed(dimension, result.confidence, revealed_flags, keep_revealed=keep_revealed),
-        "confidence": result.confidence,
-        "cards": [
+    level_name = _identity_level_name(dimension, result.score)
+    anchors = _identity_level_anchors(dimension, result.score, evidence_cards)
+    cards = [
             {
-                "level_name": _identity_level_name(dimension, result.score),
+                "level_name": level_name,
+                "anchor": anchors.get("anchor"),
                 "score": result.score,
+                **({"daily_minutes": anchors.get("daily_minutes"), "target_days": anchors.get("target_days")} if dimension == "pace" else {}),
                 "quotes": [quote["text"] for quote in _dialogue_dimension_quotes(dimension, evidence_cards)],
+                "evidence_refs": result.evidence_refs,
             }
-        ],
-    }
+        ]
+    revealable, revealed, revealed_now = _identity_reveal_state(
+        dimension, result.confidence, revealed_flags, revealed_now_flags, keep_revealed=keep_revealed
+    )
+    return _identity_card_view(
+        dimension=dimension,
+        kind="level",
+        result=result,
+        evidence_cards=evidence_cards,
+        items=cards,
+        revealable=revealable,
+        revealed=revealed,
+        revealed_now=revealed_now,
+        display_value=_identity_level_display_value(dimension, level_name, result.score, anchors, revealable=revealable),
+    )
 
 
 def _identity_tags_item(
@@ -1798,52 +2136,190 @@ def _identity_tags_item(
     result: FusionResult,
     evidence_cards: list[EvidenceCard],
     revealed_flags: dict[str, bool],
+    revealed_now_flags: set[str],
     *,
     keep_revealed: bool,
 ) -> dict[str, Any]:
-    distribution = _normalize_identity_distribution(result.distribution)
+    fused_distribution = _normalize_identity_distribution(result.distribution)
+    distribution = {
+        label: ratio
+        for label, ratio in fused_distribution.items()
+        if _identity_has_weak_point_evidence(label, evidence_cards)
+    }
     cards = [
         {
             "label": label,
+            "strength": _identity_tag_strength(dimension, label, evidence_cards),
             "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
+            "evidence_refs": _identity_evidence_refs_for_label(dimension, label, evidence_cards),
         }
         for label in distribution
     ]
-    return {
-        "key": dimension,
-        "kind": "tags",
-        "revealed": _identity_revealed(dimension, result.confidence, revealed_flags, keep_revealed=keep_revealed),
-        "confidence": result.confidence,
-        "cards": cards,
-    }
+    revealable, revealed, revealed_now = _identity_reveal_state(
+        dimension, result.confidence, revealed_flags, revealed_now_flags, keep_revealed=keep_revealed
+    )
+    return _identity_card_view(
+        dimension=dimension,
+        kind="tags",
+        result=result,
+        evidence_cards=evidence_cards,
+        items=cards,
+        revealable=revealable,
+        revealed=revealed,
+        revealed_now=revealed_now,
+        display_value=cards[0]["label"] if cards else "待取证",
+        distribution=distribution,
+    )
 
 
-def _identity_revealed(
+def _identity_reveal_state(
     dimension: DimensionKey,
     confidence: float,
     revealed_flags: dict[str, bool],
+    revealed_now_flags: set[str],
     *,
     keep_revealed: bool,
-) -> bool:
-    current = confidence >= LOW_CONFIDENCE_THRESHOLD
+) -> tuple[bool, bool, bool]:
+    revealable = confidence >= LOW_CONFIDENCE_THRESHOLD
     previous = bool(revealed_flags.get(dimension))
-    revealed = current or (keep_revealed and previous)
+    revealed = revealable or (keep_revealed and previous)
+    if revealable and not previous:
+        revealed_now_flags.add(dimension)
     if revealed:
         revealed_flags[dimension] = True
-    return revealed
+    return revealable, revealed, dimension in revealed_now_flags
+
+
+def _identity_card_view(
+    *,
+    dimension: DimensionKey,
+    kind: str,
+    result: FusionResult,
+    evidence_cards: list[EvidenceCard],
+    items: list[dict[str, Any]],
+    revealable: bool,
+    revealed: bool,
+    revealed_now: bool,
+    display_value: str,
+    distribution: dict[str, float] | None = None,
+) -> dict[str, Any]:
+    """Serialize an identity card without deriving another score or confidence."""
+
+    quotes = [item["text"] for item in _dialogue_dimension_quotes(dimension, evidence_cards)]
+    confidence_status = "已取证" if revealable else "待取证"
+    provenance = _identity_provenance(dimension, evidence_cards)
+    if not any(card.dimension == dimension for card in evidence_cards):
+        pending_reason = "尚未收集该维度的可追溯证据。"
+    elif not revealable:
+        pending_reason = f"融合置信度 {result.confidence:.2f}，尚未达到 {LOW_CONFIDENCE_THRESHOLD:.2f} 的翻开阈值。"
+    else:
+        pending_reason = None
+    explanation = result.narrative if result.narrative else "当前结论仅来自已融合的可追溯证据。"
+    if provenance == "no_key_rule_fallback":
+        explanation = f"{explanation} 本卡使用无 Key 规则回退结果。"
+    payload = IdentityCardView(
+        key=dimension,
+        label=DIMENSION_LABELS[dimension],
+        kind=cast(Any, kind),
+        revealed=revealed,
+        revealable=revealable,
+        revealed_now=revealed_now,
+        confidence=result.confidence,
+        confidence_status=confidence_status,
+        score=result.score,
+        display_value=display_value,
+        distribution=distribution or {},
+        items=items,
+        cards=items,
+        evidence_refs=result.evidence_refs,
+        quotes=quotes,
+        explanation=explanation,
+        provenance=provenance,
+        pending_reason=pending_reason,
+    ).model_dump()
+    payload.update(_identity_claim_state(dimension, evidence_cards))
+    return payload
+
+
+def _identity_provenance(dimension: DimensionKey, evidence_cards: list[EvidenceCard]) -> str:
+    cards = [card for card in evidence_cards if card.dimension == dimension]
+    explicit = [
+        str(card.objective_signal.get("scoring_provenance"))
+        for card in cards
+        if card.objective_signal.get("scoring_provenance")
+    ]
+    if explicit:
+        return explicit[-1]
+    methods = {card.extraction_method for card in cards}
+    if "no_key_rule_fallback" in methods:
+        return "no_key_rule_fallback"
+    if "rule_fallback" in methods:
+        return "rule_fallback"
+    return "fusion"
+
+
+def _identity_evidence_refs_for_label(
+    dimension: DimensionKey,
+    label: str,
+    evidence_cards: list[EvidenceCard],
+) -> list[str]:
+    refs: list[str] = []
+    for index, card in enumerate((item for item in evidence_cards if item.dimension == dimension), start=1):
+        if _identity_label_vote_weight(card.objective_signal, label, dimension=dimension) > 0:
+            refs.append(f"{card.source}#{index}")
+    return refs
+
+
+def _identity_tag_strength(dimension: DimensionKey, label: str, evidence_cards: list[EvidenceCard]) -> int:
+    count = sum(
+        1
+        for card in evidence_cards
+        if card.dimension == dimension
+        and _identity_label_vote_weight(card.objective_signal, label, dimension=dimension) > 0
+        and (
+            card.claim_status == "verified"
+            or card.tier.value != "self_report"
+            or card.objective_signal.get("correct") is False
+            or card.objective_signal.get("is_correct") is False
+        )
+    )
+    return max(1, count)
+
+
+def _identity_has_weak_point_evidence(label: str, evidence_cards: list[EvidenceCard]) -> bool:
+    return any(
+        card.dimension == "weak_points"
+        and _identity_label_vote_weight(card.objective_signal, label, dimension="weak_points") > 0
+        and (
+            card.claim_status == "verified"
+            or card.objective_signal.get("correct") is False
+            or card.objective_signal.get("is_correct") is False
+            or card.tier.value != "self_report"
+        )
+        for card in evidence_cards
+    )
+
+
+def _identity_claim_state(dimension: DimensionKey, evidence_cards: list[EvidenceCard]) -> dict[str, Any]:
+    """Expose calibration state so the client can veil self-report card faces."""
+
+    statuses = [card.claim_status for card in evidence_cards if card.dimension == dimension and card.claim_status]
+    if "pending" in statuses:
+        status = "pending"
+    elif "refuted" in statuses:
+        status = "refuted"
+    elif "verified" in statuses:
+        status = "verified"
+    else:
+        status = None
+    return {"pending_verification": status == "pending", "claim_status": status}
 
 
 def _normalize_identity_distribution(distribution: dict[str, float]) -> dict[str, float]:
-    weighted = {str(label): max(0.0, float(weight)) for label, weight in distribution.items() if float(weight) > 0}
-    total = sum(weighted.values())
-    if total <= 0:
-        return {}
-    normalized = {label: round(weight / total, 4) for label, weight in weighted.items()}
-    drift = round(1.0 - sum(normalized.values()), 4)
-    if normalized and drift:
-        top = max(weighted.items(), key=lambda item: item[1])[0]
-        normalized[top] = round(max(0.0, normalized[top] + drift), 4)
-    return dict(sorted(normalized.items(), key=lambda item: (-item[1], item[0])))
+    # Fusion already owns ratio normalization. The view layer only orders and
+    # drops zero entries so it cannot subtly rewrite the scoring result.
+    values = {str(label): float(ratio) for label, ratio in distribution.items() if float(ratio) > 0}
+    return dict(sorted(values.items(), key=lambda item: (-item[1], item[0])))
 
 
 def _identity_distribution_display_name(dimension: DimensionKey, label: str, evidence_cards: list[EvidenceCard]) -> str:
@@ -1871,6 +2347,49 @@ def _identity_level_name(dimension: DimensionKey, score: float | None) -> str:
     return "待取证"
 
 
+def _identity_level_anchors(
+    dimension: DimensionKey,
+    score: float | None,
+    evidence_cards: list[EvidenceCard],
+) -> dict[str, Any]:
+    anchors: dict[str, Any] = {}
+    if score is not None and dimension == "knowledge_base":
+        anchors["anchor"] = _nearest_anchor_label(score, BASE_LEVEL_SCORES)
+    elif score is not None and dimension == "pace":
+        anchors["anchor"] = _nearest_anchor_name(score, PACE_LEVEL_ANCHORS)
+    if dimension == "pace":
+        for card in evidence_cards:
+            if card.dimension != "pace":
+                continue
+            for source_key, output_key in (("daily_minutes", "daily_minutes"), ("minutes_per_day", "daily_minutes"), ("target_days", "target_days"), ("period_days", "target_days")):
+                value = card.objective_signal.get(source_key)
+                if isinstance(value, (int, float)) and value > 0:
+                    anchors[output_key] = int(value) if float(value).is_integer() else float(value)
+    return anchors
+
+
+def _identity_level_display_value(
+    dimension: DimensionKey,
+    level_name: str,
+    score: float | None,
+    anchors: dict[str, Any],
+    *,
+    revealable: bool,
+) -> str:
+    if score is None:
+        return "待取证"
+    if dimension == "pace" and (anchors.get("daily_minutes") or anchors.get("target_days")):
+        parts = []
+        if anchors.get("daily_minutes"):
+            parts.append(f"每天{anchors['daily_minutes']}分钟")
+        if anchors.get("target_days"):
+            parts.append(f"目标{anchors['target_days']}天")
+        value = " · ".join(parts)
+    else:
+        value = f"{level_name} · {round(score)}分"
+    return value if revealable else f"待验证：{value}"
+
+
 def _nearest_anchor_label(score: float, anchors: dict[str, float]) -> str:
     ordered = sorted(anchors.items(), key=lambda item: item[1])
     return min(ordered, key=lambda item: (abs(score - item[1]), item[1]))[0]
@@ -1896,7 +2415,7 @@ def _weighted_identity_quotes_for_label(
         vote_weight = _identity_label_vote_weight(card.objective_signal, label, dimension=dimension)
         if vote_weight <= 0:
             continue
-        quotes = _evidence_quote_texts(card) or [card.fact]
+        quotes = _evidence_quote_texts(card)
         for quote in quotes:
             text = str(quote or "").strip()
             if not text:
@@ -2161,9 +2680,18 @@ def _quiz_cards(
 
 
 async def _prescription_card(payload: dict[str, Any], source: str, weight: float, response_time_ms: int) -> EvidenceCard:
-    signal = await extract_prescription_signal(payload)
+    evaluation = evaluate_prescription(payload)
+    signal = evaluation.signal()
     weak_labels = _weak_labels_from_prescription_signal(signal)
-    objective_signal: dict[str, Any] = {**signal, "response_time_ms": response_time_ms}
+    objective_signal: dict[str, Any] = {
+        **signal,
+        "response_time_ms": response_time_ms,
+        "quote": evaluation.quote or None,
+        "basis": "explicit",
+        "confidence": 0.85,
+        "extraction_method": evaluation.method,
+        "knowledge_base_ref": payload.get("knowledge_base_ref") or payload.get("knowledge_ref") or (evaluation.knowledge_base_refs[0] if evaluation.knowledge_base_refs else None),
+    }
     if weak_labels:
         objective_signal["weak_labels"] = weak_labels
     fact_parts = [
@@ -2182,7 +2710,7 @@ async def _try_llm_prescription_extract(payload: dict[str, Any]) -> dict[str, bo
     if not (settings.deepseek_api_key or settings.zhipu_api_key):
         return None
     prompt = (
-        "只输出JSON，不要解释。请从中医开方答题中抽取 objective_signal，"
+        "只输出JSON，不要解释。请从中医开方答题中抽取 objective_signal，不能输出最终画像分数，"
         "字段必须且只能包含：对症、配伍、剂量、误用毒烈。字段值为布尔值。"
         f"\n输入：{json.dumps(payload, ensure_ascii=False)}"
     )
@@ -2271,12 +2799,29 @@ def _dimension_from_passive_event(event_type: str, resource_type: str) -> Dimens
 
 
 def _card(dimension: DimensionKey, source: str, fact: str, objective_signal: dict[str, Any], weight: float) -> EvidenceCard:
+    signal = {key: value for key, value in objective_signal.items() if value is not None}
+    evidence = signal.get("evidence")
+    quote = signal.get("quote") or (evidence[0] if isinstance(evidence, list) and evidence else evidence if isinstance(evidence, str) else None)
+    basis = signal.get("basis") if signal.get("basis") in {"explicit", "inferred"} else "inferred"
+    confidence = signal.get("confidence", 0.0)
+    try:
+        extraction_confidence = max(0.0, min(1.0, float(confidence)))
+    except (TypeError, ValueError):
+        extraction_confidence = 0.0
+    method = signal.get("extraction_method")
+    if method not in {"llm", "no_key_rule_fallback", "rule_fallback", "legacy"}:
+        method = "legacy"
     return EvidenceCard(
         dimension=dimension,
         source=source,
         fact=fact,
-        objective_signal={key: value for key, value in objective_signal.items() if value is not None},
+        objective_signal=signal,
         weight=weight,
+        quote=str(quote).strip() if quote else None,
+        basis=basis,
+        extraction_confidence=extraction_confidence,
+        extraction_method=method,
+        knowledge_base_ref=signal.get("knowledge_base_ref") or signal.get("knowledge_ref"),
         timestamp=datetime.now(UTC),
     )
 

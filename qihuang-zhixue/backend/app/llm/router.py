@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -245,10 +246,21 @@ class ModelRouter:
             if exc is None:
                 print(f"FallbackReason:{reason}")
                 return
-            chain = [f"{exc.__class__.__name__}: {exc}"]
+            # Keep the historical class/status context, but redact credentials and
+            # bound each provider message so response bodies cannot be dumped.
+            def safe_message(value: str) -> str:
+                value = re.sub(r"Bearer\s+[^\s,}]+", "Bearer [REDACTED]", value, flags=re.I)
+                value = re.sub(r"(?:api[_-]?key|authorization)\s*[:=]\s*[^,}\s]+", "[REDACTED]", value, flags=re.I)
+                # Provider JSON bodies can contain account metadata and should
+                # never be copied into application logs.
+                if "{" in value and "}" in value:
+                    value = value.split("{", 1)[0].rstrip() + "{provider response redacted}"
+                return value[:240]
+
+            chain = [f"{exc.__class__.__name__}: {safe_message(str(exc))}"]
             current = exc.__cause__ or exc.__context__
-            while current is not None:
-                chain.append(f"{current.__class__.__name__}: {current}")
+            while current is not None and len(chain) < 3:
+                chain.append(f"{current.__class__.__name__}: {safe_message(str(current))}")
                 current = current.__cause__ or current.__context__
             print(f"FallbackReason:{reason} | " + " <- ".join(chain))
 

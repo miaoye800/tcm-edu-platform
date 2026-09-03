@@ -1,0 +1,11 @@
+{
+  "id": "star-chart",
+  "name": "放射星图（备选）",
+  "stance": "借观星识药的图谱隐喻，把平级线索做成可巡游的星点，而不是另一张普通树图。",
+  "scene": "适合图谱索引、关联概览和探索式复习，不适合强顺序内容。",
+  "palette": ["#89d9cf", "#93b7ff", "#f0cf80", "#d5c6ff"],
+  "layout": "radial",
+  "nodeStyle": { "shape": "circle", "radius": "50%", "density": "airy", "emphasis": "star-dot" },
+  "lineStyle": { "kind": "solid", "width": "1px", "subWidth": "1px", "decoration": "halo" },
+  "cssVars": { "--mm-bg": "#101b26", "--mm-surface": "#172735", "--mm-text": "#e8f3f3", "--mm-muted": "#9daeb8", "--mm-primary": "#89d9cf", "--mm-accent": "#93b7ff", "--mm-secondary": "#f0cf80", "--mm-line": "#668fa2", "--mm-node-border": "#89d9cf", "--mm-glow": "rgba(137,217,207,.18)" }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "neon-night",
+  "name": "暗夜霓虹",
+  "stance": "把中药结构置入精密仪表的黑场，玉青与冷蓝各司其职，光只勾边不漫溢。",
+  "scene": "适合机制梳理、知识网络和夜间专注学习，强调结构而非装饰。",
+  "palette": ["#67e3c2", "#78aefb", "#d1f8ee", "#e0b4ff"],
+  "layout": "tree",
+  "nodeStyle": { "shape": "rect", "radius": "6px", "density": "regular", "emphasis": "dual-neon" },
+  "lineStyle": { "kind": "solid", "width": "2px", "subWidth": "1px", "decoration": "none" },
+  "cssVars": { "--mm-bg": "#0d1219", "--mm-surface": "#121c27", "--mm-text": "#e4f8f1", "--mm-muted": "#91aab2", "--mm-primary": "#67e3c2", "--mm-accent": "#78aefb", "--mm-secondary": "#e0b4ff", "--mm-line": "#5fb6c5", "--mm-node-border": "#67e3c2", "--mm-glow": "rgba(103,227,194,.22)" }
+}

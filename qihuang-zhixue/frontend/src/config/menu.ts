@@ -1,5 +1,4 @@
 import {
-  ChatDotRound,
   Compass,
   Connection,
   DataAnalysis,
@@ -38,8 +37,8 @@ export const menuGroups: MenuGroup[] = [
       { icon: HomeFilled, label: '总览仪表盘', route: '/dashboard' },
       { icon: UserFilled, label: '弟子档案', route: '/profile' },
       { icon: Refresh, label: '焕醒画像', dynamicLabel: 'profileOnboarding', route: '/onboarding' },
-      { icon: ChatDotRound, label: '智能学习', route: '/learn' },
       { icon: MapLocation, label: '闯关地图', route: '/path' },
+      { icon: MagicStick, label: '我的资源库', route: '/resources' },
     ],
   },
   {

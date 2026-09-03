@@ -2,10 +2,51 @@ import asyncio
 import sqlite3
 from pathlib import Path
 
+from app.config import DEFAULT_DATABASE_PATH, Settings, resolve_database_path
 from app.profile.evidence import EvidenceCard
 from app.profile.modes import APPRENTICE_STEPS, answer_profile_session, finish_profile_session, start_profile_session
 from app.profile.schema import create_blank_profile
 from app.profile.store import add_evidence, get_profile, get_profile_session_row, init_db, list_evidence
+
+
+def test_default_database_path_is_backend_data_dir() -> None:
+    assert DEFAULT_DATABASE_PATH.name == "qihuang.db"
+    assert DEFAULT_DATABASE_PATH.parent.name == ".data"
+    assert DEFAULT_DATABASE_PATH.parent.parent.name == "backend"
+    assert resolve_database_path(Settings(QIHUANG_DB_PATH="custom/test.db")) == (
+        DEFAULT_DATABASE_PATH.parent.parent / "custom" / "test.db"
+    )
+
+
+def test_database_path_environment_override_is_explicit(tmp_path: Path, monkeypatch) -> None:
+    override = tmp_path / "override.db"
+    monkeypatch.setenv("QIHUANG_DB_PATH", str(override))
+    assert resolve_database_path(Settings()) == override
+
+
+def test_profile_sessions_without_session_id_are_backed_up(tmp_path: Path) -> None:
+    db_path = tmp_path / "missing-session-id.db"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("CREATE TABLE profile_sessions (user_id TEXT, mode TEXT, current_step INTEGER)")
+        conn.execute("INSERT INTO profile_sessions VALUES ('legacy-user', 'apprentice', 2)")
+        conn.commit()
+
+    init_db(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        tables = {
+            str(row[0])
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
+        backup_tables = sorted(name for name in tables if name.startswith("profile_sessions_backup_"))
+        assert len(backup_tables) == 1
+        assert conn.execute("SELECT COUNT(*) FROM profile_sessions").fetchone()[0] == 0
+        assert conn.execute(f'SELECT COUNT(*) FROM "{backup_tables[0]}"').fetchone()[0] == 1
+        assert conn.execute(f'SELECT user_id, mode, current_step FROM "{backup_tables[0]}"').fetchone() == (
+            "legacy-user",
+            "apprentice",
+            2,
+        )
 
 
 def test_init_db_migrates_old_profile_sessions_and_flow_round_trips(tmp_path: Path) -> None:
@@ -92,6 +133,27 @@ def test_init_db_migrates_old_profile_sessions_and_flow_round_trips(tmp_path: Pa
     assert row["finished"] == 1
     assert row["persisted"] == 1
     assert row["step_data_json"]
+
+
+def test_init_db_adds_persistent_dialogue_turn_claim_table_to_old_database(tmp_path: Path) -> None:
+    db_path = tmp_path / "old-without-dialogue-turns.db"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("CREATE TABLE profile_sessions (session_id TEXT PRIMARY KEY, user_id TEXT, mode TEXT, current_step INTEGER)")
+        conn.commit()
+
+    init_db(db_path)
+    init_db(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        table = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'dialogue_turn_requests'"
+        ).fetchone()
+        index = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_dialogue_turn_requests_one_active'"
+        ).fetchone()
+
+    assert table == ("dialogue_turn_requests",)
+    assert index == ("idx_dialogue_turn_requests_one_active",)
 
 
 def test_init_db_migrates_profile_and_evidence_without_dropping_old_rows(tmp_path: Path) -> None:

@@ -103,7 +103,20 @@ export const identityCardDescriptions: Record<DimensionKey, DimensionDescription
   },
 }
 
+export const identityCardRefutedDescriptions: Record<DimensionKey, string> = {
+  learning_goal: '看来你的底子和你说的有些出入，师父重新看过了。',
+  learning_style: '看来你的底子和你说的有些出入，师父重新看过了。',
+  knowledge_base: '看来你的底子和你说的有些出入，师父重新看过了。',
+  weak_points: '看来你的底子和你说的有些出入，师父重新看过了。',
+  pace: '看来你的底子和你说的有些出入，师父重新看过了。',
+  motivation: '看来你的底子和你说的有些出入，师父重新看过了。',
+  resource_preference: '看来你的底子和你说的有些出入，师父重新看过了。',
+}
+
 export const dimensionLabelFor = (key: DimensionKey): string => identityCardDescriptions[key]?.label ?? key
+
+export const identityCardRefutedDescriptionFor = (key: DimensionKey): string =>
+  identityCardRefutedDescriptions[key] ?? '看来你的底子和你说的有些出入，师父重新看过了。'
 
 export const identityCardDescriptionFor = (
   dimension: DimensionKey,

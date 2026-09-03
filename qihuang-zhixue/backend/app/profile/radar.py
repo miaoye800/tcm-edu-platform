@@ -33,10 +33,12 @@ def to_radar(profile: Profile) -> dict[str, Any]:
     """Convert a seven-dimension profile to a frontend-friendly radar payload."""
 
     axes = [_axis_payload(profile, key, label) for key, label in DIMENSION_LABELS.items()]
+    provenance = {axis["key"]: axis["provenance"] for axis in axes}
     return {
         "dimensions": [axis["label"] for axis in axes],
         "values": [axis["value"] for axis in axes],
         "confidences": [axis["confidence"] for axis in axes],
+        "provenance": provenance,
         "axes": axes,
     }
 
@@ -48,6 +50,11 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
     raw_label = _raw_label(key, dimension)
     lit = _is_lit(dimension)
     status = _status(lit, confidence)
+    pending_verification = any(
+        getattr(card, "claim_status", None) == "pending"
+        for card in (getattr(dimension, "evidence", None) or [])
+    )
+    provenance = _dimension_provenance(dimension)
     return {
         "key": key,
         "label": RADAR_LABELS.get(key, source_label),
@@ -60,6 +67,8 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
         "confidence": confidence,
         "lit": lit,
         "status": status,
+        "pending_verification": pending_verification,
+        "provenance": provenance,
         "anchor": _anchor_text(key, value),
         "confidence_status": "已取证" if confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
         "confidenceStatus": "已取证" if confidence >= LOW_CONFIDENCE_THRESHOLD else "待取证",
@@ -68,6 +77,23 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
         "kind": kind,
         "placeholder": _is_placeholder(value, confidence, dimension),
     }
+
+
+def _dimension_provenance(dimension: Any) -> str:
+    cards = getattr(dimension, "evidence", None) or []
+    explicit = [
+        str(card.objective_signal.get("scoring_provenance"))
+        for card in cards
+        if card.objective_signal.get("scoring_provenance")
+    ]
+    if explicit:
+        return explicit[-1]
+    methods = {getattr(card, "extraction_method", "legacy") for card in cards}
+    if "no_key_rule_fallback" in methods:
+        return "no_key_rule_fallback"
+    if "rule_fallback" in methods:
+        return "rule_fallback"
+    return "fusion" if cards else "unknown"
 
 
 def _axis_value(key: str, dimension: Any) -> tuple[int, str]:

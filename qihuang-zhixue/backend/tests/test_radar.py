@@ -1,5 +1,5 @@
 from app.profile.radar import to_radar
-from app.profile.schema import WeakPoint, create_blank_profile
+from app.profile.schema import EvidenceCard, WeakPoint, create_blank_profile
 from app.profile.update import profile_to_response
 
 
@@ -66,6 +66,40 @@ def test_radar_empty_and_low_confidence_profile_returns_placeholders() -> None:
     assert axes["learning_goal"]["status"] == "dashed"
 
 
+def test_radar_provenance_follows_persisted_scoring_then_no_key_extraction() -> None:
+    profile = create_blank_profile("student-radar-provenance")
+    profile.knowledge_base.evidence = [
+        EvidenceCard(
+            dimension="knowledge_base",
+            source="问诊式对话",
+            fact="用户自述基础一般",
+            objective_signal={"base_level": "一般"},
+            weight=1.0,
+            quote="基础一般",
+            extraction_method="no_key_rule_fallback",
+        )
+    ]
+    profile.learning_goal.evidence = [
+        EvidenceCard(
+            dimension="learning_goal",
+            source="问诊式对话",
+            fact="用户目标是应试提分",
+            objective_signal={"label": "应试提分", "scoring_provenance": "jury"},
+            weight=1.0,
+            quote="目标是应试提分",
+            extraction_method="llm",
+        )
+    ]
+
+    radar = to_radar(profile)
+    axes = {axis["key"]: axis for axis in radar["axes"]}
+
+    assert axes["knowledge_base"]["provenance"] == "no_key_rule_fallback"
+    assert axes["learning_goal"]["provenance"] == "jury"
+    assert axes["pace"]["provenance"] == "unknown"
+    assert radar["provenance"]["learning_goal"] == "jury"
+
+
 def test_radar_anchor_matches_dimension_text() -> None:
     profile = create_blank_profile("student-radar-anchor")
     profile.knowledge_base.score = 72
@@ -107,3 +141,22 @@ def test_profile_response_radar_exposes_axes_confidence_for_frontend() -> None:
     assert payload["radar"]["axes"][0]["key"] == "knowledge_base"
     assert payload["radar"]["axes"][0]["value"] == 64
     assert payload["radar"]["axes"][0]["confidence"] == 0.7
+
+
+def test_profile_response_propagates_persisted_scoring_provenance_to_radar() -> None:
+    profile = create_blank_profile("student-radar-provenance")
+    profile.knowledge_base.evidence = [
+        EvidenceCard(
+            dimension="knowledge_base",
+            source="test",
+            fact="rule fallback",
+            objective_signal={"scoring_provenance": "no_key_rule_fallback"},
+            weight=1.0,
+        )
+    ]
+
+    payload = profile_to_response(profile)
+
+    assert payload["provenance"]["knowledge_base"] == "no_key_rule_fallback"
+    assert payload["radar"]["provenance"]["knowledge_base"] == "no_key_rule_fallback"
+    assert payload["radar"]["axes"][0]["provenance"] == "no_key_rule_fallback"

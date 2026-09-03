@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import AliasChoices
 from pydantic import Field
@@ -7,6 +8,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DEV_AUTH_SECRET = "qihuang-dev-auth-secret-change-me"
 _warned_default_auth_secret = False
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATABASE_PATH = BACKEND_ROOT / ".data" / "qihuang.db"
 
 
 class Settings(BaseSettings):
@@ -40,6 +44,7 @@ class Settings(BaseSettings):
             "profile_extract": "deepseek_model_flash",
             "profile_update": "deepseek_model_flash",
             "profile_narrative": "deepseek_model_flash",
+            "profile_goal": "deepseek_model_flash",
             "vision": "glm-4.5v",
         },
         alias="LLM_TASK_MODEL_MAP",
@@ -51,6 +56,7 @@ class Settings(BaseSettings):
     retrieval_score_threshold: float = Field(default=0.35, alias="RETRIEVAL_SCORE_THRESHOLD")
     auth_secret: str = Field(default=DEFAULT_DEV_AUTH_SECRET, alias="AUTH_SECRET")
     auth_token_expire_days: int = Field(default=7, alias="AUTH_TOKEN_EXPIRE_DAYS")
+    qihuang_db_path: Path = Field(default=DEFAULT_DATABASE_PATH, alias="QIHUANG_DB_PATH")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -64,6 +70,14 @@ def get_settings() -> Settings:
 
 def resolve_auth_secret(settings: Settings) -> str:
     return settings.auth_secret.strip() or DEFAULT_DEV_AUTH_SECRET
+
+
+def resolve_database_path(settings: Settings | None = None) -> Path:
+    """Resolve the shared SQLite path; relative overrides are backend-relative."""
+
+    configured = (settings or get_settings()).qihuang_db_path
+    path = Path(configured).expanduser()
+    return path if path.is_absolute() else BACKEND_ROOT / path
 
 
 def warn_if_default_auth_secret(settings: Settings) -> None:

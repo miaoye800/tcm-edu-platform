@@ -9,6 +9,7 @@ from app.config import Settings
 from app.profile.agent import cold_start_profile, export_mermaid, run_cold_start
 from app.profile.jury import score_profile
 from app.profile.nodes import DialogueExtraction, _dialogue_cards, _fallback_dialogue_extraction, _profile_from_scoring_results
+from app.profile.evidence import StructuredEvidence
 from app.profile.radar import to_radar
 from app.profile.schema import DIMENSION_LABELS, WeakPoint
 from app.profile.store import get_profile, upsert_profile
@@ -54,7 +55,7 @@ def test_unknown_dialogue_only_scores_knowledge_and_leaves_other_axes_dark() -> 
     assert extraction.major.value is None
     assert extraction.resource_preference.value is None
     assert extraction.base_level.evidence == ["没接触"]
-    assert profile.knowledge_base.score == 10
+    assert profile.knowledge_base.score == 11.5
     assert profile.knowledge_base.score != 50
     assert profile.learning_goal.label is None
     assert profile.learning_style.label is None
@@ -158,6 +159,39 @@ def test_pure_wellness_chat_does_not_fabricate_dialogue_profile_scores() -> None
     assert cards == []
     assert all(axis["confidence"] < 0.5 for axis in axes.values())
     assert all(axis["status"] == "dark" for axis in axes.values())
+
+
+def test_structured_evidence_contract_and_rule_fallback_metadata() -> None:
+    contract = StructuredEvidence(
+        dimension="learning_goal",
+        fact="目标线索",
+        signal={"label": "兴趣科普"},
+        quote="想先随便了解中药",
+        basis="inferred",
+        extraction_confidence=0.45,
+        source="对话",
+        extraction_method="no_key_rule_fallback",
+    )
+    assert contract.signal["label"] == "兴趣科普"
+    cards = _dialogue_cards(_fallback_dialogue_extraction("我不为考试，想先随便了解中药"))
+    assert cards
+    assert all(card.extraction_method == "no_key_rule_fallback" for card in cards)
+    assert all(card.quote and card.quote in "我不为考试，想先随便了解中药" for card in cards)
+
+
+def test_rule_fallback_handles_mixed_goals_and_negation() -> None:
+    extraction = _fallback_dialogue_extraction("不是为了考试，既想做临床实践，也想考研深造")
+    assert isinstance(extraction.learning_goal.value, dict)
+    assert "应试提分" not in extraction.learning_goal.value
+    assert {"临床实用", "学术深造"} <= set(extraction.learning_goal.value)
+    assert all(quote in "不是为了考试，既想做临床实践，也想考研深造" for quote in extraction.learning_goal.evidence)
+
+
+def test_rule_fallback_deduplicates_repeated_self_report_and_ignores_idle_chat() -> None:
+    repeated = _fallback_dialogue_extraction("我喜欢看图谱，我喜欢看图谱")
+    assert repeated.learning_style.evidence == ["图谱"]
+    idle = _fallback_dialogue_extraction("weather is nice, what should I eat for dinner?")
+    assert _dialogue_cards(idle) == []
 
 
 def test_wrong_differentiation_event_adds_weak_point_and_updates_scores(tmp_path: Path) -> None:

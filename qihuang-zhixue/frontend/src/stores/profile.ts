@@ -53,6 +53,17 @@ export const useProfileStore = defineStore('profile', {
       this.loading = true
       this.error = ''
 
+      // E2E screenshots exercise the same local fallback used by offline users.
+      // The flag is opt-in and never changes route-guard behavior in production.
+      if (window.sessionStorage.getItem('qihuang-e2e-force-mock') === '1' || window.localStorage.getItem('qihuang-e2e-force-mock') === '1') {
+        this.profile = createMockProfile(this.activeUserId)
+        this.resetNarrativeState(this.activeUserId)
+        this.usingMock = true
+        this.loaded = true
+        this.loading = false
+        return
+      }
+
       try {
         this.profile = await readProfile()
         this.usingMock = false

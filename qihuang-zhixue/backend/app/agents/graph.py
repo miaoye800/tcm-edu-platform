@@ -15,13 +15,13 @@ warnings.filterwarnings("ignore", category=LangChainPendingDeprecationWarning)
 
 from langgraph.graph import END, StateGraph
 
-from app.agents.path_agent import run_path_planning
 from app.kb.ingest import load_herbs
 from app.kb.retriever import SearchHit, search
 from app.llm.clients import ChatMessage, MockClient
 from app.llm.router import ModelRouter
 from app.profile.agent import run_cold_start
 from app.profile.update import ProfileUpdateEvent, get_latest_profile, profile_to_response, update_profile_from_event
+from app.path.service import create_l1_plan
 
 Intent = Literal["profile_setup", "knowledge_qa", "resource_generation", "learning_path", "other"]
 GRAPH_DIR = Path(__file__).resolve().parent
@@ -130,15 +130,13 @@ async def explain_agent(state: State) -> State:
 
 
 async def path_agent(state: State) -> State:
-    path_state = await run_path_planning(user_id=state["user_id"])
+    path_result = await create_l1_plan(user_id=state["user_id"])
     next_state = _copy_state(state)
-    next_state["skill_tree"] = [dict(node) for node in path_state["skill_tree"]]
-    next_state["recommendations"] = [dict(item) for item in path_state["recommendations"]]
-    next_state["reviews"] = dict(path_state["reviews"])
-    next_state["answer"] = path_state["answer"]
-    _append_trace(next_state, "path_agent", "调用 PathAgent 子图完成掌握度追踪、路径规划与复习推荐")
-    for item in path_state["trace"]:
-        _append_trace(next_state, f"path_subgraph.{item['node']}", item["summary"])
+    next_state["skill_tree"] = [stage.model_dump(mode="json") for stage in path_result.stages]
+    next_state["recommendations"] = []
+    next_state["reviews"] = {}
+    next_state["answer"] = path_result.suggestion
+    _append_trace(next_state, "path_agent", f"调用新 PathAgent L1，生成版本 v{path_result.version}")
     return next_state
 
 

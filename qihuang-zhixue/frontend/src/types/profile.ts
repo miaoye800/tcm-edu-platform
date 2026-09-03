@@ -13,12 +13,20 @@ export type DimensionKey = (typeof dimensionKeys)[number]
 export type ConfidenceStatus = '待取证' | '已取证'
 
 export type EvidenceCard = {
+  evidence_id: string
   dimension: DimensionKey
   source: string
   fact: string
   objective_signal: Record<string, unknown>
   weight: number
   timestamp: string
+  tier?: string
+  claim_status?: 'pending' | 'verified' | 'refuted' | string | null
+  quote?: string | null
+  basis?: 'explicit' | 'inferred'
+  extraction_confidence?: number
+  extraction_method?: 'llm' | 'no_key_rule_fallback' | 'rule_fallback' | 'legacy' | string
+  knowledge_base_ref?: string | null
 }
 
 export type WeakPoint = {
@@ -43,6 +51,51 @@ export type DimensionPayload = {
   narrative?: string
   items?: WeakPoint[]
   jury?: Partial<Record<TeacherName | string, JuryPayload>>
+  provenance?: string
+}
+
+export type PlanningParams = {
+  depth: '浅' | '中' | '深' | string
+  breadth: '考点导向' | '全面' | '兴趣优先' | string
+  pace: '松' | '中' | '紧' | string
+  fun_preference: number
+  assessment_strictness: '宽松' | '标准' | '严格' | string
+  time_budget: { total_days: number; daily_minutes: number } | null
+}
+
+export type ProfileGoal = {
+  raw_text: string
+  normalized: string | null
+  confirmed_by_user: boolean
+  confidence: number
+}
+
+export type ProfileTrust = {
+  trust: number
+  tier: '眼见为实' | '半信半疑' | '深信不疑' | string
+}
+
+export type ProfileChange = {
+  ts: string
+  dim: string
+  old_value: unknown
+  new_value: unknown
+  reason: string
+  source_event: string
+  evidence_ids: string[]
+}
+
+export type ProfileAbility = {
+  theta?: number
+  level?: string
+  attempts?: number
+  [key: string]: unknown
+}
+
+export type GoalCandidate = {
+  restatement: string
+  goal: ProfileGoal
+  planning_params: PlanningParams
 }
 
 export type ProfileResponse = {
@@ -50,10 +103,18 @@ export type ProfileResponse = {
   created_at?: string
   updated_at?: string
   confidence?: Partial<Record<DimensionKey, number>>
+  provenance?: Partial<Record<DimensionKey, string>>
   radar?: {
     dimensions: string[]
     values: number[]
+    provenance?: Partial<Record<DimensionKey, string>>
+    axes?: RadarAxis[]
   }
+  planning_params?: PlanningParams
+  goal?: ProfileGoal
+  change_log?: ProfileChange[]
+  change_log_pagination?: { limit: number; offset: number }
+  ability?: ProfileAbility
 } & Record<DimensionKey, DimensionPayload>
 
 export type NarrativeFact = {
@@ -113,6 +174,8 @@ export type RadarAxis = {
   lowConfidence: boolean
   anchor: string
   kind: 'numeric' | 'derived' | 'hotspot'
+  pending_verification?: boolean
+  provenance?: string
 }
 
 export type ProfileProgressDimension = {
@@ -153,25 +216,57 @@ export type EvidencePanelDimension = {
 
 export type IdentityCardKind = 'distribution' | 'level' | 'tags'
 
-export type IdentityDimensionCard = {
+export type IdentityCardProvenance = 'fusion' | 'rule_fallback' | 'no_key_rule_fallback' | string
+
+/** A server-authored item displayed inside one seven-dimension identity card. */
+export type IdentityCardItem = {
   canonical_label?: string
   display_name?: string
   ratio?: number
   level_name?: string
   score?: number | null
   label?: string
+  strength?: number | null
+  daily_minutes?: number | null
+  target_days?: number | null
   quotes?: string[]
+  evidence_refs?: string[]
   placeholder?: boolean
 }
 
-export type IdentityCardsDimensionView = {
+/**
+ * Dialogue identity-card view model. Values are deliberately not recomputed in
+ * the client: `items` is the canonical payload and `cards` is legacy support.
+ */
+export type IdentityCardView = {
   key: DimensionKey
+  label: string
   kind: IdentityCardKind
   revealed: boolean
+  revealable: boolean
+  revealed_now: boolean
   confidence: number
-  cards: IdentityDimensionCard[]
+  confidence_status: ConfidenceStatus
+  score?: number | null
+  display_value: string
+  distribution: Record<string, number>
+  items: IdentityCardItem[]
+  cards?: IdentityCardItem[]
+  evidence_refs: string[]
+  quotes: string[]
+  explanation: string
+  provenance: IdentityCardProvenance
+  pending_reason?: string | null
   target_label?: string | null
+  quick_replies?: string[]
+  pending_verification?: boolean
+  claim_status?: 'pending' | 'verified' | 'refuted' | string | null
 }
+
+/** @deprecated Use IdentityCardItem. */
+export type IdentityDimensionCard = IdentityCardItem
+/** @deprecated Use IdentityCardView. */
+export type IdentityCardsDimensionView = IdentityCardView
 
 export type DimensionRow = {
   key: DimensionKey
@@ -239,12 +334,15 @@ export type ProfileSessionResponse = {
     axes?: RadarAxis[]
     dimensions?: string[]
     values?: number[]
+    confidences?: number[]
+    provenance?: Partial<Record<DimensionKey, string>>
   }
   profile_progress?: ProfileProgress
   evidence_panel?: EvidencePanelDimension[]
   identity_cards?: IdentityCardsDimensionView[]
   target?: DimensionKey | null
   target_label?: string | null
+  quick_replies?: string[]
   turn_index?: number
   converged?: boolean
   next_question?: string | null
@@ -278,6 +376,6 @@ export type ProfileDialogueChatMessage = {
 
 export type ProfileDialogueStreamUiEvent = {
   id: number
-  type: 'thinking' | 'message' | 'done' | 'reset'
+  type: 'thinking' | 'message' | 'message_done' | 'done' | 'reset'
   delta?: string
 }

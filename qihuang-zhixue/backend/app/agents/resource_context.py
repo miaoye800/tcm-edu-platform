@@ -27,6 +27,7 @@ class ResourceDoc(TypedDict):
     combinations: list[dict[str, Any]]
     differentiation: list[dict[str, str]]
     common_confusions: list[str]
+    incompatibility: dict[str, list[str]]
     sources: list[dict[str, Any]]
     evidence_text: str
 
@@ -210,6 +211,7 @@ def _herb_to_doc(herb: Herb, hit_sources: list[dict[str, Any]]) -> ResourceDoc:
         "combinations": combinations,
         "differentiation": differentiation,
         "common_confusions": common_confusions,
+        "incompatibility": herb.incompatibility.model_dump(mode="json") if herb.incompatibility else {},
         "sources": sources,
         "evidence_text": "",
     }
@@ -236,4 +238,3 @@ def _make_evidence_text(doc: ResourceDoc) -> str:
         " ".join(doc["common_confusions"]),
     ]
     return " ".join(piece for piece in pieces if piece)
-

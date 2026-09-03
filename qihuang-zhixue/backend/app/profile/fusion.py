@@ -7,12 +7,16 @@ then applies the scoring formula from ``画像评分细则.md``.
 
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from math import isfinite
 from typing import Any
 
-from app.profile.schema import CATEGORY_DIMENSIONS, DIMENSION_LABELS, DimensionKey, EvidenceCard
+from app.profile.anchors import base_level_midpoints, midpoint_from_signal
+from app.profile.schema import CATEGORY_DIMENSIONS, DIMENSION_LABELS, DimensionKey, EvidenceCard, EvidenceTier
 
 HALF_LIFE_DAYS: dict[DimensionKey, float | None] = {
     "knowledge_base": 30.0,
@@ -36,13 +40,65 @@ ALLOWED_LABELS: dict[DimensionKey, tuple[str, ...]] = {
 
 DEFAULT_CONFIDENCE_WEIGHT_K = 3.0
 NUMERIC_VARIANCE_NORMALIZER = 2500.0
-BASE_LEVEL_SCORES: dict[str, float] = {
-    "零基础": 10.0,
-    "入门": 30.0,
-    "一般": 50.0,
-    "较好": 70.0,
-    "熟练": 85.0,
+# Compatibility view for callers that display the nearest base-level label.
+BASE_LEVEL_SCORES: dict[str, float] = base_level_midpoints()
+
+# Objective dimensions require stronger-than-self-report evidence to become solid.
+OBJECTIVE_CONFIDENCE_DIMENSIONS: frozenset[DimensionKey] = frozenset(
+    {"knowledge_base", "weak_points", "pace"}
+)
+EVIDENCE_TIER_CONFIDENCE_CAPS: dict[EvidenceTier, float] = {
+    EvidenceTier.SELF_REPORT: 0.35,
+    EvidenceTier.BEHAVIORAL: 0.6,
+    EvidenceTier.MEASURED: 1.0,
 }
+EVIDENCE_TIER_RANK: dict[EvidenceTier, int] = {
+    EvidenceTier.SELF_REPORT: 0,
+    EvidenceTier.BEHAVIORAL: 1,
+    EvidenceTier.MEASURED: 2,
+}
+
+# Only assertion-bearing fields participate in self-report deduplication;
+# telemetry such as turn number and response latency must not make a repeat new.
+SELF_REPORT_ASSERTION_FIELDS: frozenset[str] = frozenset(
+    {
+        "value",
+        "score",
+        "evidence_value",
+        "numeric_value",
+        "accuracy",
+        "correct_rate",
+        "gave_up",
+        "abandoned",
+        "correct",
+        "is_correct",
+        "对症",
+        "配伍",
+        "剂量",
+        "误用毒烈",
+        "prior_score",
+        "base_score",
+        "label",
+        "base_level",
+        "daily_minutes",
+        "minutes_per_day",
+        "target_days",
+        "period_days",
+        "motivation",
+        "motivation_score",
+        "strength",
+        "accept_challenge",
+        "challenge",
+        "weak_labels",
+        "knowledge_point",
+        "topic",
+        "votes",
+        "distribution",
+        "resource_type",
+        "identity_card",
+    }
+)
+SELF_REPORT_REPEAT_DECAY_BASE = 0.5
 
 
 @dataclass(frozen=True)
@@ -84,6 +140,8 @@ def fuse_profile(
     *,
     now: datetime | None = None,
     confidence_weight_k: float = DEFAULT_CONFIDENCE_WEIGHT_K,
+    confidence_weight_dimensions: tuple[DimensionKey, ...] | None = None,
+    self_report_trust: float = 1.0,
 ) -> dict[DimensionKey, FusionResult]:
     """Fuse all seven dimensions from evidence cards."""
 
@@ -92,7 +150,12 @@ def fuse_profile(
             dimension,
             evidence_cards,
             now=now,
-            confidence_weight_k=confidence_weight_k,
+            confidence_weight_k=(
+                confidence_weight_k
+                if confidence_weight_dimensions is None or dimension in confidence_weight_dimensions
+                else DEFAULT_CONFIDENCE_WEIGHT_K
+            ),
+            self_report_trust=self_report_trust,
         )
         for dimension in DIMENSION_LABELS
     }
@@ -104,15 +167,33 @@ def fuse_dimension(
     *,
     now: datetime | None = None,
     confidence_weight_k: float = DEFAULT_CONFIDENCE_WEIGHT_K,
+    self_report_trust: float = 1.0,
 ) -> FusionResult:
     """Fuse one dimension using the weighted + confidence + decay formula."""
 
     cards = [card for card in evidence_cards if card.dimension == dimension]
     if dimension in CATEGORY_DIMENSIONS or dimension == "weak_points":
-        return _fuse_label_dimension(dimension, cards, now=now, confidence_weight_k=confidence_weight_k)
+        return _fuse_label_dimension(
+            dimension,
+            cards,
+            now=now,
+            confidence_weight_k=confidence_weight_k,
+            self_report_trust=self_report_trust,
+        )
     if dimension == "motivation":
-        return _fuse_motivation(cards, now=now, confidence_weight_k=confidence_weight_k)
-    return _fuse_numeric_dimension(dimension, cards, now=now, confidence_weight_k=confidence_weight_k)
+        return _fuse_motivation(
+            cards,
+            now=now,
+            confidence_weight_k=confidence_weight_k,
+            self_report_trust=self_report_trust,
+        )
+    return _fuse_numeric_dimension(
+        dimension,
+        cards,
+        now=now,
+        confidence_weight_k=confidence_weight_k,
+        self_report_trust=self_report_trust,
+    )
 
 
 def score_from_evidence_value(card: EvidenceCard) -> float | None:
@@ -180,21 +261,31 @@ def _fuse_numeric_dimension(
     *,
     now: datetime | None,
     confidence_weight_k: float,
+    self_report_trust: float,
 ) -> FusionResult:
+    cards = _latest_elo_snapshot_cards(dimension, cards)
     weighted_values: list[tuple[float, float, float]] = []
-    for card in cards:
+    contributing_cards: list[EvidenceCard] = []
+    effective_weights = effective_card_weights(cards, self_report_trust=self_report_trust)
+    for card, effective_weight in zip(cards, effective_weights, strict=True):
         value = score_from_evidence_value(card)
         if value is None:
             continue
         decay = decay_factor(card, now=now)
-        weighted_values.append((value, card.weight, decay))
+        weighted_values.append((value, effective_weight, decay))
+        contributing_cards.append(card)
 
     numerator = sum(value * weight * decay for value, weight, decay in weighted_values)
     denominator = sum(weight * decay for _, weight, decay in weighted_values)
     score = round(numerator / denominator, 2) if denominator > 0 else None
     variance = _weighted_variance(weighted_values, score) if score is not None else 0.0
-    total_weight = sum(card.weight for card in cards if score_from_evidence_value(card) is not None)
+    total_weight = sum(weight for card, weight in zip(cards, effective_weights, strict=True) if score_from_evidence_value(card) is not None)
     confidence = confidence_from_weight_and_variance(total_weight, variance, k=confidence_weight_k)
+    confidence = _cap_confidence_by_tier(dimension, confidence, contributing_cards)
+    coverage_count, coverage_target = _coverage_from_cards(dimension, contributing_cards)
+    if coverage_count is not None:
+        coverage_factor = max(0.5, min(1.0, coverage_count / coverage_target))
+        confidence = round(confidence * coverage_factor, 4)
     return FusionResult(
         dimension=dimension,
         dimension_label=DIMENSION_LABELS[dimension],
@@ -205,8 +296,43 @@ def _fuse_numeric_dimension(
         variance=round(variance, 2),
         evidence_refs=[evidence_ref(card, index) for index, card in enumerate(cards, start=1)],
         narrative=_numeric_narrative(dimension, score, confidence),
-        metadata={"weighted_denominator": round(denominator, 4), "formula": "score_D=sum(value*weight*decay)/sum(weight*decay)"},
+        metadata={
+            "weighted_denominator": round(denominator, 4),
+            "effective_total_weight": round(total_weight, 4),
+            "formula": "score_D=sum(value*weight*decay)/sum(weight*decay)",
+            **(
+                {
+                    "coverage_count": coverage_count,
+                    "coverage_target": coverage_target,
+                    "coverage": round(min(1.0, coverage_count / coverage_target), 4),
+                    "coverage_factor": coverage_factor,
+                    "coverage_label": f"已考察主题 {coverage_count}/{coverage_target}",
+                }
+                if coverage_count is not None
+                else {}
+            ),
+        },
     )
+
+
+def _latest_elo_snapshot_cards(
+    dimension: DimensionKey,
+    cards: list[EvidenceCard],
+) -> list[EvidenceCard]:
+    """Keep only the newest cumulative Elo snapshot in numeric fusion.
+
+    Elo cards describe one evolving global rating, not independent observations.
+    Retaining historical snapshots would turn a current rating into a historical
+    average. Other measured knowledge evidence remains untouched.
+    """
+
+    if dimension != "knowledge_base":
+        return cards
+    snapshots = [card for card in cards if card.source == "Elo 实测能力"]
+    if len(snapshots) <= 1:
+        return cards
+    latest = max(snapshots, key=lambda card: _aware_datetime(card.timestamp))
+    return [card for card in cards if card.source != "Elo 实测能力" or card is latest]
 
 
 def _fuse_motivation(
@@ -214,10 +340,22 @@ def _fuse_motivation(
     *,
     now: datetime | None,
     confidence_weight_k: float,
+    self_report_trust: float,
 ) -> FusionResult:
-    numeric = _fuse_numeric_dimension("motivation", cards, now=now, confidence_weight_k=confidence_weight_k)
-    distribution, label, label_weight, label_variance = _label_distribution("motivation", cards, now=now)
-    total_weight = max(sum(card.weight for card in cards), label_weight)
+    numeric = _fuse_numeric_dimension(
+        "motivation",
+        cards,
+        now=now,
+        confidence_weight_k=confidence_weight_k,
+        self_report_trust=self_report_trust,
+    )
+    distribution, label, label_weight, label_variance = _label_distribution(
+        "motivation", cards, now=now, self_report_trust=self_report_trust
+    )
+    total_weight = max(
+        sum(effective_card_weights(cards, self_report_trust=self_report_trust)),
+        label_weight,
+    )
     confidence = confidence_from_weight_and_variance(
         total_weight,
         max(numeric.variance, label_variance),
@@ -243,14 +381,18 @@ def _fuse_label_dimension(
     *,
     now: datetime | None,
     confidence_weight_k: float,
+    self_report_trust: float,
 ) -> FusionResult:
-    distribution, label, total_weight, variance = _label_distribution(dimension, cards, now=now)
+    distribution, label, total_weight, variance = _label_distribution(
+        dimension, cards, now=now, self_report_trust=self_report_trust
+    )
     confidence = confidence_from_weight_and_variance(
         total_weight,
         variance,
         k=confidence_weight_k,
         variance_normalizer=1.0,
     )
+    confidence = _cap_confidence_by_tier(dimension, confidence, cards)
     return FusionResult(
         dimension=dimension,
         dimension_label=DIMENSION_LABELS[dimension],
@@ -270,12 +412,17 @@ def _label_distribution(
     cards: list[EvidenceCard],
     *,
     now: datetime | None,
+    self_report_trust: float,
 ) -> tuple[dict[str, float], str | None, float, float]:
     weights: dict[str, float] = {}
-    for card in cards:
+    for card, effective_weight in zip(
+        cards,
+        effective_card_weights(cards, self_report_trust=self_report_trust),
+        strict=True,
+    ):
         decay = decay_factor(card, now=now)
         for label, vote_weight in _label_votes_from_signal(dimension, card.objective_signal).items():
-            weights[label] = weights.get(label, 0.0) + card.weight * decay * vote_weight
+            weights[label] = weights.get(label, 0.0) + effective_weight * decay * vote_weight
 
     total_weight = sum(weights.values())
     if total_weight <= 0:
@@ -352,49 +499,72 @@ def _knowledge_value(signal: dict[str, Any]) -> float | None:
     if prior is not None:
         return _clamp_score(prior)
 
-    label = str(signal.get("label") or signal.get("base_level") or "").strip()
-    if label in BASE_LEVEL_SCORES:
-        return BASE_LEVEL_SCORES[label]
-    return None
+    return midpoint_from_signal("knowledge_base", signal)
 
 
 def _pace_value(signal: dict[str, Any]) -> float | None:
-    minutes = _first_numeric(signal, ("daily_minutes", "minutes_per_day"))
-    target_days = _first_numeric(signal, ("target_days", "period_days"))
-    values: list[float] = []
-    if minutes is not None:
-        if minutes < 15:
-            values.append(20.0)
-        elif minutes <= 40:
-            values.append(55.0)
-        else:
-            values.append(85.0)
-    if target_days is not None:
-        if target_days <= 14:
-            values.append(85.0)
-        elif target_days <= 45:
-            values.append(55.0)
-        else:
-            values.append(25.0)
-    return round(sum(values) / len(values), 2) if values else None
+    return midpoint_from_signal("pace", signal)
 
 
 def _motivation_value(signal: dict[str, Any]) -> float | None:
     explicit = _first_numeric(signal, ("motivation_score", "strength"))
     if explicit is not None:
         return _clamp_score(explicit)
-    label = str(signal.get("label") or signal.get("motivation") or "")
-    if label in {"被动", "佛系", "外部推动"}:
-        return 35.0
-    if label == "外驱":
-        return 50.0
-    if label == "内外混合":
-        return 65.0
-    if label == "内驱":
-        return 75.0
-    if bool(signal.get("accept_challenge") or signal.get("challenge")):
-        return 80.0
-    return None
+    return midpoint_from_signal("motivation", signal)
+
+
+def effective_card_weights(
+    cards: list[EvidenceCard],
+    *,
+    self_report_trust: float = 1.0,
+) -> list[float]:
+    """Apply geometric decay to repeated homogeneous self-report assertions."""
+
+    occurrences: dict[str, int] = {}
+    weights: list[float] = []
+    for card in cards:
+        if _effective_tier(card) != EvidenceTier.SELF_REPORT:
+            weights.append(card.weight)
+            continue
+        assertion_hash = _self_report_assertion_hash(card)
+        occurrence = occurrences.get(assertion_hash, 0) + 1
+        occurrences[assertion_hash] = occurrence
+        trust = max(0.3, min(1.0, self_report_trust))
+        weights.append(card.weight * trust * (SELF_REPORT_REPEAT_DECAY_BASE ** (occurrence - 1)))
+    return weights
+
+
+def _self_report_assertion_hash(card: EvidenceCard) -> str:
+    assertion = {
+        key: card.objective_signal[key]
+        for key in sorted(SELF_REPORT_ASSERTION_FIELDS)
+        if key in card.objective_signal
+    }
+    if assertion:
+        normalized = json.dumps(assertion, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    else:
+        normalized = re.sub(r"[^\w\u4e00-\u9fff]+", "", card.fact.casefold())
+    payload = f"{card.dimension}:{normalized}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _cap_confidence_by_tier(
+    dimension: DimensionKey,
+    confidence: float,
+    cards: list[EvidenceCard],
+) -> float:
+    if dimension not in OBJECTIVE_CONFIDENCE_DIMENSIONS or not cards:
+        return confidence
+    if any(card.claim_status == "pending" for card in cards):
+        return round(min(confidence, 0.35), 4)
+    highest_tier = max((_effective_tier(card) for card in cards), key=EVIDENCE_TIER_RANK.__getitem__)
+    return round(min(confidence, EVIDENCE_TIER_CONFIDENCE_CAPS[highest_tier]), 4)
+
+
+def _effective_tier(card: EvidenceCard) -> EvidenceTier:
+    if card.tier == EvidenceTier.SELF_REPORT and card.claim_status == "verified":
+        return EvidenceTier.MEASURED
+    return card.tier
 
 
 def _weighted_variance(weighted_values: list[tuple[float, float, float]], mean: float | None) -> float:
@@ -404,6 +574,25 @@ def _weighted_variance(weighted_values: list[tuple[float, float, float]], mean: 
     if denominator <= 0:
         return 0.0
     return sum(((value - mean) ** 2) * weight * decay for value, weight, decay in weighted_values) / denominator
+
+
+def _coverage_from_cards(
+    dimension: DimensionKey,
+    cards: list[EvidenceCard],
+) -> tuple[int | None, int]:
+    """Read the latest cumulative Elo coverage carried by measured evidence."""
+
+    if dimension != "knowledge_base":
+        return None, 8
+    coverage_values: list[tuple[int, int]] = []
+    for card in cards:
+        signal = card.objective_signal
+        count = _as_float(signal.get("coverage_count"))
+        target = _as_float(signal.get("coverage_target"))
+        if count is None:
+            continue
+        coverage_values.append((max(0, int(count)), max(1, int(target or 8))))
+    return max(coverage_values, key=lambda item: item[0]) if coverage_values else (None, 8)
 
 
 def _numeric_narrative(dimension: DimensionKey, score: float | None, confidence: float) -> str:
@@ -461,10 +650,12 @@ def _clamp01(value: float) -> float:
 __all__ = [
     "ALLOWED_LABELS",
     "DEFAULT_CONFIDENCE_WEIGHT_K",
+    "EVIDENCE_TIER_CONFIDENCE_CAPS",
     "FusionResult",
     "HALF_LIFE_DAYS",
     "confidence_from_weight_and_variance",
     "decay_factor",
+    "effective_card_weights",
     "evidence_ref",
     "fuse_dimension",
     "fuse_profile",

@@ -1,4 +1,7 @@
-"""学习路径规划 Agent。"""
+"""Deprecated skill-tree/review compatibility adapter.
+
+The only runtime route planner lives in :mod:`app.path.planner`.
+"""
 
 from __future__ import annotations
 
@@ -215,7 +218,17 @@ async def run_path_planning(
     user_id: str,
     db_path: Path | None = None,
 ) -> PathState:
-    """运行学习路径规划图并返回完整 state。"""
+    """Deprecated legacy skill-tree/review adapter.
+
+    Runtime route planning moved to :mod:`app.path.planner`. This function is
+    kept only for the deprecated GET /api/path compatibility response.
+    """
+
+    warnings.warn(
+        "run_path_planning is deprecated; use app.path.service.create_l1_plan",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     graph = build_path_graph()
     result = await graph.ainvoke(initial_path_state(user_id=user_id, db_path=db_path))

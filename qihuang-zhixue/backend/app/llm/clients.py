@@ -215,7 +215,12 @@ class DeepSeekClient(BaseLLMClient):
                     },
                     json=payload,
                 ) as response:
-                    _raise_for_status(response, body=await response.aread())
+                    # Never pre-read a successful SSE response: `aread()` drains
+                    # the whole body and turns a genuine provider stream into one
+                    # buffered response for the browser. Read a body only when
+                    # reporting a non-success status.
+                    if response.status_code >= 400:
+                        _raise_for_status(response, body=await response.aread())
                     frame_lines: list[str] = []
                     async for line in response.aiter_lines():
                         if line == "":

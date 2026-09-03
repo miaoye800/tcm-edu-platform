@@ -42,19 +42,45 @@ import GlassCard from '../components/ui/GlassCard.vue'
 import QuizPanel from '../components/learning/QuizPanel.vue'
 import ResourceSkeleton from '../components/learning/ResourceSkeleton.vue'
 import { useLearningStore } from '../stores/learning'
-import type { QuizPayload, QuizSubmitItem } from '../types/learning'
+import { useProfileStore } from '../stores/profile'
+import { readNextCalibration, submitCalibration } from '../services/profileApi'
+import type { CalibrationAnswer, QuizPayload, QuizQuestion, QuizSubmitItem } from '../types/learning'
 
 const learning = useLearningStore()
-const topicInput = ref(learning.activeTopic || '麻黄')
+const profileStore = useProfileStore()
+const topicInput = ref(learning.activeTopic || '')
 
-const quizPayload = computed(() => learning.resources.quiz?.payload as QuizPayload | undefined)
+const calibrationQuestions = ref<QuizQuestion[]>([])
+const quizPayload = computed(() => {
+  const payload = learning.resources.quiz?.payload as QuizPayload | undefined
+  return payload ? { ...payload, questions: [...payload.questions, ...calibrationQuestions.value] } : undefined
+})
 
 const generateQuiz = async () => {
-  await learning.generateResources(topicInput.value || '麻黄', ['quiz', 'explain'])
+  const topic = topicInput.value.trim()
+  if (!topic) {
+    learning.error = '请输入测评主题'
+    return
+  }
+  await learning.generateResources(topic, ['quiz', 'explain'])
+  try {
+    const plan = await readNextCalibration()
+    calibrationQuestions.value = plan.claim_id
+      ? plan.questions.map((question) => ({ stem: question.prompt, type: '单选', options: question.options.map((text, index) => ({ key: String.fromCharCode(65 + index), text })), answer: [], explanation: '', source: { name: learning.activeTopic, type: '题库', ref: question.question_id }, bloom_level: '应用', difficulty: 1, distractor_rationale: {}, claims: [], calibration: { claimId: plan.claim_id!, questionId: question.question_id } }))
+      : []
+  } catch { calibrationQuestions.value = [] }
 }
 
-const submitItems = async (items: QuizSubmitItem[]) => {
-  await learning.answerQuiz(items)
+const submitItems = async (items: QuizSubmitItem[], calibrationAnswers: CalibrationAnswer[]) => {
+  if (items.length) await learning.answerQuiz(items)
+  const grouped = new Map<string, CalibrationAnswer[]>()
+  calibrationAnswers.forEach((answer) => grouped.set(answer.claimId, [...(grouped.get(answer.claimId) ?? []), answer]))
+  const settlements = await Promise.all([...grouped.entries()].map(([claimId, answers]) => submitCalibration(claimId, answers.map(({ questionId, answer }) => ({ question_id: questionId, answer })))))
+  calibrationQuestions.value = []
+  if (settlements.some((settlement) => settlement.status === 'verified' || settlement.status === 'refuted')) {
+    await profileStore.loadProfile()
+    void profileStore.loadNarrative(true)
+  }
 }
 
 onMounted(() => {

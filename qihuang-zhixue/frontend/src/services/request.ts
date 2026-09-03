@@ -89,8 +89,10 @@ export const handleUnauthorized = async (response: Response, options?: RequestOp
 
 const readErrorMessage = async (response: Response): Promise<string> => {
   try {
-    const payload = (await response.json()) as { detail?: string }
-    return payload.detail || ''
+    const payload = (await response.json()) as { detail?: string | Record<string, unknown> }
+    if (typeof payload.detail === 'string') return payload.detail
+    if (payload.detail && typeof payload.detail === 'object') return String(payload.detail.reason || payload.detail.message || JSON.stringify(payload.detail))
+    return ''
   } catch {
     return ''
   }
@@ -117,6 +119,7 @@ const forwardAbort = (
 }
 
 const readFetchErrorMessage = (error: unknown): string => {
+  if (error instanceof TypeError) return '无法连接后端，请确认服务已启动后重试'
   if (error instanceof Error && error.message) return error.message
   return '网络请求失败，请稍后重试'
 }

@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path(__file__).resolve().parents[2] / ".data" / "qihuang.db"
+from app.profile.store import DB_PATH
 
 
 def init_db(db_path: Path = DB_PATH) -> None:
@@ -230,4 +230,3 @@ def _to_iso(value: datetime) -> str:
     if value.tzinfo is None:
         value = value.replace(tzinfo=UTC)
     return value.isoformat()
-

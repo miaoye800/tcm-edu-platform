@@ -11,6 +11,7 @@
     <el-dropdown trigger="click" placement="bottom-start" @command="handleUserCommand">
       <button class="user-card" type="button" aria-label="当前登录用户">
         <img :src="xiaoqi" alt="当前用户头像" />
+        <XiaoqiMascot expression="default" :size="40" alt="当前用户头像" />
         <span class="user-card__copy">
           <strong>{{ auth.displayName }}</strong>
           <em>{{ auth.user?.is_guest ? '游客体验' : '已登录' }}</em>
@@ -44,6 +45,7 @@ import { useRouter } from 'vue-router'
 import { SwitchButton } from '@element-plus/icons-vue'
 import qihuangLogo from '../../assets/brand/qihuang-logo.png'
 import xiaoqi from '../../assets/mascot/xiaoqi-avatar.png'
+import XiaoqiMascot from '../ui/XiaoqiMascot.vue'
 import { menuGroups } from '../../config/menu'
 import { readOnboardingState } from '../../services/onboardingStorage'
 import { useAssistantStore } from '../../stores/assistant'
@@ -119,6 +121,7 @@ const handleUserCommand = (command: string) => {
 }
 
 .user-card img {
+  display: none;
   border: 1px solid rgba(143, 208, 173, 0.22);
   border-radius: 16px;
   object-fit: cover;

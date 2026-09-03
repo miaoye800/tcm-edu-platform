@@ -126,6 +126,7 @@ export const buildRadarAxes = (
   return dimensionKeys.map((key) => {
     const dimension = profile?.[key]
     const confidence = confidenceFor(profile, narrative, key)
+    const pendingVerification = Boolean(profile?.[key].evidence?.some((card) => card.claim_status === 'pending'))
     return {
       key,
       label: radarLabels[key],
@@ -138,6 +139,7 @@ export const buildRadarAxes = (
       lowConfidence: confidence < lowConfidenceThreshold,
       anchor: anchorText(key, derivedValues[key]),
       kind: axisKind(key),
+      pending_verification: pendingVerification,
     }
   })
 }

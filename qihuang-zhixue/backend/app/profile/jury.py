@@ -13,8 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.config import Settings, get_settings
 from app.llm.clients import ChatMessage
 from app.llm.router import ModelRouter
+from app.profile.anchors import SCORE_ANCHOR_INTERVALS
 from app.profile.fusion import FusionResult, evidence_ref, fuse_dimension
-from app.profile.guardrail import GuardrailWarning, apply_guardrail
+from app.profile.guardrail import GuardrailWarning, allowed_score_interval, apply_guardrail
 from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, evidence_card_to_json_dict
 
 TeacherName = Literal["严师", "宽师", "中立"]
@@ -30,15 +31,32 @@ ANCHOR_SCALES: dict[DimensionKey, str] = {
     "knowledge_base": (
         "知识基础（0-100）：0-20 药名认不全，性味归经空白；21-40 认得常见药名，功效模糊；"
         "41-60 掌握常用药功效，配伍薄弱；61-80 功效+配伍较熟，能应对多数病例；"
-        "81-100 配伍加减熟练、剂量精准。"
+        "81-100 配伍加减熟练、剂量精准。基础自评区间："
+        + "；".join(
+            f"{label} [{interval[0]:g}, {interval[1]:g}]"
+            for label, interval in SCORE_ANCHOR_INTERVALS["knowledge_base"]["base_level"].items()
+        )
     ),
     "motivation": (
         "动机强度（0-100）：0-20 被动应付，几乎无自驱；21-40 需外部持续推动；"
         "41-60 有意愿，需目标牵引；61-80 主动性强，能自我安排；81-100 高度自驱，主动找挑战。"
+        "动机标签区间："
+        + "；".join(
+            f"{label} [{interval[0]:g}, {interval[1]:g}]"
+            for label, interval in SCORE_ANCHOR_INTERVALS["motivation"]["label"].items()
+        )
     ),
     "pace": (
-        "学习进度节奏（0-100，慢到快）：0-30 慢：每天 <15min / 目标周期宽松；"
-        "31-70 中：每天 15-40min；71-100 快：每天 >40min / 目标周期紧。"
+        "学习进度节奏（0-100，慢到快）："
+        + "；".join(
+            f"每日时长 {label} -> [{interval[0]:g}, {interval[1]:g}]"
+            for label, interval in SCORE_ANCHOR_INTERVALS["pace"]["daily_minutes"].items()
+        )
+        + "；"
+        + "；".join(
+            f"目标周期 {label} -> [{interval[0]:g}, {interval[1]:g}]"
+            for label, interval in SCORE_ANCHOR_INTERVALS["pace"]["target_days"].items()
+        )
     ),
     "learning_goal": "类别型，不打数值分，只能贴标签：应试提分 / 临床实用 / 兴趣科普 / 学术深造。",
     "learning_style": "类别型，不打数值分，只能贴标签：视觉型 / 文字型 / 记忆(口诀)型。",
@@ -141,6 +159,7 @@ class ScoringResult(BaseModel):
     evidence_refs: list[str] = Field(default_factory=list)
     narrative: str = ""
     method: Literal["jury", "fusion"] = "jury"
+    provenance: str = "jury"
     self_check_sampled: bool = False
     warnings: list[GuardrailWarning] = Field(default_factory=list)
 
@@ -165,26 +184,30 @@ async def score_dimension(
     active_settings = settings or get_settings()
     if not force_llm and llm_call is None and not _has_llm_key(active_settings):
         fusion = fuse_dimension(dimension, cards)
-        return _result_from_fusion(fusion, cards)
+        return _result_from_fusion(fusion, cards, provenance="no_key_rule_fallback")
 
     try:
         first = await _call_and_parse_jury(dimension, cards, router=router, settings=active_settings, llm_call=llm_call)
     except ValueError as exc:
-        if llm_call is not None or force_llm:
-            raise
         fusion = fuse_dimension(dimension, cards)
-        result = _result_from_fusion(fusion, cards)
+        result = _result_from_fusion(fusion, cards, provenance="rule_fallback")
         result.narrative = f"{result.narrative} LLM 调用未返回有效评审团 JSON，已回退规则融合（{exc}）。"
         return result
     if first.variance > variance_threshold:
-        second = await _call_and_parse_jury(
-            dimension,
-            cards,
-            router=router,
-            settings=active_settings,
-            llm_call=llm_call,
-            self_check=True,
-        )
+        try:
+            second = await _call_and_parse_jury(
+                dimension,
+                cards,
+                router=router,
+                settings=active_settings,
+                llm_call=llm_call,
+                self_check=True,
+            )
+        except ValueError as exc:
+            fusion = fuse_dimension(dimension, cards)
+            result = _result_from_fusion(fusion, cards, provenance="rule_fallback")
+            result.narrative = f"{result.narrative} LLM 自检未返回有效评审团 JSON，已回退规则融合（{exc}）。"
+            return result
         selected = second if second.variance <= first.variance else first
         selected.self_check_sampled = True
         return _apply_score_guardrail(selected, cards)
@@ -251,6 +274,14 @@ def build_jury_messages(
         ensure_ascii=False,
         indent=2,
     )
+    allowed_low, allowed_high, allowed_reasons = allowed_score_interval(dimension, evidence_cards)
+    interval_instruction = ""
+    if dimension in {"knowledge_base", "pace", "motivation"} and allowed_reasons:
+        interval_instruction = (
+            f"本组证据的强制评分区间：[{allowed_low:g}, {allowed_high:g}]。"
+            "三位老师都必须在区间内结合证据细节给出具体分，不得机械填写中点。"
+            f"区间依据：{'；'.join(allowed_reasons)}。\n"
+        )
     extra = "这是一次自洽补采：请重新独立评估，避免照抄前次答案。" if self_check else ""
     schema = {
         "dimension": label,
@@ -281,6 +312,7 @@ def build_jury_messages(
             "content": (
                 f"评分维度：{label}\n"
                 f"锚点量表：{ANCHOR_SCALES[dimension]}\n"
+                f"{interval_instruction}"
                 f"证据卡：{evidence_json}\n"
                 "聚合规则：三师分数去极端取中位；方差越大置信度越低；类别型维度禁造新标签；"
                 "薄弱点必须来自错误证据卡的 label/topic/knowledge_point/weak_labels。"
@@ -326,6 +358,7 @@ def _parse_jury_output(
     self_check_sampled: bool = False,
 ) -> ScoringResult:
     payload = JuryStructuredOutput.model_validate_json(_extract_json_object(raw))
+    fusion = fuse_dimension(dimension, evidence_cards)
     jury = payload.jury.as_dict()
     scores = [jury[teacher].score for teacher in JURY_TEACHERS]
     aggregated = aggregate_jury_scores(scores)
@@ -335,11 +368,14 @@ def _parse_jury_output(
         dimension_key=dimension,
         jury=jury,
         aggregated_score=aggregated,
-        label=payload.label,
-        distribution=payload.distribution,
+        # Category distributions are evidence votes, never LLM-created labels.
+        label=fusion.label if fusion.label is not None else payload.label,
+        distribution=fusion.distribution if fusion.distribution else payload.distribution,
         weak_points=payload.weak_points,
         variance=variance,
-        confidence=confidence_from_variance(variance),
+        # Jury agreement can only reduce confidence; source diversity and tier
+        # remain the responsibility of deterministic fusion.
+        confidence=min(fusion.confidence, confidence_from_variance(variance)),
         evidence_refs=_evidence_refs_from_payload(payload.evidence_refs, evidence_cards),
         narrative=payload.narrative,
         method="jury",
@@ -367,7 +403,12 @@ def _apply_score_guardrail(result: ScoringResult, evidence_cards: list[EvidenceC
     return result
 
 
-def _result_from_fusion(fusion: FusionResult, evidence_cards: list[EvidenceCard]) -> ScoringResult:
+def _result_from_fusion(
+    fusion: FusionResult,
+    evidence_cards: list[EvidenceCard],
+    *,
+    provenance: str = "fusion",
+) -> ScoringResult:
     guarded = apply_guardrail(
         fusion.dimension,
         evidence_cards=evidence_cards,
@@ -392,6 +433,7 @@ def _result_from_fusion(fusion: FusionResult, evidence_cards: list[EvidenceCard]
         evidence_refs=fusion.evidence_refs,
         narrative=narrative,
         method="fusion",
+        provenance=provenance,
         warnings=guarded.warnings,
     )
 

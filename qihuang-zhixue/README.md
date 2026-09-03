@@ -26,6 +26,8 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 部署须知：正式部署前必须设置 `AUTH_SECRET` 环境变量，否则 JWT 使用开发默认密钥不安全。
 
+数据库默认使用 `backend/.data/qihuang.db`。如需覆盖，设置 `QIHUANG_DB_PATH`；相对路径按 `backend/` 目录解析，也支持绝对路径。
+
 健康检查：
 
 ```bash

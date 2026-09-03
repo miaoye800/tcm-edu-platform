@@ -1,0 +1,19 @@
+{
+  "version": "profile-eval-v1",
+  "privacy": "synthetic Chinese utterances; no identifiers, dates, contact details, or production transcripts",
+  "cases": [
+    {"case_id": "goal_exam", "input": "我准备考研，希望系统提分。", "expected": {"evidence": [{"dimension": "learning_goal", "quote": "考研"}]}},
+    {"case_id": "goal_interest", "input": "我主要出于兴趣，想把中医基础学明白。", "expected": {"evidence": [{"dimension": "learning_goal", "quote": "兴趣"}]}},
+    {"case_id": "goal_career_switch", "input": "我想转行做中医相关工作，先补齐基础。", "expected": {"evidence": [{"dimension": "learning_goal", "quote": "转行"}]}},
+    {"case_id": "goal_clinical_mixed", "input": "先为临床应用打底，也不排斥以后参加考试。", "expected": {"evidence": [{"dimension": "learning_goal", "quote": "临床应用"}]}},
+    {"case_id": "time_daily", "input": "最近每天能稳定学习90分钟，周末会多一些。", "expected": {"evidence": [{"dimension": "pace", "quote": "每天"}]}},
+    {"case_id": "time_fragments", "input": "我只有通勤的碎片时间，通常十几分钟一段。", "expected": {"evidence": [{"dimension": "pace", "quote": "碎片时间"}]}},
+    {"case_id": "time_unstable", "input": "工作排班不固定，没法保证每天都有时间。", "expected": {"evidence": [{"dimension": "pace", "quote": "没法保证"}]}},
+    {"case_id": "base_humble", "input": "不敢说自己基础好，只记得一些常见药名。", "expected": {"evidence": [{"dimension": "knowledge_base", "quote": "不敢说"}]}},
+    {"case_id": "style_mixed", "input": "我喜欢先看视频，再用病例和图谱练习。", "expected": {"evidence": [{"dimension": "learning_style", "quote": "视频"}]}},
+    {"case_id": "weak_repeated", "input": "方剂配伍我总是做错，复习几遍还是会错。", "expected": {"evidence": [{"dimension": "weak_points", "quote": "总是做错"}]}},
+    {"case_id": "negation", "input": "我不想考试，也不喜欢看视频，而且没有固定时间。", "expected": {"evidence": [], "must_not_extract_dimensions": ["learning_goal", "learning_style"]}},
+    {"case_id": "chitchat", "input": "今天天气不错，晚饭吃了面。", "expected": {"evidence": []}},
+    {"case_id": "indirect", "input": "以后若能在门诊看懂常见证候，我就满足了。", "expected": {"evidence": [{"dimension": "learning_goal", "quote": "门诊"}]}}
+  ]
+}

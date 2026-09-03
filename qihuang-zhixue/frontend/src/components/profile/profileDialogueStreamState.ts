@@ -1,4 +1,4 @@
-import type { IdentityCardsDimensionView, ProfileDialogueChatMessage, ProfileDialogueStreamUiEvent } from '../../types/profile'
+import type { DimensionKey, IdentityCardView, IdentityCardsDimensionView, ProfileDialogueChatMessage, ProfileDialogueStreamUiEvent } from '../../types/profile'
 
 export type ProfileDialogueMessageState = {
   messages: ProfileDialogueChatMessage[]
@@ -9,8 +9,15 @@ export type ProfileDialogueMessageState = {
 export type ProfileDialogueApplyResult = 'none' | 'created' | 'appended' | 'finished'
 
 export type ProfileDialogueIdentityCardState = {
-  revealedDimensions: Record<string, boolean>
-  revealCounts: Record<string, number>
+  sessionId: string | null
+  hydrated: boolean
+  playedRevealKeys: Record<string, boolean>
+  claimStatuses: Record<string, string | null | undefined>
+}
+
+export type RenderedIdentityCardView = IdentityCardView & {
+  /** UI-only marker: never sent back to, or used to alter, the backend state. */
+  revealAnimation: boolean
 }
 
 export const createProfileDialogueMessageState = (): ProfileDialogueMessageState => ({
@@ -20,8 +27,10 @@ export const createProfileDialogueMessageState = (): ProfileDialogueMessageState
 })
 
 export const createProfileDialogueIdentityCardState = (): ProfileDialogueIdentityCardState => ({
-  revealedDimensions: {},
-  revealCounts: {},
+  sessionId: null,
+  hydrated: false,
+  playedRevealKeys: {},
+  claimStatuses: {},
 })
 
 export const createProfileDialogueAssistantMessage = (
@@ -118,6 +127,15 @@ export const finishProfileDialogueStreamingAssistant = (
   return 'finished'
 }
 
+/** The visible answer is done; keep this bubble active for backend stages. */
+export const markProfileDialogueVisibleMessageComplete = (state: ProfileDialogueMessageState): ProfileDialogueApplyResult => {
+  if (state.activeAssistantId === null) return 'none'
+  const idx = state.messages.findIndex((message) => message.id === state.activeAssistantId)
+  if (idx === -1) return 'none'
+  state.messages[idx].typing = false
+  return 'finished'
+}
+
 export const applyProfileDialogueStreamEvent = (
   state: ProfileDialogueMessageState,
   event: ProfileDialogueStreamUiEvent,
@@ -133,6 +151,7 @@ export const applyProfileDialogueStreamEvent = (
   if (event.type === 'message') {
     return appendProfileDialogueAssistantDelta(state, event.delta ?? '')
   }
+  if (event.type === 'message_done') return markProfileDialogueVisibleMessageComplete(state)
   if (event.type === 'done') {
     return finishProfileDialogueStreamingAssistant(state, now)
   }
@@ -142,17 +161,34 @@ export const applyProfileDialogueStreamEvent = (
 export const applyProfileDialogueIdentityCards = (
   state: ProfileDialogueIdentityCardState,
   dimensions: IdentityCardsDimensionView[],
-): IdentityCardsDimensionView[] =>
-  dimensions.map((dimension) => {
-    const wasRevealed = Boolean(state.revealedDimensions[dimension.key])
-    const shouldReveal = Boolean(dimension.revealed || wasRevealed)
-    if (shouldReveal && !wasRevealed) {
-      state.revealedDimensions[dimension.key] = true
-      state.revealCounts[dimension.key] = (state.revealCounts[dimension.key] ?? 0) + 1
-    }
+  sessionId?: string | null | ((dimension: DimensionKey) => void),
+  onRefuted?: (dimension: DimensionKey) => void,
+): RenderedIdentityCardView[] => {
+  const resolvedSessionId = typeof sessionId === 'string' ? sessionId : null
+  const resolvedOnRefuted = typeof sessionId === 'function' ? sessionId : onRefuted
+  if (resolvedSessionId && state.sessionId !== resolvedSessionId) {
+    state.sessionId = resolvedSessionId
+    state.hydrated = false
+    state.playedRevealKeys = {}
+    state.claimStatuses = {}
+  }
+
+  const isHydration = !state.hydrated
+  const rendered = dimensions.map((dimension) => {
+    const previousClaimStatus = state.claimStatuses[dimension.key]
+    if (dimension.claim_status === 'refuted' && previousClaimStatus !== 'refuted') resolvedOnRefuted?.(dimension.key)
+    state.claimStatuses[dimension.key] = dimension.claim_status
+    const revealKey = `${state.sessionId ?? 'unknown'}:${dimension.key}`
+    if (isHydration && dimension.revealed) state.playedRevealKeys[revealKey] = true
+    const revealAnimation = Boolean(!isHydration && dimension.revealed && dimension.revealed_now && !state.playedRevealKeys[revealKey])
+    if (revealAnimation) state.playedRevealKeys[revealKey] = true
     return {
       ...dimension,
-      revealed: shouldReveal,
-      cards: dimension.cards.map((card) => ({ ...card })),
+      items: (dimension.items ?? []).map((item) => ({ ...item })),
+      cards: dimension.cards?.map((card) => ({ ...card })),
+      revealAnimation,
     }
   })
+  state.hydrated = true
+  return rendered
+}

@@ -7,6 +7,7 @@ from collections import Counter
 from collections.abc import Awaitable, Callable
 from contextlib import closing
 from datetime import UTC, datetime, timedelta, timezone
+from math import isfinite
 from pathlib import Path
 from typing import Any, Literal
 
@@ -16,9 +17,20 @@ from app.config import Settings, get_settings
 from app.llm.router import ModelRouter
 from app.profile.fusion import FusionResult, fuse_dimension, fuse_profile
 from app.profile.jury import LLMCall, ScoringResult, score_dimension
+from app.profile.prescription import evaluate_prescription
 from app.profile.radar import to_radar
-from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, Profile, WeakPoint
-from app.profile.store import DB_PATH, add_evidence, connect, get_profile, init_db, list_evidence, upsert_profile
+from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, EvidenceTier, Profile, WeakPoint
+from app.profile.store import (
+    DB_PATH,
+    add_evidence,
+    connect,
+    get_profile,
+    get_trust,
+    init_db,
+    list_evidence,
+    record_profile_change,
+    upsert_profile,
+)
 
 SHANGHAI_TZ = timezone(timedelta(hours=8))
 DEFAULT_JURY_WEIGHT_THRESHOLD = 2.0
@@ -67,6 +79,7 @@ async def update_profile_from_event(
 ) -> ProfileUpdateResult:
     """Convert an event to evidence cards and incrementally update dimensions."""
 
+    active_settings = settings or get_settings()
     parsed = event if isinstance(event, ProfileUpdateEvent) else ProfileUpdateEvent.model_validate(event)
     cards = evidence_cards_from_event(parsed, now=now)
     for card in cards:
@@ -75,24 +88,46 @@ async def update_profile_from_event(
     affected = _ordered_dimensions(card.dimension for card in cards)
     all_cards = list_evidence(user_id, db_path=db_path)
     profile = get_profile(user_id, db_path=db_path)
+    trust = get_trust(user_id, db_path=db_path)
     jury_called: list[DimensionKey] = []
     _init_update_state(db_path)
 
     for dimension in affected:
         dimension_cards = [card for card in all_cards if card.dimension == dimension]
-        fusion = fuse_dimension(dimension, dimension_cards, now=now)
-        _apply_fusion_to_profile(profile, dimension, fusion, dimension_cards)
+        fusion = fuse_dimension(dimension, dimension_cards, now=now, self_report_trust=trust)
+        first_evaluation = not _dimension_has_result(profile, dimension) and _fusion_has_result(fusion)
+        _apply_fusion_to_profile(
+            profile,
+            dimension,
+            fusion,
+            dimension_cards,
+            db_path=db_path,
+            reason="规则融合更新",
+            source_event=parsed.type,
+            provenance="fusion" if _has_configured_llm_key(active_settings) else "no_key_rule_fallback",
+        )
         pending_weight = _increment_pending_weight(user_id, dimension, _new_weight(cards, dimension), db_path)
-        if pending_weight >= jury_weight_threshold:
+        mandatory_first_jury = (
+            first_evaluation
+            and _has_configured_llm_key(active_settings)
+        )
+        if mandatory_first_jury or pending_weight >= jury_weight_threshold:
             result = await jury_scorer(
                 dimension,
                 dimension_cards,
                 router=router,
-                settings=settings,
+                settings=active_settings,
                 force_llm=force_llm,
                 llm_call=llm_call,
             )
-            _apply_scoring_to_profile(profile, dimension, result, dimension_cards)
+            _apply_scoring_to_profile(
+                profile,
+                dimension,
+                result,
+                dimension_cards,
+                db_path=db_path,
+                source_event=parsed.type,
+            )
             _reset_pending_weight(user_id, dimension, db_path, now=now)
             jury_called.append(dimension)
 
@@ -127,10 +162,16 @@ async def get_latest_profile(
         return profile
 
     dimensions_with_evidence = _dimensions_with_evidence(cards)
+    mandatory_first_jury = {
+        dimension
+        for dimension in dimensions_with_evidence
+        if not _dimension_has_result(profile, dimension) and _has_configured_llm_key(active_settings)
+    }
     throttled_dimensions = {
         dimension
         for dimension in dimensions_with_evidence
-        if _should_throttle_jury_refresh(
+        if dimension not in mandatory_first_jury
+        and _should_throttle_jury_refresh(
             user_id,
             dimension,
             db_path,
@@ -141,12 +182,22 @@ async def get_latest_profile(
         )
     }
 
-    fused = fuse_profile(cards, now=now)
+    trust = get_trust(user_id, db_path=db_path)
+    fused = fuse_profile(cards, now=now, self_report_trust=trust)
     for dimension, fusion in fused.items():
         if dimension in throttled_dimensions:
             continue
         dimension_cards = [card for card in cards if card.dimension == dimension]
-        _apply_fusion_to_profile(profile, dimension, fusion, dimension_cards)
+        _apply_fusion_to_profile(
+            profile,
+            dimension,
+            fusion,
+            dimension_cards,
+            db_path=db_path,
+            reason="规则融合刷新",
+            source_event="profile_read",
+            provenance="fusion" if _has_configured_llm_key(active_settings) else "no_key_rule_fallback",
+        )
 
     for dimension in dimensions_with_evidence:
         if dimension in throttled_dimensions:
@@ -160,7 +211,14 @@ async def get_latest_profile(
             force_llm=force_llm,
             llm_call=llm_call,
         )
-        _apply_scoring_to_profile(profile, dimension, result, dimension_cards)
+        _apply_scoring_to_profile(
+            profile,
+            dimension,
+            result,
+            dimension_cards,
+            db_path=db_path,
+            source_event="profile_read",
+        )
         _reset_pending_weight(user_id, dimension, db_path, now=now)
 
     upsert_profile(profile, db_path=db_path)
@@ -185,7 +243,14 @@ def profile_to_response(profile: Profile) -> dict[str, Any]:
     payload["confidence"] = {
         dimension: getattr(profile, dimension).confidence for dimension in DIMENSION_LABELS
     }
-    payload["radar"] = to_radar(profile)
+    provenance = _profile_provenance(profile)
+    payload["provenance"] = provenance
+    radar = to_radar(profile)
+    radar["provenance"] = provenance
+    for axis in radar.get("axes", []):
+        if isinstance(axis, dict):
+            axis["provenance"] = provenance.get(str(axis.get("key")), "unknown")
+    payload["radar"] = radar
     return payload
 
 
@@ -229,16 +294,53 @@ def _quiz_cards(payload: dict[str, Any], timestamp: datetime) -> list[EvidenceCa
                     timestamp,
                 )
             )
+    ability = payload.get("ability")
+    if isinstance(ability, dict):
+        rating = ability.get("rating")
+        score = ability.get("score")
+        coverage_count = ability.get("coverage_count")
+        coverage_target = ability.get("coverage_target", 8)
+        coverage = ability.get("coverage")
+        if _finite_number(score) is not None and _finite_number(rating) is not None:
+            cards.append(
+                EvidenceCard(
+                    dimension="knowledge_base",
+                    source="Elo 实测能力",
+                    tier=EvidenceTier.MEASURED,
+                    fact=(
+                        f"实测能力 {float(score):.1f} 分（rating {float(rating):.1f}），"
+                        f"已考察主题 {int(coverage_count or 0)}/{int(coverage_target or 8)}"
+                    ),
+                    objective_signal={
+                        "score": float(score),
+                        "rating": float(rating),
+                        "coverage_count": int(coverage_count or 0),
+                        "coverage_target": int(coverage_target or 8),
+                        "coverage": float(coverage or 0),
+                    },
+                    weight=3.0,
+                    timestamp=timestamp,
+                )
+            )
     return cards
 
 
 def _prescription_cards(payload: dict[str, Any], timestamp: datetime) -> list[EvidenceCard]:
-    signal = {
-        "对症": bool(payload.get("对症", payload.get("symptom_match", payload.get("match_symptom", False)))),
-        "配伍": bool(payload.get("配伍", payload.get("compatible", False))),
-        "剂量": bool(payload.get("剂量", payload.get("dosage_ok", False))),
-        "误用毒烈": bool(payload.get("误用毒烈", payload.get("toxic_misuse", False))),
-    }
+    evaluation = evaluate_prescription(payload)
+    signal = evaluation.signal()
+    signal.update(
+        {
+            "quote": evaluation.quote or None,
+            "basis": "explicit",
+            "confidence": 0.85,
+            "extraction_method": evaluation.method,
+            "knowledge_base_ref": (
+                payload.get("knowledge_base_ref")
+                or payload.get("knowledge_ref")
+                or (evaluation.knowledge_base_refs[0] if evaluation.knowledge_base_refs else None)
+            ),
+        }
+    )
     weak_labels = _weak_labels_from_signal(signal, payload)
     if weak_labels:
         signal["weak_labels"] = weak_labels
@@ -257,7 +359,15 @@ def _prescription_cards(payload: dict[str, Any], timestamp: datetime) -> list[Ev
                 "weak_points",
                 "开药实战",
                 f"开药薄弱标签：{'、'.join(weak_labels)}",
-                {"weak_labels": weak_labels, "correct": False},
+                {
+                    "weak_labels": weak_labels,
+                    "correct": False,
+                    "quote": evaluation.quote or None,
+                    "basis": "explicit",
+                    "confidence": 0.85,
+                    "knowledge_base_ref": evaluation.knowledge_base_refs[0] if evaluation.knowledge_base_refs else None,
+                    "extraction_method": evaluation.method,
+                },
                 1.5,
                 timestamp,
             )
@@ -266,6 +376,48 @@ def _prescription_cards(payload: dict[str, Any], timestamp: datetime) -> list[Ev
 
 
 def _interaction_cards(payload: dict[str, Any], timestamp: datetime) -> list[EvidenceCard]:
+    subtype = _str_or_none(payload.get("subtype") or payload.get("interaction_type"))
+    if subtype == "resource_choice":
+        label = _str_or_none(payload.get("resource_type") or payload.get("resource_preference"))
+        return (
+            [_card("resource_preference", "资源选择", f"资源偏好选择：{label}", {"label": label}, 1.0, timestamp)]
+            if label
+            else []
+        )
+    if subtype == "skip_or_retry":
+        topic = str(payload.get("topic") or payload.get("knowledge_point") or "未标注内容").strip()
+        retried = bool(payload.get("retry") or payload.get("retried"))
+        skipped = bool(payload.get("skip") or payload.get("skipped"))
+        cards = [
+            _card(
+                "weak_points",
+                "跳过重试",
+                f"{topic}{'重试' if retried else '跳过'}",
+                {"label": topic, "correct": False, "gave_up": skipped},
+                0.8 if retried else 0.6,
+                timestamp,
+            )
+        ]
+        cards.append(
+            _card(
+                "motivation",
+                "跳过重试",
+                "主动重试" if retried else "跳过当前任务",
+                {"accept_challenge": retried, "motivation_score": 65 if retried else 35},
+                0.5,
+                timestamp,
+            )
+        )
+        return cards
+    if subtype == "dwell_time":
+        seconds = payload.get("dwell_seconds") or payload.get("duration_seconds") or 0
+        minutes = max(0.0, float(seconds) / 60.0)
+        return [
+            _card("pace", "停留时长", f"内容停留 {minutes:.1f} 分钟", {"daily_minutes": minutes}, 0.5, timestamp),
+            _card("learning_style", "停留时长", "内容停留行为线索", {"topic": payload.get("topic")}, 0.3, timestamp),
+        ]
+    # chat_message uses the established generic mapping. Absence of subtype is
+    # intentionally identical for backward compatibility.
     cards: list[EvidenceCard] = []
     if label := _str_or_none(payload.get("learning_goal")):
         cards.append(_card("learning_goal", "交互事件", f"学习目标选择：{label}", {"label": label}, 1.0, timestamp))
@@ -292,10 +444,22 @@ def _interaction_cards(payload: dict[str, Any], timestamp: datetime) -> list[Evi
     return cards
 
 
-def _apply_fusion_to_profile(profile: Profile, dimension: DimensionKey, fusion: FusionResult, cards: list[EvidenceCard]) -> None:
+def _apply_fusion_to_profile(
+    profile: Profile,
+    dimension: DimensionKey,
+    fusion: FusionResult,
+    cards: list[EvidenceCard],
+    *,
+    db_path: Path | None = None,
+    reason: str = "规则融合更新",
+    source_event: str = "fusion",
+    provenance: str = "fusion",
+) -> None:
     dim = getattr(profile, dimension)
+    old_value = _dimension_snapshot(dim)
     dim.confidence = fusion.confidence
     dim.evidence = cards
+    _stamp_scoring_provenance(cards, provenance)
     dim.narrative = fusion.narrative
     if hasattr(dim, "score"):
         dim.score = fusion.score
@@ -305,12 +469,24 @@ def _apply_fusion_to_profile(profile: Profile, dimension: DimensionKey, fusion: 
         dim.distribution = fusion.distribution
     if dimension == "weak_points":
         dim.items = _weak_points_from_cards(cards)
+    _record_dimension_change(profile, dimension, old_value, reason, source_event, cards, db_path)
 
 
-def _apply_scoring_to_profile(profile: Profile, dimension: DimensionKey, result: ScoringResult, cards: list[EvidenceCard]) -> None:
+def _apply_scoring_to_profile(
+    profile: Profile,
+    dimension: DimensionKey,
+    result: ScoringResult,
+    cards: list[EvidenceCard],
+    *,
+    db_path: Path | None = None,
+    source_event: str = "jury",
+) -> None:
     dim = getattr(profile, dimension)
-    dim.confidence = result.confidence
+    old_value = _dimension_snapshot(dim)
+    has_pending_claim = any(card.claim_status == "pending" for card in cards)
+    dim.confidence = min(result.confidence, 0.35) if has_pending_claim else result.confidence
     dim.evidence = cards
+    _stamp_scoring_provenance(cards, result.provenance)
     dim.narrative = result.narrative
     if hasattr(dim, "score") and result.aggregated_score is not None:
         dim.score = result.aggregated_score
@@ -320,6 +496,73 @@ def _apply_scoring_to_profile(profile: Profile, dimension: DimensionKey, result:
         dim.distribution = result.distribution
     if dimension == "weak_points":
         dim.items = _weak_points_from_cards(cards)
+    warning_text = "、".join(warning.reason for warning in result.warnings)
+    reason = "三师评审更新"
+    if warning_text:
+        reason = f"{reason}；护栏钳制：{warning_text}"
+    _record_dimension_change(profile, dimension, old_value, reason, source_event, cards, db_path)
+
+
+def _dimension_snapshot(dim: Any) -> dict[str, Any]:
+    return {
+        "score": getattr(dim, "score", None),
+        "label": getattr(dim, "label", None),
+        "distribution": getattr(dim, "distribution", {}),
+        "confidence": getattr(dim, "confidence", 0.0),
+        "items": [item.model_dump(mode="json") for item in getattr(dim, "items", [])],
+    }
+
+
+def _stamp_scoring_provenance(cards: list[EvidenceCard], provenance: str) -> None:
+    for card in cards:
+        card.objective_signal = {**card.objective_signal, "scoring_provenance": provenance}
+
+
+def _profile_provenance(profile: Profile) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for dimension in DIMENSION_LABELS:
+        cards = getattr(profile, dimension).evidence or []
+        values = [str(card.objective_signal.get("scoring_provenance")) for card in cards if card.objective_signal.get("scoring_provenance")]
+        result[dimension] = values[-1] if values else "unknown"
+    return result
+
+
+def _record_dimension_change(
+    profile: Profile,
+    dimension: DimensionKey,
+    old_value: dict[str, Any],
+    reason: str,
+    source_event: str,
+    cards: list[EvidenceCard],
+    db_path: Path | None,
+) -> None:
+    if db_path is None:
+        return
+    record_profile_change(
+        profile.user_id,
+        dimension,
+        old_value,
+        _dimension_snapshot(getattr(profile, dimension)),
+        reason=reason,
+        source_event=source_event,
+        evidence_ids=[card.evidence_id for card in cards],
+        db_path=db_path,
+    )
+
+
+def _dimension_has_result(profile: Profile, dimension: DimensionKey) -> bool:
+    dim = getattr(profile, dimension)
+    if getattr(dim, "score", None) is not None:
+        return True
+    if getattr(dim, "label", None) is not None:
+        return True
+    if bool(getattr(dim, "distribution", {})):
+        return True
+    return bool(getattr(dim, "items", []))
+
+
+def _fusion_has_result(fusion: FusionResult) -> bool:
+    return fusion.score is not None or fusion.label is not None or bool(fusion.distribution)
 
 
 def _weak_points_from_cards(cards: list[EvidenceCard]) -> list[WeakPoint]:
@@ -510,12 +753,28 @@ def _card(
     weight: float,
     timestamp: datetime,
 ) -> EvidenceCard:
+    signal = {key: value for key, value in objective_signal.items() if value is not None}
+    quote = signal.get("quote")
+    basis = signal.get("basis") if signal.get("basis") in {"explicit", "inferred"} else "inferred"
+    method = signal.get("extraction_method")
+    if method not in {"llm", "no_key_rule_fallback", "rule_fallback", "legacy"}:
+        method = "legacy"
+    confidence = signal.get("confidence", 0.0)
+    try:
+        extraction_confidence = max(0.0, min(1.0, float(confidence)))
+    except (TypeError, ValueError):
+        extraction_confidence = 0.0
     return EvidenceCard(
         dimension=dimension,
         source=source,
         fact=fact,
-        objective_signal={key: value for key, value in objective_signal.items() if value is not None},
+        objective_signal=signal,
         weight=weight,
+        quote=str(quote).strip() if quote else None,
+        basis=basis,
+        extraction_confidence=extraction_confidence,
+        extraction_method=method,
+        knowledge_base_ref=signal.get("knowledge_base_ref") or signal.get("knowledge_ref"),
         timestamp=timestamp,
     )
 
@@ -524,6 +783,16 @@ def _str_or_none(value: Any) -> str | None:
     if isinstance(value, str) and value.strip():
         return value.strip()
     return None
+
+
+def _finite_number(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if isfinite(parsed) else None
 
 
 __all__ = [

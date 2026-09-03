@@ -62,7 +62,9 @@ test('dialogue streams indefinitely and finishes by user action', () => {
   assert(onboarding.includes('dialogueUtteranceFromPayload'), 'dialogue answer should convert utterance or quick_reply into stream text')
   assert(onboarding.includes("event === 'thinking'"), 'dialogue stream should handle thinking events')
   assert(onboarding.includes("event === 'message'"), 'dialogue stream should handle message events')
-  assert(onboarding.includes("event === 'message_done'"), 'dialogue stream should unlock on visible completion')
+  assert(onboarding.includes("event === 'message_done'"), 'dialogue stream should finish the visible assistant bubble')
+  const messageDoneBlock = onboarding.slice(onboarding.indexOf("event === 'message_done'"), onboarding.indexOf("event === 'evidence'"))
+  assert(!messageDoneBlock.includes('dialoguePending.value = false'), 'input should remain locked until the backend state event is committed')
   assert(onboarding.includes(':stream-events="dialogueStreamEvents"'), 'dialogue stream events should pass through an ordered queue prop')
   assert(onboarding.includes('const dialogueStreamEvents = ref'), 'dialogue stream events should be queued instead of stored in a single ref')
   assert(onboarding.includes('dialogueStreamEvents.value.push'), 'each SSE event should be appended so same-tick frames are not overwritten')
@@ -74,6 +76,8 @@ test('dialogue streams indefinitely and finishes by user action', () => {
   assert(onboarding.includes('await dialogueStreamInFlight.catch'), 'dialogue finish should wait for in-flight background updates')
   assert(onboarding.includes("await router.replace('/profile')"), 'dialogue flow should jump to the profile page after finish')
   assert(onboarding.includes('profileStore.setDialogueRadarChanges'), 'dialogue finish should preserve radar changes for highlight')
+  assert(onboarding.includes('readActiveProfileSession'), 'dialogue should restore its server-owned session after refresh')
+  assert(onboarding.includes('readProfileSession'), 'refresh and disconnect recovery should rehydrate from the backend')
 })
 
 test('missing resources or keys can fall back to templates and manual card selection', () => {

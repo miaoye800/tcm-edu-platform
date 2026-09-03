@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.profile.evidence import EvidenceCard
+from app.profile.evidence import EvidenceCard, EvidenceTier, StructuredEvidence
 
 DimensionKey = Literal[
     "knowledge_base",
@@ -89,6 +89,33 @@ class WeakPoint(BaseModel):
     strength: int = Field(default=1, ge=1)
 
 
+class IdentityCardView(BaseModel):
+    """Stable, traceable view model for one dialogue identity card.
+
+    ``cards`` is retained as a legacy alias for clients that adopted the first
+    dialogue implementation. New consumers should use ``items``.
+    """
+
+    key: DimensionKey
+    label: str
+    kind: Literal["distribution", "level", "tags"]
+    revealed: bool
+    revealable: bool
+    revealed_now: bool
+    confidence: float = Field(ge=0.0, le=1.0)
+    confidence_status: Literal["待取证", "已取证"]
+    score: float | None = None
+    display_value: str
+    distribution: dict[str, float] = Field(default_factory=dict)
+    items: list[dict[str, Any]] = Field(default_factory=list)
+    cards: list[dict[str, Any]] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    quotes: list[str] = Field(default_factory=list)
+    explanation: str
+    provenance: str
+    pending_reason: str | None = None
+
+
 class WeakPointsDimension(ProfileDimensionBase):
     """Hotspot/list dimension: weak labels plus evidence-backed strength."""
 
@@ -118,6 +145,53 @@ class ResourcePreferenceDimension(CategoricalDimension):
         return value
 
 
+PlanningDepth = Literal["浅", "中", "深"]
+PlanningBreadth = Literal["考点导向", "全面", "兴趣优先"]
+PlanningPace = Literal["松", "中", "紧"]
+AssessmentStrictness = Literal["宽松", "标准", "严格"]
+
+
+class TimeBudget(BaseModel):
+    total_days: int = Field(ge=1)
+    daily_minutes: int = Field(ge=1)
+
+
+class PlanningParams(BaseModel):
+    """Continuous planning controls used by the route-planning agent."""
+
+    depth: PlanningDepth = "中"
+    breadth: PlanningBreadth = "全面"
+    pace: PlanningPace = "中"
+    fun_preference: float = Field(default=0.5, ge=0.0, le=1.0)
+    assessment_strictness: AssessmentStrictness = "标准"
+    time_budget: TimeBudget | None = None
+
+
+class Goal(BaseModel):
+    raw_text: str = ""
+    normalized: LearningGoalLabel | None = None
+    confirmed_by_user: bool = False
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+def derive_planning_params(profile: "Profile") -> PlanningParams:
+    """Derive a conservative planning baseline from the existing seven axes."""
+
+    breadth: PlanningBreadth = "考点导向" if profile.learning_goal.label == "应试提分" else "全面"
+    pace_score = profile.pace.score
+    plan_pace: PlanningPace = "紧" if pace_score is not None and pace_score >= 70 else "松" if pace_score is not None and pace_score <= 30 else "中"
+    motivation_score = profile.motivation.score
+    strictness: AssessmentStrictness = "宽松" if motivation_score is not None and motivation_score < 40 else "标准"
+    engaging_resources = {"拟人化短剧", "汤头歌诀"}
+    fun_preference = 0.7 if profile.resource_preference.label in engaging_resources or profile.learning_style.label == "视觉型" else 0.5
+    return PlanningParams(
+        breadth=breadth,
+        pace=plan_pace,
+        fun_preference=fun_preference,
+        assessment_strictness=strictness,
+    )
+
+
 class Profile(BaseModel):
     """Seven-dimension learning profile snapshot."""
 
@@ -131,8 +205,16 @@ class Profile(BaseModel):
     pace: NumericDimension = Field(default_factory=NumericDimension)
     motivation: MotivationDimension = Field(default_factory=MotivationDimension)
     resource_preference: ResourcePreferenceDimension = Field(default_factory=ResourcePreferenceDimension)
+    planning_params: PlanningParams = Field(default_factory=PlanningParams)
+    goal: Goal = Field(default_factory=Goal)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    @model_validator(mode="after")
+    def derive_unconfirmed_planning_params(self) -> "Profile":
+        if not self.goal.confirmed_by_user:
+            object.__setattr__(self, "planning_params", derive_planning_params(self))
+        return self
 
 
 def create_blank_profile(user_id: str) -> Profile:
@@ -164,10 +246,17 @@ __all__ = [
     "DIMENSION_LABELS",
     "DimensionKey",
     "EvidenceCard",
+    "EvidenceTier",
+    "IdentityCardView",
+    "StructuredEvidence",
     "MIXED_DIMENSIONS",
     "NUMERIC_DIMENSIONS",
+    "Goal",
+    "PlanningParams",
+    "TimeBudget",
     "Profile",
     "create_blank_profile",
+    "derive_planning_params",
     "evidence_card_asdict",
     "evidence_card_from_dict",
     "evidence_card_to_json_dict",

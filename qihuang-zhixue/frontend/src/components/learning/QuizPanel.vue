@@ -49,7 +49,7 @@
         />
 
         <div class="question-actions">
-          <el-button size="small" text :icon="View" @click="toggleReveal(questionKey(question, index))">
+          <el-button v-if="!question.calibration" size="small" text :icon="View" @click="toggleReveal(questionKey(question, index))">
             对答案
           </el-button>
           <Badge tone="gold" :label="question.source.name || question.source.type" />
@@ -69,7 +69,7 @@
 import { reactive } from 'vue'
 import { Check, View } from '@element-plus/icons-vue'
 import Badge from '../ui/Badge.vue'
-import type { QuizQuestion, QuizSubmitItem } from '../../types/learning'
+import type { CalibrationAnswer, QuizQuestion, QuizSubmitItem } from '../../types/learning'
 
 const props = defineProps<{
   questions: QuizQuestion[]
@@ -78,7 +78,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submit: [items: QuizSubmitItem[]]
+  submit: [items: QuizSubmitItem[], calibrationAnswers: CalibrationAnswer[]]
 }>()
 
 const answers = reactive<Record<string, string>>({})
@@ -104,7 +104,7 @@ const answerFor = (question: QuizQuestion, index: number) => {
 }
 
 const submitAll = () => {
-  const items = props.questions.map((question, index) => ({
+  const items = props.questions.filter((question) => !question.calibration).map((question, index) => ({
     question_id: questionKey(question, index),
     kc_id: question.source.name || props.topic,
     answer: answerFor(question, index),
@@ -113,7 +113,8 @@ const submitAll = () => {
     bloom_level: question.bloom_level,
     topic: props.topic,
   }))
-  emit('submit', items)
+  const calibrationAnswers = props.questions.flatMap((question, index) => question.calibration ? [{ claimId: question.calibration.claimId, questionId: question.calibration.questionId, answer: answerFor(question, index) }] : [])
+  emit('submit', items, calibrationAnswers)
   props.questions.forEach((question, index) => {
     revealed[questionKey(question, index)] = true
   })

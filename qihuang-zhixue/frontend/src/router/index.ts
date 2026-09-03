@@ -3,19 +3,57 @@ import AppShell from '../components/layout/AppShell.vue'
 import AtlasView from '../views/AtlasView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import DashboardView from '../views/DashboardView.vue'
-import LearnView from '../views/LearnView.vue'
+// LearnView is retained for compatibility; /learn redirects to the meridian entry.
 import LoginView from '../views/LoginView.vue'
+import MyResourcesView from '../views/MyResourcesView.vue'
+import ResourceDetailView from '../views/ResourceDetailView.vue'
 import MistakesView from '../views/MistakesView.vue'
+import MeridianDemo from '../views/MeridianDemo.vue'
+import AlchemyDemo from '../views/AlchemyDemo.vue'
+import MindmapThemesDemo from '../views/MindmapThemesDemo.vue'
+import MeridianMapView from '../views/MeridianMapView.vue'
 import OnboardingView from '../views/OnboardingView.vue'
 import PathView from '../views/PathView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import QuizView from '../views/QuizView.vue'
+import AssessmentView from '../views/AssessmentView.vue'
+import ApprenticeStoryView from '../views/ApprenticeStoryView.vue'
 import ReviewView from '../views/ReviewView.vue'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
 import { readOnboardingState } from '../services/onboardingStorage'
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/apprentice',
+    name: 'apprentice-story',
+    component: ApprenticeStoryView,
+    meta: { title: '收徒剧情', mode: 'fullscreen' },
+  },
+  {
+    path: '/assessment/:nodeId',
+    name: 'assessment',
+    component: AssessmentView,
+    meta: { title: '过关试炼', mode: 'fullscreen' },
+  },
+  {
+    path: '/alchemy-demo',
+    name: 'alchemy-demo',
+    component: AlchemyDemo,
+    meta: { title: '炼药演出样张', public: true },
+  },
+  {
+    path: '/mindmap-themes',
+    name: 'mindmap-themes',
+    component: MindmapThemesDemo,
+    meta: { title: '思维导图模板库', public: true },
+  },
+  {
+    path: '/meridian-demo',
+    name: 'meridian-demo',
+    component: MeridianDemo,
+    meta: { title: '经络学习脉络样张', public: true },
+  },
   {
     path: '/login',
     name: 'login',
@@ -48,14 +86,26 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'learn',
         name: 'learn',
-        component: LearnView,
-        meta: { title: '智能学习', group: '学习', mode: 'immersive' },
+        // deprecated: immersive learning now begins from a map node.
+        redirect: '/path',
       },
       {
         path: 'path',
         name: 'path',
-        component: PathView,
+        component: MeridianMapView,
         meta: { title: '闯关地图', group: '学习', mode: 'embedded' },
+      },
+      {
+        path: 'resources',
+        name: 'resources',
+        component: MyResourcesView,
+        meta: { title: '我的资源库', group: '学习', mode: 'embedded' },
+      },
+      {
+        path: 'resources/:id',
+        name: 'resource-detail',
+        component: ResourceDetailView,
+        meta: { title: '资源查看', group: '学习', mode: 'embedded' },
       },
       {
         path: 'quiz',
@@ -105,12 +155,31 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+if (import.meta.env.DEV) {
+  routes.unshift({
+    path: '/profile-dialogue-fixture',
+    name: 'profile-dialogue-fixture',
+    component: () => import('../views/ProfileDialogueFixtureView.vue'),
+    meta: { title: '命格卡视觉验收', public: true },
+  })
+  routes.unshift({
+    path: '/stage4-lab',
+    name: 'stage4-lab',
+    component: () => import('../views/Stage4Lab.vue'),
+    meta: { title: '阶段四选件货架', public: true },
+  })
+}
+
 const router = createRouter({
   history: createWebHistory(),
   routes,
 })
 
 router.beforeEach(async (to) => {
+  // Isolated visual-capture builds only; normal dev and production keep auth.
+  if (import.meta.env.VITE_E2E_CAPTURE === 'true') return true
+  if (import.meta.env.VITE_E2E_GRAPH_CAPTURE === 'true' && to.name === 'atlas') return true
+
   const auth = useAuthStore()
   const isPublic = Boolean(to.meta.public)
 
@@ -126,7 +195,7 @@ router.beforeEach(async (to) => {
     return redirect
   }
 
-  if (!isPublic && auth.isAuthenticated && to.name !== 'onboarding') {
+  if (!isPublic && auth.isAuthenticated && to.name !== 'onboarding' && to.name !== 'apprentice-story') {
     const profile = useProfileStore()
     const userId = auth.user?.user_id ?? ''
     const onboarding = readOnboardingState(userId)

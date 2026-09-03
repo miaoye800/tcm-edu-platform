@@ -5,7 +5,10 @@
         <span>{{ axis.sourceLabel }}</span>
         <small>{{ axis.metric }} · {{ axis.raw }}</small>
       </div>
-      <Badge :tone="axis.lowConfidence ? 'muted' : 'jade'" :label="axis.confidenceStatus" />
+      <div class="dim-row__badges">
+        <Badge :tone="axis.lowConfidence ? 'muted' : 'jade'" :label="axis.confidenceStatus" />
+        <span v-if="axis.pending_verification" class="pending-verification">待验证</span>
+      </div>
     </div>
     <p>{{ axis.anchor }}</p>
     <div class="dim-row__bar" aria-hidden="true">
@@ -45,6 +48,9 @@ defineProps<{
   min-width: 0;
   gap: 4px;
 }
+
+.dim-row__badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.pending-verification { padding: 3px 7px; border: 1px solid var(--qh-color-gold); border-radius: var(--qh-radius-pill); color: var(--qh-color-gold); font-size: 11px; font-weight: 900; }
 
 .dim-row__head span {
   color: var(--qh-text);

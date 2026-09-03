@@ -120,7 +120,7 @@ class QuizQuestion(StrictResourceModel):
     explanation: str = Field(description="解析，说明答案为什么成立并引用知识库证据")
     source: SourceRef = Field(description="本题主要证据来源")
     bloom_level: BloomLevel = Field(description="布鲁姆认知层级")
-    difficulty: int = Field(ge=1, le=5, description="题目难度，依据学生 profile 动态调整")
+    difficulty: int = Field(default=3, ge=1, le=5, description="题目难度，依据学生 profile 动态调整")
     distractor_rationale: dict[str, str] = Field(
         default_factory=dict,
         description="每个干扰项为何像但错，必须指向常见易混药或证",

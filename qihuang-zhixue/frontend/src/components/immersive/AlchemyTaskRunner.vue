@@ -1,0 +1,26 @@
+<template>
+  <section class="task-runner">
+    <div class="queue" v-if="tasks.length > 1"><span v-for="(task, index) in tasks" :key="task.id" :class="{ active: index === activeIndex, done: task.resource }" :title="task.type">{{ index + 1 }}</span></div>
+    <AlchemyStage :events="active.events" @click.stop />
+    <div class="results" v-if="ready.length"><ResourceCard v-for="item in ready" :key="item.id" :resource="item" @open="open"/></div>
+    <button v-if="failed" class="retry" @click="retry">Retry</button>
+  </section>
+</template>
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import AlchemyStage, { type AlchemyStreamEvent } from '../alchemy/AlchemyStage.vue'
+import { getResource, streamResourceTask } from '../../services/resourceApi'
+import type { ResourceItem, ResourceTaskEvent, ResourceType } from '../../types/resource'
+import ResourceCard from '../resources/ResourceCard.vue'
+type Task = { id: string; type: ResourceType; events: AlchemyStreamEvent[]; resource?: ResourceItem; failed?: boolean }
+const props = defineProps<{ taskIds: string[]; types: ResourceType[]; usingMock?: boolean }>(); const emit = defineEmits<{ finished: [] }>(); const router = useRouter(); const activeIndex = ref(0); const tasks = reactive<Task[]>(props.taskIds.map((id, index) => ({ id, type: props.types[index] || 'doc', events: [] }))); const controllers: AbortController[] = []
+const active = computed(() => tasks[activeIndex.value] || { events: [] }); const ready = computed(() => tasks.flatMap(task => task.resource ? [task.resource] : [])); const failed = computed(() => tasks[activeIndex.value]?.failed)
+const stageStepId = (id: string) => ({ relate: 'relation', layout: 'compose' }[id] || id)
+const adapt = (task: Task, event: ResourceTaskEvent) => { const stepId = stageStepId(event.payload.step_id || `step-${event.step_index}`); if (event.event === 'step_start') task.events.push({ type: 'step', stepId, label: event.step_label }); if (event.event === 'step_done') task.events.push({ type: 'step_done', stepId }); if (event.event === 'error') { task.failed = true; task.events.push({ type: 'status', status: 'failed' }) }; if (event.event === 'done') task.events.push({ type: 'complete' }) }
+const fake = async (task: Task) => { const ids = ['source', 'relation', 'distill', 'verify', 'compose']; for (const [index, stepId] of ids.entries()) { await new Promise(resolve => window.setTimeout(resolve, 480)); adapt(task, { event: 'step_start', step_index: index, total_steps: ids.length, step_label: stepId, payload: { step_id: stepId } }) }; await new Promise(resolve => window.setTimeout(resolve, 900)); task.resource = { id: task.type === 'doc' ? 'mock-doc' : `mock-${task.id}`, node_id: 'd01', type: task.type, title: task.type === 'doc' ? '麻黄 · 性味归经与功效' : `${task.type} resource`, status: 'ready', created_at: new Date().toISOString() }; adapt(task, { event: 'done', step_index: 5, total_steps: 5, step_label: 'complete', payload: { resource_id: task.resource.id } }) }
+const run = async (index: number) => { activeIndex.value = index; const task = tasks[index]; if (!task) return; if (props.usingMock) await fake(task); else { const controller = new AbortController(); controllers.push(controller); await streamResourceTask(task.id, async event => { adapt(task, event); if (event.event === 'done' && event.payload.resource_id) task.resource = await getResource(event.payload.resource_id) }, { signal: controller.signal, onConnection: state => task.events.push({ type: 'status', status: state }) }) }; if (index + 1 < tasks.length) await run(index + 1); else emit('finished') }
+const retry = () => { const task = tasks[activeIndex.value]; if (!task) return; task.failed = false; task.events = []; void run(activeIndex.value) }; const open = (item: ResourceItem) => { if (item.type === 'doc') void router.push({ name: 'resource-detail', params: { id: item.id } }); else void router.push({ name: 'resource-detail', params: { id: item.id }, query: { pending: 'stage3' } }) }
+onMounted(() => void run(0)); onBeforeUnmount(() => controllers.forEach(controller => controller.abort()))
+</script>
+<style scoped>.task-runner{position:absolute;inset:0;z-index:12;overflow:auto;background:rgba(8,16,14,.94)}.task-runner :deep(.alchemy-stage){border-radius:0}.queue{position:absolute;z-index:20;top:26px;right:92px;display:flex;gap:6px}.queue span{display:grid;width:24px;height:24px;place-items:center;border:1px solid rgba(143,208,173,.32);border-radius:50%;color:var(--qh-text-muted);font-size:10px}.queue .active{border-color:var(--qh-color-gold);color:var(--qh-color-gold)}.queue .done{color:var(--qh-color-jade)}.results{position:absolute;z-index:19;right:20px;bottom:20px;display:grid;gap:8px;width:min(290px,70vw)}.results button,.retry{display:grid;gap:4px;padding:13px;border:1px solid rgba(229,183,94,.55);border-radius:5px;color:var(--qh-text);background:rgba(16,29,25,.88);text-align:left;cursor:pointer}.results small,.results span{color:var(--qh-text-muted);font-size:11px}.retry{position:absolute;z-index:20;right:24px;bottom:24px;color:#2e2116;background:var(--qh-color-gold);font-weight:800}</style>

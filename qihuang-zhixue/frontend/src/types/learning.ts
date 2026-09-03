@@ -70,7 +70,10 @@ export type QuizQuestion = {
   difficulty: number
   distractor_rationale: Record<string, string>
   claims: string[]
+  calibration?: { claimId: string; questionId: string }
 }
+
+export type CalibrationAnswer = { claimId: string; questionId: string; answer: string[] }
 
 export type QuizPayload = {
   questions: QuizQuestion[]

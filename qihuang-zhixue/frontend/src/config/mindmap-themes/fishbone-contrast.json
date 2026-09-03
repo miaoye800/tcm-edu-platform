@@ -1,0 +1,11 @@
+{
+  "id": "fishbone-contrast",
+  "name": "鱼骨对比",
+  "stance": "让结论沿一根主脊排列，玉青与珊瑚在左右明确分庭，避免比较信息混成一团。",
+  "scene": "适合同类药鉴别、寒热优劣、药对异同等必须左右对照的内容。",
+  "palette": ["#5fa99b", "#e48678", "#254c50", "#f2c57c"],
+  "layout": "fishbone",
+  "nodeStyle": { "shape": "rect", "radius": "5px", "density": "regular", "emphasis": "split-color" },
+  "lineStyle": { "kind": "solid", "width": "3px", "subWidth": "1px", "decoration": "spine" },
+  "cssVars": { "--mm-bg": "#eff5f1", "--mm-surface": "#ffffff", "--mm-text": "#213a3b", "--mm-muted": "#63807d", "--mm-primary": "#5fa99b", "--mm-accent": "#e48678", "--mm-secondary": "#f2c57c", "--mm-line": "#376d6a", "--mm-node-border": "#5fa99b", "--mm-glow": "transparent" }
+}

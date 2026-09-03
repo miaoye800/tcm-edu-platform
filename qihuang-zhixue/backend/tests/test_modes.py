@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 import app.profile.modes as modes_module
 from app.api.profile import get_profile_db_path
+from app.api.profile import _dialogue_sse_iter
 from app.auth.dependencies import get_current_user
 from app.auth.models import AuthUser
 from app.config import Settings
@@ -22,9 +23,10 @@ from app.profile.modes import (
     reset_profile_sessions,
 )
 from app.profile.fusion import ALLOWED_LABELS
+from app.profile.prescription import evaluate_prescription
 from app.profile.schema import DimensionKey, EvidenceCard, create_blank_profile
 from app.profile.nodes import diagnostic_eval_node, diagnostic_question_node, initial_state
-from app.profile.store import list_evidence, upsert_profile
+from app.profile.store import list_chat_messages, list_evidence, upsert_profile
 
 
 client = TestClient(app)
@@ -135,6 +137,116 @@ def test_practice_uses_high_weight_prescription_evidence() -> None:
     assert cards[0]["objective_signal"]["response_time_ms"] == 7000
 
 
+def test_prescription_uses_shared_trace_metadata_and_no_key_marker(monkeypatch) -> None:
+    import asyncio
+    from app.profile.modes import _prescription_card
+    from app.config import Settings
+
+    monkeypatch.setattr("app.profile.modes.get_settings", lambda: Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None))
+
+    card = asyncio.run(
+        _prescription_card(
+            {
+                "case": "风寒怕冷",
+                "prescription": "麻黄3g 桂枝3g",
+                "knowledge_base_ref": "herb:mahuang",
+            },
+            source="收徒二幕",
+            weight=1.5,
+            response_time_ms=100,
+        )
+    )
+    assert card.quote and "麻黄3g" in card.quote
+    assert card.basis == "explicit"
+    assert card.extraction_confidence == 0.85
+    assert card.extraction_method == "no_key_rule_fallback"
+    assert card.knowledge_base_ref == "herb:mahuang"
+
+
+def test_free_prescriptions_allow_multiple_kb_supported_solutions() -> None:
+    first = evaluate_prescription({"case": "热毒咽痛", "prescription": "金银花12g，连翘12g"})
+    second = evaluate_prescription({"case": "热毒咽痛", "prescription": "黄芩9g，黄连3g，石膏30g"})
+
+    for evaluation in (first, second):
+        assert evaluation.symptom_match is True
+        assert evaluation.compatible is True
+        assert evaluation.dosage_ok is True
+        assert evaluation.toxic_misuse is False
+        assert evaluation.knowledge_base_refs
+        assert all(item["quote"] in evaluation.quote or item["quote"] == "" for item in evaluation.findings)
+
+
+def test_free_prescription_flags_unrelated_dose_and_toxic_risks() -> None:
+    unrelated = evaluate_prescription({"case": "风寒恶寒无汗", "prescription": "阿司匹林10g"})
+    dose = evaluate_prescription({"case": "风寒恶寒无汗", "prescription": "麻黄100g，桂枝6g"})
+    toxic = evaluate_prescription({"case": "风寒恶寒无汗", "prescription": "细辛10g"})
+
+    assert any(item["kind"] == "unrelated_herb" for item in unrelated.findings)
+    assert any(item["kind"] == "dose_abnormal" for item in dose.findings)
+    assert toxic.toxic_misuse is True
+    assert any(item["kind"] == "toxic_misuse" for item in toxic.findings)
+
+
+def test_cough_with_ginseng_is_not_automatically_symptom_matched() -> None:
+    evaluation = evaluate_prescription({"case": "咳嗽痰多", "prescription": "人参9g"})
+
+    assert evaluation.symptom_match is False
+    assert evaluation.symptom_match_status == "mismatched"
+    mismatch = next(item for item in evaluation.findings if item["kind"] == "case_mismatch")
+    assert mismatch["quote"] == "咳嗽痰多"
+    assert mismatch["knowledge_base_refs"]
+    assert mismatch["rule"] == "prescription_rule_v1"
+
+
+def test_incremental_prescription_cards_keep_shared_trace_metadata() -> None:
+    import app.profile.update as update_module
+
+    cards = update_module.evidence_cards_from_event(
+        update_module.ProfileUpdateEvent(
+            type="prescription",
+            payload={"case": "风寒恶寒无汗", "prescription": "麻黄6g，桂枝6g"},
+        )
+    )
+
+    assert cards
+    for card in cards:
+        assert card.quote and card.quote in "麻黄6g，桂枝6g"
+        assert card.basis == "explicit"
+        assert card.extraction_confidence == 0.85
+        assert card.extraction_method == "no_key_rule_fallback"
+        assert card.knowledge_base_ref
+
+
+def test_apprentice_practice_and_event_reuse_prescription_evaluator(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+    real = evaluate_prescription
+
+    def spy(payload: dict[str, object]):
+        calls.append(payload)
+        return real(payload)
+
+    monkeypatch.setattr(modes_module, "evaluate_prescription", spy)
+    import app.profile.update as update_module
+
+    monkeypatch.setattr(update_module, "evaluate_prescription", spy)
+    asyncio.run(
+        modes_module._prescription_card(
+            {"case": "风寒恶寒无汗", "prescription": "麻黄6g，桂枝6g"},
+            source="practice",
+            weight=1.5,
+            response_time_ms=1,
+        )
+    )
+    update_module.evidence_cards_from_event(
+        update_module.ProfileUpdateEvent(
+            type="prescription",
+            payload={"case": "风寒恶寒无汗", "prescription": "麻黄6g，桂枝6g"},
+        )
+    )
+
+    assert len(calls) == 2
+
+
 def test_passive_events_convert_to_evidence_cards() -> None:
     first = _start("passive")
 
@@ -164,14 +276,25 @@ def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(
     assert first["step"]["kind"] == "dialogue"
     assert first["step"]["id"] == "dialogue_turn_1"
 
+    first_utterance = "我是中药学学生，最近主要想准备期末考试，也想把基础补稳。"
     payload = _answer(
         session_id,
         "dialogue_turn_1",
-        {"utterance": "我是中药学学生，最近主要想准备期末考试，也想把基础补稳。"},
+        {"utterance": first_utterance},
     )
     assert payload["turn_index"] == 1
     assert payload["next_question"]
     assert len(payload["evidence_cards"]) > 0
+    for card in payload["evidence_cards"]:
+        assert {
+            "quote",
+            "basis",
+            "extraction_confidence",
+            "extraction_method",
+            "knowledge_base_ref",
+        } <= card.keys()
+        assert card["quote"] in first_utterance
+        assert card["extraction_method"] == "no_key_rule_fallback"
     assert set(payload["card_scores"]) == {"考前冲刺", "临床学徒", "草木好奇者", "研读派"}
     assert all(0 <= value <= 1 for value in payload["card_scores"].values())
     assert payload["converged"] is False
@@ -472,8 +595,67 @@ def test_dialogue_chat_sse_event_order_and_dark_axes(monkeypatch, tmp_path: Path
     assert {item["key"] for item in identity_cards["items"]} == set(modes_module.DIMENSION_LABELS)
     axes = {axis["key"]: axis for axis in radar["axes"]}
     assert axes["knowledge_base"]["status"] != "dark"
+    assert axes["knowledge_base"]["provenance"] == "no_key_rule_fallback"
+    assert radar["provenance"]["knowledge_base"] == "no_key_rule_fallback"
     for key in ("learning_goal", "learning_style", "weak_points", "pace", "motivation", "resource_preference"):
         assert axes[key]["status"] == "dark"
+
+    restored = client.get(f"/api/profile/session/{first['session_id']}")
+    assert restored.status_code == 200, restored.text
+    restored_payload = restored.json()
+    assert restored_payload["status"] == "restored"
+    assert restored_payload["step"]["id"] == "dialogue_turn_2"
+    assert all(not item["revealed_now"] for item in restored_payload["identity_cards"])
+
+
+def test_dialogue_no_key_visible_stream_uses_rule_question_without_mock_marker(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-visible-no-key.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    first = _start("dialogue", user_id="dialogue-visible-no-key-user")
+
+    response = client.post(
+        "/api/profile/dialogue/chat",
+        json={"session_id": first["session_id"], "utterance": "我想在30天内通过考试，每天学习45分钟。"},
+    )
+
+    assert response.status_code == 200, response.text
+    events = _parse_sse(response.text)
+    message_text = "".join(str(data.get("delta") or "") for event, data in events if event == "message")
+    thinking_text = "".join(str(data.get("delta") or "") for event, data in events if event == "thinking")
+    assert message_text.startswith("我记下了。")
+    assert "[MOCK:" not in message_text
+    assert "FallbackReason" not in message_text
+    assert thinking_text
+    assert [event for event, _ in events][-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+
+
+def test_dialogue_session_restore_rejects_another_user(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-restore-owner.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    first = _start("dialogue", user_id="restore-owner")
+
+    _override_current_user("other-user")
+    response = client.get(f"/api/profile/session/{first['session_id']}")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "画像会话已过期，请重新开始"
+
+
+def test_dialogue_stream_log_records_lengths_without_content(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("INFO", logger="app.profile.modes")
+
+    modes_module._log_dialogue_stream_fulltext(
+        "session-that-must-not-be-logged-in-full",
+        3,
+        ["private thinking"],
+        ["private assistant response"],
+    )
+
+    assert "thinking_len=16" in caplog.text
+    assert "message_len=26" in caplog.text
+    assert "private thinking" not in caplog.text
+    assert "private assistant response" not in caplog.text
+    assert "session-that-must-not-be-logged-in-full" not in caplog.text
 
 
 def test_dialogue_chat_extraction_error_still_emits_visible_done(monkeypatch, tmp_path: Path) -> None:
@@ -627,6 +809,12 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
                             "basis": "inferred",
                             "evidence": ["可能要考试"],
                         },
+                        "motivation": {
+                            "value": "被动",
+                            "confidence": 0.9,
+                            "basis": "explicit",
+                            "evidence": ["你为什么想学"],
+                        },
                     }
                 },
                 ensure_ascii=False,
@@ -649,6 +837,8 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
     assert next_question == ""
     assert extraction.major.value == "中药学"
     assert extraction.learning_goal.value == {"应试提分": 0.6, "兴趣科普": 0.4}
+    assert extraction.motivation.value is None
+    assert extraction.motivation.evidence == []
     assert calls[0]["task_type"] == "profile_extract"
     assert calls[0]["kw"]["temperature"] == 0
     assert calls[0]["kw"]["thinking"] == {"type": "disabled"}
@@ -1223,6 +1413,192 @@ def _start(mode: str, user_id: str = "student-001") -> dict[str, object]:
     assert payload["status"] == "start"
     assert payload["step"] is not None
     return payload
+
+
+def test_dialogue_client_turn_id_replay_after_pre_done_disconnect_is_idempotent(tmp_path: Path) -> None:
+    """A reconnect after server commit must replay state, not write a second turn."""
+
+    db_path = tmp_path / "dialogue-client-turn-replay.db"
+    user_id = "dialogue-client-turn-user"
+    session = modes_module.start_profile_session(user_id, "dialogue", db_path=db_path)
+
+    async def consume_until_state() -> list[tuple[str, dict[str, object]]]:
+        events: list[tuple[str, dict[str, object]]] = []
+        async for event, data in modes_module.stream_dialogue_chat_events(
+            session.session_id,
+            user_id=user_id,
+            utterance="I want to pass the exam in thirty days.",
+            client_turn_id="turn-a",
+            db_path=db_path,
+        ):
+            events.append((event, data))
+            if event == "state":
+                # Simulate a client which lost the connection before the done frame.
+                break
+        return events
+
+    first_events = asyncio.run(consume_until_state())
+    committed = modes_module.get_profile_session(session.session_id, user_id=user_id, db_path=db_path)
+    evidence_before = list_evidence(user_id, db_path=db_path)
+    messages_before = list_chat_messages(user_id, session.session_id, db_path=db_path)
+
+    async def replay() -> list[tuple[str, dict[str, object]]]:
+        return [
+            event
+            async for event in modes_module.stream_dialogue_chat_events(
+                session.session_id,
+                user_id=user_id,
+                utterance="I want to pass the exam in thirty days.",
+                client_turn_id="turn-a",
+                db_path=db_path,
+            )
+        ]
+
+    replay_events = asyncio.run(replay())
+    reloaded = modes_module.get_profile_session(session.session_id, user_id=user_id, db_path=db_path)
+
+    assert [event for event, _ in first_events][-1] == "state"
+    assert [event for event, _ in replay_events] == ["state", "done"]
+    assert committed.step_index == reloaded.step_index == 1
+    assert list_evidence(user_id, db_path=db_path) == evidence_before
+    assert list_chat_messages(user_id, session.session_id, db_path=db_path) == messages_before
+    assert all(not item["revealed_now"] for item in replay_events[0][1]["identity_cards"])
+
+
+def test_dialogue_chat_api_replays_completed_client_turn_without_duplicate_rows(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-api-client-turn-replay.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    started = _start("dialogue", user_id="dialogue-api-client-turn-user")
+    request = {
+        "session_id": started["session_id"],
+        "utterance": "Use the same request id through a reconnect.",
+        "client_turn_id": "api-turn-a",
+    }
+
+    first = client.post("/api/profile/dialogue/chat", json=request)
+    replay = client.post("/api/profile/dialogue/chat", json=request)
+
+    assert first.status_code == replay.status_code == 200
+    assert [event for event, _ in _parse_sse(replay.text)] == ["state", "done"]
+    assert modes_module.get_profile_session(started["session_id"], user_id="dialogue-api-client-turn-user", db_path=db_path).step_index == 1
+    assert len(list_chat_messages("dialogue-api-client-turn-user", started["session_id"], db_path=db_path)) == 2
+
+
+def test_dialogue_sse_disconnect_before_done_keeps_committed_turn(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-disconnect-commit.db"
+    user_id = "dialogue-disconnect-commit-user"
+    session = modes_module.start_profile_session(user_id, "dialogue", db_path=db_path)
+
+    class DisconnectedRequest:
+        async def is_disconnected(self) -> bool:
+            return True
+
+    async def consume() -> list[str]:
+        events: list[str] = []
+        async for frame in _dialogue_sse_iter(
+            session_id=session.session_id,
+            user_id=user_id,
+            utterance="Commit this answer before the stream closes.",
+            client_turn_id="turn-disconnect",
+            db_path=db_path,
+            request=DisconnectedRequest(),
+        ):
+            events.append(frame.splitlines()[0].removeprefix("event: "))
+        return events
+
+    events = asyncio.run(consume())
+    restored = modes_module.get_profile_session(session.session_id, user_id=user_id, db_path=db_path)
+
+    assert "done" not in events
+    assert restored.step_index == 1
+    assert len(list_chat_messages(user_id, session.session_id, db_path=db_path)) == 2
+
+
+def test_dialogue_client_turn_id_scopes_replay_and_allows_same_text_next_turn(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-client-turn-scope.db"
+    user_id = "dialogue-client-turn-scope-user"
+    first = modes_module.start_profile_session(user_id, "dialogue", db_path=db_path)
+    second = modes_module.start_profile_session("dialogue-client-turn-other-user", "dialogue", db_path=db_path)
+
+    async def submit(session_id: str, owner: str, turn_id: str) -> list[str]:
+        return [
+            event
+            async for event, _ in modes_module.stream_dialogue_chat_events(
+                session_id,
+                user_id=owner,
+                utterance="I want steady study time.",
+                client_turn_id=turn_id,
+                db_path=db_path,
+            )
+        ]
+
+    assert asyncio.run(submit(first.session_id, user_id, "turn-a"))[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+    assert asyncio.run(submit(first.session_id, user_id, "turn-b"))[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+    assert modes_module.get_profile_session(first.session_id, user_id=user_id, db_path=db_path).step_index == 2
+    assert len(list_chat_messages(user_id, first.session_id, db_path=db_path)) == 4
+
+    assert asyncio.run(submit(second.session_id, "dialogue-client-turn-other-user", "turn-a"))[-1] == "done"
+    assert modes_module.get_profile_session(second.session_id, user_id="dialogue-client-turn-other-user", db_path=db_path).step_index == 1
+
+
+def test_dialogue_client_turn_id_concurrent_claim_only_writes_once(monkeypatch, tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-client-turn-concurrent.db"
+    user_id = "dialogue-client-turn-concurrent-user"
+    session = modes_module.start_profile_session(user_id, "dialogue", db_path=db_path)
+    original_extract = modes_module._dialogue_extract_cards_for_chat
+
+    async def delayed_extract(**kwargs):
+        await asyncio.sleep(0.02)
+        return await original_extract(**kwargs)
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_cards_for_chat", delayed_extract)
+
+    async def collect() -> list[str]:
+        return [
+            event
+            async for event, _ in modes_module.stream_dialogue_chat_events(
+                session.session_id,
+                user_id=user_id,
+                utterance="I need a repeat-safe answer.",
+                client_turn_id="turn-concurrent",
+                db_path=db_path,
+            )
+        ]
+
+    async def run_both() -> tuple[list[str], list[str]]:
+        return await asyncio.gather(collect(), collect())
+
+    left, right = asyncio.run(run_both())
+
+    assert sum("evidence" in events for events in (left, right)) == 1
+    assert sum("error" in events for events in (left, right)) == 1
+    assert modes_module.get_profile_session(session.session_id, user_id=user_id, db_path=db_path).step_index == 1
+    assert len(list_chat_messages(user_id, session.session_id, db_path=db_path)) == 2
+
+
+def test_dialogue_chat_api_accepts_legacy_requests_without_client_turn_id(tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-legacy-client.db"
+    app.dependency_overrides[get_profile_db_path] = lambda: db_path
+    started = _start("dialogue", user_id="dialogue-legacy-client-user")
+
+    response = client.post(
+        "/api/profile/dialogue/chat",
+        json={"session_id": started["session_id"], "utterance": "I am using an older client."},
+    )
+
+    assert response.status_code == 200, response.text
+    assert [event for event, _ in _parse_sse(response.text)][-1] == "done"
+    assert modes_module.get_profile_session(started["session_id"], user_id="dialogue-legacy-client-user", db_path=db_path).step_index == 1
+
+
+def test_dialogue_start_returns_server_owned_unrevealed_identity_cards() -> None:
+    payload = _start("dialogue", user_id="dialogue-start-cards")
+
+    cards = payload["identity_cards"]
+    assert len(cards) == 7
+    assert all(card["revealed"] is False for card in cards)
+    assert all(card["revealed_now"] is False for card in cards)
+    assert all(card["items"] == card["cards"] for card in cards)
 
 
 def _answer(session_id: str, step_id: str, payload: dict[str, object]) -> dict[str, object]:

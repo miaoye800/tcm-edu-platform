@@ -1,0 +1,11 @@
+{
+  "id": "herb-garden",
+  "name": "清新药园",
+  "stance": "像晨露里的药圃标签，圆润、呼吸感和枝叶末端共同降低初学者的进入门槛。",
+  "scene": "适合入门概览、儿童或跨专业学习者，以及需要温和叙事的药材导读。",
+  "palette": ["#5c9d71", "#8fd0ad", "#e2a66e", "#78b58c"],
+  "layout": "tree",
+  "nodeStyle": { "shape": "pill", "radius": "999px", "density": "airy", "emphasis": "soft-fill" },
+  "lineStyle": { "kind": "solid", "width": "2px", "subWidth": "1.5px", "decoration": "leaf" },
+  "cssVars": { "--mm-bg": "#e9f3e4", "--mm-surface": "#f8fcf4", "--mm-text": "#244738", "--mm-muted": "#5d7e6d", "--mm-primary": "#5c9d71", "--mm-accent": "#8fd0ad", "--mm-secondary": "#e2a66e", "--mm-line": "#6eaa7b", "--mm-node-border": "#9bcda9", "--mm-glow": "rgba(143,208,173,.18)" }
+}

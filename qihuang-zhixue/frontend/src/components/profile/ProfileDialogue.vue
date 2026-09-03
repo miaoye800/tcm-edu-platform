@@ -1,5 +1,5 @@
 <template>
-  <section class="profile-dialogue" aria-label="问诊式画像对话">
+  <section class="profile-dialogue" aria-label="问诊式画像对话" :style="{ '--identity-flip-duration': `${identityFlipDurationMs}ms` }">
     <main class="dialogue-main">
       <div class="dialogue-head">
         <div>
@@ -23,14 +23,10 @@
               class="message-reasoning"
               :class="{ 'is-streaming': message.reasoningStreaming }"
             >
-              <button class="reasoning-toggle" type="button" @click="toggleReasoning(message.id)">
-                <span>{{ message.reasoningStreaming ? '小岐正在思考' : reasoningTitle(message) }}</span>
-                <small>{{ message.reasoningCollapsed ? '展开' : '收起' }}</small>
-              </button>
-              <p v-if="!message.reasoningCollapsed">
-                {{ message.reasoning }}
-                <span v-if="message.reasoningStreaming" class="reasoning-caret" />
-              </p>
+              <span class="reasoning-label">{{ message.reasoningStreaming ? '本轮处理中' : '本轮处理完成' }}</span>
+              <ol class="reasoning-steps">
+                <li v-for="(step, index) in reasoningSteps(message.reasoning)" :key="`${message.id}-${index}`">{{ step }}</li>
+              </ol>
             </section>
             <span class="speaker">{{ message.role === 'assistant' ? '小岐' : '我' }}</span>
             <p>{{ message.text }}</p>
@@ -40,13 +36,23 @@
       </div>
 
       <footer class="answer-dock">
+        <section v-if="converged" class="dialogue-goal">
+          <template v-if="goalCandidate">
+            <p>小岐：{{ goalCandidate.restatement }}</p>
+            <div><el-button class="qh-button qh-button--primary qh-button--compact" size="small" type="primary" :loading="goalBusy" @click="confirmGoal">确认</el-button><el-button class="qh-button qh-button--secondary qh-button--compact" size="small" :disabled="goalBusy" @click="goalCandidate = null">重新说</el-button></div>
+          </template>
+          <template v-else>
+            <el-input v-model="goalText" size="small" placeholder="说说接下来的学习目标" @keyup.enter="proposeGoal" />
+            <el-button class="qh-button qh-button--secondary qh-button--compact" size="small" :loading="goalBusy" @click="proposeGoal">让小岐复述</el-button>
+          </template>
+        </section>
         <div class="quick-chips" aria-label="快捷回答">
           <button
             v-for="chip in visibleQuickReplies"
             :key="chip.id"
-            class="quick-chip"
+            class="quick-chip qh-option-button"
             type="button"
-            :disabled="disabled"
+            :disabled="disabled || pending"
             @click="sendQuickReply(chip.quickReply)"
           >
             {{ chip.label }}
@@ -61,9 +67,9 @@
             :disabled="disabled"
             aria-label="自由回答"
           />
-          <el-button type="primary" :icon="Promotion" native-type="submit" :disabled="disabled || !draft.trim()">发送</el-button>
+          <el-button class="qh-button qh-button--primary" type="primary" :icon="Promotion" native-type="submit" :loading="pending" :disabled="disabled || pending || !draft.trim()">发送</el-button>
         </form>
-        <el-button class="finish-dialogue" :icon="Check" type="primary" plain @click="finishDialogue">结束对话</el-button>
+        <el-button class="finish-dialogue qh-button qh-button--secondary" :icon="Check" :disabled="pending" @click="finishDialogue">结束对话</el-button>
       </footer>
     </main>
 
@@ -74,17 +80,19 @@
             <p class="eyebrow">命格牌阵</p>
             <h3>{{ activeDimensionLabel }}</h3>
           </div>
-          <span>{{ formatConfidence(activeIdentityDimension?.confidence ?? 0) }}</span>
+          <span>{{ activeIdentityDimension?.revealed ? `${activeIdentityDimension.confidence_status} ${formatConfidence(activeIdentityDimension.confidence)}` : '待取证' }}</span>
         </div>
+        <p v-if="hasNoKeyRuleFallback" class="identity-board__notice">规则评分（未配置模型密钥）</p>
 
         <div class="dimension-tabs" role="tablist" aria-label="切换命格维度">
           <button
             v-for="dimension in renderedIdentityCards"
             :key="dimension.key"
             type="button"
-            :class="['dimension-tab', `tone-${dimensionTone(dimension.key)}`, { 'is-active': dimension.key === activeIdentityDimension?.key }]"
+            :class="['dimension-tab', 'qh-option-button', `tone-${dimensionTone(dimension.key)}`, { 'is-active': dimension.key === activeIdentityDimension?.key }]"
             role="tab"
             :aria-selected="dimension.key === activeIdentityDimension?.key"
+            :aria-controls="`identity-card-panel-${dimension.key}`"
             @click="selectedDimensionKey = dimension.key"
           >
             {{ dimensionLabel(dimension) }}
@@ -93,64 +101,80 @@
 
         <div class="tarot-card-grid" :class="`kind-${activeIdentityDimension?.kind ?? 'distribution'}`">
           <article
-            v-for="card in activeDimensionCards"
-            :key="card.id"
+            v-if="activeIdentityDimension"
+            :id="`identity-card-panel-${activeIdentityDimension.key}`"
             :class="[
               'identity-tarot-card',
               `tone-${dimensionTone(activeIdentityDimension?.key)}`,
               {
                 'is-flipped': activeIdentityDimension?.revealed,
                 'is-drawing': !activeIdentityDimension?.revealed,
-                'is-placeholder': card.placeholder,
+                'is-flipping': isActiveDimensionFlipping,
+                'is-veiled': activeIdentityDimension?.pending_verification && activeIdentityDimension?.claim_status !== 'verified',
               },
             ]"
-            :aria-label="identityCardAria(card)"
+            role="tabpanel"
+            :aria-label="identityCardAria()"
           >
-            <button
-              class="card-info"
-              type="button"
-              aria-label="查看命格牌说明"
-              :aria-describedby="tooltipId(card)"
-              @click.stop="toggleTooltip(tooltipId(card))"
-              @focus="activeTooltipId = tooltipId(card)"
-              @blur="closeTooltip"
-              @keydown.escape.stop="closeTooltip"
-              @touchstart.passive="startInfoPress(tooltipId(card))"
-              @touchend.passive="clearInfoPress"
-              @touchcancel.passive="clearInfoPress"
-            >
-              ⓘ
-            </button>
-            <p
-              :id="tooltipId(card)"
-              :class="['card-tooltip', { 'is-open': activeTooltipId === tooltipId(card) }]"
-              role="tooltip"
-            >
-              {{ tooltipText(card) }}
-            </p>
+            <el-popover v-if="activeIdentityDimension.revealed" placement="bottom-end" :width="320" trigger="click" popper-class="identity-evidence-popper">
+              <template #reference>
+                <button class="card-info qh-icon-button" type="button" aria-label="查看证据与解释" title="查看证据与解释"><el-icon><InfoFilled /></el-icon></button>
+              </template>
+              <section class="identity-evidence" :aria-label="`${activeDimensionLabel}的证据说明`">
+                <strong>证据说明</strong>
+                <p>{{ activeIdentityDimension.explanation }}</p>
+                <span v-if="provenanceText(activeIdentityDimension.provenance)" class="evidence-provenance">{{ provenanceText(activeIdentityDimension.provenance) }}</span>
+                <p v-if="activeIdentityDimension.evidence_refs.length" class="evidence-refs">来源：{{ activeIdentityDimension.evidence_refs.join('、') }}</p>
+                <blockquote v-for="quote in visibleQuotes" :key="quote">“{{ quote }}”</blockquote>
+                <details v-if="remainingQuotes.length"><summary>展开其余原话</summary><blockquote v-for="quote in remainingQuotes" :key="quote">“{{ quote }}”</blockquote></details>
+              </section>
+            </el-popover>
             <div class="tarot-inner">
-              <div class="tarot-face tarot-back">
+              <div v-if="!activeIdentityDimension.revealed || isActiveDimensionFlipping" class="tarot-face tarot-back" :aria-hidden="activeIdentityDimension.revealed">
                 <span class="tarot-seal">{{ dimensionSeal(activeIdentityDimension?.key) }}</span>
                 <span class="drawing-runes" aria-hidden="true">
                   <i />
                   <i />
                   <i />
                 </span>
-                <strong>绘制中</strong>
+                <strong>{{ activeDimensionLabel }}</strong>
+                <span>待取证</span>
+                <p>{{ pendingReasonText(activeIdentityDimension.pending_reason) }}</p>
               </div>
-              <div class="tarot-face tarot-front">
-                <span class="tarot-kicker">{{ dimensionLabel(activeIdentityDimension) }}</span>
-                <strong>{{ cardTitle(card) }}</strong>
-                <span v-if="activeIdentityDimension?.kind === 'distribution'" class="card-value">{{ ratioPercent(card.raw) }}</span>
-                <span v-else-if="activeIdentityDimension?.kind === 'level'" class="card-value">{{ scoreText(card.raw) }}</span>
-                <span v-else class="card-value">薄弱标签</span>
+              <div v-if="activeIdentityDimension.revealed" class="tarot-face tarot-front">
+                <div class="tarot-front__head">
+                  <span class="tarot-kicker">{{ activeDimensionLabel }}</span>
+                  <span class="card-confidence">{{ formatConfidence(activeIdentityDimension.confidence) }}</span>
+                </div>
+                <strong class="card-display-value">{{ activeIdentityDimension.display_value }}</strong>
+                <span v-if="activeIdentityDimension.provenance === 'no_key_rule_fallback'" class="provenance-badge">规则评分（未配置模型密钥）</span>
+                <div v-if="activeIdentityDimension.kind === 'distribution'" class="distribution-content">
+                  <div class="distribution-bar" aria-label="真实占比组成">
+                    <span v-for="item in activeIdentityItems" :key="identityItemKey(item)" :style="{ flexGrow: ratioValue(item) }" />
+                  </div>
+                  <div v-for="item in activeIdentityItems" :key="identityItemKey(item)" class="distribution-row">
+                    <span>{{ item.display_name || item.canonical_label || '未命名' }}</span><strong>{{ ratioPercent(item) }}</strong>
+                  </div>
+                </div>
+                <div v-else-if="activeIdentityDimension.kind === 'level'" class="level-content">
+                  <div v-for="item in activeIdentityItems" :key="identityItemKey(item)" class="level-row">
+                    <strong>{{ item.level_name || item.display_name || activeIdentityDimension.display_value }}</strong>
+                    <span v-if="item.score !== null && item.score !== undefined">{{ Math.round(item.score) }} 分</span>
+                    <small v-if="item.daily_minutes !== null && item.daily_minutes !== undefined">每日 {{ item.daily_minutes }} 分钟</small>
+                    <small v-if="item.target_days !== null && item.target_days !== undefined">目标 {{ item.target_days }} 天</small>
+                  </div>
+                </div>
+                <div v-else class="tag-content">
+                  <span v-for="item in activeIdentityItems" :key="identityItemKey(item)">{{ item.label || item.display_name }}<small v-if="item.strength !== null && item.strength !== undefined">{{ item.strength }}</small></span>
+                </div>
+                <span v-if="activeIdentityDimension?.pending_verification && activeIdentityDimension?.claim_status !== 'verified'" class="veil-copy">尚待实证</span>
               </div>
             </div>
           </article>
         </div>
       </section>
 
-      <div v-else class="card-grid">
+      <div v-else-if="hasLegacyInference" class="card-grid">
         <button
           v-for="card in displayCards"
           :key="card.name"
@@ -165,13 +189,14 @@
             },
           ]"
           :style="{ '--score': `${card.score}%`, '--delay': `${card.index * 90}ms` }"
+          :disabled="!card.flipped"
           @click="selectCard(card.name)"
         >
           <span class="card-face card-back">
             <span class="seal is-blur">{{ card.seal }}</span>
             <span>待显影</span>
           </span>
-          <span class="card-face card-front">
+          <span v-if="card.flipped" class="card-face card-front">
             <span class="match-ring" :aria-label="`${card.name}匹配度${card.score}%`">
               <span>{{ card.score }}</span>
             </span>
@@ -183,15 +208,21 @@
         </button>
       </div>
 
-      <section class="confirm-panel">
+      <section v-else class="identity-empty" aria-label="命格卡待取证">
+        <span class="tarot-seal">问</span>
+        <strong>命格卡尚未翻开</strong>
+        <p>继续对话，待后端收集到足够证据后显影。</p>
+      </section>
+
+      <section v-if="showConfirmPanel" class="confirm-panel">
         <div>
-          <p class="eyebrow">AI 画像速写</p>
+          <p class="eyebrow">{{ hasNoKeyRuleFallback ? '规则画像速写' : '画像速写' }}</p>
           <h3>{{ selectedMeta.name }}</h3>
           <p>{{ selectedMeta.sketch }}</p>
         </div>
         <div class="confirm-actions">
-          <el-button :icon="Check" type="primary" @click="confirmSelected">直接选卡</el-button>
-          <el-button :icon="Switch" @click="skipSelection">跳过</el-button>
+          <el-button class="qh-button qh-button--primary" :icon="Check" type="primary" @click="confirmSelected">直接选卡</el-button>
+          <el-button class="qh-button qh-button--secondary" :icon="Switch" @click="skipSelection">跳过</el-button>
         </div>
       </section>
 
@@ -260,15 +291,16 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Promotion, Switch } from '@element-plus/icons-vue'
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { Check, InfoFilled, Promotion, Switch } from '@element-plus/icons-vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import xiaoqiAvatar from '../../assets/mascot/xiaoqi-avatar.png'
-import { dialogueQuestionChips } from '../../config/dialogueQuestions'
+import { stage4Visual } from '../../config/stage4Visual'
 import type {
   DimensionKey,
   EvidencePanelDimension,
   IdentityCardsDimensionView,
   IdentityDimensionCard,
+  IdentityCardItem,
   ProfileDialogueChatMessage,
   ProfileDialogueStreamUiEvent,
   ProfileProgress,
@@ -285,7 +317,9 @@ import {
   type CardScores,
   type IdentityCardName,
 } from './profileDialogueModel'
-import { dimensionLabelFor, identityCardDescriptionFor } from './profileIdentityCardDescriptions'
+import { dimensionLabelFor, identityCardRefutedDescriptionFor } from './profileIdentityCardDescriptions'
+import { confirmProfileGoal, proposeProfileGoal } from '../../services/profileApi'
+import type { GoalCandidate } from '../../types/profile'
 import {
   addProfileDialogueAssistantPrompt,
   addProfileDialogueUserMessage,
@@ -305,6 +339,7 @@ const props = withDefaults(
     profileProgress?: ProfileProgress | null
     evidencePanel?: EvidencePanelDimension[]
     identityCardsView?: IdentityCardsDimensionView[]
+    sessionId?: string | null
     activeTarget?: DimensionKey | string | null
     activeTargetLabel?: string | null
     converged?: boolean
@@ -320,6 +355,7 @@ const props = withDefaults(
     profileProgress: null,
     evidencePanel: () => [],
     identityCardsView: () => [],
+    sessionId: null,
     activeTarget: null,
     activeTargetLabel: null,
     converged: false,
@@ -344,10 +380,14 @@ const renderedIdentityCards = ref<IdentityCardsDimensionView[]>([])
 const messages = computed(() => messageState.messages)
 const flowPinned = ref(true)
 const selectedDimensionKey = ref<DimensionKey | null>(null)
-const activeTooltipId = ref('')
+const goalText = ref('')
+const goalCandidate = ref<GoalCandidate | null>(null)
+const goalBusy = ref(false)
 let consumedStreamEventCount = 0
-let infoPressTimer: ReturnType<typeof window.setTimeout> | null = null
+const flippingDimensionKey = ref<DimensionKey | null>(null)
+let flipTimer: ReturnType<typeof window.setTimeout> | null = null
 const flowBottomThreshold = 28
+const identityFlipDurationMs = stage4Visual.dialogue.identityFlipMs
 
 const isFlowNearBottom = () => {
   const flow = flowRef.value
@@ -381,7 +421,7 @@ const addUserMessage = (text: string) => {
 }
 
 const sendUtterance = () => {
-  if (props.disabled) return
+  if (props.disabled || props.pending) return
   const utterance = draft.value.trim()
   if (!utterance) return
   addUserMessage(utterance)
@@ -391,7 +431,7 @@ const sendUtterance = () => {
 }
 
 const sendQuickReply = (quickReply: string) => {
-  if (props.disabled) return
+  if (props.disabled || props.pending) return
   addUserMessage(quickReply)
   startStreamTurn()
   emit('answer', createAnswerPayload('quick_reply', quickReply))
@@ -452,17 +492,7 @@ const finishStreamingAssistant = () => {
   })
 }
 
-const toggleReasoning = (messageId: number) => {
-  const message = messages.value.find((item) => item.id === messageId)
-  if (!message) return
-  message.reasoningCollapsed = !message.reasoningCollapsed
-  if (!message.reasoningCollapsed) void scrollFlow()
-}
-
-const reasoningTitle = (message: ProfileDialogueChatMessage) => {
-  if (!message.reasoningDurationMs) return '思考过程'
-  return `思考过程 · ${Math.max(1, Math.round(message.reasoningDurationMs / 1000))} 秒`
-}
+const reasoningSteps = (reasoning: string) => reasoning.split('\n').map((item) => item.trim()).filter(Boolean)
 
 const axisStatus = (axis: RadarAxis): 'dark' | 'dashed' | 'solid' => {
   if (axis.status === 'dark' || axis.placeholder || axis.lit === false) return 'dark'
@@ -542,9 +572,12 @@ const cardMetric = (dimension: IdentityCardsDimensionView, card: IdentityDimensi
   return card.label || card.display_name || '薄弱标签'
 }
 
+const identityItemsFor = (dimension: IdentityCardsDimensionView): IdentityCardItem[] =>
+  dimension.items.length ? dimension.items : (dimension.cards ?? [])
+
 const archivedCardsFor = (dimension: IdentityCardsDimensionView): ArchivedIdentityCard[] => {
   const fallback = evidenceByDimension.value.get(dimension.key)
-  return dimension.cards
+  return identityItemsFor(dimension)
     .filter((card) => !card.placeholder)
     .map((card, index) => ({
       dimensionKey: dimension.key,
@@ -561,7 +594,7 @@ const revealedArchiveCards = computed(() =>
 )
 
 const collectionGroups = computed<CollectionGroup[]>(() => {
-  const identityGroups = renderedIdentityCards.value
+  return renderedIdentityCards.value
     .filter((dimension) => dimension.revealed)
     .map((dimension) => {
       const fallback = evidenceByDimension.value.get(dimension.key)
@@ -570,40 +603,24 @@ const collectionGroups = computed<CollectionGroup[]>(() => {
         label: dimensionLabel(dimension),
         value: fallback?.value ?? (dimension.kind === 'level' ? '数值维度' : dimension.kind === 'tags' ? '标签维度' : '分布维度'),
         confidence: dimension.confidence,
-        status: fallback?.status ?? (dimension.confidence >= 0.5 ? '宸插彇璇?' : '寰呭彇璇?'),
+        status: fallback?.status ?? (dimension.confidence >= 0.5 ? '已取证' : '待取证'),
         cards: archivedCardsFor(dimension),
         quotes: evidenceQuoteTexts(fallback),
       }
     })
 
-  const revealedKeys = new Set(identityGroups.map((group) => group.key))
-  const evidenceOnlyGroups = props.evidencePanel
-    .filter((item) => !revealedKeys.has(item.key))
-    .map((item) => ({
-      key: item.key,
-      label: item.label,
-      value: item.value,
-      confidence: item.confidence,
-      status: item.status,
-      cards: [],
-      quotes: evidenceQuoteTexts(item),
-    }))
-
-  return [...identityGroups, ...evidenceOnlyGroups]
 })
 
-type RenderedIdentityCard = {
-  id: string
-  raw: IdentityDimensionCard
-  placeholder: boolean
-  index: number
-}
-
 const hasDimensionCards = computed(() => renderedIdentityCards.value.length > 0)
+const hasLegacyInference = computed(() => Boolean(props.inferredCard) || Object.values(props.cardScores).some((score) => Number(score) > 0))
+const showConfirmPanel = computed(() => props.converged || (!hasDimensionCards.value && hasLegacyInference.value))
+const hasNoKeyRuleFallback = computed(() =>
+  renderedIdentityCards.value.some((dimension) => dimension.provenance === 'no_key_rule_fallback'),
+)
 
 const dimensionLabel = (dimension?: IdentityCardsDimensionView | null) => {
   if (!dimension) return props.activeTargetLabel || '命格卡'
-  return dimension.target_label || dimensionLabelFor(dimension.key)
+  return dimension.target_label || dimension.label || dimensionLabelFor(dimension.key)
 }
 
 const activeDimensionLabel = computed(() => dimensionLabel(activeIdentityDimension.value))
@@ -623,31 +640,13 @@ const activeIdentityDimension = computed<IdentityCardsDimensionView | null>(() =
   )
 })
 
-const activeDimensionCards = computed<RenderedIdentityCard[]>(() => {
-  const dimension = activeIdentityDimension.value
-  if (!dimension) return []
-  const cards = dimension.cards.length ? dimension.cards : placeholderCardsFor(dimension)
-  return cards.map((card, index) => ({
-    id: `${dimension.key}-${card.display_name ?? card.level_name ?? card.label ?? card.canonical_label ?? 'slot'}-${index}`,
-    raw: card,
-    placeholder: Boolean(card.placeholder),
-    index,
-  }))
-})
+const activeIdentityItems = computed(() =>
+  activeIdentityDimension.value ? identityItemsFor(activeIdentityDimension.value) : [],
+)
 
-const placeholderCardsFor = (dimension: IdentityCardsDimensionView): IdentityDimensionCard[] => {
-  const countByDimension: Partial<Record<DimensionKey, number>> = {
-    learning_goal: 5,
-    motivation: 4,
-    resource_preference: 4,
-    learning_style: 3,
-    knowledge_base: 1,
-    pace: 1,
-    weak_points: 1,
-  }
-  const count = countByDimension[dimension.key] ?? (dimension.kind === 'level' ? 1 : 3)
-  return Array.from({ length: count }, (_, index) => ({ placeholder: true, label: `slot-${index + 1}` }))
-}
+const visibleQuotes = computed(() => activeIdentityDimension.value?.quotes.slice(0, 2) ?? [])
+const remainingQuotes = computed(() => activeIdentityDimension.value?.quotes.slice(2) ?? [])
+const isActiveDimensionFlipping = computed(() => flippingDimensionKey.value === activeIdentityDimension.value?.key)
 
 const dimensionTone = (dimension?: DimensionKey | null): 'jade' | 'gold' | 'blue' | 'coral' => {
   if (dimension === 'learning_goal' || dimension === 'motivation') return 'gold'
@@ -669,9 +668,8 @@ const dimensionSeal = (dimension?: DimensionKey | null) => {
   return dimension ? (seals[dimension] ?? '命') : '命'
 }
 
-const cardTitle = (card: RenderedIdentityCard) =>
-  card.raw.display_name || card.raw.level_name || card.raw.label || card.raw.canonical_label || '待显影'
-
+const identityItemKey = (item: IdentityCardItem) => item.display_name || item.level_name || item.label || item.canonical_label || 'item'
+const ratioValue = (item: IdentityCardItem) => Math.max(0, Number(item.ratio) || 0)
 const ratioPercent = (card: IdentityDimensionCard) => `${Math.round(Math.max(0, Math.min(1, Number(card.ratio) || 0)) * 100)}%`
 
 const scoreText = (card: IdentityDimensionCard) => {
@@ -679,40 +677,26 @@ const scoreText = (card: IdentityDimensionCard) => {
   return Number.isFinite(score) ? `${Math.round(score)} 分` : '待取证'
 }
 
-const tooltipId = (card: RenderedIdentityCard) => `identity-card-tip-${card.id}`
-
-const tooltipText = (card: RenderedIdentityCard) => {
-  const dimension = activeIdentityDimension.value
-  if (!dimension) return '命格牌说明'
-  return identityCardDescriptionFor(dimension.key, dimension.kind, card.raw)
+const provenanceText = (provenance: string) => {
+  if (provenance === 'no_key_rule_fallback') return '规则评分（未配置模型密钥）'
+  if (provenance === 'rule_fallback') return '规则评分'
+  if (provenance === 'fusion') return '证据融合'
+  return ''
 }
 
-const identityCardAria = (card: RenderedIdentityCard) => {
+const pendingReasonText = (reason?: string | null) => {
+  if (!reason) return '继续对话后会补充可追溯证据。'
+  if (/\d/.test(reason) || reason.includes('置信度') || reason.includes('阈值')) {
+    return '已有线索尚不足以翻开，继续对话后会补充证据。'
+  }
+  return reason
+}
+
+const identityCardAria = () => {
   const dimension = activeIdentityDimension.value
   const label = dimensionLabel(dimension)
-  if (!dimension?.revealed) return `${label}命格牌，背面朝上，绘制中`
-  return `${label}命格牌，${cardTitle(card)}，${dimension.kind === 'distribution' ? ratioPercent(card.raw) : dimension.kind === 'level' ? scoreText(card.raw) : '薄弱标签'}`
-}
-
-const toggleTooltip = (id: string) => {
-  activeTooltipId.value = activeTooltipId.value === id ? '' : id
-}
-
-const closeTooltip = () => {
-  activeTooltipId.value = ''
-}
-
-const startInfoPress = (id: string) => {
-  clearInfoPress()
-  infoPressTimer = window.setTimeout(() => {
-    activeTooltipId.value = id
-  }, 420)
-}
-
-const clearInfoPress = () => {
-  if (!infoPressTimer) return
-  window.clearTimeout(infoPressTimer)
-  infoPressTimer = null
+  if (!dimension?.revealed) return `${label}命格牌，待取证`
+  return `${label}命格牌，${dimension.display_value}，置信度${formatConfidence(dimension.confidence)}`
 }
 
 const selectCard = (cardName: IdentityCardName | string) => {
@@ -731,6 +715,18 @@ const finishDialogue = () => {
   emit('confirm', createConfirmPayload(selectedCard.value ?? props.inferredCard ?? null))
 }
 
+const proposeGoal = async () => {
+  if (!goalText.value.trim()) return
+  goalBusy.value = true
+  try { goalCandidate.value = await proposeProfileGoal(goalText.value.trim()) } finally { goalBusy.value = false }
+}
+
+const confirmGoal = async () => {
+  if (!goalCandidate.value) return
+  goalBusy.value = true
+  try { await confirmProfileGoal(goalCandidate.value); goalCandidate.value = null; goalText.value = '' } finally { goalBusy.value = false }
+}
+
 const displayCards = computed(() =>
   legacyIdentityCards.map((card, index) => ({
     ...card,
@@ -743,14 +739,11 @@ const displayCards = computed(() =>
 )
 
 const visibleQuickReplies = computed(() => {
-  if (props.quickReplies.length > 0) {
-    return props.quickReplies.map((reply, index) => ({
-      id: `backend-${index}-${reply}`,
-      label: reply,
-      quickReply: reply,
-    }))
-  }
-  return dialogueQuestionChips
+  return props.quickReplies.map((reply, index) => ({
+    id: `backend-${index}-${reply}`,
+    label: reply,
+    quickReply: reply,
+  }))
 })
 
 const selectedMeta = computed(() => {
@@ -788,9 +781,21 @@ watch(
 )
 
 watch(
-  () => props.identityCardsView,
-  (cards) => {
-    renderedIdentityCards.value = applyProfileDialogueIdentityCards(identityCardState, cards)
+  () => [props.sessionId, props.identityCardsView] as const,
+  ([sessionId, cards]) => {
+    const nextCards = applyProfileDialogueIdentityCards(identityCardState, cards, sessionId, (dimension) => {
+      addAssistantPrompt(identityCardRefutedDescriptionFor(dimension))
+    })
+    const newlyFlipped = nextCards.find((dimension) => dimension.revealAnimation)
+    if (newlyFlipped) {
+      if (flipTimer) window.clearTimeout(flipTimer)
+      flippingDimensionKey.value = newlyFlipped.key
+      flipTimer = window.setTimeout(() => {
+        flippingDimensionKey.value = null
+        flipTimer = null
+      }, identityFlipDurationMs)
+    }
+    renderedIdentityCards.value = nextCards
     if (
       selectedDimensionKey.value &&
       !renderedIdentityCards.value.some((dimension) => dimension.key === selectedDimensionKey.value)
@@ -800,6 +805,10 @@ watch(
   },
   { immediate: true, deep: true },
 )
+
+onBeforeUnmount(() => {
+  if (flipTimer) window.clearTimeout(flipTimer)
+})
 
 watch(
   () => props.activeTarget,
@@ -823,7 +832,6 @@ watch(
 }
 
 .dialogue-main,
-.destiny-panel,
 .confirm-panel,
 .mini-radar {
   @include glass-panel(24px);
@@ -841,6 +849,9 @@ watch(
 .answer-dock {
   padding: 22px;
 }
+
+.dialogue-goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; border: 1px solid rgba(231, 194, 116, .24); border-radius: 8px; background: rgba(231, 194, 116, .06); }
+.dialogue-goal p { grid-column: 1 / -1; margin: 0; color: var(--qh-text-muted); font-size: 13px; line-height: 1.6; }.dialogue-goal div { display: flex; gap: 8px; }
 
 .dialogue-head {
   display: flex;
@@ -944,33 +955,38 @@ h3 {
   background: rgba(159, 182, 214, 0.08);
 }
 
-.reasoning-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 0;
-  border: 0;
+.reasoning-label {
   color: rgba(238, 245, 239, 0.78);
-  background: transparent;
-  cursor: pointer;
   font-weight: 900;
-  text-align: left;
 }
 
-.reasoning-toggle small {
-  flex: 0 0 auto;
-  color: var(--qh-color-blue);
-  font-size: 12px;
-}
-
-.message-reasoning p {
+.reasoning-steps {
+  display: grid;
+  gap: 4px;
   margin: 0;
+  padding: 0;
+  list-style: none;
   color: var(--qh-text-muted);
   font-size: 13px;
-  line-height: 1.75;
-  white-space: pre-wrap;
+}
+
+.reasoning-steps li::before {
+  display: inline-block;
+  width: 14px;
+  content: '✓';
+  color: var(--qh-color-jade);
+}
+
+.message-reasoning.is-streaming .reasoning-steps li:last-child::before {
+  content: '•';
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Legacy toggle styles are intentionally removed: processing status is not a
+   user-expandable chain-of-thought. */
+.reasoning-toggle {
+  color: rgba(238, 245, 239, 0.78);
+  background: transparent;
 }
 
 .reasoning-caret {
@@ -1044,21 +1060,7 @@ h3 {
 }
 
 .quick-chip {
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid rgba(143, 208, 173, 0.18);
-  border-radius: var(--qh-radius-pill);
-  color: rgba(238, 245, 239, 0.84);
-  background: rgba(143, 208, 173, 0.08);
-  cursor: pointer;
   font-size: 13px;
-  font-weight: 900;
-}
-
-.quick-chip:hover,
-.quick-chip:focus-visible {
-  border-color: rgba(231, 194, 116, 0.46);
-  color: var(--qh-text);
 }
 
 .quick-chip:focus-visible,
@@ -1102,6 +1104,13 @@ h3 {
   font-weight: 900;
 }
 
+.identity-board__notice {
+  margin: -4px 0 0;
+  color: var(--qh-color-gold);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .dimension-tabs {
   display: flex;
   gap: 7px;
@@ -1112,10 +1121,7 @@ h3 {
 .dimension-tab {
   --tone-color: var(--qh-color-jade);
   flex: 0 0 auto;
-  min-height: 32px;
-  padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--tone-color) 22%, transparent);
-  border-radius: 999px;
   color: rgba(238, 245, 239, 0.76);
   background: color-mix(in srgb, var(--tone-color) 9%, transparent);
   cursor: pointer;
@@ -1151,8 +1157,7 @@ h3 {
 
 .tarot-card-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .tarot-card-grid.kind-level {
@@ -1162,15 +1167,18 @@ h3 {
 .identity-tarot-card {
   --tone-color: var(--qh-color-jade);
   position: relative;
-  min-height: 178px;
+  min-height: 286px;
   perspective: 1100px;
 }
 
 .tarot-inner {
   display: grid;
-  min-height: 178px;
+  min-height: 286px;
   transform-style: preserve-3d;
-  transition: transform 680ms cubic-bezier(0.2, 0.72, 0.18, 1);
+}
+
+.identity-tarot-card.is-flipping .tarot-inner {
+  transition: transform var(--identity-flip-duration) cubic-bezier(0.2, 0.72, 0.18, 1);
 }
 
 .identity-tarot-card.is-flipped .tarot-inner {
@@ -1180,9 +1188,9 @@ h3 {
 .tarot-face {
   grid-area: 1 / 1;
   display: grid;
-  min-height: 178px;
-  align-content: center;
-  justify-items: center;
+  min-height: 286px;
+  align-content: start;
+  justify-items: stretch;
   gap: 10px;
   padding: 18px 14px;
   border: 1px solid color-mix(in srgb, var(--tone-color) 22%, transparent);
@@ -1193,11 +1201,21 @@ h3 {
 }
 
 .tarot-back {
+  justify-items: center;
+  text-align: center;
   color: rgba(238, 245, 239, 0.64);
   background:
     radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--tone-color) 22%, transparent), transparent 36%),
     repeating-linear-gradient(45deg, rgba(238, 245, 239, 0.035) 0 2px, transparent 2px 10px),
     linear-gradient(145deg, rgba(19, 33, 31, 0.96), rgba(8, 14, 16, 0.9));
+}
+
+.tarot-back p {
+  max-width: 29ch;
+  margin: 0;
+  color: var(--qh-text-muted);
+  font-size: 12px;
+  line-height: 1.65;
 }
 
 .tarot-front {
@@ -1208,12 +1226,18 @@ h3 {
     linear-gradient(145deg, rgba(238, 245, 239, 0.12), rgba(18, 31, 31, 0.9));
 }
 
-.identity-tarot-card.is-flipped .tarot-front::after {
+.identity-tarot-card.is-veiled .tarot-front { opacity: .58; }
+.identity-tarot-card.is-veiled .tarot-front::before { position: absolute; inset: 0; z-index: 1; background: repeating-linear-gradient(135deg, rgba(242, 234, 214, .2) 0 1px, transparent 1px 7px); content: ""; pointer-events: none; }
+.veil-copy { position: absolute; right: 9px; bottom: 9px; z-index: 2; padding: 4px 7px; border: 1px solid var(--qh-color-gold); border-radius: var(--qh-radius-pill); color: var(--qh-color-gold); background: rgba(16, 32, 29, .72); font-size: 11px; font-weight: 900; }
+.identity-tarot-card.is-flipping:not(.is-veiled) .tarot-front { animation: unveil-card var(--identity-flip-duration) ease both; }
+@keyframes unveil-card { from { clip-path: inset(0 0 0 100%); opacity: .45; } to { clip-path: inset(0); opacity: 1; } }
+
+.identity-tarot-card.is-flipping .tarot-front::after {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.18) 45%, transparent 70%);
-  animation: card-sheen 900ms ease both;
+  animation: card-sheen var(--identity-flip-duration) ease both;
   content: "";
 }
 
@@ -1255,7 +1279,7 @@ h3 {
 .tarot-front strong {
   max-width: 100%;
   overflow-wrap: anywhere;
-  text-align: center;
+  text-align: left;
   font-weight: 900;
 }
 
@@ -1265,29 +1289,26 @@ h3 {
   font-weight: 900;
 }
 
-.card-value {
-  color: rgba(238, 245, 239, 0.78);
-  font-family: var(--qh-font-display);
-  font-size: 20px;
-  font-weight: 900;
-}
+.tarot-front__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.card-confidence { flex: 0 0 auto; color: var(--qh-color-gold); font-size: 12px; font-weight: 900; }
+.card-display-value { color: var(--qh-text); font-size: 19px; line-height: 1.35; }
+.provenance-badge, .evidence-provenance { width: fit-content; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--qh-color-gold) 56%, transparent); border-radius: var(--qh-radius-pill); color: var(--qh-color-gold); background: color-mix(in srgb, var(--qh-color-gold) 10%, transparent); font-size: 11px; font-weight: 900; }
+.distribution-content, .level-content { display: grid; gap: 7px; }
+.distribution-bar { display: flex; height: 8px; overflow: hidden; border-radius: var(--qh-radius-pill); background: var(--qh-color-text-faint); }
+.distribution-bar span { min-width: 2px; background: var(--tone-color); }.distribution-bar span:nth-child(2n) { opacity: .72; }.distribution-bar span:nth-child(3n) { opacity: .48; }
+.distribution-row, .level-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 10px; color: var(--qh-text-muted); font-size: 12px; line-height: 1.45; }
+.distribution-row span, .level-row strong { min-width: 0; overflow-wrap: anywhere; }.distribution-row strong, .level-row > span { color: var(--qh-color-gold); font-size: 12px; font-weight: 900; }
+.level-row small { grid-column: 1 / -1; color: var(--qh-text-muted); font-size: 12px; }.tag-content { display: flex; flex-wrap: wrap; gap: 7px; }.tag-content > span { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--tone-color) 32%, transparent); border-radius: var(--qh-radius-pill); color: var(--qh-text-soft); background: color-mix(in srgb, var(--tone-color) 10%, transparent); font-size: 12px; overflow-wrap: anywhere; }.tag-content small { color: var(--tone-color); font-weight: 900; }
 
 .card-info {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 5;
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border: 1px solid rgba(238, 245, 239, 0.18);
-  border-radius: 50%;
-  color: rgba(238, 245, 239, 0.8);
-  background: rgba(10, 18, 20, 0.68);
-  cursor: help;
   font-size: 14px;
 }
+
+.identity-evidence { display: grid; gap: 8px; color: var(--qh-text); font-size: 12px; line-height: 1.65; }.identity-evidence p, .identity-evidence blockquote { margin: 0; }.identity-evidence p, .identity-evidence blockquote, .identity-evidence details { color: var(--qh-text-muted); }.identity-evidence blockquote { padding-left: 9px; border-left: 2px solid var(--qh-color-jade); }.identity-evidence summary { cursor: pointer; color: var(--qh-color-jade); font-weight: 900; }.evidence-refs { overflow-wrap: anywhere; }
 
 .card-tooltip {
   position: absolute;
@@ -1323,6 +1344,33 @@ h3 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.identity-empty {
+  display: grid;
+  min-height: 286px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 28px;
+  border: 1px solid rgba(143, 208, 173, 0.14);
+  border-radius: 8px;
+  color: var(--qh-text-muted);
+  background: rgba(238, 245, 239, 0.035);
+  text-align: center;
+}
+
+.identity-empty strong {
+  color: var(--qh-text);
+  font-family: var(--qh-font-display);
+  font-size: 18px;
+}
+
+.identity-empty p {
+  max-width: 260px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .destiny-card {
@@ -1826,6 +1874,16 @@ h3 {
 
   .finish-dialogue {
     justify-self: stretch;
+  }
+
+  .dimension-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .dimension-tab {
+    flex: 1 1 calc(33.333% - 5px);
+    text-align: center;
   }
 }
 

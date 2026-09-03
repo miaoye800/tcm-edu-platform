@@ -21,6 +21,7 @@ from app.kb.ingest import load_herbs
 from app.mastery.bkt import get_mastery, record_mastery_event
 from app.mastery.review import due_reviews, record_review_result
 from app.mastery.storage import DB_PATH as MASTERY_DB_PATH
+from app.profile.ability import normalize_difficulty, record_ability_attempt
 from app.profile.update import ProfileUpdateEvent, get_latest_profile, update_profile_from_event
 
 router = APIRouter(prefix="/api", tags=["learning"])
@@ -82,15 +83,17 @@ async def generate_resources(
     )
 
 
-@router.get("/path")
+@router.get("/path", deprecated=True)
 async def read_learning_path(
     current_user: AuthUser = Depends(get_current_user),
     db_path: Path = Depends(get_mastery_db_path),
 ) -> dict[str, Any]:
-    """返回技能树、Top3 推荐与复习摘要。"""
+    """Deprecated compatibility endpoint; new clients use POST /api/path/plan."""
 
     state = await run_path_planning(user_id=current_user.user_id, db_path=db_path)
     return {
+        "deprecated": True,
+        "replacement": "/api/path/plan",
         "user_id": state["user_id"],
         "skill_tree": state["skill_tree"],
         "recommendations": state["recommendations"],
@@ -124,6 +127,7 @@ async def submit_quiz(
     user_id = current_user.user_id
     results: list[dict[str, Any]] = []
     profile_answers: list[dict[str, Any]] = []
+    ability = None
 
     for item in payload.items:
         correct = _is_answer_correct(item.answer, item.correct_answer)
@@ -153,11 +157,19 @@ async def submit_quiz(
             evidence=evidence,
             db_path=db_path,
         )
+        ability = record_ability_attempt(
+            user_id=user_id,
+            kc_id=kc_id,
+            correct=correct,
+            difficulty=item.difficulty,
+            topic=item.topic,
+            db_path=db_path,
+        )
         profile_answers.append(
             {
                 "question_id": item.question_id,
                 "knowledge_point": item.topic,
-                "difficulty": "hard" if item.difficulty >= 4 else "easy",
+                "difficulty": normalize_difficulty(item.difficulty),
                 "correct": correct,
             }
         )
@@ -172,7 +184,10 @@ async def submit_quiz(
 
     await update_profile_from_event(
         user_id,
-        ProfileUpdateEvent(type="quiz", payload={"answers": profile_answers}),
+        ProfileUpdateEvent(
+            type="quiz",
+            payload={"answers": profile_answers, "ability": ability.as_dict() if ability else None},
+        ),
         db_path=db_path,
     )
     return {

@@ -1,0 +1,12 @@
+{
+  "version": "prescription-eval-v1",
+  "privacy": "synthetic cases only; no patient identifiers or real clinical records",
+  "cases": [
+    {"case_id": "reasonable_a", "input": {"case": "热毒咽痛", "prescription": "金银花12g，连翘12g"}, "expected_status": "matched", "expected_findings": [], "multiple_solution_allowed": true},
+    {"case_id": "reasonable_b", "input": {"case": "热毒咽痛", "prescription": "黄芩9g，黄连3g，石膏30g"}, "expected_status": "matched", "expected_findings": [], "multiple_solution_allowed": true},
+    {"case_id": "dose", "input": {"case": "风寒恶寒无汗", "prescription": "麻黄100g，桂枝6g"}, "expected_status": "matched", "expected_findings": ["dose_abnormal"]},
+    {"case_id": "toxic", "input": {"case": "风寒恶寒无汗", "prescription": "细辛10g"}, "expected_status": "matched", "expected_findings": ["toxic_misuse"]},
+    {"case_id": "unknown", "input": {"case": "风寒恶寒无汗", "prescription": "阿司匹林10g"}, "expected_status": "mismatched", "expected_findings": ["unrelated_herb"]},
+    {"case_id": "unresolved_case", "input": {"case": "最近有点不舒服", "prescription": "人参6g"}, "expected_status": "uncertain", "expected_findings": ["case_unresolved"]}
+  ]
+}

@@ -8,12 +8,21 @@
       </div>
 
       <div class="hero-bubble">
+        <XiaoqiMascot expression="default" :size="48" alt="小岐" />
         <img :src="xiaoqi" alt="小岐" />
         <div>
           <strong>小岐提示</strong>
           <span>先取证，再会诊；画像越亮，路径越准。</span>
         </div>
       </div>
+
+      <GlassCard v-if="!profileStore.usingMock" class="trust-card" padding="md">
+        <el-tooltip content="师父会根据你的自述与实测是否相符调整信任" placement="bottom">
+          <div class="trust-card__label">师父信任度</div>
+        </el-tooltip>
+        <strong>{{ trust?.tier ?? '读取中' }}</strong>
+        <span>{{ trust ? `${Math.round(trust.trust * 100)}%` : '' }}</span>
+      </GlassCard>
     </div>
 
     <el-alert
@@ -37,6 +46,16 @@
         <el-button class="hint-action" size="small" type="primary" @click="goOnboarding">焕醒画像</el-button>
       </template>
     </el-alert>
+
+    <el-alert
+      v-if="noKeyFallbackDimensions.length"
+      class="profile-alert"
+      type="warning"
+      title="当前未配置模型密钥，以下维度使用可追溯规则评分"
+      :description="`受影响维度：${noKeyFallbackDimensions.join('、')}`"
+      show-icon
+      :closable="false"
+    />
 
     <section class="stats-grid" aria-label="画像概览">
       <StatCard v-for="stat in stats" :key="stat.label" v-bind="stat" />
@@ -120,7 +139,7 @@
 
         <template v-else>
           <p class="narrative-text">{{ narrativeText }}</p>
-          <p v-if="showTemplateSource" class="narrative-source">{{ narrativeMockSourceText }}</p>
+          <p v-if="showTemplateSource" class="narrative-source">{{ narrativeTemplateSourceText }}</p>
 
           <div class="narrative-columns">
             <section>
@@ -155,13 +174,38 @@
         <p v-else class="empty-line">当前暂无高频薄弱标签。</p>
       </GlassCard>
     </section>
+
+    <GlassCard v-if="!profileStore.usingMock" class="goal-card" padding="lg">
+      <div class="panel-head"><div><p class="eyebrow">学习目标</p><h3>请小岐复述</h3></div></div>
+      <template v-if="goalCandidate">
+        <div class="goal-restatement"><img :src="xiaoqi" alt="小岐" /><p>{{ goalCandidate.restatement }}</p></div>
+        <div class="goal-actions"><el-button type="primary" :loading="goalConfirming" @click="confirmGoal">确认</el-button><el-button @click="resetGoal">重新说</el-button></div>
+      </template>
+      <template v-else>
+        <el-input v-model="goalText" maxlength="2000" placeholder="例如：两个月内准备好方剂学期末考试" @keyup.enter="proposeGoal" />
+        <el-button type="primary" :loading="goalProposing" @click="proposeGoal">让小岐复述</el-button>
+      </template>
+    </GlassCard>
+
+    <GlassCard v-if="!profileStore.usingMock" class="change-log" padding="lg">
+      <div class="panel-head"><div><p class="eyebrow">档案留痕</p><h3>画像变迁录</h3></div></div>
+      <div v-if="profileStore.profile.change_log?.length" class="change-log__list">
+        <article v-for="item in profileStore.profile.change_log" :key="`${item.ts}-${item.dim}`">
+          <span class="change-icon">{{ calibrationChange(item.source_event) ? '◈' : '·' }}</span>
+          <div><strong>{{ dimensionName(item.dim) }}</strong><small>{{ formatDateTime(item.ts) }}</small><p>{{ changeValue(item.old_value) }} → {{ changeValue(item.new_value) }}</p><em>{{ item.reason }}</em></div>
+        </article>
+      </div>
+      <p v-else class="empty-line">暂未记录画像变迁。</p>
+      <div class="change-log__pager"><el-button :disabled="changeOffset === 0" @click="previousChanges">上一页</el-button><span>第 {{ Math.floor(changeOffset / changeLimit) + 1 }} 页</span><el-button :disabled="(profileStore.profile.change_log?.length ?? 0) < changeLimit" @click="nextChanges">下一页</el-button></div>
+    </GlassCard>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import xiaoqi from '../assets/mascot/xiaoqi-avatar.png'
+import XiaoqiMascot from '../components/ui/XiaoqiMascot.vue'
 import DimRow from '../components/profile/DimRow.vue'
 import JuryCard from '../components/profile/JuryCard.vue'
 import RadarChart from '../components/profile/RadarChart.vue'
@@ -170,7 +214,8 @@ import Badge from '../components/ui/Badge.vue'
 import GlassCard from '../components/ui/GlassCard.vue'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
-import type { RadarChange, TeacherName } from '../types/profile'
+import { confirmProfileGoal, proposeProfileGoal, readProfileTrust, readProfile } from '../services/profileApi'
+import type { GoalCandidate, ProfileTrust, RadarChange, TeacherName } from '../types/profile'
 import { dimensionKeys } from '../types/profile'
 import {
   buildRadarAxes,
@@ -185,6 +230,13 @@ import {
 const profileStore = useProfileStore()
 const auth = useAuthStore()
 const router = useRouter()
+const trust = ref<ProfileTrust | null>(null)
+const goalText = ref('')
+const goalCandidate = ref<GoalCandidate | null>(null)
+const goalProposing = ref(false)
+const goalConfirming = ref(false)
+const changeLimit = 20
+const changeOffset = ref(0)
 
 const radarAxes = computed(() => buildRadarAxes(profileStore.profile, profileStore.narrative))
 const evidenceCards = computed(() => profileEvidenceCards(profileStore.profile))
@@ -195,6 +247,9 @@ const readyDimensionCount = computed(
     dimensionKeys.filter(
       (key) => confidenceFor(profileStore.profile, profileStore.narrative, key) >= lowConfidenceThreshold,
     ).length,
+)
+const noKeyFallbackDimensions = computed(() =>
+  dimensionKeys.filter((key) => profileStore.profile.provenance?.[key] === 'no_key_rule_fallback'),
 )
 const lowConfidenceNames = computed(() =>
   dimensionKeys
@@ -215,7 +270,11 @@ const radarChangeByKey = computed(
 const retryNarrativeLabel = '\u91cd\u65b0\u751f\u6210'
 const narrativePendingText = '\u5c0f\u5c90\u6b63\u5728\u6574\u7406\u8bc1\u636e\u5e76\u751f\u6210\u753b\u50cf\u53d9\u8ff0\uff0c\u4f60\u73b0\u5728\u53ef\u4ee5\u7ee7\u7eed\u6d4f\u89c8\u5176\u4ed6\u5185\u5bb9\u3002'
 const narrativeLoadingText = '\u751f\u6210\u4e2d'
-const narrativeMockSourceText = '\u5f53\u524d\u5c55\u793a\u7684\u662f\u6a21\u677f\u53d9\u8ff0\uff08MOCK \u6f14\u793a\u6765\u6e90\uff09\u3002'
+const narrativeTemplateSourceText = computed(() =>
+  noKeyFallbackDimensions.value.length
+    ? '当前展示的是规则模板叙述（未配置模型密钥）。'
+    : '当前展示的是规则模板叙述。',
+)
 const narrativeStrengthLabel = '\u6240\u957f'
 const narrativeStrengthEmptyText = '\u5f85\u8865\u5145\u3002'
 const narrativeWeaknessLabel = '\u6240\u77ed'
@@ -308,9 +367,37 @@ const retryNarrative = () => {
   void profileStore.loadNarrative(true)
 }
 
+const proposeGoal = async () => {
+  if (!goalText.value.trim()) return
+  goalProposing.value = true
+  try { goalCandidate.value = await proposeProfileGoal(goalText.value.trim()) } finally { goalProposing.value = false }
+}
+const resetGoal = () => { goalCandidate.value = null; goalText.value = '' }
+const confirmGoal = async () => {
+  if (!goalCandidate.value) return
+  goalConfirming.value = true
+  try { await confirmProfileGoal(goalCandidate.value); goalCandidate.value = null; await refreshProfileView() } finally { goalConfirming.value = false }
+}
+const loadTrust = async () => { try { trust.value = await readProfileTrust() } catch { trust.value = null } }
+const loadChanges = async (offset: number) => {
+  changeOffset.value = Math.max(0, offset)
+  try { profileStore.profile = await readProfile({ limit: changeLimit, offset: changeOffset.value }) } catch { /* retain last successful profile */ }
+}
+const previousChanges = () => void loadChanges(changeOffset.value - changeLimit)
+const nextChanges = () => void loadChanges(changeOffset.value + changeLimit)
+const calibrationChange = (source: string) => source === 'calibration' || source.includes('claim') || source.includes('goal_confirm')
+const dimensionName = (key: string) => dimensionLabels[key as keyof typeof dimensionLabels] ?? key
+const changeValue = (value: unknown) => {
+  if (value === null || value === undefined) return '未设定'
+  if (typeof value !== 'object') return String(value)
+  const record = value as Record<string, unknown>
+  return String(record.label ?? record.normalized ?? record.score ?? record.confidence ?? '已更新')
+}
+
 const refreshProfileView = async () => {
   await profileStore.loadProfile()
   void profileStore.ensureNarrativeLoaded()
+  if (!profileStore.usingMock) void loadTrust()
 }
 
 const scheduleRadarHighlightFade = () => {
@@ -360,6 +447,19 @@ watch(
   align-items: stretch;
   gap: 18px;
 }
+.trust-card { display: grid; align-content: center; gap: 5px; min-width: 170px; }
+.trust-card__label, .trust-card span { color: var(--qh-text-muted); font-size: 12px; }
+.trust-card strong { color: var(--qh-color-gold); font-family: var(--qh-font-display); font-size: 22px; }
+.goal-card { display: grid; gap: 14px; }
+.goal-card :deep(.el-input) { max-width: 640px; }
+.goal-actions { display: flex; gap: 10px; }
+.goal-restatement { display: flex; align-items: flex-start; gap: 10px; max-width: 720px; color: var(--qh-text-muted); }
+.goal-restatement img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.goal-restatement p { margin: 7px 0 0; line-height: 1.7; }
+.change-log { display: grid; gap: 14px; }
+.change-log__list { display: grid; gap: 10px; }
+.change-log__list article { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; padding: 12px; border: 1px solid rgba(143,208,173,.14); border-radius: 8px; }
+.change-icon { color: var(--qh-color-gold); font-size: 18px; }.change-log__list small { margin-left: 10px; color: var(--qh-text-muted); }.change-log__list p { margin: 6px 0; color: var(--qh-text); }.change-log__list em { color: var(--qh-text-muted); font-size: 12px; font-style: normal; }.change-log__pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; color: var(--qh-text-muted); font-size: 12px; }
 
 .hero-copy {
   @include glass-panel(26px);

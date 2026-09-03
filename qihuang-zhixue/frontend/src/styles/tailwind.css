@@ -1,0 +1,2 @@
+/* Stage 4 deliberately emits utilities only: no Tailwind reset or component layer. */
+@tailwind utilities;

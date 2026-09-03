@@ -1,0 +1,11 @@
+{
+  "id": "hand-scroll",
+  "name": "手绘书卷（备选）",
+  "stance": "用纸张、铅笔线和卷轴边缘模拟随手批注的温度，保留信息结构的克制。",
+  "scene": "适合课堂共创、读书札记和需要保留个人批注感的知识整理。",
+  "palette": ["#5f6d5d", "#a46d4f", "#7694a0", "#c1a56a"],
+  "layout": "tree",
+  "nodeStyle": { "shape": "note", "radius": "1px", "density": "airy", "emphasis": "paper-edge" },
+  "lineStyle": { "kind": "dashed", "width": "2px", "subWidth": "1px", "decoration": "none" },
+  "cssVars": { "--mm-bg": "#efe2c8", "--mm-surface": "#fff8e7", "--mm-text": "#3e493c", "--mm-muted": "#737961", "--mm-primary": "#5f6d5d", "--mm-accent": "#a46d4f", "--mm-secondary": "#c1a56a", "--mm-line": "#78816a", "--mm-node-border": "#b39468", "--mm-glow": "transparent" }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "timeline-process",
+  "name": "时间线流程",
+  "stance": "把枝状知识压成一条有节拍的主轴，让顺序成为最醒目的信息，而不是附带注脚。",
+  "scene": "适合炮制流程、病程演变、诊疗步骤与学习路径等有明确先后的内容。",
+  "palette": ["#3d7582", "#d79a5b", "#8fae9f", "#b45f54"],
+  "layout": "timeline",
+  "nodeStyle": { "shape": "card", "radius": "6px", "density": "regular", "emphasis": "milestone" },
+  "lineStyle": { "kind": "solid", "width": "4px", "subWidth": "1px", "decoration": "milestone-dot" },
+  "cssVars": { "--mm-bg": "#f4f6f0", "--mm-surface": "#fffefa", "--mm-text": "#263f42", "--mm-muted": "#6c8078", "--mm-primary": "#3d7582", "--mm-accent": "#d79a5b", "--mm-secondary": "#b45f54", "--mm-line": "#5e8790", "--mm-node-border": "#8fae9f", "--mm-glow": "transparent" }
+}

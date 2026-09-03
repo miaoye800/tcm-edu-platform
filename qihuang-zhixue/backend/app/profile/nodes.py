@@ -14,6 +14,7 @@ from app.llm.clients import ChatMessage
 from app.llm.router import ModelRouter
 from app.profile.fusion import ALLOWED_LABELS, BASE_LEVEL_SCORES
 from app.profile.jury import ScoringResult, score_profile
+from app.profile.evidence import ExtractionMethod
 from app.profile.modes import load_diagnostic_questions
 from app.profile.schema import (
     DIMENSION_LABELS,
@@ -57,6 +58,7 @@ class ExtractedSignal(BaseModel):
     confidence: float = Field(default=0.0, ge=0, le=1)
     basis: EvidenceBasis = "inferred"
     evidence: list[str] = Field(default_factory=list)
+    extraction_method: ExtractionMethod = "llm"
 
     @field_validator("value", mode="before")
     @classmethod
@@ -107,6 +109,7 @@ class ExtractedNumber(BaseModel):
     confidence: float = Field(default=0.0, ge=0, le=1)
     basis: EvidenceBasis = "inferred"
     evidence: list[str] = Field(default_factory=list)
+    extraction_method: ExtractionMethod = "llm"
 
     @field_validator("evidence", mode="before")
     @classmethod
@@ -144,6 +147,7 @@ class DialogueExtraction(BaseModel):
     daily_minutes: ExtractedNumber = Field(default_factory=_empty_number)
     target_days: ExtractedNumber = Field(default_factory=_empty_number)
     mastery_hint: ExtractedScore = Field(default_factory=_empty_score)
+    extraction_method: ExtractionMethod = "llm"
 
     @model_validator(mode="before")
     @classmethod
@@ -312,6 +316,9 @@ async def profile_synthesis_node(state: ProfileState) -> ProfileState:
     )
     next_state = copy_state(state)
     next_state["profile"] = profile.model_dump(mode="json")
+    next_state["profile"]["provenance"] = {
+        dimension: result.provenance for dimension, result in scoring.items()
+    }
     append_trace(next_state, "profile_synthesis_agent", "按证据卡、三师会诊、护栏与融合生成 7 维画像")
     return next_state
 
@@ -396,6 +403,7 @@ async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
             "content": (
                 "你是学习画像证据抽取器，只输出 JSON。阅读整段对话，为每个维度抽取标签/数值，"
                 "并给出用户【原话片段】作为 evidence。没有依据的维度必须 value=null，禁止猜测或填默认。"
+                "你只负责提取证据，不得输出或决定最终画像分数；数值只能是用户原话中的线索。"
                 "confidence 反映证据强度：明确陈述→高，含糊暗示→低。不得创造 allowed_labels 之外的新标签。"
                 "learning_goal 落不进应试提分/临床实用/兴趣科普/学术深造时，只能用 allowed_labels 中的“其他”，"
                 "且 evidence 必须是用户原话子串。"
@@ -594,6 +602,18 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                 timestamp,
             )
         )
+    method = extraction.extraction_method
+    for card in cards:
+        evidence = card.objective_signal.get("evidence")
+        quotes = evidence if isinstance(evidence, list) else [evidence] if isinstance(evidence, str) else []
+        card.quote = str(quotes[0]).strip() if quotes and str(quotes[0]).strip() else None
+        basis = card.objective_signal.get("basis")
+        if basis in {"explicit", "inferred"}:
+            card.basis = basis
+        confidence = card.objective_signal.get("confidence")
+        if isinstance(confidence, (int, float)):
+            card.extraction_confidence = max(0.0, min(1.0, float(confidence)))
+        card.extraction_method = method
     return cards
 
 
@@ -646,6 +666,8 @@ def _profile_from_scoring_results(
     for dimension in DIMENSION_LABELS:
         result = scoring[dimension]
         cards = _cards_for_dimension(evidence_cards, dimension)
+        for card in cards:
+            card.objective_signal = {**card.objective_signal, "scoring_provenance": result.provenance}
         target = getattr(profile, dimension)
         target.confidence = result.confidence
         target.evidence = cards
@@ -662,21 +684,13 @@ def _profile_from_scoring_results(
 
 
 def _fallback_dialogue_extraction(text: str) -> DialogueExtraction:
-    learning_goal_label, learning_goal_evidence = _first_match(
-        text,
-        [
-            ("应试提分", ("考试", "期末", "考证", "exam", "exams", "test", "tests")),
-            ("学术深造", ("考研", "论文", "科研")),
-            ("临床实用", ("临床", "坐诊", "辨证")),
-            ("兴趣科普", ("兴趣", "喜欢", "了解")),
-        ],
-    )
+    learning_goal_label, learning_goal_evidence = _goal_signal_from_text(text)
     if learning_goal_label is None:
         learning_goal_label, learning_goal_evidence = _other_learning_goal_from_text(text)
     style, style_evidence = _first_match(
         text,
         [
-            ("视觉型", ("图", "表", "图谱")),
+            ("视觉型", ("图谱", "图", "表")),
             ("记忆(口诀)型", ("口诀", "歌诀")),
         ],
     )
@@ -715,6 +729,7 @@ def _fallback_dialogue_extraction(text: str) -> DialogueExtraction:
             resource_preference=_signal(resource_preference, 0.7 if resource_preference else 0.0, "explicit", resource_evidence),
             daily_minutes=_number_signal(daily_minutes, 0.8 if daily_minutes is not None else 0.0, "explicit", daily_evidence),
             target_days=_number_signal(target_days, 0.8 if target_days is not None else 0.0, "explicit", target_evidence),
+            extraction_method="no_key_rule_fallback",
         ),
         text,
     )
@@ -755,7 +770,7 @@ def _weak_points_from_dialogue_text(text: str) -> list[str]:
 
 
 def _other_learning_goal_from_text(text: str) -> tuple[str | None, list[str]]:
-    """Return the traceable fallback goal bucket for explicit non-canonical goals."""
+    """Return the traceable fallback bucket for explicit non-canonical learning targets."""
 
     goal_markers = ("目标", "想", "希望", "为了", "打算", "准备", "用来", "先学")
     topic_markers = ("学", "中医", "中药", "药", "方", "调理", "辨证")
@@ -857,7 +872,13 @@ def _signal(
     basis: EvidenceBasis,
     evidence: str | list[str] | None,
 ) -> ExtractedSignal:
-    return ExtractedSignal(value=value, confidence=confidence, basis=basis, evidence=_evidence_list(evidence))
+    return ExtractedSignal(
+        value=value,
+        confidence=confidence,
+        basis=basis,
+        evidence=_evidence_list(evidence),
+        extraction_method="no_key_rule_fallback",
+    )
 
 
 def _number_signal(
@@ -866,7 +887,13 @@ def _number_signal(
     basis: EvidenceBasis,
     evidence: str | list[str] | None,
 ) -> ExtractedNumber:
-    return ExtractedNumber(value=float(value) if value is not None else None, confidence=confidence, basis=basis, evidence=_evidence_list(evidence))
+    return ExtractedNumber(
+        value=float(value) if value is not None else None,
+        confidence=confidence,
+        basis=basis,
+        evidence=_evidence_list(evidence),
+        extraction_method="no_key_rule_fallback",
+    )
 
 
 def _evidence_list(evidence: str | list[str] | None) -> list[str]:
@@ -971,12 +998,29 @@ def _card(
     weight: float,
     timestamp: datetime,
 ) -> EvidenceCard:
+    signal = {key: value for key, value in objective_signal.items() if value is not None}
+    evidence = signal.get("evidence")
+    quote = signal.get("quote") or (evidence[0] if isinstance(evidence, list) and evidence else evidence if isinstance(evidence, str) else None)
+    basis = signal.get("basis") if signal.get("basis") in {"explicit", "inferred"} else "inferred"
+    confidence = signal.get("confidence", weight)
+    try:
+        extraction_confidence = max(0.0, min(1.0, float(confidence)))
+    except (TypeError, ValueError):
+        extraction_confidence = 0.0
+    method = signal.get("extraction_method")
+    if method not in {"llm", "no_key_rule_fallback", "rule_fallback", "legacy"}:
+        method = "legacy"
     return EvidenceCard(
         dimension=dimension,
         source=source,
         fact=fact,
-        objective_signal={key: value for key, value in objective_signal.items() if value is not None},
+        objective_signal=signal,
         weight=weight,
+        quote=str(quote).strip() if quote else None,
+        basis=basis,
+        extraction_confidence=extraction_confidence,
+        extraction_method=method,
+        knowledge_base_ref=signal.get("knowledge_base_ref") or signal.get("knowledge_ref"),
         timestamp=timestamp,
     )
 
@@ -1015,9 +1059,37 @@ def _contains_any(text: str, keywords: tuple[str, ...]) -> bool:
 
 def _first_keyword(text: str, keywords: tuple[str, ...]) -> str | None:
     for keyword in keywords:
-        if keyword in text:
-            return keyword
+        start = text.find(keyword)
+        while start >= 0:
+            if not _is_negated(text, start):
+                return keyword
+            start = text.find(keyword, start + len(keyword))
     return None
+
+
+def _is_negated(text: str, start: int) -> bool:
+    clause_start = max((text.rfind(mark, 0, start) for mark in "，。！？；,.!?;"), default=-1) + 1
+    prefix = text[clause_start:start].strip()
+    return bool(re.search(r"(?:不是|并非|不想|不为|不准备|没有|没打算|无意|非|不)\s*(?:为了|为|想|要|准备|打算)?\s*$", prefix))
+
+
+def _goal_signal_from_text(text: str) -> tuple[str | dict[str, float] | None, list[str]]:
+    options = [
+        ("应试提分", ("考试", "期末", "考证", "exam", "exams", "test", "tests")),
+        ("学术深造", ("考研", "论文", "科研")),
+        ("临床实用", ("临床", "坐诊", "辨证")),
+        ("兴趣科普", ("兴趣", "喜欢", "了解")),
+    ]
+    matches: list[tuple[str, str]] = []
+    for label, keywords in options:
+        keyword = _first_keyword(text, keywords)
+        if keyword and (label, keyword) not in matches:
+            matches.append((label, keyword))
+    if len(matches) == 1:
+        return matches[0][0], [matches[0][1]]
+    if len(matches) > 1:
+        return {label: 1.0 for label, _ in matches}, [keyword for _, keyword in matches]
+    return _other_learning_goal_from_text(text)
 
 
 def _add_evidence(evidence: dict[str, list[str]], key: str, snippet: str | None) -> None:

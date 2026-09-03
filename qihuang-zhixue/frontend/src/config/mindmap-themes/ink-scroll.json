@@ -1,0 +1,11 @@
+{
+  "id": "ink-scroll",
+  "name": "水墨青卷",
+  "stance": "以宣纸留白承接药性脉络，线条像蘸墨后的提按，不把古意做成陈旧。",
+  "scene": "适合药性、归经、方义等需要沉静研读和层层追溯的知识。",
+  "palette": ["#304b43", "#5d9a89", "#8aaea1", "#b8894f"],
+  "layout": "tree",
+  "nodeStyle": { "shape": "rect", "radius": "4px", "density": "airy", "emphasis": "jade-border" },
+  "lineStyle": { "kind": "brush", "width": "4px", "subWidth": "1.5px", "decoration": "none" },
+  "cssVars": { "--mm-bg": "#f7f3e8", "--mm-surface": "#fffdf7", "--mm-text": "#263b34", "--mm-muted": "#62736a", "--mm-primary": "#304b43", "--mm-accent": "#5d9a89", "--mm-secondary": "#b8894f", "--mm-line": "#486d60", "--mm-node-border": "#78a99d", "--mm-glow": "transparent" }
+}

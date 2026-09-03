@@ -1,16 +1,21 @@
 import asyncio
 import json
+import sqlite3
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from app.config import Settings
 from app.llm.clients import ChatMessage
 from app.llm.router import ModelRouter
-from app.profile.fusion import decay_factor, fuse_dimension
+from app.profile.fusion import decay_factor, effective_card_weights, fuse_dimension
 from app.profile.guardrail import apply_guardrail
 from app.profile.jury import score_dimension
-from app.profile.schema import EvidenceCard
+from app.profile.modes import _dialogue_fusion
+from app.profile.schema import EvidenceCard, EvidenceTier
+from app.profile.store import add_evidence
+from app.profile.update import _init_update_state, get_latest_profile, profile_to_response, update_profile_from_event
 
 
 def test_fusion_uses_weighted_decay_formula() -> None:
@@ -40,6 +45,24 @@ def test_no_key_skips_jury_and_uses_rule_fusion() -> None:
     assert result.method == "fusion"
     assert result.jury == {}
     assert result.aggregated_score == 100
+    assert result.provenance == "no_key_rule_fallback"
+
+
+def test_no_key_provenance_persists_from_update_to_profile_response(tmp_path: Path) -> None:
+    result = asyncio.run(
+        update_profile_from_event(
+            "provenance-user",
+            {"type": "quiz", "payload": {"correct": True}},
+            db_path=tmp_path / "provenance.db",
+            jury_weight_threshold=0,
+            settings=_no_key_settings(),
+        )
+    )
+    payload = profile_to_response(result.profile)
+
+    assert result.profile.knowledge_base.evidence[0].objective_signal["scoring_provenance"] == "no_key_rule_fallback"
+    assert payload["provenance"]["knowledge_base"] == "no_key_rule_fallback"
+    assert payload["radar"]["axes"][0]["provenance"] == "no_key_rule_fallback"
 
 
 def test_blank_key_skips_jury_and_uses_rule_fusion() -> None:
@@ -74,6 +97,23 @@ def test_jury_falls_back_to_fusion_when_router_returns_mock_text() -> None:
     assert result.method == "fusion"
     assert result.jury == {}
     assert "回退规则融合" in result.narrative
+
+
+def test_invalid_injected_jury_json_also_falls_back_to_rules() -> None:
+    async def invalid_json(_messages: Sequence[ChatMessage]) -> str:
+        return "not-json"
+
+    result = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [_card("knowledge_base", {"correct": True}, 1.2)],
+            settings=_key_settings(),
+            llm_call=invalid_json,
+        )
+    )
+
+    assert result.method == "fusion"
+    assert result.provenance == "rule_fallback"
 
 
 def test_jury_single_call_outputs_three_views_and_median_score() -> None:
@@ -337,9 +377,203 @@ def test_knowledge_prior_without_score_uses_base_level_mapping_only() -> None:
     unknown = fuse_dimension("knowledge_base", [_card("knowledge_base", {"prior": True, "label": "未知基础"}, 0.3)])
     scored = fuse_dimension("knowledge_base", [_card("knowledge_base", {"prior": True, "prior_score": 64}, 0.3)])
 
-    assert low.score == 10
+    assert low.score == 11.5
     assert unknown.score is None
     assert scored.score == 64
+
+
+def test_legacy_sources_migrate_to_evidence_tiers() -> None:
+    assert _card("knowledge_base", {"correct": True}, 1.0, source="quiz").tier == EvidenceTier.MEASURED
+    assert _card("pace", {"daily_minutes": 30}, 1.0, source="interaction").tier == EvidenceTier.BEHAVIORAL
+    assert _card("knowledge_base", {"base_level": "一般"}, 1.0, source="dialogue").tier == EvidenceTier.SELF_REPORT
+    assert _card("knowledge_base", {"prior": True}, 0.3, source="身份卡+30秒速判", fact="身份卡先验").tier == EvidenceTier.SELF_REPORT
+    assert _card("knowledge_base", {"correct": True}, 0.8, source="身份卡+30秒速判", fact="诊断题答对").tier == EvidenceTier.MEASURED
+
+
+def test_self_report_only_objective_dimensions_stay_below_solid_confidence() -> None:
+    cases = {
+        "knowledge_base": {"base_level": "较好"},
+        "pace": {"daily_minutes": 30},
+        "weak_points": {"label": "配伍", "correct": False},
+    }
+    for dimension, signal in cases.items():
+        cards = [
+            _card(dimension, signal, 1.0, tier=EvidenceTier.SELF_REPORT, fact=f"同一自述 {index}")
+            for index in range(3)
+        ]
+        assert fuse_dimension(dimension, cards).confidence < 0.5
+
+
+def test_high_self_report_score_stays_low_confidence_until_measured() -> None:
+    self_report = _card(
+        "knowledge_base",
+        {"value": 92},
+        1.0,
+        tier=EvidenceTier.SELF_REPORT,
+        fact="我基础很好，能独立开方",
+    )
+    reported = fuse_dimension("knowledge_base", [self_report])
+    measured = fuse_dimension(
+        "knowledge_base",
+        [self_report, _card("knowledge_base", {"correct": True}, 1.2, tier=EvidenceTier.MEASURED)],
+    )
+
+    assert reported.score == 92
+    assert reported.confidence <= 0.35
+    assert measured.confidence > reported.confidence
+
+
+def test_jury_confidence_cannot_replace_evidence_tier_confidence() -> None:
+    async def unanimous(_messages: Sequence[ChatMessage]) -> str:
+        return _jury_json((92, 92, 92), "three teachers agree")
+
+    result = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [_card("knowledge_base", {"value": 92}, 1.0, tier=EvidenceTier.SELF_REPORT)],
+            settings=_key_settings(),
+            llm_call=unanimous,
+        )
+    )
+
+    assert result.aggregated_score == 92
+    assert result.confidence <= 0.35
+
+
+def test_repeated_homogeneous_self_report_uses_geometric_weight_decay() -> None:
+    cards = [
+        _card(
+            "knowledge_base",
+            {"base_level": "较好", "turn": index},
+            1.0,
+            tier=EvidenceTier.SELF_REPORT,
+            fact=f"第 {index} 次说基础较好",
+        )
+        for index in range(1, 4)
+    ]
+
+    assert effective_card_weights(cards) == [1.0, 0.5, 0.25]
+    assert fuse_dimension("knowledge_base", cards).metadata["effective_total_weight"] == 1.75
+
+
+def test_dialogue_knowledge_base_keeps_global_k() -> None:
+    cards = [
+        _card("knowledge_base", {"value": 70}, 1.5, tier=EvidenceTier.MEASURED),
+        _card("learning_goal", {"label": "临床实用"}, 1.5, tier=EvidenceTier.SELF_REPORT),
+    ]
+
+    fused = _dialogue_fusion(cards)
+
+    assert fused["knowledge_base"].confidence == 0.5
+    assert fused["learning_goal"].confidence == 1.0
+
+
+def test_jury_can_distinguish_details_within_same_anchor_interval() -> None:
+    prompts: list[str] = []
+
+    async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        prompt = str(messages[1]["content"])
+        prompts.append(prompt)
+        scores = (63, 65, 64) if "只会辨认常见药名" in prompt else (74, 76, 75)
+        return _jury_json(scores, "同锚点内依据细节取具体分")
+
+    cautious = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [
+                _card(
+                    "knowledge_base",
+                    {"base_level": "较好"},
+                    1.0,
+                    tier=EvidenceTier.SELF_REPORT,
+                    fact="自评较好，但只会辨认常见药名",
+                )
+            ],
+            settings=_key_settings(),
+            llm_call=llm_call,
+        )
+    )
+    experienced = asyncio.run(
+        score_dimension(
+            "knowledge_base",
+            [
+                _card(
+                    "knowledge_base",
+                    {"base_level": "较好"},
+                    1.0,
+                    tier=EvidenceTier.SELF_REPORT,
+                    fact="自评较好，能解释常用药配伍禁忌",
+                )
+            ],
+            settings=_key_settings(),
+            llm_call=llm_call,
+        )
+    )
+
+    assert "强制评分区间：[62, 78]" in prompts[0]
+    assert 62 <= cautious.aggregated_score <= 78  # type: ignore[operator]
+    assert 62 <= experienced.aggregated_score <= 78  # type: ignore[operator]
+    assert cautious.aggregated_score != experienced.aggregated_score
+
+
+def test_guardrail_clamps_to_central_anchor_boundaries() -> None:
+    cards = [_card("pace", {"daily_minutes": 45}, 1.0, tier=EvidenceTier.SELF_REPORT)]
+
+    assert apply_guardrail("pace", evidence_cards=cards, score=20).score == 75
+    assert apply_guardrail("pace", evidence_cards=cards, score=99).score == 95
+
+
+def test_first_evaluation_with_key_bypasses_weight_threshold(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    result = asyncio.run(
+        update_profile_from_event(
+            "first-review-threshold",
+            {"type": "quiz", "payload": {"correct": True, "difficulty": "easy"}},
+            db_path=tmp_path / "threshold.db",
+            jury_weight_threshold=99,
+            settings=_key_settings(),
+            llm_call=_counting_jury(calls),
+            now=datetime(2026, 7, 2, tzinfo=UTC),
+        )
+    )
+
+    assert result.jury_called_dimensions == ["knowledge_base"]
+    assert len(calls) == 1
+
+
+def test_first_evaluation_with_key_bypasses_24_hour_throttle(tmp_path: Path) -> None:
+    db_path = tmp_path / "throttle.db"
+    now = datetime(2026, 7, 2, tzinfo=UTC)
+    add_evidence(
+        "first-review-throttle",
+        _card("knowledge_base", {"correct": True}, 0.8, tier=EvidenceTier.MEASURED),
+        db_path=db_path,
+    )
+    _init_update_state(db_path)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO profile_update_state(user_id, dimension, pending_weight, updated_at, last_scored_at)
+            VALUES (?, ?, 0, ?, ?)
+            """,
+            ("first-review-throttle", "knowledge_base", now.isoformat(), now.isoformat()),
+        )
+        conn.commit()
+    calls: list[str] = []
+
+    profile = asyncio.run(
+        get_latest_profile(
+            "first-review-throttle",
+            db_path=db_path,
+            settings=_key_settings(),
+            llm_call=_counting_jury(calls),
+            now=now + timedelta(hours=1),
+        )
+    )
+
+    assert len(calls) == 1
+    assert profile.knowledge_base.score == 66
 
 
 def _card(
@@ -347,15 +581,22 @@ def _card(
     signal: dict[str, Any],
     weight: float,
     timestamp: datetime | None = None,
+    *,
+    tier: EvidenceTier | None = None,
+    source: str = "测试",
+    fact: str = "测试证据",
 ) -> EvidenceCard:
-    return EvidenceCard(
-        dimension=dimension,  # type: ignore[arg-type]
-        source="测试",
-        fact="测试证据",
-        objective_signal=signal,
-        weight=weight,
-        timestamp=timestamp or datetime(2026, 7, 2, tzinfo=UTC),
-    )
+    payload: dict[str, Any] = {
+        "dimension": dimension,
+        "source": source,
+        "fact": fact,
+        "objective_signal": signal,
+        "weight": weight,
+        "timestamp": timestamp or datetime(2026, 7, 2, tzinfo=UTC),
+    }
+    if tier is not None:
+        payload["tier"] = tier
+    return EvidenceCard.model_validate(payload)
 
 
 def _no_key_settings() -> Settings:
@@ -381,6 +622,14 @@ def _jury_json(scores: tuple[int, int, int], narrative: str) -> str:
         },
         ensure_ascii=False,
     )
+
+
+def _counting_jury(calls: list[str]):
+    async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        calls.append(str(messages[1]["content"]))
+        return _jury_json((62, 72, 66), "首评强制评审")
+
+    return llm_call
 
 
 class CapturingRouter(ModelRouter):

@@ -72,9 +72,14 @@ def test_quiz_submit_updates_mastery_and_review(tmp_path: Path, monkeypatch) -> 
         recorded_reviews.append(dict(kwargs))
         return _ReviewForTest(kc_id=str(kwargs["kc_id"]))
 
+    class _AbilityForTest:
+        def as_dict(self) -> dict[str, object]:
+            return {"rating": 1000, "score": 50, "coverage_count": 1, "coverage_target": 8, "coverage": 0.125}
+
     monkeypatch.setattr(learning_api, "update_profile_from_event", fake_update_profile)
     monkeypatch.setattr(learning_api, "record_mastery_event", fake_record_mastery_event)
     monkeypatch.setattr(learning_api, "record_review_result", fake_record_review_result)
+    monkeypatch.setattr(learning_api, "record_ability_attempt", lambda **kwargs: _AbilityForTest())
     monkeypatch.setattr(
         learning_api,
         "get_mastery",

@@ -1,4 +1,6 @@
 import asyncio
+import json
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -16,6 +18,13 @@ from app.agents.resource_schemas import (
 )
 from app.agents.resources_graph import run_resource_generation
 from app.agents.verify_agent import verify_claims
+from app.api.resources import get_resource_db_path
+from app.path.store import upsert_node
+from app.resources import service as resource_service
+from app.resources import storage as resource_storage
+from app.main import app
+from fastapi.testclient import TestClient
+from tests.helpers import auth_session
 
 
 def test_each_resource_has_valid_envelope() -> None:
@@ -109,3 +118,71 @@ async def _assert_quiz_agent_outputs_valid_questions() -> None:
     assert resource.payload.questions
     assert all(1 <= question.difficulty <= 5 for question in resource.payload.questions)
 
+
+def test_node_resource_task_sse_resume_and_library(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    db_path = tmp_path / "qihuang.db"
+    upsert_node({"id": "mahuang", "name": "麻黄", "level": "point"}, db_path)
+    app.dependency_overrides[get_resource_db_path] = lambda: db_path
+
+    async def stub(resource_type: str, topic: str):
+        assert topic == "麻黄"
+        if resource_type == "doc":
+            return ({"blocks": [{"type": "heading", "text": "麻黄"}, {"type": "paragraph", "text": "发汗解表 [0]"}]}, [{"出处": "本草纲目", "原文摘录": "麻黄", "定位": "草部"}])
+        return ({"nodes": []}, [])
+
+    monkeypatch.setattr(resource_service, "generate_content", stub)
+    client = TestClient(app)
+    session = auth_session(client, "resource-user", db_path)
+    created = client.post("/api/resource/tasks", json={"node_id": "mahuang", "resource_type": "doc"}, headers=session["headers"])
+    assert created.status_code == 201, created.text
+    task_id = created.json()["task_id"]
+
+    # Consume one event then close: the resumed iterator must not restart it.
+    iterator = resource_service.stream_task(task_id, session["user"]["user_id"], db_path)
+    first = asyncio.run(anext(iterator))
+    asyncio.run(iterator.aclose())
+    assert first["event"] == "step_start"
+    remaining = asyncio.run(_collect(resource_service.stream_task(task_id, session["user"]["user_id"], db_path)))
+    assert remaining[0]["event"] == "step_done"
+    events = [first, *remaining]
+    assert events[-1]["event"] == "done"
+    starts = [event for event in events if event["event"] == "step_start"]
+    dones = [event for event in events if event["event"] == "step_done"]
+    assert len(starts) == len(dones) == 5
+    assert [event["payload"]["block"]["text"] for event in events if event["event"] == "block"] == ["麻黄", "发汗解表 [0]"]
+
+    resource_id = events[-1]["payload"]["resource_id"]
+    detail = client.get(f"/api/resources/{resource_id}", headers=session["headers"])
+    assert detail.status_code == 200
+    assert detail.json()["content"]["blocks"][1]["text"] == "发汗解表 [0]"
+    favorite = client.post(f"/api/resources/{resource_id}/favorite", headers=session["headers"])
+    assert favorite.json()["favorited"] is True
+    listing = client.get("/api/resources", params={"node_id": "mahuang", "type": "doc", "favorited": True, "q": "麻黄"}, headers=session["headers"])
+    assert listing.json()["total"] == 1
+
+
+async def _collect(iterator):
+    return [event async for event in iterator]
+
+
+def test_resource_storage_migration_is_idempotent(tmp_path: Path) -> None:
+    db_path = tmp_path / "qihuang.db"
+    resource_storage.init_db(db_path)
+    resource_storage.init_db(db_path)
+    import sqlite3
+    with sqlite3.connect(db_path) as conn:
+        assert {"user_resource", "resource_task"} <= {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+
+
+def test_resource_task_marks_failed_when_generator_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    db_path = tmp_path / "qihuang.db"
+    upsert_node({"id": "mahuang", "name": "麻黄", "level": "point"}, db_path)
+    task = resource_storage.create_task("failed-task", "u1", "mahuang", "quiz", db_path)
+
+    async def fail(*_args, **_kwargs):
+        raise RuntimeError("no key")
+
+    monkeypatch.setattr(resource_service, "generate_content", fail)
+    events = asyncio.run(_collect(resource_service.stream_task(task["task_id"], "u1", db_path)))
+    assert events[-1]["event"] == "error"
+    assert resource_storage.get_task("failed-task", "u1", db_path)["status"] == "failed"

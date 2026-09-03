@@ -1,4 +1,8 @@
-"""ECharts Graph 资源 Agent。"""
+"""Deprecated ECharts Graph resource generator.
+
+Persisted phase-2 graph resources use ``graph_intelligence.GraphAgent`` instead.
+This module remains for the pre-existing learning-resource LangGraph API.
+"""
 
 from __future__ import annotations
 
@@ -129,4 +133,3 @@ def _mock_payload(docs: list[ResourceDoc], whitelist: ResourceWhitelist) -> Grap
         if link.source in deduped_nodes and link.target in deduped_nodes
     ]
     return GraphPayload(nodes=list(deduped_nodes.values()), links=kept_links)
-

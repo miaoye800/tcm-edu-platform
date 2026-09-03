@@ -16,8 +16,8 @@
       </div>
 
       <div class="hero-actions">
-        <el-button v-if="!resultReady" :icon="View" @click="skipOnboarding">先随便逛逛 / 跳过</el-button>
-        <el-button v-if="session && !resultReady" :icon="Refresh" @click="resetFlow">换一种方式</el-button>
+        <el-button v-if="!resultReady" class="qh-button qh-button--secondary" :icon="View" @click="skipOnboarding">先随便逛逛 / 跳过</el-button>
+        <el-button v-if="session && !resultReady" class="qh-button qh-button--secondary" :icon="Refresh" @click="resetFlow">换一种方式</el-button>
       </div>
     </div>
 
@@ -35,8 +35,8 @@
         </div>
         <div class="mode-foot">
           <Badge tone="gold" :label="mode.duration" />
-          <el-button type="primary" :icon="ArrowRight" @click="mode.mode === 'passive' ? skipOnboarding() : startMode(mode.mode)">
-            {{ mode.mode === 'passive' ? '开启旁观' : '开始' }}
+          <el-button class="qh-button qh-button--primary" type="primary" :icon="ArrowRight" :loading="busy" @click="mode.mode === 'passive' ? skipOnboarding() : mode.mode === 'apprentice' ? startApprenticeStory() : startMode(mode.mode)">
+            {{ mode.mode === 'passive' ? '开启旁观' : mode.mode === 'apprentice' ? '进入收徒剧情' : '开始重塑' }}
           </el-button>
         </div>
       </GlassCard>
@@ -51,6 +51,7 @@
       :profile-progress="dialogueProfileProgress"
       :evidence-panel="dialogueEvidencePanel"
       :identity-cards-view="dialogueIdentityCards"
+      :session-id="session.session_id"
       :active-target="dialogueActiveTarget"
       :active-target-label="dialogueActiveTargetLabel"
       :converged="dialogueConverged"
@@ -75,14 +76,14 @@
 
       <section v-if="activeStep?.kind === 'identity'" class="step-block">
         <p class="field-label">选择身份卡</p>
-        <el-radio-group v-model="form.identityCard" class="choice-grid">
+        <el-radio-group v-model="form.identityCard" class="choice-grid qh-option-group">
           <el-radio-button v-for="card in identityCards" :key="card" :label="card" :value="card" />
         </el-radio-group>
       </section>
 
       <section v-else-if="activeStep?.kind === 'identity_quiz'" class="step-block">
         <p class="field-label">身份卡</p>
-        <el-radio-group v-model="form.identityCard" class="choice-grid">
+        <el-radio-group v-model="form.identityCard" class="choice-grid qh-option-group">
           <el-radio-button v-for="card in identityCards" :key="card" :label="card" :value="card" />
         </el-radio-group>
         <QuestionSet v-model="form.questionAnswers" :questions="questions" />
@@ -105,7 +106,7 @@
 
       <section v-else-if="activeStep?.kind === 'resource_choice'" class="step-block">
         <p class="field-label">挑一件师父药宝</p>
-        <el-radio-group v-model="form.resourceType" class="choice-grid">
+        <el-radio-group v-model="form.resourceType" class="choice-grid qh-option-group">
           <el-radio-button v-for="resource in resourceTypes" :key="resource" :label="resource" :value="resource" />
         </el-radio-group>
       </section>
@@ -126,8 +127,8 @@
       </section>
 
       <footer class="session-actions">
-        <el-button @click="skipOnboarding">先随便逛逛 / 跳过</el-button>
-        <el-button type="primary" :icon="Check" :disabled="!canSubmitStep" @click="submitStep">
+        <el-button class="qh-button qh-button--secondary" @click="skipOnboarding">先随便逛逛 / 跳过</el-button>
+        <el-button class="qh-button qh-button--primary" type="primary" :icon="Check" :loading="busy" :disabled="!canSubmitStep" @click="submitStep">
           {{ session.finished ? '生成画像' : '下一步' }}
         </el-button>
       </footer>
@@ -162,7 +163,7 @@
           :closable="false"
         >
           <template #default>
-            <el-button size="small" type="primary" @click="retryNarrative">重新生成</el-button>
+            <el-button class="qh-button qh-button--primary qh-button--compact" size="small" type="primary" @click="retryNarrative">重新生成</el-button>
           </template>
         </el-alert>
 
@@ -178,7 +179,7 @@
 
         <template v-else>
           <p>{{ narrativeText }}</p>
-          <p v-if="showTemplateSource" class="narrative-source">当前展示的是模板叙述（MOCK 演示来源）。</p>
+          <p v-if="showTemplateSource" class="narrative-source">{{ narrativeTemplateSourceText }}</p>
         </template>
 
         <div class="resource-grid">
@@ -188,8 +189,8 @@
           </article>
         </div>
         <div class="result-actions">
-          <el-button :icon="Refresh" @click="resetFlow">重塑画像</el-button>
-          <el-button type="primary" :icon="ArrowRight" @click="enterApp">进入主页面</el-button>
+          <el-button class="qh-button qh-button--secondary" :icon="Refresh" @click="resetFlow">重塑画像</el-button>
+          <el-button class="qh-button qh-button--primary" type="primary" :icon="ArrowRight" @click="enterApp">进入主页面</el-button>
         </div>
       </GlassCard>
     </section>
@@ -197,7 +198,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, reactive, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowRight, Check, Compass, FirstAidKit, MagicStick, Refresh, Tickets, View } from '@element-plus/icons-vue'
@@ -206,8 +207,18 @@ import RadarChart from '../components/profile/RadarChart.vue'
 import type { AnswerPayload, CardScores, ConfirmPayload } from '../components/profile/profileDialogueModel'
 import Badge from '../components/ui/Badge.vue'
 import GlassCard from '../components/ui/GlassCard.vue'
-import { answerProfileSession, finishProfileSession, startProfileSession, streamProfileDialogueChat } from '../services/profileApi'
-import { saveOnboardingState } from '../services/onboardingStorage'
+import { answerProfileSession, finishProfileSession, readProfileSession, startProfileSession, streamProfileDialogueChat } from '../services/profileApi'
+import {
+  clearActiveProfileSession,
+  clearPendingDialogueTurn,
+  readActiveProfileSession,
+  readPendingDialogueTurn,
+  resolvePendingDialogueTurn,
+  saveActiveProfileSession,
+  saveOnboardingState,
+  savePendingDialogueTurn,
+  type PendingDialogueTurnState,
+} from '../services/onboardingStorage'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
 import type { ProfileBuildMode, ProfileDialogueStreamUiEvent, ProfileSessionQuestion, ProfileSessionResponse } from '../types/profile'
@@ -254,8 +265,9 @@ const QuestionSet = defineComponent({
                 h(
                   'button',
                   {
-                    class: ['answer-option', { 'is-selected': (props.modelValue as Record<string, string>)[question.id] === option }],
+                    class: ['answer-option', 'qh-option-button', { 'is-selected': (props.modelValue as Record<string, string>)[question.id] === option }],
                     type: 'button',
+                    'aria-pressed': (props.modelValue as Record<string, string>)[question.id] === option,
                     onClick: () => update(question.id, option),
                   },
                   option,
@@ -277,7 +289,6 @@ const retryNarrativeLabel = '\u91cd\u65b0\u751f\u6210'
 const resultNarrativePendingText = '\u5c0f\u5c90\u6b63\u5728\u6574\u7406\u672c\u8f6e\u8bc1\u636e\u5e76\u751f\u6210\u753b\u50cf\u6863\u6848\uff0c\u4f60\u73b0\u5728\u53ef\u4ee5\u7ee7\u7eed\u8fdb\u5165\u4e3b\u9875\u3002'
 const resultNarrativeLoadingTitle = '\u751f\u6210\u4e2d'
 const resultNarrativeLoadingBody = '\u753b\u50cf\u53d9\u8ff0\u5b8c\u6210\u540e\uff0c\u8fd9\u91cc\u4f1a\u66ff\u6362\u6210\u771f\u5b9e\u5185\u5bb9\u3002'
-const narrativeMockSourceText = '\u5f53\u524d\u5c55\u793a\u7684\u662f\u6a21\u677f\u53d9\u8ff0\uff08MOCK \u6f14\u793a\u6765\u6e90\uff09\u3002'
 
 const busy = ref(false)
 const dialoguePending = ref(false)
@@ -289,6 +300,12 @@ const resultReady = ref(false)
 const stepStartedAt = ref(Date.now())
 let dialogueStreamEventId = 0
 let dialogueStreamInFlight: Promise<void> | null = null
+let pendingDialogueTurn: PendingDialogueTurnState | null = null
+
+const newClientTurnId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
 
 const form = reactive({
   identityCard: '临床学徒',
@@ -351,13 +368,18 @@ const dialogueIdentityCards = computed(() => session.value?.identity_cards ?? []
 const dialogueActiveTarget = computed(() => session.value?.target ?? activeStep.value?.payload.target ?? null)
 const dialogueActiveTargetLabel = computed(() => session.value?.target_label ?? null)
 const dialogueConverged = computed(() => Boolean(session.value?.converged || activeStep.value?.kind === 'confirm'))
-const dialogueQuickReplies = computed(() => activeStep.value?.payload.quick_replies ?? [])
+const dialogueQuickReplies = computed(() => session.value?.quick_replies ?? activeStep.value?.payload.quick_replies ?? [])
 const lowConfidenceCount = computed(() => radarAxes.value.filter((axis) => axis.lowConfidence).length)
 const showNarrativePlaceholder = computed(() => !profileStore.usingMock && !profileStore.narrativeLoaded)
 const showNarrativeRetry = computed(
   () => !profileStore.usingMock && !profileStore.narrativeLoaded && !profileStore.narrativeLoading && Boolean(profileStore.narrativeError),
 )
 const showTemplateSource = computed(() => !showNarrativePlaceholder.value && profileStore.narrative.method === 'template')
+const narrativeTemplateSourceText = computed(() =>
+  Object.values(profileStore.profile.provenance ?? {}).includes('no_key_rule_fallback')
+    ? '当前展示的是规则模板叙述（未配置模型密钥）。'
+    : '当前展示的是规则模板叙述。',
+)
 const resultNarrativeBadgeTone = computed(() => {
   if (profileStore.usingMock) return 'jade'
   if (profileStore.narrativeLoading) return 'gold'
@@ -420,12 +442,15 @@ const resetStepForm = () => {
 const startMode = async (mode: ProfileBuildMode) => {
   busy.value = true
   dialoguePending.value = false
+  pendingDialogueTurn = null
+  clearPendingDialogueTurn(auth.user?.user_id)
   error.value = ''
   try {
     activeMode.value = mode
     profileStore.clearDialogueRadarChanges()
     dialogueStreamEvents.value = []
     session.value = await startProfileSession(mode)
+    if (auth.user) saveActiveProfileSession(auth.user.user_id, { sessionId: session.value.session_id, mode })
     resultReady.value = false
     resetStepForm()
   } catch (err) {
@@ -433,6 +458,10 @@ const startMode = async (mode: ProfileBuildMode) => {
   } finally {
     busy.value = false
   }
+}
+
+const startApprenticeStory = async () => {
+  await router.push({ name: 'apprentice-story', query: { redirect: redirectTarget() } })
 }
 
 const stepPayload = (): Record<string, unknown> => {
@@ -503,12 +532,17 @@ const dialogueUtteranceFromPayload = (payload: AnswerPayload): string =>
   String('utterance' in payload ? payload.utterance : payload.quick_reply || '').trim()
 
 const answerDialogue = async (payload: AnswerPayload) => {
+  if (dialoguePending.value || busy.value) return
   if (!session.value) {
     error.value = '对话尚未就绪，请稍候重试'
     return
   }
   const utterance = dialogueUtteranceFromPayload(payload)
   if (!utterance) return
+  const userId = auth.user?.user_id
+  const savedPending = userId ? readPendingDialogueTurn(userId) : null
+  pendingDialogueTurn = resolvePendingDialogueTurn(savedPending, session.value.session_id, utterance, newClientTurnId)
+  if (userId) savePendingDialogueTurn(userId, pendingDialogueTurn)
   busy.value = true
   dialoguePending.value = true
   error.value = ''
@@ -523,9 +557,7 @@ const answerDialogue = async (payload: AnswerPayload) => {
       return
     }
     if (event === 'message_done') {
-      pushDialogueStreamEvent('done')
-      dialoguePending.value = false
-      busy.value = false
+      pushDialogueStreamEvent('message_done')
       return
     }
     if (event === 'evidence' && session.value) {
@@ -547,9 +579,13 @@ const answerDialogue = async (payload: AnswerPayload) => {
       return
     }
     if (event === 'state' && session.value) {
+      const latestIdentityCards = session.value.identity_cards?.length
+        ? session.value.identity_cards
+        : data.identity_cards
       session.value = {
         ...session.value,
         ...data,
+        identity_cards: latestIdentityCards,
         converged: Boolean(data.converged),
         finished: Boolean(data.finished ?? session.value.finished),
       } as ProfileSessionResponse
@@ -560,14 +596,21 @@ const answerDialogue = async (payload: AnswerPayload) => {
       return
     }
     if (event === 'done') pushDialogueStreamEvent('done')
-  })
+  }, pendingDialogueTurn.clientTurnId)
   dialogueStreamInFlight = streamPromise
   try {
     await streamPromise
     stepStartedAt.value = Date.now()
+    if (userId) clearPendingDialogueTurn(userId)
+    pendingDialogueTurn = null
   } catch (err) {
     pushDialogueStreamEvent('done')
-    error.value = err instanceof Error ? err.message : '对话提交失败'
+    try {
+      session.value = await readProfileSession(session.value.session_id)
+      error.value = '对话连接曾中断，画像状态已从后端恢复，可以继续回答'
+    } catch {
+      error.value = err instanceof Error ? err.message : '对话提交失败'
+    }
   } finally {
     if (dialogueStreamInFlight === streamPromise) dialogueStreamInFlight = null
     dialoguePending.value = false
@@ -599,6 +642,9 @@ const finishCurrentSession = async () => {
   }
   const finished = await finishProfileSession(session.value.session_id)
   session.value = finished
+  pendingDialogueTurn = null
+  clearPendingDialogueTurn(auth.user.user_id)
+  clearActiveProfileSession(auth.user.user_id)
   saveOnboardingState(auth.user.user_id, { status: 'completed', mode: activeMode.value ?? finished.mode })
   await profileStore.loadProfile()
   void profileStore.ensureNarrativeLoaded()
@@ -621,6 +667,7 @@ const skipOnboarding = async () => {
       events: [{ event_type: 'skip', topic: '画像引导', response_time_ms: 300 }],
     })
     await finishProfileSession(passive.session_id)
+    clearActiveProfileSession(auth.user.user_id)
     saveOnboardingState(auth.user.user_id, { status: 'skipped', mode: 'passive' })
     ElMessage.success('已跳过，之后可从侧栏回来重塑画像')
     await router.replace(redirectTarget())
@@ -632,6 +679,9 @@ const skipOnboarding = async () => {
 }
 
 const resetFlow = () => {
+  clearActiveProfileSession(auth.user?.user_id)
+  clearPendingDialogueTurn(auth.user?.user_id)
+  pendingDialogueTurn = null
   session.value = null
   activeMode.value = null
   resultReady.value = false
@@ -640,6 +690,32 @@ const resetFlow = () => {
   error.value = ''
   resetStepForm()
 }
+
+onMounted(async () => {
+  const saved = readActiveProfileSession(auth.user?.user_id)
+  if (!saved) return
+  busy.value = true
+  error.value = ''
+  try {
+    const restored = await readProfileSession(saved.sessionId)
+    if (restored.finished) {
+      clearActiveProfileSession(auth.user?.user_id)
+      await router.replace('/profile')
+      return
+    }
+    session.value = restored
+    activeMode.value = restored.mode
+    const restoredPending = auth.user ? readPendingDialogueTurn(auth.user.user_id) : null
+    pendingDialogueTurn = restoredPending?.sessionId === restored.session_id ? restoredPending : null
+    resultReady.value = false
+    resetStepForm()
+  } catch (err) {
+    clearActiveProfileSession(auth.user?.user_id)
+    error.value = err instanceof Error ? err.message : '画像会话已过期，请重新开始'
+  } finally {
+    busy.value = false
+  }
+})
 
 const retryNarrative = () => {
   void profileStore.loadNarrative(true)
@@ -780,20 +856,6 @@ h3 {
   gap: 10px;
 }
 
-:deep(.el-radio-button__inner) {
-  border: 1px solid rgba(143, 208, 173, 0.18);
-  border-radius: 14px !important;
-  background: rgba(238, 245, 239, 0.06);
-  color: rgba(238, 245, 239, 0.78);
-  font-weight: 900;
-}
-
-:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  border-color: rgba(143, 208, 173, 0.68);
-  background: rgba(90, 168, 134, 0.34);
-  box-shadow: none;
-}
-
 :deep(.question-set) {
   display: grid;
   gap: 12px;
@@ -817,23 +879,6 @@ h3 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-}
-
-:deep(.answer-option) {
-  min-height: 42px;
-  padding: 8px 10px;
-  border: 1px solid rgba(159, 182, 214, 0.18);
-  border-radius: 12px;
-  color: rgba(238, 245, 239, 0.82);
-  background: rgba(159, 182, 214, 0.08);
-  cursor: pointer;
-  font-weight: 800;
-}
-
-:deep(.answer-option.is-selected) {
-  border-color: rgba(231, 194, 116, 0.64);
-  color: var(--qh-text);
-  background: rgba(231, 194, 116, 0.16);
 }
 
 .two-fields {
@@ -913,10 +958,21 @@ h3 {
 }
 
 @media (max-width: 760px) {
+  h2 {
+    font-size: 28px;
+  }
+
   .onboarding-hero,
   .mode-foot,
   .session-head {
     display: grid;
+  }
+
+  .hero-actions,
+  .mode-foot,
+  .session-actions,
+  .result-actions {
+    padding-right: 100px;
   }
 
   .mode-grid,

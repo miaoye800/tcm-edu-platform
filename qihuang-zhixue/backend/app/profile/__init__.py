@@ -1,7 +1,7 @@
 """Learning profile package."""
 
 from app.profile.agent import cold_start_profile, export_mermaid, get_profile, run_cold_start
-from app.profile.evidence import EvidenceCard
+from app.profile.evidence import EvidenceCard, StructuredEvidence
 from app.profile.radar import to_radar
 from app.profile.schema import (
     CategoricalDimension,
@@ -20,6 +20,7 @@ __all__ = [
     "CategoricalDimension",
     "DimensionKey",
     "EvidenceCard",
+    "StructuredEvidence",
     "MotivationDimension",
     "NumericDimension",
     "Profile",

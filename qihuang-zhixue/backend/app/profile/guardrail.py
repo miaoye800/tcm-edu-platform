@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.profile.anchors import signal_anchor_intervals
 from app.profile.fusion import ALLOWED_LABELS
 from app.profile.schema import CATEGORY_DIMENSIONS, DIMENSION_LABELS, DimensionKey, EvidenceCard
 
@@ -124,20 +125,11 @@ def allowed_score_interval(dimension: DimensionKey, evidence_cards: list[Evidenc
             high = min(high, 80.0)
             reasons.append("存在剂量错误客观信号，知识基础上限不超过 80")
 
-    if dimension == "motivation":
-        labels = {str(card.objective_signal.get("label") or card.objective_signal.get("motivation") or "") for card in evidence_cards}
-        if labels & {"佛系", "被动", "外部推动"}:
-            high = min(high, 55.0)
-            reasons.append("动机客观标签为佛系/被动，上限不超过 55")
-        if any(card.objective_signal.get("accept_challenge") or card.objective_signal.get("challenge") for card in evidence_cards):
-            low = max(low, 55.0)
-            reasons.append("用户主动接挑战，动机强度下限不低于 55")
-
-    if dimension == "pace":
-        interval = _pace_interval(evidence_cards)
-        if interval is not None:
-            low, high = max(low, interval[0]), min(high, interval[1])
-            reasons.append(interval[2])
+    for card in evidence_cards:
+        for interval, reason in signal_anchor_intervals(dimension, card.objective_signal):
+            low = max(low, interval[0])
+            high = min(high, interval[1])
+            reasons.append(reason)
 
     if low > high:
         midpoint = round((low + high) / 2, 2)
@@ -230,31 +222,6 @@ def _knowledge_correctness(evidence_cards: list[EvidenceCard]) -> tuple[int, int
             correct += sum(1 for item in checks if item)
             total += len(checks)
     return correct, total
-
-
-def _pace_interval(evidence_cards: list[EvidenceCard]) -> tuple[float, float, str] | None:
-    intervals: list[tuple[float, float, str]] = []
-    for card in evidence_cards:
-        signal = card.objective_signal
-        minutes = _as_float(signal.get("daily_minutes") or signal.get("minutes_per_day"))
-        target_days = _as_float(signal.get("target_days") or signal.get("period_days"))
-        if minutes is not None:
-            if minutes < 15:
-                intervals.append((0.0, 30.0, "每日时长 <15min，节奏应落在慢速区间"))
-            elif minutes <= 40:
-                intervals.append((31.0, 70.0, "每日时长 15-40min，节奏应落在中速区间"))
-            else:
-                intervals.append((71.0, 100.0, "每日时长 >40min，节奏应落在快速区间"))
-        if target_days is not None:
-            if target_days <= 14:
-                intervals.append((71.0, 100.0, "目标周期紧，节奏应落在快速区间"))
-            elif target_days > 60:
-                intervals.append((0.0, 30.0, "目标周期宽松，节奏应落在慢速区间"))
-    if not intervals:
-        return None
-    low = max(item[0] for item in intervals)
-    high = min(item[1] for item in intervals)
-    return low, high, "；".join(item[2] for item in intervals)
 
 
 def _best_allowed_label_from_evidence(dimension: DimensionKey, evidence_cards: list[EvidenceCard]) -> str | None:

@@ -1,4 +1,4 @@
-"""markmap 层级 Markdown 资源 Agent。"""
+"""Deprecated compatibility adapter; resource_task now uses app.mindmap.MindmapAgent."""
 
 from __future__ import annotations
 
@@ -82,4 +82,3 @@ def _mock_payload(topic: str, docs: list[ResourceDoc]) -> MindmapPayload:
             ],
         ],
     )
-
