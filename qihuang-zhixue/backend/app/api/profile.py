@@ -22,6 +22,7 @@ from app.profile.modes import (
     answer_profile_session,
     dialogue_session_summary,
     dialogue_session_busy,
+    recover_dialogue_component_scores,
     finish_profile_session_async,
     get_profile_session,
     session_payload,
@@ -298,6 +299,8 @@ async def read_session(
         raise HTTPException(status_code=404, detail="画像会话已过期，请重新开始") from exc
     response = session_payload(session, status="finished" if session.finished else "restored")
     if session.mode == ProfileMode.dialogue:
+        if not dialogue_session_busy(session_id, db_path=db_path):
+            await recover_dialogue_component_scores(session, db_path=db_path)
         response.update(dialogue_session_summary(session, db_path=db_path))
     return response
 

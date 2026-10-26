@@ -3,6 +3,7 @@ export type GraphEntityType = 'herb' | 'syndrome' | 'formula' | 'category'
 export type GraphRelationType =
   | '功效相通' | '相须' | '相使' | '相畏' | '相杀' | '相恶' | '相反'
   | '性味相同' | '性味相反' | '归经聚类' | '药证链' | '证方链' | '同类鉴别'
+  | '组成'
 
 export interface GraphSource { 出处: string; 原文摘录: string; 定位: string }
 export interface GraphNode { id: string; name: string; type: GraphEntityType; brief: string }

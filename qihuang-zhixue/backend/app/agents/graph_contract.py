@@ -23,6 +23,7 @@ class RelationType(StrEnum):
     MERIDIAN_CLUSTER = "归经聚类"
     HERB_SYNDROME = "药证链"
     SYNDROME_FORMULA = "证方链"
+    COMPOSITION = "组成"
     DIFFERENTIATION = "同类鉴别"
 
 

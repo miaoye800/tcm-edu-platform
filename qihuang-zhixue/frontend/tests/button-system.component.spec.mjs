@@ -28,12 +28,12 @@ test('shared button vocabulary uses token-backed primary, secondary, option, and
   assert(onboarding.includes('qh-option-group'), 'onboarding choice radios should reuse option controls')
 })
 
-test('story icon buttons expose accurate labels and a tooltip without replacing text actions', () => {
-  assert(story.includes('aria-label="退出收徒剧情"'), 'exit action should have an accessible name')
-  assert(story.includes("muted ? '开启音效' : '静音'"), 'sound action should announce its stateful purpose')
-  assert(story.includes('<el-tooltip'), 'icon-only story controls should provide tooltips')
-  assert(story.includes('<Close />') && story.includes('<Microphone'), 'story controls should use the established icon library')
-  assert(story.includes("scene.canSkip ? '继续' : '进入问答'"), 'the primary narrative action should remain text-labelled')
+test('story uses a text-labelled exit control and has no sound or click-to-continue actions', () => {
+  assert(story.includes('退出剧情'), 'exit action should be visibly labelled')
+  assert(story.includes('@click="leaveStory"'), 'exit action should leave the story immediately')
+  assert(!story.includes('开启音效') && !story.includes('静音'), 'sound is enabled by default without a toggle')
+  assert(!story.includes('点击对白继续'), 'dialogue should advance automatically')
+  assert(story.includes("muted: false") || story.includes(':muted="false"'), 'story playback should default to sound on')
 })
 
 test('loading and disabled dialogue controls guard against repeat submission', () => {
@@ -56,5 +56,5 @@ test('unrevealed destiny cards cannot mount an evidence action or reveal card da
 test('reduced-motion button branch remains present', () => {
   assert(tokens.includes('@media (prefers-reduced-motion: reduce)'), 'shared controls need a reduced-motion branch')
   assert(tokens.includes('.qh-icon-button'), 'shared reduced-motion branch should cover icon controls')
-  assert(story.includes('.story-controls .qh-icon-button { transition: none; }'), 'story control motion should be removed for reduced motion')
+  assert(/\.story-controls \.qh-icon-button[^}]*transition: none;/.test(story), 'story control motion should be removed for reduced motion')
 })

@@ -10,11 +10,14 @@ from typing import Any, Literal, TypedDict, cast
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
+from app.config import get_settings
 from app.llm.clients import ChatMessage
 from app.llm.router import ModelRouter
 from app.profile.fusion import ALLOWED_LABELS, BASE_LEVEL_SCORES
 from app.profile.jury import ScoringResult, score_profile
 from app.profile.evidence import ExtractionMethod
+from app.profile.component_model import AtomicEvidence, CombinationType, ComponentCollection, DimensionScan, quote_is_traceable
+from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS
 from app.profile.modes import load_diagnostic_questions
 from app.profile.schema import (
     DIMENSION_LABELS,
@@ -51,6 +54,31 @@ EvidenceBasis = Literal["explicit", "inferred"]
 SignalValue = str | dict[str, float] | None
 
 
+class AgentAssessment(BaseModel):
+    """Semantic assessment authored by the extraction agent, never a keyword rule.
+
+    It describes what one traceable statement contributes to the profile.  The
+    fusion layer only validates bounds, deduplicates dependent evidence, and
+    aggregates these agent-authored values.
+    """
+
+    radar_score: float | None = Field(default=None, ge=5.0, le=95.0)
+    confidence_contribution: float = Field(default=0.0, ge=0.0, le=0.95)
+    coverage: float = Field(default=0.0, ge=0.0, le=1.0)
+    priority_strength: float = Field(default=0.0, ge=0.0, le=1.0)
+    independence: float = Field(default=1.0, ge=0.0, le=1.0)
+    confirmed_aspects: list[str] = Field(default_factory=list, max_length=5)
+    unknown_reasons: list[str] = Field(default_factory=list, max_length=5)
+    assessment_reason: str = Field(default="", max_length=160)
+
+    @field_validator("confirmed_aspects", "unknown_reasons", mode="before")
+    @classmethod
+    def _clean_assessment_aspects(cls, value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return list(dict.fromkeys(str(item).strip() for item in value if str(item).strip()))[:5]
+
+
 class ExtractedSignal(BaseModel):
     """One traceable label/distribution extracted from dialogue."""
 
@@ -58,6 +86,8 @@ class ExtractedSignal(BaseModel):
     confidence: float = Field(default=0.0, ge=0, le=1)
     basis: EvidenceBasis = "inferred"
     evidence: list[str] = Field(default_factory=list)
+    card_names: dict[str, str] = Field(default_factory=dict)
+    assessment: AgentAssessment = Field(default_factory=AgentAssessment)
     extraction_method: ExtractionMethod = "llm"
 
     @field_validator("value", mode="before")
@@ -101,6 +131,19 @@ class ExtractedSignal(BaseModel):
                 snippets.append(snippet)
         return snippets
 
+    @field_validator("card_names", mode="before")
+    @classmethod
+    def _clean_card_names(cls, value: Any) -> dict[str, str]:
+        if not isinstance(value, dict):
+            return {}
+        cleaned: dict[str, str] = {}
+        for raw_label, raw_name in value.items():
+            label = str(raw_label).strip()
+            name = re.sub(r"[\s，。！？、,.!?]+", "", str(raw_name).strip())
+            if label and 1 <= len(name) <= 5:
+                cleaned[label] = name
+        return cleaned
+
 
 class ExtractedNumber(BaseModel):
     """One traceable numeric clue extracted from dialogue."""
@@ -109,6 +152,7 @@ class ExtractedNumber(BaseModel):
     confidence: float = Field(default=0.0, ge=0, le=1)
     basis: EvidenceBasis = "inferred"
     evidence: list[str] = Field(default_factory=list)
+    assessment: AgentAssessment = Field(default_factory=AgentAssessment)
     extraction_method: ExtractionMethod = "llm"
 
     @field_validator("evidence", mode="before")
@@ -147,7 +191,15 @@ class DialogueExtraction(BaseModel):
     daily_minutes: ExtractedNumber = Field(default_factory=_empty_number)
     target_days: ExtractedNumber = Field(default_factory=_empty_number)
     mastery_hint: ExtractedScore = Field(default_factory=_empty_score)
+    # New dialogue contract. Legacy per-dimension fields remain accepted for
+    # stored sessions and older model adapters.
+    turn_id: int | None = None
+    dimension_scan: list[DimensionScan] = Field(default_factory=list)
+    atomic_evidence: list[AtomicEvidence] = Field(default_factory=list)
+    component_collection: list[ComponentCollection] = Field(default_factory=list)
+    combination_type: CombinationType = "single_clear_self_report"
     extraction_method: ExtractionMethod = "llm"
+    extraction_error: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -396,6 +448,12 @@ def dialogue_transcript(messages: list[ChatMessage]) -> str:
 
 
 async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
+    settings = get_settings()
+    if not ((settings.deepseek_api_key and settings.deepseek_api_key.strip()) or (settings.zhipu_api_key and settings.zhipu_api_key.strip())):
+        # Semantic collection must be done by the agent. In particular, do not
+        # let a local keyword table create a plausible-looking profile when the
+        # extraction model is unavailable.
+        return DialogueExtraction(extraction_method="no_key_rule_fallback")
     router = ModelRouter()
     messages: list[ChatMessage] = [
         {
@@ -403,10 +461,20 @@ async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
             "content": (
                 "你是学习画像证据抽取器，只输出 JSON。阅读整段对话，为每个维度抽取标签/数值，"
                 "并给出用户【原话片段】作为 evidence。没有依据的维度必须 value=null，禁止猜测或填默认。"
-                "你只负责提取证据，不得输出或决定最终画像分数；数值只能是用户原话中的线索。"
-                "confidence 反映证据强度：明确陈述→高，含糊暗示→低。不得创造 allowed_labels 之外的新标签。"
-                "learning_goal 落不进应试提分/临床实用/兴趣科普/学术深造时，只能用 allowed_labels 中的“其他”，"
-                "且 evidence 必须是用户原话子串。"
+                "你还要为每条已有原话的维度给出 assessment：这是你基于整段上下文作出的语义判断，"
+                "不是关键词映射，也不是最终画像结论。程序不会把任何特定措辞直接换算成分数。"
+                "radar_score 代表该维度适合放入雷达图的当前估计，只能在 5..95 之间，不能给 0 或 100；"
+                "confidence_contribution 代表这条证据对“已确认程度”的贡献，coverage 代表它已覆盖该维度多少必要信息，"
+                "priority_strength 表示该内容在该维度中的优先性，independence 表示它与既有证据的独立程度。"
+                "unknown_reasons 要说明仍未了解的组成或矛盾，不要因只提到一个目标就假定没有其他目标。"
+                "confirmed_aspects 要写本句实际确认了该维度的哪些组成；严格区分事实提取把握与画像确认程度："
+                "明确说出学习时长可使该时长的提取把握很高，但单凭计划不能证明节奏可持续，也不能代替目标周期、执行历史和时间约束等未知组成。"
+                "所有 assessment 数值由你结合原话、上下文和已有证据判断；不要建立“某个词=固定数值”的表。"
+                "一句用户回答可以同时包含多个维度，也可以在同一维度形成多个倾向；必须分别抽取，不能只保留一句话的首个线索。"
+                "confidence 反映抽取把握，不是画像最终置信度。优先使用 allowed_labels；落不进固定学习目标时归入“其他”。"
+                "learning_goal 落不进 allowed_labels 时，只能使用其中的“其他”，"
+                "且 evidence 必须是用户原话子串。每个类别可在 card_names 中给一个1至5个汉字的牌名；"
+                "固定类别沿用给定牌名，只有“其他”才根据原话新取名，风格需凝练、古雅、克制，不照抄整句。"
             ),
         },
         {
@@ -422,12 +490,25 @@ async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
                             "motivation": list(ALLOWED_LABELS["motivation"]),
                             "resource_preference": list(ALLOWED_LABELS["resource_preference"]),
                         },
+                        "components": COMPONENTS,
+                        "component_rubrics": COMPONENT_RUBRICS,
+                        "preset_card_names": {
+                            "learning_goal": {"应试提分": "赶考", "临床实用": "济世", "兴趣科普": "问草", "学术深造": "研经", "基础巩固": "筑基", "能力提升": "精进", "其他": "自定"},
+                            "learning_style": {"视觉型": "观象", "文字型": "研文", "记忆(口诀)型": "诵诀"},
+                            "motivation": {"内驱": "求道", "外驱": "赶程", "内外混合": "双引", "被动": "待启"},
+                            "resource_preference": {"知识图谱": "观脉", "拟人化短剧": "入戏", "汤头歌诀": "诵方", "医案文选": "读案"},
+                        },
                         "schema": (
                             "major, learning_goal, base_level, learning_style, weak_points, motivation, resource_preference "
-                            "均为 {value:string|object|null, confidence:0..1, basis:explicit|inferred, evidence:string[]}；"
+                            "均为 {value:string|object|null, confidence:0..1, basis:explicit|inferred, evidence:string[], card_names:object, "
+                            "assessment:{radar_score:5..95|null,confidence_contribution:0..0.95,coverage:0..1,priority_strength:0..1,independence:0..1,confirmed_aspects:string[],unknown_reasons:string[],assessment_reason:string}}；"
                             "weak_points 只抽用户自述的易错/薄弱/困惑知识点原文短句，没有原文依据则 value=null；"
                             "daily_minutes, target_days, motivation_score, mastery_hint "
-                            "均为 {value:number|null, confidence:0..1, basis:explicit|inferred, evidence:string[]}。"
+                            "均为 {value:number|null, confidence:0..1, basis:explicit|inferred, evidence:string[],assessment:{radar_score:5..95|null,confidence_contribution:0..0.95,coverage:0..1,priority_strength:0..1,independence:0..1,confirmed_aspects:string[],unknown_reasons:string[],assessment_reason:string}}。"
+                            "同时必须返回 turn_id、dimension_scan、atomic_evidence、component_collection。atomic_evidence 每项必须含 "
+                            "evidence_id,dimension,component,evidence_group_id,source_turn_ids,quote,normalized_claim,evidence_type,supports,"
+                            "collection_status,assessment,confirmed_aspects,pending_aspects,semantic_relation,related_evidence_ids,"
+                            "quality_factors(source_reliability,expression_clarity,content_specificity,freshness,consistency,independence_note)。"
                         ),
                     },
                     ensure_ascii=False,
@@ -445,7 +526,9 @@ async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
     try:
         return _validate_dialogue_evidence(DialogueExtraction.model_validate(_json_object(raw)), text)
     except (ValueError, ValidationError):
-        return _fallback_dialogue_extraction(text)
+        # Retain a visible provenance, but never manufacture collection or
+        # scoring from a failed model call.
+        return DialogueExtraction(extraction_method="rule_fallback")
 
 
 async def _evaluate_diagnostic_structured(
@@ -484,6 +567,57 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
     if isinstance(extraction, dict):
         extraction = DialogueExtraction.model_validate(extraction)
     timestamp = datetime.now(UTC)
+    if extraction.atomic_evidence:
+        # The component contract is the canonical path. A single source quote
+        # may yield several component cards; evidence_group_id keeps them from
+        # becoming several independent confidence sources.
+        cards: list[EvidenceCard] = []
+        for item in extraction.atomic_evidence:
+            signal = {
+                "evidence": [item.quote],
+                "normalized_claim": item.normalized_claim,
+                "evidence_type": item.evidence_type,
+                "supports": item.supports,
+                "evidence_group_id": item.evidence_group_id,
+                "semantic_relation": item.semantic_relation,
+                "related_evidence_ids": item.related_evidence_ids,
+                "collection_status": item.collection_status,
+                "assessment": item.assessment,
+                "confirmed_aspects": item.confirmed_aspects,
+                "pending_aspects": item.pending_aspects,
+                "quality_factors": item.quality_factors.model_dump(mode="json"),
+                "combination_type": extraction.combination_type,
+                "agent_assessment": {
+                    "confidence_contribution": min(0.95, max(0.0, item.quality_factors.content_specificity)),
+                    "coverage": 1.0 if item.collection_status == "scorable" else 0.0,
+                    "priority_strength": 0.5,
+                    "independence": 1.0,
+                },
+            }
+            cards.append(EvidenceCard(
+                evidence_id=item.evidence_id,
+                dimension=item.dimension,
+                component=item.component,
+                evidence_group_id=item.evidence_group_id,
+                source="对话原子证据",
+                source_turn_ids=item.source_turn_ids,
+                fact=item.normalized_claim,
+                normalized_claim=item.normalized_claim,
+                objective_signal=signal,
+                weight=1.0,
+                quote=item.quote,
+                basis="explicit",
+                extraction_confidence=1.0,
+                extraction_method=extraction.extraction_method,
+                collection_status=item.collection_status,
+                semantic_relation=item.semantic_relation,
+                related_evidence_ids=item.related_evidence_ids,
+                quality_factors=item.quality_factors.model_dump(mode="json"),
+                confirmed_aspects=item.confirmed_aspects,
+                pending_aspects=item.pending_aspects,
+                timestamp=timestamp,
+            ))
+        return cards
     cards: list[EvidenceCard] = []
     base_level = _signal_label(extraction.base_level)
     if base_level:
@@ -500,6 +634,7 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                     "evidence": extraction.base_level.evidence,
                     "confidence": extraction.base_level.confidence,
                     "basis": extraction.base_level.basis,
+                    **_agent_assessment_signal(extraction.base_level, extraction.extraction_method),
                 },
                 extraction.base_level.confidence,
                 timestamp,
@@ -517,6 +652,7 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                     "evidence": extraction.mastery_hint.evidence,
                     "confidence": extraction.mastery_hint.confidence,
                     "basis": extraction.mastery_hint.basis,
+                    **_agent_assessment_signal(extraction.mastery_hint, extraction.extraction_method),
                 },
                 extraction.mastery_hint.confidence,
                 timestamp,
@@ -542,6 +678,7 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                     "evidence": extraction.weak_points.evidence,
                     "confidence": extraction.weak_points.confidence,
                     "basis": extraction.weak_points.basis,
+                    **_agent_assessment_signal(extraction.weak_points, extraction.extraction_method),
                 },
                 extraction.weak_points.confidence,
                 timestamp,
@@ -557,9 +694,11 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                 {
                     "label": motivation_label,
                     "distribution": _signal_distribution(extraction.motivation),
+                    "card_names": extraction.motivation.card_names,
                     "evidence": extraction.motivation.evidence,
                     "confidence": extraction.motivation.confidence,
                     "basis": extraction.motivation.basis,
+                    **_agent_assessment_signal(extraction.motivation, extraction.extraction_method),
                 },
                 extraction.motivation.confidence,
                 timestamp,
@@ -576,6 +715,7 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                     "evidence": extraction.motivation_score.evidence,
                     "confidence": extraction.motivation_score.confidence,
                     "basis": extraction.motivation_score.basis,
+                    **_agent_assessment_signal(extraction.motivation_score, extraction.extraction_method),
                 },
                 extraction.motivation_score.confidence,
                 timestamp,
@@ -597,6 +737,9 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                     "basis": "explicit"
                     if "explicit" in {extraction.daily_minutes.basis, extraction.target_days.basis}
                     else "inferred",
+                    **_agent_assessment_for_signals(
+                        (extraction.daily_minutes, extraction.target_days), extraction.extraction_method
+                    ),
                 },
                 confidence,
                 timestamp,
@@ -670,8 +813,31 @@ def _profile_from_scoring_results(
             card.objective_signal = {**card.objective_signal, "scoring_provenance": result.provenance}
         target = getattr(profile, dimension)
         target.confidence = result.confidence
+        target.radar_score = result.radar_score
+        target.coverage = result.coverage
+        target.unknown_reasons = result.unknown_reasons
+        target.confidence_breakdown = result.confidence_breakdown
         target.evidence = cards
         target.narrative = result.narrative
+        if hasattr(target, "component_scores") and (any(card.component for card in cards) or result.component_scores):
+            target.component_scores = dict(result.component_scores)
+            required_components = COMPONENTS.get(dimension, ())
+            complete_component_score = (
+                result.aggregated_score is not None
+                and all(component in result.component_scores for component in required_components)
+            )
+            target.scoring_phase = "scored" if complete_component_score else "collecting"
+            target.pending_components = [
+                component for component in required_components if component not in result.component_scores
+            ]
+            target.component_matrix = {
+                component: {
+                    "status": "collected" if component in result.component_scores else "pending",
+                    "score": result.component_scores.get(component),
+                }
+                for component in required_components
+            }
+            target.score_summary = result.narrative
         if hasattr(target, "score") and result.aggregated_score is not None:
             target.score = result.aggregated_score
         if hasattr(target, "label") and result.label is not None:
@@ -856,14 +1022,41 @@ def _add_label_card(
                 {
                     "label": label,
                     "distribution": distribution,
+                    "card_names": signal.card_names,
                     "evidence": signal.evidence,
                     "confidence": signal.confidence,
                     "basis": signal.basis,
+                    **_agent_assessment_signal(signal, signal.extraction_method),
                 },
                 signal.confidence,
                 timestamp,
             )
         )
+
+
+def _agent_assessment_signal(signal: ExtractedSignal | ExtractedNumber, method: ExtractionMethod) -> dict[str, Any]:
+    """Keep semantic scoring exclusively attributable to a successful LLM extraction.
+
+    The no-key path can still retain traceable quotes and labels for the user,
+    but it must not silently turn lexical fallback heuristics into a semantic
+    assessment.
+    """
+
+    if method != "llm" or signal.value is None:
+        return {}
+    return {"agent_assessment": signal.assessment.model_dump(exclude_none=True)}
+
+
+def _agent_assessment_for_signals(
+    signals: tuple[ExtractedNumber, ...], method: ExtractionMethod
+) -> dict[str, Any]:
+    available = [signal for signal in signals if signal.value is not None]
+    if method != "llm" or not available:
+        return {}
+    # Pace can be evidenced by time and deadline together. Select the agent's
+    # more informative assessment rather than inventing a keyword-based blend.
+    selected = max(available, key=lambda signal: signal.assessment.confidence_contribution)
+    return {"agent_assessment": selected.assessment.model_dump(exclude_none=True)}
 
 
 def _signal(
@@ -927,26 +1120,35 @@ def _validate_dialogue_evidence(extraction: DialogueExtraction, source_text: str
         if signal.value is None:
             signal.evidence = []
             signal.confidence = 0.0
+            signal.assessment = AgentAssessment()
             continue
         evidence = [snippet for snippet in signal.evidence if snippet and snippet in source_text]
         if not evidence or len(evidence) != len(signal.evidence):
             signal.value = None
             signal.evidence = []
             signal.confidence = 0.0
+            signal.assessment = AgentAssessment()
         else:
             signal.evidence = evidence
     for signal in (extraction.daily_minutes, extraction.target_days, extraction.motivation_score, extraction.mastery_hint):
         if signal.value is None:
             signal.evidence = []
             signal.confidence = 0.0
+            signal.assessment = AgentAssessment()
             continue
         evidence = [snippet for snippet in signal.evidence if snippet and snippet in source_text]
         if not evidence or len(evidence) != len(signal.evidence):
             signal.value = None
             signal.evidence = []
             signal.confidence = 0.0
+            signal.assessment = AgentAssessment()
         else:
             signal.evidence = evidence
+    valid_atomic: list[AtomicEvidence] = []
+    for item in extraction.atomic_evidence:
+        if quote_is_traceable(item.quote, source_text):
+            valid_atomic.append(item)
+    extraction.atomic_evidence = valid_atomic
     return extraction
 
 
@@ -1079,6 +1281,8 @@ def _goal_signal_from_text(text: str) -> tuple[str | dict[str, float] | None, li
         ("学术深造", ("考研", "论文", "科研")),
         ("临床实用", ("临床", "坐诊", "辨证")),
         ("兴趣科普", ("兴趣", "喜欢", "了解")),
+        ("基础巩固", ("掌握基础", "巩固基础", "打好基础", "夯实基础")),
+        ("能力提升", ("提升能力", "提高水平", "系统提升")),
     ]
     matches: list[tuple[str, str]] = []
     for label, keywords in options:

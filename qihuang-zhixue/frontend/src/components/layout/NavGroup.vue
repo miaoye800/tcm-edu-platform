@@ -36,7 +36,7 @@ const emit = defineEmits<{
 .nav-group__title {
   margin: 0;
   padding: 0 10px;
-  color: rgba(223, 236, 228, 0.42);
+  color: var(--qh-nav-title);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0;

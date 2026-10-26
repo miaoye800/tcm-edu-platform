@@ -37,7 +37,7 @@ DIMENSION_LABELS: dict[DimensionKey, str] = {
     "resource_preference": "资源类型偏好",
 }
 
-LearningGoalLabel = Literal["应试提分", "临床实用", "兴趣科普", "学术深造", "其他"]
+LearningGoalLabel = Literal["应试提分", "临床实用", "兴趣科普", "学术深造", "基础巩固", "能力提升", "其他"]
 LearningStyleLabel = Literal["视觉型", "文字型", "记忆(口诀)型"]
 MotivationLabel = Literal["内驱", "外驱", "内外混合", "被动"]
 ResourceTypeLabel = Literal["知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"]
@@ -49,8 +49,21 @@ class ProfileDimensionBase(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    # The radar is a bounded estimate, deliberately distinct from both raw
+    # event values and categorical card ratios. ``None`` means no evidence.
+    radar_score: float | None = Field(default=None, ge=5.0, le=95.0)
+    coverage: float = Field(default=0.0, ge=0.0, le=1.0)
+    unknown_reasons: list[str] = Field(default_factory=list)
+    confidence_breakdown: dict[str, float] = Field(default_factory=dict)
     evidence: list[EvidenceCard] = Field(default_factory=list)
     narrative: str = ""
+    # Unified component collection state. A dimension is not scoreable until
+    # every required component has a scorable evidence set and agent score.
+    component_matrix: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    component_scores: dict[str, float] = Field(default_factory=dict)
+    scoring_phase: Literal["collecting", "scored"] = "collecting"
+    pending_components: list[str] = Field(default_factory=list)
+    score_summary: str = ""
 
 
 class NumericDimension(ProfileDimensionBase):
@@ -64,11 +77,17 @@ class CategoricalDimension(ProfileDimensionBase):
 
     label: str | None = None
     distribution: dict[str, float] = Field(default_factory=dict)
+    distribution_scope: Literal["observed_evidence", "complete_profile"] = "observed_evidence"
 
     @property
     def derived_score(self) -> float | None:
+        if self.radar_score is not None:
+            return self.radar_score
         if not self.distribution:
             return None
+        # Compatibility view for legacy records without an agent-authored
+        # radar estimate. The radar serializer bounds evidence-bearing values
+        # away from absolute edges before display.
         return round(max(self.distribution.values()) * 100, 2)
 
     @field_validator("distribution")
@@ -105,8 +124,13 @@ class IdentityCardView(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     confidence_status: Literal["待取证", "已取证"]
     score: float | None = None
+    radar_score: float | None = Field(default=None, ge=5.0, le=95.0)
+    coverage: float = Field(default=0.0, ge=0.0, le=1.0)
+    unknown_reasons: list[str] = Field(default_factory=list)
+    confidence_breakdown: dict[str, float] = Field(default_factory=dict)
     display_value: str
     distribution: dict[str, float] = Field(default_factory=dict)
+    distribution_scope: Literal["observed_evidence", "complete_profile"] = "observed_evidence"
     items: list[dict[str, Any]] = Field(default_factory=list)
     cards: list[dict[str, Any]] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)

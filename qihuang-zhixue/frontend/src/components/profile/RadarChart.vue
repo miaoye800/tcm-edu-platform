@@ -32,7 +32,8 @@
         text-anchor="middle"
         dominant-baseline="middle"
       >
-        {{ item.axis.label }}
+        <tspan>{{ item.axis.label }}</tspan>
+        <tspan :x="item.labelPoint.x" dy="15" class="radar-confidence">{{ confidenceLabel(item.axis) }}</tspan>
       </text>
       <polygon :points="fillPoints" class="radar-fill" />
       <line
@@ -55,6 +56,7 @@
       />
       <circle :cx="center" :cy="center" r="4" class="radar-center" />
     </svg>
+    <div class="radar-legend" aria-label="雷达图确认度图例"><span class="is-solid">实线：确认度至少 50%</span><span class="is-dashed">虚线：已收集但仍待确认</span></div>
   </div>
 </template>
 
@@ -83,13 +85,14 @@ const radius = 132
 const labelRadius = 173
 
 const axisStatus = (axis: RadarAxis): 'dark' | 'dashed' | 'solid' => {
-  if (axis.status === 'dark' || axis.placeholder || axis.lit === false) return 'dark'
+  if (axis.status === 'dark' || axis.lit === false) return 'dark'
   if (axis.status === 'dashed' || axis.lowConfidence) return 'dashed'
   return 'solid'
 }
 
 const axisStatusClass = (axis: RadarAxis) => `is-${axisStatus(axis)}`
 const isHighlighted = (axis: RadarAxis) => props.highlightedKeys.includes(axis.key)
+const confidenceLabel = (axis: RadarAxis) => axisStatus(axis) === 'dark' ? '待取证' : `确认 ${Math.round(Math.max(0, Math.min(1, axis.confidence)) * 100)}%`
 
 const pointFor = (index: number, value: number, activeRadius = radius): Point => {
   const angle = -Math.PI / 2 + (Math.PI * 2 * index) / props.axes.length
@@ -122,8 +125,10 @@ const segments = computed(() =>
     return {
       start: radarPoints.value[index],
       end: radarPoints.value[nextIndex],
+      // A segment touching a collected-but-low-confidence axis must stay
+      // visibly dashed, even when its other endpoint is still uncollected.
       dashed: axisStatus(axis) === 'dashed' || axisStatus(props.axes[nextIndex]) === 'dashed',
-      dark: axisStatus(axis) === 'dark' || axisStatus(props.axes[nextIndex]) === 'dark',
+      dark: axisStatus(axis) === 'dark' && axisStatus(props.axes[nextIndex]) === 'dark',
     }
   }),
 )
@@ -166,7 +171,7 @@ const segments = computed(() =>
 }
 
 .radar-axis-line.is-dashed {
-  stroke: rgba(223, 236, 228, 0.18);
+  stroke: rgba(231, 194, 116, 0.68);
   stroke-dasharray: 5 5;
 }
 
@@ -181,23 +186,27 @@ const segments = computed(() =>
 }
 
 .radar-label {
-  fill: rgba(238, 245, 239, 0.86);
+  fill: var(--qh-radar-label);
   font-family: var(--qh-font-body);
   font-size: 13px;
   font-weight: 900;
 }
 
 .radar-label.is-dashed {
-  fill: rgba(223, 236, 228, 0.42);
+  fill: var(--qh-radar-label-muted);
 }
 
 .radar-label.is-dark {
-  fill: rgba(223, 236, 228, 0.28);
+  fill: var(--qh-radar-label-faint);
 }
 
 .radar-label.is-highlighted {
   fill: var(--qh-color-gold);
 }
+
+.radar-confidence { fill: var(--qh-radar-label-muted); font-family: var(--qh-font-body); font-size: 10px; font-weight: 700; }
+.radar-label.is-dashed .radar-confidence { fill: var(--qh-color-gold); }
+.radar-label.is-dark .radar-confidence { fill: var(--qh-radar-label-faint); }
 
 .radar-fill {
   fill: url("#radarFill");
@@ -211,9 +220,10 @@ const segments = computed(() =>
 }
 
 .radar-data-segment.is-dashed {
-  stroke: rgba(159, 182, 214, 0.38);
-  stroke-dasharray: 7 7;
-  stroke-width: 2.5;
+  stroke: var(--qh-color-gold);
+  stroke-dasharray: 8 7;
+  stroke-width: 2.8;
+  filter: drop-shadow(0 0 6px rgba(231, 194, 116, 0.62));
 }
 
 .radar-data-segment.is-dark {
@@ -230,7 +240,10 @@ const segments = computed(() =>
 }
 
 .radar-point.is-dashed {
-  fill: rgba(223, 236, 228, 0.4);
+  fill: var(--qh-color-gold);
+  stroke: var(--qh-color-paper-ink);
+  stroke-dasharray: 2 2;
+  filter: drop-shadow(0 0 5px rgba(231, 194, 116, 0.68));
 }
 
 .radar-point.is-dark {
@@ -251,6 +264,11 @@ const segments = computed(() =>
   fill: var(--qh-color-gold);
   filter: drop-shadow(0 0 10px rgba(231, 194, 116, 0.8));
 }
+
+.radar-legend { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:-8px; color:var(--qh-text-muted); font-size:11px; }
+.radar-legend span { display:inline-flex; align-items:center; gap:5px; }
+.radar-legend span::before { width:22px; height:0; border-top:2px solid var(--qh-color-jade); content:""; }
+.radar-legend .is-dashed::before { border-top-color:var(--qh-color-gold); border-top-style:dashed; }
 
 @keyframes highlight-pop {
   0% {

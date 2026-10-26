@@ -57,6 +57,8 @@
       :converged="dialogueConverged"
       :quick-replies="dialogueQuickReplies"
       :stream-events="dialogueStreamEvents"
+      :developer-audit="session.developer_audit"
+      :chat-history="session.chat_history ?? []"
       :pending="dialoguePending"
       :disabled="!activeStep"
       @answer="answerDialogue"
@@ -567,6 +569,11 @@ const answerDialogue = async (payload: AnswerPayload) => {
         evidence_count: session.value.evidence_count + cards.length,
         evidence_cards: [...(session.value.evidence_cards ?? []), ...(cards as NonNullable<ProfileSessionResponse['evidence_cards']>)],
       }
+      return
+    }
+    if (event === 'audit' && session.value) {
+      const record = data as import('../types/profile').ProfileDeveloperAuditRecord
+      session.value = { ...session.value, developer_audit: [...(session.value.developer_audit ?? []), record].slice(-24) }
       return
     }
     if (event === 'identity_cards' && session.value) {

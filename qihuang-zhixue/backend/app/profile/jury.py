@@ -15,6 +15,7 @@ from app.llm.clients import ChatMessage
 from app.llm.router import ModelRouter
 from app.profile.anchors import SCORE_ANCHOR_INTERVALS
 from app.profile.fusion import FusionResult, evidence_ref, fuse_dimension
+from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS, DIMENSION_COMPONENT_LABELS, ComponentScore, deduplicate_component_cards
 from app.profile.guardrail import GuardrailWarning, allowed_score_interval, apply_guardrail
 from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, evidence_card_to_json_dict
 
@@ -123,6 +124,7 @@ class JuryStructuredOutput(BaseModel):
     weak_points: list[str] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)
     narrative: str = Field(min_length=1)
+    component_scores: list[ComponentScore] = Field(default_factory=list)
 
     @field_validator("distribution")
     @classmethod
@@ -151,11 +153,19 @@ class ScoringResult(BaseModel):
     dimension_key: DimensionKey
     jury: dict[TeacherName, JurorAssessment] = Field(default_factory=dict)
     aggregated_score: float | None = Field(default=None, ge=0.0, le=100.0)
+    # Component scores are kept alongside the legacy aggregate so the profile
+    # state can render the collection/scored phase without reconstructing the
+    # agent response from mutable evidence cards.
+    component_scores: dict[str, float] = Field(default_factory=dict)
     label: str | None = None
     distribution: dict[str, float] = Field(default_factory=dict)
     weak_points: list[str] = Field(default_factory=list)
     variance: float = Field(default=0.0, ge=0.0)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    radar_score: float | None = Field(default=None, ge=5.0, le=95.0)
+    coverage: float = Field(default=0.0, ge=0.0, le=1.0)
+    unknown_reasons: list[str] = Field(default_factory=list)
+    confidence_breakdown: dict[str, float] = Field(default_factory=dict)
     evidence_refs: list[str] = Field(default_factory=list)
     narrative: str = ""
     method: Literal["jury", "fusion"] = "jury"
@@ -283,6 +293,44 @@ def build_jury_messages(
             f"区间依据：{'；'.join(allowed_reasons)}。\n"
         )
     extra = "这是一次自洽补采：请重新独立评估，避免照抄前次答案。" if self_check else ""
+    component_instruction = ""
+    if any(card.component for card in evidence_cards):
+        component_input: list[dict[str, Any]] = []
+        for component in COMPONENTS[dimension]:
+            cards = [card for card in evidence_cards if card.component == component]
+            if not cards:
+                continue
+            kept, conflicts, dropped_ids = deduplicate_component_cards(cards)
+            component_input.append({
+                "key": component,
+                "weight": COMPONENT_RUBRICS[dimension][component]["weight"],
+                "rubric": COMPONENT_RUBRICS[dimension][component],
+                "deduplicated_evidence": [
+                    {
+                        "evidence_id": card.evidence_id,
+                        "quote": card.quote,
+                        "normalized_claim": card.normalized_claim or card.fact,
+                        "evidence_group_id": card.evidence_group_id,
+                        "source_turn_ids": card.source_turn_ids,
+                        "evidence_type": card.objective_signal.get("evidence_type"),
+                        "semantic_relation": card.semantic_relation,
+                    }
+                    for card in kept
+                    if card.semantic_relation != "conflict"
+                ],
+                "conflicts": [
+                    {"evidence_id": card.evidence_id, "quote": card.quote, "reason": card.fact}
+                    for card in conflicts
+                ],
+                "source_groups": sorted({card.evidence_group_id for card in [*kept, *conflicts] if card.evidence_group_id}),
+                "deduplicated_evidence_ids": dropped_ids,
+            })
+        component_instruction = (
+            f"本维度组件量表：{json.dumps(COMPONENT_RUBRICS[dimension], ensure_ascii=False)}\n"
+            f"组件评分输入：{json.dumps(component_input, ensure_ascii=False)}\n"
+            "这是完成评分期：必须逐组件输出 component_scores，每项含 component、score(5..95)、"
+            "evidence_refs、reason、conflict_handling；所有冲突证据都必须保留并说明影响。\n"
+        )
     schema = {
         "dimension": label,
         "jury": {
@@ -298,6 +346,7 @@ def build_jury_messages(
         "weak_points": ["仅薄弱点维填写可追溯标签"],
         "evidence_refs": ["抓药实战#1"],
         "narrative": "自然语言画像叙述",
+        "component_scores": [{"component": "组件名", "score": 72, "evidence_refs": ["ev-1"], "reason": "可验证理由", "conflict_handling": "冲突处理"}],
     }
     return [
         {
@@ -314,6 +363,7 @@ def build_jury_messages(
                 f"锚点量表：{ANCHOR_SCALES[dimension]}\n"
                 f"{interval_instruction}"
                 f"证据卡：{evidence_json}\n"
+                f"{component_instruction}"
                 "聚合规则：三师分数去极端取中位；方差越大置信度越低；类别型维度禁造新标签；"
                 "薄弱点必须来自错误证据卡的 label/topic/knowledge_point/weak_labels。"
                 "每位老师必须给 score、reasoning_chain、comment。类别维还要给 label 和 distribution，薄弱点维还要给 weak_points。\n"
@@ -342,8 +392,10 @@ async def _call_and_parse_jury(
             messages,
             response_format={"type": "json_object"},
             temperature=0,
-            thinking={"type": "enabled"},
-            reasoning_effort="high",
+            # 评分结果受结构化 Schema、证据融合和分数护栏约束，默认无需
+            # 额外的推理 token。保留模型路由配置，必要时可单独切回 Pro。
+            thinking={"type": "disabled"},
+            max_tokens=1200,
         )
     if raw.startswith(MOCK_FALLBACK_PREFIX):
         raise ValueError(_mock_fallback_reason(raw))
@@ -358,7 +410,36 @@ def _parse_jury_output(
     self_check_sampled: bool = False,
 ) -> ScoringResult:
     payload = JuryStructuredOutput.model_validate_json(_extract_json_object(raw))
+    canonical_by_name = {
+        name: key
+        for key in COMPONENTS.get(dimension, ())
+        for name in (key, DIMENSION_COMPONENT_LABELS[dimension][key])
+    }
+    if payload.component_scores:
+        # Models sometimes echo the human-readable rubric label instead of
+        # the stable component key. Normalize both forms before matching;
+        # otherwise valid scores are silently discarded and the dimension
+        # remains permanently in the collecting phase.
+        by_component = {
+            canonical_by_name[item.component]: item
+            for item in payload.component_scores
+            if item.component in canonical_by_name
+        }
+        for card in evidence_cards:
+            scored = by_component.get(card.component or "")
+            if scored is not None:
+                card.objective_signal = {
+                    **card.objective_signal,
+                    "component_score": scored.score,
+                    "component_score_reason": scored.reason,
+                    "component_conflict_handling": scored.conflict_handling,
+                }
     fusion = fuse_dimension(dimension, evidence_cards)
+    component_scores = {
+        canonical_by_name[item.component]: item.score
+        for item in payload.component_scores
+        if item.component in canonical_by_name
+    }
     jury = payload.jury.as_dict()
     scores = [jury[teacher].score for teacher in JURY_TEACHERS]
     aggregated = aggregate_jury_scores(scores)
@@ -367,7 +448,8 @@ def _parse_jury_output(
         dimension=DIMENSION_LABELS[dimension],
         dimension_key=dimension,
         jury=jury,
-        aggregated_score=aggregated,
+        aggregated_score=fusion.score if any(card.component for card in evidence_cards) else aggregated,
+        component_scores=component_scores,
         # Category distributions are evidence votes, never LLM-created labels.
         label=fusion.label if fusion.label is not None else payload.label,
         distribution=fusion.distribution if fusion.distribution else payload.distribution,
@@ -376,6 +458,10 @@ def _parse_jury_output(
         # Jury agreement can only reduce confidence; source diversity and tier
         # remain the responsibility of deterministic fusion.
         confidence=min(fusion.confidence, confidence_from_variance(variance)),
+        radar_score=fusion.radar_score,
+        coverage=fusion.coverage,
+        unknown_reasons=fusion.unknown_reasons,
+        confidence_breakdown=fusion.confidence_breakdown,
         evidence_refs=_evidence_refs_from_payload(payload.evidence_refs, evidence_cards),
         narrative=payload.narrative,
         method="jury",
@@ -420,16 +506,28 @@ def _result_from_fusion(
     narrative = fusion.narrative
     if guarded.score != fusion.score and guarded.score is not None:
         narrative = f"{narrative} 护栏已将最终分纠偏为 {guarded.score:.1f}。"
+    component_scores = {
+        card.component: float(card.objective_signal["component_score"])
+        for card in evidence_cards
+        if card.component
+        and isinstance(card.objective_signal.get("component_score"), (int, float))
+        and 5 <= float(card.objective_signal["component_score"]) <= 95
+    }
     return ScoringResult(
         dimension=fusion.dimension_label,
         dimension_key=fusion.dimension,
         jury={},
         aggregated_score=guarded.score,
+        component_scores=component_scores,
         label=guarded.label,
         distribution=guarded.distribution,
         weak_points=guarded.weak_points,
         variance=fusion.variance,
         confidence=fusion.confidence,
+        radar_score=fusion.radar_score,
+        coverage=fusion.coverage,
+        unknown_reasons=fusion.unknown_reasons,
+        confidence_breakdown=fusion.confidence_breakdown,
         evidence_refs=fusion.evidence_refs,
         narrative=narrative,
         method="fusion",

@@ -119,6 +119,42 @@ def test_refine_replays_original_params(tmp_path: Path) -> None:
     assert response.json()["meta"]["params"] == {"focus": "配伍"}
 
 
+def test_center_graph_endpoint_builds_then_serves_from_cache(tmp_path: Path) -> None:
+    center_id, name = _center()
+    db_path = tmp_path / "graph-api.db"
+    upsert_node({"id": center_id, "name": name, "level": "point"}, db_path)
+    app.dependency_overrides[get_graph_db_path] = lambda: db_path
+    client = TestClient(app)
+    session = auth_session(client, "graph-api-user", db_path)
+
+    # /default-center 必须先于 /{center_id} 匹配，否则会被当成 center_id。
+    default = client.get("/api/graph/default-center", headers=session["headers"])
+    assert default.status_code == 200, default.text
+    assert "center_id" in default.json()
+
+    first = client.get(f"/api/graph/{center_id}", headers=session["headers"])
+    assert first.status_code == 200, first.text
+    payload = first.json()
+    assert payload["center_id"] == center_id
+    assert payload["nodes"] and payload["edges"]
+    assert any(edge["relation_type"] == "药证链" for edge in payload["edges"])
+    # 配伍与方药组成必须能从规则层产出，否则图谱只剩「同经络」这一种弱关系。
+    assert any(edge["relation_type"] == "相须" for edge in payload["edges"])
+    assert any(edge["relation_type"] == "组成" for edge in payload["edges"])
+
+    second = client.get(f"/api/graph/{center_id}", headers=session["headers"])
+    assert second.json() == payload
+
+
+def test_center_graph_endpoint_404_for_unknown_node(tmp_path: Path) -> None:
+    db_path = tmp_path / "graph-api-404.db"
+    app.dependency_overrides[get_graph_db_path] = lambda: db_path
+    client = TestClient(app)
+    session = auth_session(client, "graph-api-404-user", db_path)
+    response = client.get("/api/graph/not-a-real-node", headers=session["headers"])
+    assert response.status_code == 404
+
+
 def test_doc_blocks_include_rich_types() -> None:
     blocks = resource_service._doc_blocks({"sections": [{"title": "功效", "content": "正文", "claims": ["发汗解表"], "sources": [{"ref": "教材定位", "quote": "短摘录"}]}, {"title": "用量与使用注意", "content": "谨慎", "claims": [], "sources": []}]})
     assert {"heading", "paragraph", "bullet", "table", "callout", "quote"} <= {block["type"] for block in blocks}

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getGraphNodeDetail } from '../services/graphApi'
+import { getDefaultCenter, getGraph, getGraphNodeDetail } from '../services/graphApi'
 import type { GraphContent, GraphNodeDetail } from '../types/graph'
 
 const source = (出处: string, 原文摘录: string, 定位: string) => ({ 出处, 原文摘录, 定位 })
@@ -8,43 +8,107 @@ export const mockMahuangGraph: GraphContent = {
   nodes: [
     { id: 'herb-gancao', name: '甘草', type: 'herb', brief: '调和诸药，益气缓急' },
     { id: 'herb-banxia', name: '半夏', type: 'herb', brief: '燥湿化痰，降逆止呕' },
-    { id: 'herb-fuling', name: '茯苓', type: 'herb', brief: '渗湿利水，健脾宁心' },
-    { id: 'syn-phlegm', name: '痰湿内停', type: 'syndrome', brief: '痰多胸闷，脾运不健' },
+    { id: 'herb-ganjiang', name: '干姜', type: 'herb', brief: '温中散寒，温肺化饮' },
     { id: 'herb-mahuang', name: '麻黄', type: 'herb', brief: '发汗解表，宣肺平喘，利水消肿' },
-    { id: 'herb-guizhi', name: '桂枝', type: 'herb', brief: '助麻黄发汗解肌' }, { id: 'herb-xixin', name: '细辛', type: 'herb', brief: '温肺化饮' },
-    { id: 'herb-shigao', name: '石膏', type: 'herb', brief: '清泄肺热' }, { id: 'herb-xingren', name: '杏仁', type: 'herb', brief: '降气平喘' },
-    { id: 'herb-jiegeng', name: '桔梗', type: 'herb', brief: '宣肺利咽' }, { id: 'syn-fenghan', name: '风寒表实', type: 'syndrome', brief: '恶寒发热，无汗喘咳' },
-    { id: 'syn-shuiyin', name: '寒饮喘咳', type: 'syndrome', brief: '外寒内饮，喘咳痰稀' }, { id: 'formula-mahuang', name: '麻黄汤', type: 'formula', brief: '发汗解表，宣肺平喘' },
-    { id: 'formula-xiaoqinglong', name: '小青龙汤', type: 'formula', brief: '解表化饮，止咳平喘' }, { id: 'cat-jiebiao', name: '发散风寒药', type: 'category', brief: '解表药类属' },
-    { id: 'cat-fei', name: '肺经', type: 'category', brief: '归经聚类' },
+    { id: 'herb-guizhi', name: '桂枝', type: 'herb', brief: '解肌发表，温通经脉' },
+    { id: 'herb-xixin', name: '细辛', type: 'herb', brief: '祛风散寒，温肺化饮' },
+    { id: 'herb-xingren', name: '杏仁', type: 'herb', brief: '降气止咳平喘' },
+    { id: 'herb-shaoyao', name: '芍药', type: 'herb', brief: '养血调营，敛阴和营' },
+    { id: 'herb-wuweizi', name: '五味子', type: 'herb', brief: '敛肺滋肾，收敛止咳' },
+    { id: 'syn-fenghan', name: '风寒表实', type: 'syndrome', brief: '恶寒发热，无汗而喘' },
+    { id: 'syn-hanyin', name: '外寒内饮', type: 'syndrome', brief: '恶寒发热，咳喘痰稀，干呕' },
+    { id: 'formula-mahuang', name: '麻黄汤', type: 'formula', brief: '发汗解表，宣肺平喘' },
+    { id: 'formula-xiaoqinglong', name: '小青龙汤', type: 'formula', brief: '解表散寒，温肺化饮' },
+    { id: 'cat-jiebiao', name: '发散风寒药', type: 'category', brief: '解表药类属' },
+    { id: 'cat-fei', name: '肺经', type: 'category', brief: '麻黄的归经之一' },
   ],
   edges: [
-    { source: 'herb-mahuang', target: 'herb-gancao', relation_type: '相畏', label: '相畏·缓和峻烈', source_ref: 0 },
-    { source: 'herb-mahuang', target: 'herb-banxia', relation_type: '相杀', label: '相杀·制约药性', source_ref: 1 },
-    { source: 'herb-mahuang', target: 'herb-fuling', relation_type: '相恶', label: '相恶·避免相碍', source_ref: 2 },
-    { source: 'herb-mahuang', target: 'herb-banxia', relation_type: '相反', label: '相反·禁忌辨识', source_ref: 3 },
-    { source: 'herb-mahuang', target: 'herb-fuling', relation_type: '性味相同', label: '性味相同·温化水湿', source_ref: 4 },
-    { source: 'herb-mahuang', target: 'syn-phlegm', relation_type: '功效相通', label: '功效相通·宣肺化饮', source_ref: 5 },
-    { source: 'herb-mahuang', target: 'herb-guizhi', relation_type: '相须', label: '相须·助发汗', source_ref: 0 },
-    { source: 'herb-mahuang', target: 'herb-xingren', relation_type: '相使', label: '相使·宣降肺气', source_ref: 1 },
-    { source: 'herb-mahuang', target: 'herb-xixin', relation_type: '功效相通', label: '功效相通·温肺化饮', source_ref: 2 },
-    { source: 'herb-mahuang', target: 'herb-shigao', relation_type: '同类鉴别', label: '同类鉴别·寒热有别', source_ref: 3 },
-    { source: 'herb-mahuang', target: 'herb-jiegeng', relation_type: '性味相反', label: '性味相反·升降互参', source_ref: 4 },
-    { source: 'herb-mahuang', target: 'syn-fenghan', relation_type: '药证链', label: '药证链·风寒表实', source_ref: 5 },
-    { source: 'syn-fenghan', target: 'formula-mahuang', relation_type: '证方链', label: '证方链·麻黄汤', source_ref: 6 },
-    { source: 'herb-mahuang', target: 'syn-shuiyin', relation_type: '药证链', label: '药证链·寒饮喘咳', source_ref: 7 },
-    { source: 'syn-shuiyin', target: 'formula-xiaoqinglong', relation_type: '证方链', label: '证方链·小青龙汤', source_ref: 8 },
-    { source: 'herb-mahuang', target: 'cat-jiebiao', relation_type: '归经聚类', label: '药类聚类·解表', source_ref: 9 },
-    { source: 'herb-mahuang', target: 'cat-fei', relation_type: '归经聚类', label: '归经聚类·肺经', source_ref: 10 },
+    { source: 'herb-mahuang', target: 'formula-mahuang', relation_type: '组成', label: '方中组成·麻黄汤', source_ref: 2 },
+    { source: 'herb-guizhi', target: 'formula-mahuang', relation_type: '组成', label: '方中组成·麻黄汤', source_ref: 2 },
+    { source: 'herb-xingren', target: 'formula-mahuang', relation_type: '组成', label: '方中组成·麻黄汤', source_ref: 2 },
+    { source: 'herb-gancao', target: 'formula-mahuang', relation_type: '组成', label: '方中组成·麻黄汤', source_ref: 2 },
+    { source: 'herb-mahuang', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-guizhi', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-banxia', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-xixin', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-ganjiang', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-shaoyao', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-wuweizi', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-gancao', target: 'formula-xiaoqinglong', relation_type: '组成', label: '方中组成·小青龙汤', source_ref: 3 },
+    { source: 'herb-mahuang', target: 'syn-fenghan', relation_type: '药证链', label: '主治证候·风寒表实', source_ref: 1 },
+    { source: 'syn-fenghan', target: 'formula-mahuang', relation_type: '证方链', label: '常用方剂·麻黄汤', source_ref: 1 },
+    { source: 'herb-mahuang', target: 'syn-hanyin', relation_type: '药证链', label: '主治证候·外寒内饮', source_ref: 4 },
+    { source: 'syn-hanyin', target: 'formula-xiaoqinglong', relation_type: '证方链', label: '常用方剂·小青龙汤', source_ref: 4 },
+    { source: 'herb-mahuang', target: 'cat-jiebiao', relation_type: '归经聚类', label: '药类归属·发散风寒药', source_ref: 5 },
+    { source: 'herb-mahuang', target: 'cat-fei', relation_type: '归经聚类', label: '归经·肺经', source_ref: 6 },
   ],
-  sources: [source('《神农本草经》', '主中风伤寒头痛，温疟。', '上品'), source('《本草纲目》', '麻黄乃肺经专药。', '草部'), source('《伤寒论》', '麻黄汤主之。', '辨太阳病脉证并治'), source('《本草求真》', '石膏与麻黄，一寒一热。', '卷上'), source('《本草备要》', '桔梗升，杏仁降。', '草部'), source('《伤寒论》', '太阳病，头痛发热，身疼腰痛，骨节疼痛，恶风，无汗而喘者。', '辨太阳病'), source('《伤寒论》', '麻黄汤：麻黄、桂枝、杏仁、甘草。', '方剂'), source('《伤寒论》', '伤寒表不解，心下有水气，干呕发热而咳。', '辨太阳病'), source('《伤寒论》', '小青龙汤主之。', '方剂'), source('《中药学》', '麻黄属发散风寒药。', '解表药'), source('《中药学》', '归肺、膀胱经。', '性味归经')],
+  sources: [
+    source('《神农本草经》', '主中风伤寒头痛，温疟。发汗。', '上品'),
+    source('《伤寒论》', '太阳病，头痛发热，身疼腰痛，骨节疼痛，恶风，无汗而喘者，麻黄汤主之。', '辨太阳病脉证并治'),
+    source('《伤寒论》', '麻黄汤方：麻黄、桂枝、杏仁、甘草。', '辨太阳病脉证并治'),
+    source('《伤寒论》', '小青龙汤方：麻黄、芍药、细辛、干姜、甘草、桂枝、五味子、半夏。', '辨太阳病脉证并治'),
+    source('《伤寒论》', '伤寒表不解，心下有水气，干呕发热而咳，小青龙汤主之。', '辨太阳病脉证并治'),
+    source('《中药学》', '麻黄属发散风寒药。', '解表药'),
+    source('《中药学》', '归肺、膀胱经。', '性味归经'),
+  ],
 }
 
 export const useGraphStore = defineStore('graph', {
-  state: () => ({ content: mockMahuangGraph as GraphContent, usingMock: true, loading: false, detail: null as GraphNodeDetail | null, detailLoading: false }),
+  state: () => ({ content: mockMahuangGraph as GraphContent, usingMock: true, loading: false, detail: null as GraphNodeDetail | null, detailLoading: false, detailRequestVersion: 0 }),
   actions: {
     setContent(content?: GraphContent) { this.content = content?.nodes?.length ? content : mockMahuangGraph },
-    async loadDetail(nodeId: string) { this.detailLoading = true; try { this.detail = await getGraphNodeDetail(nodeId); this.usingMock = false } catch { this.detail = mockDetail; this.usingMock = true } finally { this.detailLoading = false } },
+    /** 按中心节点拉取真实子图；失败或为空时返回 false，由调用方决定是否回落 mock。 */
+    async loadCenter(centerId: string): Promise<boolean> {
+      if (!centerId) return false
+      this.loading = true
+      try {
+        const content = await getGraph(centerId)
+        if (!content?.nodes?.length) return false
+        this.content = content
+        this.usingMock = false
+        return true
+      } catch {
+        return false
+      } finally {
+        this.loading = false
+      }
+    },
+    /** 优先用学习路径当前节点，其次退到任一有缓存的药材。 */
+    async loadDefaultCenter(): Promise<boolean> {
+      try {
+        const { center_id: centerId } = await getDefaultCenter()
+        if (centerId && (await this.loadCenter(centerId))) return true
+      } catch {
+        /* 未登录或路径为空时静默回落 */
+      }
+      return false
+    },
+    async loadDetail(nodeId: string) {
+      const requestVersion = ++this.detailRequestVersion
+      this.detailLoading = true
+      try {
+        const detail = await getGraphNodeDetail(nodeId)
+        if (requestVersion !== this.detailRequestVersion) return
+        this.detail = detail; this.usingMock = false
+      } catch {
+        if (requestVersion !== this.detailRequestVersion) return
+        this.detail = fallbackDetail(this.content, nodeId); this.usingMock = true
+      } finally {
+        if (requestVersion === this.detailRequestVersion) this.detailLoading = false
+      }
+    },
   },
 })
 const mockDetail: GraphNodeDetail = { 性味归经: '辛、微苦，温。归肺、膀胱经。', 功效主治: { 功效: ['发汗解表', '宣肺平喘', '利水消肿'], 主治: ['风寒表实证', '胸闷喘咳', '风水浮肿'] }, 常用剂量与炮制: { 剂量: '2-10g，煎服', 炮制: '生用发汗力强；蜜炙偏于润肺平喘。' }, 使用禁忌: ['表虚自汗、阴虚盗汗者慎用', '高血压及失眠患者慎用'], 经典出处: ['《神农本草经》', '《伤寒论》'], 关联考点: { exam_frequency: .92, 说明: '麻黄汤组成与麻桂配伍为高频辨析点。' }, sources: mockMahuangGraph.sources.slice(0, 3) }
+
+const fallbackDetail = (content: GraphContent, nodeId: string): GraphNodeDetail => {
+  if (nodeId === 'herb-mahuang') return mockDetail
+  const relatedSources = [...new Set(content.edges.filter(edge => edge.source === nodeId || edge.target === nodeId).map(edge => edge.source_ref))]
+    .map(index => content.sources[index]).filter((source): source is GraphContent['sources'][number] => Boolean(source)).slice(0, 4)
+  const node = content.nodes.find(item => item.id === nodeId)
+  return {
+    功效主治: { 功效: node?.brief ? [node.brief] : [], 主治: [] },
+    经典出处: [...new Set(relatedSources.map(source => source.出处))],
+    sources: relatedSources,
+  }
+}

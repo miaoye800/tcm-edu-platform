@@ -121,7 +121,8 @@ def test_dialogue_low_confidence_becomes_low_weight_and_dashed_radar() -> None:
     profile = modes_module._profile_from_fusion("low-confidence-user", cards, fusion=fusion)
     axes = {axis["key"]: axis for axis in to_radar(profile)["axes"]}
 
-    assert axes["learning_goal"]["status"] == "dashed"
+    assert axes["learning_goal"]["status"] == "dark"
+    assert axes["learning_goal"]["scoring_phase"] == "collecting"
 
 
 def test_dialogue_extraction_does_not_card_unknown_statement() -> None:

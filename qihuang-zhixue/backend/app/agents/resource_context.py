@@ -128,11 +128,22 @@ def all_evidence_text(docs: list[ResourceDoc]) -> str:
     return "\n".join(doc["evidence_text"] for doc in docs)
 
 
+_NAME_BY_ID: dict[str, str] | None = None
+
+
+def reset_herb_index() -> None:
+    """知识库变更后清空 id→name 索引，避免继续用旧名字。"""
+
+    global _NAME_BY_ID
+    _NAME_BY_ID = None
+
+
 def herb_name_by_id(herb_id: str) -> str:
-    for herb in load_herbs():
-        if herb.id == herb_id:
-            return herb.name
-    return herb_id
+    # 构建全图时一次 _herb_to_doc 会调十几次，逐个遍历知识库会退化成 O(n²)。
+    global _NAME_BY_ID
+    if _NAME_BY_ID is None:
+        _NAME_BY_ID = {herb.id: herb.name for herb in load_herbs()}
+    return _NAME_BY_ID.get(herb_id, herb_id)
 
 
 def _prioritize_exact_herb(topic: str, hits: list[SearchHit], limit: int) -> list[SearchHit]:

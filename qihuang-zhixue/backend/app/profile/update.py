@@ -458,6 +458,10 @@ def _apply_fusion_to_profile(
     dim = getattr(profile, dimension)
     old_value = _dimension_snapshot(dim)
     dim.confidence = fusion.confidence
+    dim.radar_score = fusion.radar_score
+    dim.coverage = fusion.coverage
+    dim.unknown_reasons = fusion.unknown_reasons
+    dim.confidence_breakdown = fusion.confidence_breakdown
     dim.evidence = cards
     _stamp_scoring_provenance(cards, provenance)
     dim.narrative = fusion.narrative
@@ -485,6 +489,10 @@ def _apply_scoring_to_profile(
     old_value = _dimension_snapshot(dim)
     has_pending_claim = any(card.claim_status == "pending" for card in cards)
     dim.confidence = min(result.confidence, 0.35) if has_pending_claim else result.confidence
+    dim.radar_score = result.radar_score
+    dim.coverage = result.coverage
+    dim.unknown_reasons = result.unknown_reasons
+    dim.confidence_breakdown = result.confidence_breakdown
     dim.evidence = cards
     _stamp_scoring_provenance(cards, result.provenance)
     dim.narrative = result.narrative

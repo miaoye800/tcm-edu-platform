@@ -1,4 +1,4 @@
-import type { EvidenceCard, GoalCandidate, IdentityCardView, ProfileBuildMode, ProfileNarrative, ProfileResponse, ProfileSessionResponse, ProfileTrust } from '../types/profile'
+import type { EvidenceCard, GoalCandidate, IdentityCardView, ProfileBuildMode, ProfileDeveloperAuditRecord, ProfileNarrative, ProfileResponse, ProfileSessionResponse, ProfileTrust } from '../types/profile'
 import { authHeaders, handleUnauthorized, requestJson, requestResponse } from './request'
 
 const PROFILE_TIMEOUT_MS = 800
@@ -83,6 +83,7 @@ export type ProfileDialogueStreamEvent =
   | { event: 'message'; data: { delta?: string } }
   | { event: 'message_done'; data: Record<string, never> }
   | { event: 'evidence'; data: { cards?: EvidenceCard[] } }
+  | { event: 'audit'; data: ProfileDeveloperAuditRecord }
   | { event: 'identity_cards'; data: { items?: IdentityCardView[] } }
   | { event: 'radar'; data: NonNullable<ProfileSessionResponse['radar']> }
   | { event: 'state'; data: Partial<ProfileSessionResponse> & { converged?: boolean; target?: string | null; target_label?: string | null; error?: string } }

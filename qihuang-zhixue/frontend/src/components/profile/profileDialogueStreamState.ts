@@ -88,6 +88,7 @@ export const appendProfileDialogueAssistantDelta = (
 ): ProfileDialogueApplyResult => {
   if (!delta) return 'none'
   const idx = ensureProfileDialogueStreamingAssistant(state)
+  state.messages[idx].reasoningStreaming = false
   state.messages[idx].text += delta
   return 'appended'
 }
@@ -142,8 +143,7 @@ export const applyProfileDialogueStreamEvent = (
   now = Date.now(),
 ): ProfileDialogueApplyResult => {
   if (event.type === 'reset') {
-    ensureProfileDialogueStreamingAssistant(state)
-    return 'created'
+    return 'none'
   }
   if (event.type === 'thinking') {
     return appendProfileDialogueAssistantReasoning(state, event.delta ?? '', now)

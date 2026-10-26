@@ -14,7 +14,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from app.agents.graph_contract import GraphContent, GraphEdgeContent, GraphNodeContent, GraphRelationDraft, GraphSource, RelationType
 from app.agents.prompts import GRAPH_AGENT_SYSTEM_PROMPT
-from app.agents.resource_context import ResourceDoc, _herb_to_doc, retrieve_resource_docs
+from app.agents.resource_context import ResourceDoc, _herb_to_doc, herb_name_by_id, retrieve_resource_docs
 from app.graph_storage import get_graph, node_exists, put_entity, put_graph, put_relations
 from app.kb.ingest import load_herbs
 from app.llm.clients import MockClient
@@ -24,9 +24,51 @@ from app.profile.store import DB_PATH
 logger = logging.getLogger(__name__)
 _relation_list = TypeAdapter(list[GraphRelationDraft])
 
-# The source corpus stores formula ids but not a formula table.  These names
-# preserve the handful of clinically important ids used in current herb data.
-FORMULA_NAMES = {"formula_mahuangtang": "麻黄汤", "formula_guizhitang": "桂枝汤", "formula_gegentang": "葛根汤", "formula_xiaoqinglongtang": "小青龙汤"}
+# The source corpus stores formula ids but not a formula table.  This map is the
+# single place that turns those ids into display names; keep it in sync with the
+# `formula_ref` values found in backend/data/herbs/*.json.
+FORMULA_NAMES = {
+    "formula_mahuangtang": "麻黄汤",
+    "formula_guizhitang": "桂枝汤",
+    "formula_gegentang": "葛根汤",
+    "formula_xiaoqinglongtang": "小青龙汤",
+    "formula_sijunzi_tang": "四君子汤",
+    "formula_qingyingtang": "清营汤",
+    "formula_siwu_tang": "四物汤",
+    "formula_zengyetang": "增液汤",
+    "formula_yinqiaosan": "银翘散",
+    "formula_wuwei_xiaoduyin": "五味消毒饮",
+    "formula_qinghaobiejiatang": "青蒿鳖甲汤",
+    "formula_shengmai_san": "生脉散",
+    "formula_yupingfengsan": "玉屏风散",
+    "formula_danggui_buxue_tang": "当归补血汤",
+    "formula_liuwei_dihuang_wan": "六味地黄丸",
+    "formula_shaoyao_gancao_tang": "芍药甘草汤",
+    "formula_shashenmaidongtang": "沙参麦冬汤",
+    "formula_sangjuyin": "桑菊饮",
+    "formula_buzhongyiqitang": "补中益气汤",
+    "formula_baitouwengtang": "白头翁汤",
+    "formula_baihutang": "白虎汤",
+    "formula_zhibaidihuangwan": "知柏地黄丸",
+    "formula_gegen_qinlian_tang": "葛根芩连汤",
+    "formula_sanhuang_xiexin_tang": "三黄泻心汤",
+    "formula_longdan_xiegan_tang": "龙胆泻肝汤",
+    "formula_shenfu_tang": "参附汤",
+    "formula_shenling_baizhu_san": "参苓白术散",
+    "formula_zhigancao_tang": "炙甘草汤",
+    "formula_ganmai_dazao_tang": "甘麦大枣汤",
+    "formula_qiju_dihuang_wan": "杞菊地黄丸",
+    "formula_erzhiwan": "二至丸",
+    "formula_xiangrusan": "香薷散",
+    "formula_cangerzisan": "苍耳子散",
+    "formula_xiaochaihutang": "小柴胡汤",
+    "formula_maxingshigantang": "麻杏石甘汤",
+    "formula_zhizichitang": "栀子豉汤",
+    "formula_yinchenhaotang": "茵陈蒿汤",
+    "formula_zuojinwan": "左金丸",
+    "formula_ermiaosan": "二妙散",
+    "formula_xiebaisan": "泻白散",
+}
 
 
 def entity_id(kind: str, name: str) -> str:
@@ -47,6 +89,7 @@ class GraphAgent:
 
     def __init__(self, *, llm_call: Callable[[str], Awaitable[str]] | None = None) -> None:
         self._llm_call = llm_call
+        self._herbs_by_name: dict[str, Any] | None = None
 
     async def generate(self, *, center_id: str, center_name: str, db_path: Path = DB_PATH) -> GraphContent:
         cached = get_graph(center_id, db_path)
@@ -76,13 +119,28 @@ class GraphAgent:
         put_graph(center_id, content.model_dump(mode='json'), created_at, db_path)
         return content
 
+    def build_rules_only(self, *, center_id: str, center_name: str) -> tuple[GraphContent, list[GraphRelationDraft]] | None:
+        """规则层构图：不调用 LLM、不读写数据库。
+
+        离线预计算脚本与缓存缺失时的降级路径共用这一入口，保证两者结构一致。
+        返回 ``None`` 表示知识库里没有这味药。
+        """
+        center = self._doc_by_name(center_name)
+        if center is None:
+            return None
+        docs = self._local_related_docs(center)
+        rules, nodes = self._rule_relations(center_id, center, docs)
+        relations = self._dedupe(rules)
+        return self._content(center_id, center, nodes, relations), relations
+
     def _doc_by_name(self, name: str) -> ResourceDoc | None:
-        for herb in load_herbs():
-            if herb.name != name:
-                continue
-            # Keep a retrieval-shaped document even when semantic retrieval misses.
-            return _herb_to_doc(herb, [source.model_dump(mode='json') for source in herb.sources])
-        return None
+        # 构建全图时会被调用上千次，知识库 JSON 只读一次即可。
+        if self._herbs_by_name is None:
+            self._herbs_by_name = {herb.name: herb for herb in load_herbs()}
+        herb = self._herbs_by_name.get(name)
+        if herb is None:
+            return None
+        return _herb_to_doc(herb, [source.model_dump(mode='json') for source in herb.sources])
 
     def _local_related_docs(self, center: ResourceDoc | None) -> list[ResourceDoc]:
         if center is None:
@@ -122,15 +180,33 @@ class GraphAgent:
             excerpt = f"{syndrome}：{indication.get('description', '')}".strip('：')
             relations.append(GraphRelationDraft(source_id=center_id, target_id=syndrome_id, relation_type=RelationType.HERB_SYNDROME, label=f'药证链·{syndrome}', sources=center_source(excerpt), confidence=.94))
         for combo in center['combinations'][:3]:
+            purpose = str(combo.get('purpose', '')).strip()
             formula_ref = str(combo.get('formula_ref', '')).strip()
+
+            # 配伍：数据里只有 with + purpose，教材统一归到「相须/相使」协同组。
+            for partner_id in combo.get('with', [])[:2]:
+                partner_name = herb_name_by_id(partner_id)
+                if not partner_name or partner_name == center['name'] or self._doc_by_name(partner_name) is None:
+                    continue
+                partner_node_id = entity_id('herb', partner_name)
+                nodes[partner_node_id] = GraphNodeContent(id=partner_node_id, name=partner_name, type='herb', brief='配伍药材')
+                pairing = f"{center['name']}配{partner_name}：{purpose}" if purpose else f"{center['name']}与{partner_name}配伍"
+                relations.append(GraphRelationDraft(source_id=center_id, target_id=partner_node_id, relation_type=RelationType.XIANG_XU, label=f'相须·{partner_name}', sources=center_source(pairing), confidence=.9))
+
             if not formula_ref:
                 continue
             formula_name = FORMULA_NAMES.get(formula_ref, formula_ref.removeprefix('formula_'))
             formula_id = entity_id('formula', formula_ref)
-            nodes[formula_id] = GraphNodeContent(id=formula_id, name=formula_name, type='formula', brief=str(combo.get('purpose', ''))[:80])
-            syndrome_id = next((r.target_id for r in relations if r.relation_type == RelationType.HERB_SYNDROME), None)
+            nodes[formula_id] = GraphNodeContent(id=formula_id, name=formula_name, type='formula', brief=purpose[:80])
+            excerpt = f"{formula_name}：{purpose}" if purpose else f"{formula_name}含{center['name']}"
+            # 方药组成：本药是该方的组成药味。
+            relations.append(GraphRelationDraft(source_id=center_id, target_id=formula_id, relation_type=RelationType.COMPOSITION, label=f'方中组成·{formula_name}', sources=center_source(excerpt), confidence=.88))
+            # 证方链：优先取 purpose 点名的证候，取不到再回退到首个药证链。
+            syndrome_id = next((item.target_id for item in relations if item.relation_type == RelationType.HERB_SYNDROME and item.target_id in nodes and nodes[item.target_id].name in purpose), None) if purpose else None
+            if syndrome_id is None:
+                syndrome_id = next((item.target_id for item in relations if item.relation_type == RelationType.HERB_SYNDROME), None)
             if syndrome_id:
-                relations.append(GraphRelationDraft(source_id=syndrome_id, target_id=formula_id, relation_type=RelationType.SYNDROME_FORMULA, label=f'证方链·{formula_name}', sources=center_source(f"{formula_name}：{combo.get('purpose', '')}"), confidence=.82))
+                relations.append(GraphRelationDraft(source_id=syndrome_id, target_id=formula_id, relation_type=RelationType.SYNDROME_FORMULA, label=f'证方链·{formula_name}', sources=center_source(excerpt), confidence=.82))
         for item in center['differentiation'][:2]:
             other = str(item.get('compare_name') or item.get('compare_with') or '').strip()
             if not other:

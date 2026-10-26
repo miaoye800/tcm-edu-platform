@@ -32,7 +32,7 @@ def test_radar_uses_numeric_scores_and_category_derived_scores_with_confidence()
     assert axes["knowledge_base"]["value"] == 72
     assert axes["knowledge_base"]["lit"] is True
     assert axes["knowledge_base"]["status"] == "solid"
-    assert axes["learning_goal"]["metric"] == "目标清晰度"
+    assert axes["learning_goal"]["metric"] == "目标锚定估计"
     assert axes["learning_goal"]["kind"] == "derived"
     assert axes["learning_goal"]["value"] == 70
     assert axes["learning_goal"]["raw_label"] == "应试提分"
@@ -61,9 +61,32 @@ def test_radar_empty_and_low_confidence_profile_returns_placeholders() -> None:
     assert axes["knowledge_base"]["status"] == "dark"
     assert axes["learning_goal"]["raw_label"] == "学术深造"
     assert axes["learning_goal"]["value"] == 0
-    assert axes["learning_goal"]["placeholder"] is True
+    assert axes["learning_goal"]["placeholder"] is False
     assert axes["learning_goal"]["lit"] is True
     assert axes["learning_goal"]["status"] == "dashed"
+
+
+def test_low_confidence_evidence_is_drawn_as_a_dashed_axis() -> None:
+    profile = create_blank_profile("student-radar-dashed")
+    profile.learning_goal.label = "兴趣科普"
+    profile.learning_goal.distribution = {"兴趣科普": 0.65, "基础巩固": 0.35}
+    profile.learning_goal.confidence = 0.28
+    profile.learning_goal.evidence = [
+        EvidenceCard(
+            dimension="learning_goal",
+            source="问诊式对话",
+            fact="用户表达兴趣入门并希望巩固基础",
+            objective_signal={"distribution": {"兴趣科普": 0.65, "基础巩固": 0.35}},
+            weight=0.8,
+        )
+    ]
+
+    axis = next(item for item in to_radar(profile)["axes"] if item["key"] == "learning_goal")
+
+    assert axis["value"] == 65
+    assert axis["lit"] is True
+    assert axis["placeholder"] is False
+    assert axis["status"] == "dashed"
 
 
 def test_radar_provenance_follows_persisted_scoring_then_no_key_extraction() -> None:

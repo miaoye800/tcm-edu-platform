@@ -329,18 +329,11 @@ def _log_deepseek_stream_delta(delta: Mapping[str, Any]) -> None:
     reasoning = str(delta.get("reasoning_content") or "")
     content = str(delta.get("content") or "")
     logger.debug(
-        "DeepSeek stream delta keys=%s reasoning_content=%r content=%r",
+        "DeepSeek stream delta keys=%s has_reasoning=%s reasoning_len=%s content_len=%s",
         sorted(str(key) for key in delta.keys()),
-        reasoning[:80],
-        content[:80],
-    )
-    print(
-        "[deepseek.chat_stream.delta]",
-        {
-            "keys": sorted(str(key) for key in delta.keys()),
-            "reasoning_content": reasoning[:80],
-            "content": content[:80],
-        },
+        bool(reasoning),
+        len(reasoning),
+        len(content),
     )
 
 
@@ -417,15 +410,13 @@ def _timeout_seconds(kw: Mapping[str, Any], default: float) -> float:
 def _log_deepseek_chat_request(payload: Mapping[str, Any], *, timeout_seconds: float) -> None:
     if get_settings().env.lower() not in {"dev", "development", "local"}:
         return
-    print(
-        "[deepseek.chat.request]",
-        {
-            "model": payload.get("model"),
-            "stream": payload.get("stream"),
-            "thinking": payload.get("thinking"),
-            "response_format": payload.get("response_format"),
-            "timeout_seconds": timeout_seconds,
-        },
+    logger.debug(
+        "DeepSeek request model=%s stream=%s thinking=%s response_format=%s timeout_seconds=%s",
+        payload.get("model"),
+        payload.get("stream"),
+        bool(payload.get("thinking")),
+        bool(payload.get("response_format")),
+        timeout_seconds,
     )
 
 

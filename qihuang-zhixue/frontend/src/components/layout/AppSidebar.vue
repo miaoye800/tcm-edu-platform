@@ -28,13 +28,17 @@
     </el-dropdown>
 
     <nav class="sidebar-nav" aria-label="主导航">
-      <NavGroup
-        v-for="group in displayMenuGroups"
-        :key="group.group"
-        :group="group"
-        :collapsed="collapsed"
-        @assistant="assistant.show"
-      />
+      <template v-for="(group, groupIndex) in displayMenuGroups" :key="group.group">
+        <section v-if="groupIndex === 0" class="nav-group">
+          <p class="nav-group__title" :class="{ 'is-collapsed': collapsed }">{{ group.group }}</p>
+          <div class="nav-group__items">
+            <NavItem :item="group.items[0]" :collapsed="collapsed" @assistant="assistant.show" />
+            <button class="theme-switch" type="button" :class="{ 'is-collapsed': collapsed }" :aria-label="theme === 'dark' ? '切换浅色模式' : '切换深色模式'" @click="toggleTheme"><el-icon><Sunny v-if="theme === 'dark'" /><Moon v-else /></el-icon><span>{{ theme === 'dark' ? '浅色模式' : '深色模式' }}</span></button>
+            <NavItem v-for="item in group.items.slice(1)" :key="item.route" :item="item" :collapsed="collapsed" @assistant="assistant.show" />
+          </div>
+        </section>
+        <NavGroup v-else :group="group" :collapsed="collapsed" @assistant="assistant.show" />
+      </template>
     </nav>
   </aside>
 </template>
@@ -42,7 +46,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { SwitchButton } from '@element-plus/icons-vue'
+import { Moon, Sunny, SwitchButton } from '@element-plus/icons-vue'
 import qihuangLogo from '../../assets/brand/qihuang-logo.png'
 import xiaoqi from '../../assets/mascot/xiaoqi-avatar.png'
 import XiaoqiMascot from '../ui/XiaoqiMascot.vue'
@@ -52,6 +56,8 @@ import { useAssistantStore } from '../../stores/assistant'
 import { useAuthStore } from '../../stores/auth'
 import { useProfileStore } from '../../stores/profile'
 import NavGroup from './NavGroup.vue'
+import NavItem from './NavItem.vue'
+import { useTheme } from '../../composables/useTheme'
 
 defineProps<{
   collapsed: boolean
@@ -61,6 +67,7 @@ const assistant = useAssistantStore()
 const auth = useAuthStore()
 const profile = useProfileStore()
 const router = useRouter()
+const { theme, toggleTheme } = useTheme()
 
 const displayMenuGroups = computed(() =>
   menuGroups.map((group) => ({
@@ -173,9 +180,9 @@ const handleUserCommand = (command: string) => {
   min-height: 58px;
   margin: 18px 0;
   padding: 9px;
-  border: 1px solid rgba(143, 208, 173, 0.14);
+  border: 1px solid var(--qh-user-border);
   border-radius: 18px;
-  background: rgba(238, 245, 239, 0.06);
+  background: var(--qh-user-surface);
   color: var(--qh-text);
   cursor: pointer;
   text-align: left;
@@ -207,7 +214,7 @@ const handleUserCommand = (command: string) => {
 }
 
 .user-card__copy strong {
-  color: rgba(238, 245, 239, 0.78);
+  color: var(--qh-user-name);
   font-size: 13px;
   font-weight: 900;
 }
@@ -225,6 +232,15 @@ const handleUserCommand = (command: string) => {
   overflow-y: auto;
   padding-right: 2px;
 }
+
+.theme-switch { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid var(--qh-border); border-radius: var(--qh-radius-stage); color: var(--qh-nav-text); background: var(--qh-button-secondary-fill); cursor: pointer; font-weight: 800; text-align: left; }
+.theme-switch:focus-visible { @include focus-ring; }
+.theme-switch.is-collapsed { justify-content: center; padding-inline: 0; }
+.theme-switch.is-collapsed span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.nav-group { display: grid; gap: 8px; }
+.nav-group__title { margin: 0; padding: 0 10px; color: var(--qh-nav-title); font-size: 12px; font-weight: 900; }
+.nav-group__title.is-collapsed { height: 1px; overflow: hidden; opacity: 0; }
+.nav-group__items { display: grid; gap: 4px; }
 
 .is-collapsed .brand {
   grid-template-columns: 1fr;

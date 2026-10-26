@@ -104,3 +104,19 @@ tmp-step*-logs/
 # reports live outside this directory.
 qihuang-zhixue/frontend/deliverables/
 tmp-*.png
+
+# 本地工作区状态（AI 助手、编辑器、文档渲染中间产物）
+.workbuddy-ai/
+.zcode/
+.docx-work/
+_cleanup_root_pytest.ps1
+
+# 本地素材与备份：体积大、与源码无关，留在本机即可
+ai-video/
+qihuang-zhixue/CardImg/
+qihuang-zhixue/_archive_*/
+_archive_*/
+/*.png
+/*.webp
+/*.docx
+qihuang-zhixue/frontend/graph-interaction-qa.png

@@ -17,17 +17,13 @@
             :src="xiaoqiAvatar"
             alt="药灵·小岐"
           />
-          <article :class="['chat-bubble', `is-${message.role}`]">
-            <section
-              v-if="message.role === 'assistant' && message.reasoning"
-              class="message-reasoning"
-              :class="{ 'is-streaming': message.reasoningStreaming }"
-            >
-              <span class="reasoning-label">{{ message.reasoningStreaming ? '本轮处理中' : '本轮处理完成' }}</span>
-              <ol class="reasoning-steps">
-                <li v-for="(step, index) in reasoningSteps(message.reasoning)" :key="`${message.id}-${index}`">{{ step }}</li>
-              </ol>
-            </section>
+          <div v-if="message.role === 'assistant' && message.reasoning && !message.text" class="message-column">
+            <section class="message-reasoning" :class="{ 'is-streaming': message.reasoningStreaming }" role="status"><span class="reasoning-spark" aria-hidden="true" /><span class="reasoning-label">{{ reasoningStatus(message) }}</span></section>
+            <article v-if="message.text" :class="['chat-bubble', `is-${message.role}`]">
+              <span class="speaker">小岐</span><p>{{ message.text }}</p><span v-if="message.typing" class="typing-caret" />
+            </article>
+          </div>
+          <article v-else :class="['chat-bubble', `is-${message.role}`]">
             <span class="speaker">{{ message.role === 'assistant' ? '小岐' : '我' }}</span>
             <p>{{ message.text }}</p>
             <span v-if="message.role === 'assistant' && message.typing" class="typing-caret" />
@@ -74,7 +70,9 @@
     </main>
 
     <aside class="destiny-panel" aria-label="命格卡推断">
-      <section v-if="hasDimensionCards" class="identity-board" aria-label="命格卡牌阵">
+      <DestinyCardBoard v-if="hasDimensionCards" :dimensions="renderedIdentityCards" />
+
+      <section v-else-if="hasDimensionCards" class="identity-board" aria-label="命格卡牌阵">
         <div class="identity-board__head">
           <div>
             <p class="eyebrow">命格牌阵</p>
@@ -149,7 +147,8 @@
                 <strong class="card-display-value">{{ activeIdentityDimension.display_value }}</strong>
                 <span v-if="activeIdentityDimension.provenance === 'no_key_rule_fallback'" class="provenance-badge">规则评分（未配置模型密钥）</span>
                 <div v-if="activeIdentityDimension.kind === 'distribution'" class="distribution-content">
-                  <div class="distribution-bar" aria-label="真实占比组成">
+                  <small class="distribution-scope">{{ activeIdentityDimension.distribution_scope === 'complete_profile' ? '完整画像组成' : '当前已观察证据组成，不代表全部构成' }}</small>
+                  <div class="distribution-bar" :aria-label="activeIdentityDimension.distribution_scope === 'complete_profile' ? '完整画像组成' : '当前已观察证据组成'">
                     <span v-for="item in activeIdentityItems" :key="identityItemKey(item)" :style="{ flexGrow: ratioValue(item) }" />
                   </div>
                   <div v-for="item in activeIdentityItems" :key="identityItemKey(item)" class="distribution-row">
@@ -226,16 +225,15 @@
         </div>
       </section>
 
-      <section class="mini-radar" :class="{ 'is-drawing': radar.length > 0 }">
+    </aside>
+
+    <section class="mini-radar" :class="{ 'is-drawing': radar.length > 0 }">
         <div class="mini-radar__head">
           <p class="eyebrow">七维旁证</p>
           <span>画像完成度 {{ profileCompletionText }}</span>
         </div>
         <RadarChart v-if="radar.length" :axes="radar" />
         <p v-else class="radar-empty">暂无雷达数据时，小岐仍可用模板问题继续取证。</p>
-        <div v-if="pendingDimensions.length" class="pending-dimensions" aria-label="待取证维度">
-          <span v-for="dimension in pendingDimensions" :key="dimension.key">{{ dimension.label }}待取证</span>
-        </div>
         <details class="evidence-panel">
           <summary>
             <span>命格收藏册</span>
@@ -285,8 +283,8 @@
             </article>
           </div>
         </details>
-      </section>
-    </aside>
+        <ProfileDeveloperAudit :records="developerAudit" />
+    </section>
   </section>
 </template>
 
@@ -295,6 +293,7 @@ import { Check, InfoFilled, Promotion, Switch } from '@element-plus/icons-vue'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import xiaoqiAvatar from '../../assets/mascot/xiaoqi-avatar.png'
 import { stage4Visual } from '../../config/stage4Visual'
+import { dialogueQuestionChips } from '../../config/dialogueQuestions'
 import type {
   DimensionKey,
   EvidencePanelDimension,
@@ -303,10 +302,13 @@ import type {
   IdentityCardItem,
   ProfileDialogueChatMessage,
   ProfileDialogueStreamUiEvent,
+  ProfileDeveloperAuditRecord,
   ProfileProgress,
   RadarAxis,
 } from '../../types/profile'
 import RadarChart from './RadarChart.vue'
+import DestinyCardBoard from './DestinyCardBoard.vue'
+import ProfileDeveloperAudit from './ProfileDeveloperAudit.vue'
 import {
   bestScoredCard,
   cardIsFlipped,
@@ -325,9 +327,10 @@ import {
   addProfileDialogueUserMessage,
   applyProfileDialogueIdentityCards,
   applyProfileDialogueStreamEvent,
+  createProfileDialogueAssistantMessage,
   createProfileDialogueIdentityCardState,
   createProfileDialogueMessageState,
-  ensureProfileDialogueStreamingAssistant,
+  createProfileDialogueUserMessage,
 } from './profileDialogueStreamState'
 
 const props = withDefaults(
@@ -340,11 +343,13 @@ const props = withDefaults(
     evidencePanel?: EvidencePanelDimension[]
     identityCardsView?: IdentityCardsDimensionView[]
     sessionId?: string | null
+    chatHistory?: Array<{ role: 'assistant' | 'user'; content: string }>
     activeTarget?: DimensionKey | string | null
     activeTargetLabel?: string | null
     converged?: boolean
     quickReplies?: string[]
     streamEvents?: ProfileDialogueStreamUiEvent[]
+    developerAudit?: ProfileDeveloperAuditRecord[]
     disabled?: boolean
     pending?: boolean
   }>(),
@@ -356,11 +361,13 @@ const props = withDefaults(
     evidencePanel: () => [],
     identityCardsView: () => [],
     sessionId: null,
+    chatHistory: () => [],
     activeTarget: null,
     activeTargetLabel: null,
     converged: false,
     quickReplies: () => [],
     streamEvents: () => [],
+    developerAudit: () => [],
     disabled: false,
     pending: false,
   },
@@ -388,6 +395,27 @@ const flippingDimensionKey = ref<DimensionKey | null>(null)
 let flipTimer: ReturnType<typeof window.setTimeout> | null = null
 const flowBottomThreshold = 28
 const identityFlipDurationMs = stage4Visual.dialogue.identityFlipMs
+
+watch(
+  () => props.sessionId,
+  () => {
+    messageState.messages = []
+    messageState.messageId = 0
+    messageState.activeAssistantId = null
+    for (const item of props.chatHistory) {
+      const text = item.content.trim()
+      if (!text) continue
+      const message = item.role === 'user'
+        ? createProfileDialogueUserMessage(messageState, text)
+        : createProfileDialogueAssistantMessage(messageState, text, false)
+      messageState.messages.push(message)
+    }
+    void nextTick(() => {
+      if (flowRef.value) flowRef.value.scrollTop = flowRef.value.scrollHeight
+    })
+  },
+  { immediate: true },
+)
 
 const isFlowNearBottom = () => {
   const flow = flowRef.value
@@ -425,7 +453,6 @@ const sendUtterance = () => {
   const utterance = draft.value.trim()
   if (!utterance) return
   addUserMessage(utterance)
-  startStreamTurn()
   emit('answer', createAnswerPayload('utterance', utterance))
   draft.value = ''
 }
@@ -433,13 +460,7 @@ const sendUtterance = () => {
 const sendQuickReply = (quickReply: string) => {
   if (props.disabled || props.pending) return
   addUserMessage(quickReply)
-  startStreamTurn()
   emit('answer', createAnswerPayload('quick_reply', quickReply))
-}
-
-const startStreamTurn = () => {
-  ensureProfileDialogueStreamingAssistant(messageState)
-  void scrollFlow(true)
 }
 
 const applyQueuedStreamEvent = (event: ProfileDialogueStreamUiEvent) => {
@@ -492,10 +513,14 @@ const finishStreamingAssistant = () => {
   })
 }
 
-const reasoningSteps = (reasoning: string) => reasoning.split('\n').map((item) => item.trim()).filter(Boolean)
-
+const reasoningStatus = (message: ProfileDialogueChatMessage) => {
+  const stages = message.reasoning.split('\n').map((item) => item.trim()).filter(Boolean)
+  const latestStage = stages[stages.length - 1]
+  if (latestStage) return latestStage
+  return message.reasoningStreaming ? '正在处理你的回答' : '信息已整理，正在生成回答'
+}
 const axisStatus = (axis: RadarAxis): 'dark' | 'dashed' | 'solid' => {
-  if (axis.status === 'dark' || axis.placeholder || axis.lit === false) return 'dark'
+  if (axis.status === 'dark' || axis.lit === false) return 'dark'
   if (axis.status === 'dashed' || axis.lowConfidence) return 'dashed'
   return 'solid'
 }
@@ -512,13 +537,6 @@ const profileCompletionText = computed(() => {
   const collected = props.profileProgress?.collected ?? props.radar.filter((axis) => !axis.lowConfidence && axis.status !== 'dark').length
   return `${collected}/${total}`
 })
-
-const pendingDimensions = computed(() =>
-  props.profileProgress?.dimensions.filter((dimension) => !dimension.collected) ??
-  props.radar
-    .filter((axis) => axis.lowConfidence || axis.status === 'dark')
-    .map((axis) => ({ key: axis.key, label: axis.sourceLabel || axis.label })),
-)
 
 const visibleEvidencePanel = computed(() => props.evidencePanel.length ? props.evidencePanel : [])
 
@@ -739,7 +757,12 @@ const displayCards = computed(() =>
 )
 
 const visibleQuickReplies = computed(() => {
-  return props.quickReplies.map((reply, index) => ({
+  const replies = props.quickReplies.length > 0
+    ? props.quickReplies
+    : activeIdentityDimension.value?.quick_replies?.length
+      ? activeIdentityDimension.value.quick_replies
+      : dialogueQuestionChips.map((chip) => chip.label)
+  return replies.map((reply, index) => ({
     id: `backend-${index}-${reply}`,
     label: reply,
     quickReply: reply,
@@ -757,13 +780,6 @@ watch(
     if (messages.value.length === 0) addAssistantPrompt(prompt)
   },
   { immediate: true },
-)
-
-watch(
-  () => props.pending,
-  (pending) => {
-    if (pending) ensureProfileDialogueStreamingAssistant(messageState)
-  },
 )
 
 watch(
@@ -861,6 +877,7 @@ watch(
   border-bottom: 1px solid rgba(143, 208, 173, 0.1);
 }
 
+
 .eyebrow {
   margin: 0 0 7px;
   color: var(--qh-color-jade);
@@ -946,41 +963,29 @@ h3 {
 }
 
 .message-reasoning {
-  display: grid;
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
   gap: 8px;
-  margin: 0 0 10px;
-  padding: 10px 12px;
-  border: 1px solid rgba(159, 182, 214, 0.18);
-  border-radius: 12px;
-  background: rgba(159, 182, 214, 0.08);
+  min-height: 24px;
+  overflow: hidden;
+  color: var(--qh-text-muted);
 }
 
 .reasoning-label {
-  color: rgba(238, 245, 239, 0.78);
-  font-weight: 900;
+  position: relative;
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--qh-text-muted), var(--qh-color-jade), var(--qh-color-gold), var(--qh-text-muted));
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-
-.reasoning-steps {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--qh-text-muted);
-  font-size: 13px;
-}
-
-.reasoning-steps li::before {
-  display: inline-block;
-  width: 14px;
-  content: '✓';
-  color: var(--qh-color-jade);
-}
-
-.message-reasoning.is-streaming .reasoning-steps li:last-child::before {
-  content: '•';
-  animation: pulse 1s ease-in-out infinite;
-}
+.reasoning-spark { width: 6px; height: 6px; border-radius: 50%; background: var(--qh-color-jade); box-shadow: 0 0 10px var(--qh-color-jade); }
+.message-reasoning.is-streaming .reasoning-label { animation: reasoning-sheen 1.8s linear infinite; }
+.message-column { display: grid; gap: 7px; max-width: min(620px, 88%); }
 
 /* Legacy toggle styles are intentionally removed: processing status is not a
    user-expandable chain-of-thought. */
@@ -1024,9 +1029,11 @@ h3 {
 .chat-bubble p {
   display: inline;
   margin: 0;
-  color: rgba(238, 245, 239, 0.88);
+  color: var(--qh-color-text-soft);
   line-height: 1.8;
 }
+
+@keyframes reasoning-sheen { to { background-position: 240% 0; } }
 
 .chat-bubble .message-reasoning p {
   display: block;
@@ -1081,9 +1088,13 @@ h3 {
 
 .destiny-panel {
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: clamp(560px, calc(100dvh - 176px), 720px);
+  min-height: 560px;
   gap: 14px;
-  align-content: start;
-  padding: 18px;
+  align-content: stretch;
+  padding: 0;
+  overflow: hidden;
 }
 
 .identity-board {
@@ -1528,7 +1539,13 @@ h3 {
 }
 
 .mini-radar {
+  grid-column: 1 / -1;
+  min-height: 336px;
   padding: 16px;
+}
+
+.mini-radar > .evidence-panel {
+  display: none;
 }
 
 .mini-radar__head {
@@ -1546,7 +1563,7 @@ h3 {
 }
 
 .mini-radar :deep(.radar-wrap) {
-  max-width: 310px;
+  max-width: 286px;
 }
 
 .mini-radar.is-drawing :deep(.radar-data-segment) {
@@ -1554,23 +1571,6 @@ h3 {
   stroke-dashoffset: 260;
   animation: radar-draw 720ms ease forwards;
   animation-delay: calc(var(--segment-index, 0) * 80ms);
-}
-
-.pending-dimensions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.pending-dimensions span {
-  padding: 5px 8px;
-  border: 1px solid rgba(159, 182, 214, 0.16);
-  border-radius: 999px;
-  color: rgba(223, 236, 228, 0.58);
-  background: rgba(159, 182, 214, 0.07);
-  font-size: 12px;
-  font-weight: 900;
 }
 
 .evidence-panel {

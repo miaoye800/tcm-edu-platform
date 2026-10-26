@@ -61,7 +61,7 @@ const collapsed = ref(false)
   border: 1px solid rgba(143, 208, 173, 0.22);
   border-radius: 12px;
   color: var(--qh-text);
-  background: rgba(18, 31, 30, 0.88);
+  background: var(--qh-collapse-fill);
   box-shadow: var(--qh-shadow-soft);
   cursor: pointer;
   transition: left 220ms ease;

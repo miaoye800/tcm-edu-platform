@@ -9,8 +9,10 @@ import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 import { useProfileStore } from './stores/profile'
+import { initializeTheme } from './composables/useTheme'
 
 const E2E_FORCE_MOCK_KEY = 'qihuang-e2e-force-mock'
+initializeTheme()
 
 // Read this before router installation so the guard sees it on its first pass.
 if (new URLSearchParams(window.location.search).get('e2eForceMock') === '1') {

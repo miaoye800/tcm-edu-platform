@@ -50,7 +50,7 @@ const emit = defineEmits<{
   min-height: 44px;
   padding: 5px 8px;
   border-radius: 14px;
-  color: rgba(238, 245, 239, 0.72);
+  color: var(--qh-nav-text);
   background: transparent;
   cursor: pointer;
   transition:

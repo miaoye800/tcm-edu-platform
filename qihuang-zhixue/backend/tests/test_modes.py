@@ -32,6 +32,21 @@ from app.profile.store import list_chat_messages, list_evidence, upsert_profile
 client = TestClient(app)
 
 
+def test_dialogue_quick_replies_follow_visible_question_not_next_dimension() -> None:
+    assert modes_module._dialogue_quick_replies_for_question(
+        "你平时更喜欢怎么学中药？", "knowledge_base"
+    ) == ["知识图谱", "教材条文", "口诀歌诀", "案例拆解"]
+    assert modes_module._dialogue_quick_replies_for_question(
+        "你觉得自己目前的辨证基础怎么样？", "learning_goal"
+    ) == ["会四诊合参", "常按证型判断", "两种都会一些", "还在练习"]
+    assert modes_module._dialogue_quick_replies_for_question(
+        "嗯，明白了。", "learning_goal"
+    ) == []
+    assert modes_module._dialogue_quick_replies_for_question(
+        "如果方便的话，你平时最常用什么方式记忆？", "learning_goal"
+    ) == ["知识图谱", "教材条文", "口诀歌诀", "案例拆解"]
+
+
 def setup_function() -> None:
     app.dependency_overrides.clear()
 
@@ -267,7 +282,7 @@ def test_passive_events_convert_to_evidence_cards() -> None:
     assert cards[1]["objective_signal"]["response_time_ms"] == 300
 
 
-def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(tmp_path: Path) -> None:
+def test_dialogue_flow_without_key_does_not_fabricate_semantic_cards(tmp_path: Path) -> None:
     db_path = tmp_path / "dialogue.db"
     app.dependency_overrides[get_profile_db_path] = lambda: db_path
     first = _start("dialogue", user_id="dialogue-user")
@@ -284,17 +299,7 @@ def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(
     )
     assert payload["turn_index"] == 1
     assert payload["next_question"]
-    assert len(payload["evidence_cards"]) > 0
-    for card in payload["evidence_cards"]:
-        assert {
-            "quote",
-            "basis",
-            "extraction_confidence",
-            "extraction_method",
-            "knowledge_base_ref",
-        } <= card.keys()
-        assert card["quote"] in first_utterance
-        assert card["extraction_method"] == "no_key_rule_fallback"
+    assert payload["evidence_cards"] == []
     assert set(payload["card_scores"]) == {"考前冲刺", "临床学徒", "草木好奇者", "研读派"}
     assert all(0 <= value <= 1 for value in payload["card_scores"].values())
     assert payload["converged"] is False
@@ -305,7 +310,7 @@ def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(
         {"quick_reply": "考试推动，但我自己也想学明白，平时更喜欢文字材料和表格。"},
     )
     assert payload["turn_index"] == 2
-    assert len(payload["evidence_cards"]) > 0
+    assert payload["evidence_cards"] == []
     assert payload["converged"] is False
 
     payload = _answer(
@@ -316,10 +321,10 @@ def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(
 
     assert payload["turn_index"] == 3
     assert payload["step"]["kind"] == "dialogue"
-    assert payload["converged"] is True
+    assert payload["converged"] is False
     assert payload["next_question"]
-    assert payload["inferred_card"] in payload["card_scores"]
-    assert max(payload["card_scores"].values()) > 0
+    assert payload["inferred_card"] is None
+    assert max(payload["card_scores"].values()) == 0
     assert "dimensions" in payload["radar"]
 
     finished = client.post("/api/profile/session/finish", json={"session_id": session_id})
@@ -330,7 +335,7 @@ def test_dialogue_flow_collects_cards_scores_converges_and_finishes_without_key(
     assert isinstance(finished.json()["radar_changes"], list)
     assert isinstance(finished.json()["summary_text"], str)
     assert len(stored) == len(finished.json()["evidence_cards"])
-    assert len(stored) >= 3
+    assert stored == []
 
 
 def test_dialogue_reload_preserves_step_data_and_finished_semantics(monkeypatch, tmp_path: Path) -> None:
@@ -564,8 +569,7 @@ def test_dialogue_mock_mode_does_not_store_utterance_in_objective_signal(monkeyp
         {"utterance": "I am preparing for exams and want to strengthen the basics."},
     )
 
-    assert payload["evidence_cards"]
-    assert all("utterance" not in card["objective_signal"] for card in payload["evidence_cards"])
+    assert payload["evidence_cards"] == []
 
 
 def test_dialogue_chat_sse_event_order_and_dark_axes(monkeypatch, tmp_path: Path) -> None:
@@ -587,18 +591,25 @@ def test_dialogue_chat_sse_event_order_and_dark_axes(monkeypatch, tmp_path: Path
     assert "message" in event_names
     assert event_names.index("message") < event_names.index("evidence")
     assert event_names.index("message_done") < event_names.index("evidence")
-    assert event_names[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+    assert event_names[-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
 
     radar = next(data for event, data in events if event == "radar")
+    audit = next(data for event, data in events if event == "audit")
     identity_cards = next(data for event, data in events if event == "identity_cards")
     assert len(identity_cards["items"]) == 7
     assert {item["key"] for item in identity_cards["items"]} == set(modes_module.DIMENSION_LABELS)
     axes = {axis["key"]: axis for axis in radar["axes"]}
-    assert axes["knowledge_base"]["status"] != "dark"
-    assert axes["knowledge_base"]["provenance"] == "no_key_rule_fallback"
-    assert radar["provenance"]["knowledge_base"] == "no_key_rule_fallback"
-    for key in ("learning_goal", "learning_style", "weak_points", "pace", "motivation", "resource_preference"):
+    for key in modes_module.DIMENSION_LABELS:
         assert axes[key]["status"] == "dark"
+    assert audit["turn_index"] == 1
+    assert audit["user_input"] == "我完全不知道，没接触过中药"
+    assert audit["model_result"]["method"] == "no_key_rule_fallback"
+    assert audit["model_result"]["scan_available"] is False
+    assert audit["model_result"]["scan_complete"] is False
+    assert audit["model_result"]["evidence"] == []
+    assert {stage["actor"] for stage in audit["stages"]} == {"模型", "系统"}
+    assert len(audit["system_result"]["dimensions"]) == 7
+    assert all(item["status"] == "本轮未收集" for item in audit["system_result"]["dimensions"])
 
     restored = client.get(f"/api/profile/session/{first['session_id']}")
     assert restored.status_code == 200, restored.text
@@ -606,6 +617,39 @@ def test_dialogue_chat_sse_event_order_and_dark_axes(monkeypatch, tmp_path: Path
     assert restored_payload["status"] == "restored"
     assert restored_payload["step"]["id"] == "dialogue_turn_2"
     assert all(not item["revealed_now"] for item in restored_payload["identity_cards"])
+    assert restored_payload["chat_history"][0] == {"role": "user", "content": "我完全不知道，没接触过中药"}
+    assert restored_payload["chat_history"][1]["role"] == "assistant"
+    assert restored_payload["chat_history"][1]["content"]
+    assert restored_payload["evidence_count"] == len(restored_payload["evidence_cards"])
+
+
+def test_dialogue_visible_reply_is_emitted_before_provider_finishes(monkeypatch, tmp_path: Path) -> None:
+    db_path = tmp_path / "dialogue-incremental-stream.db"
+    monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
+    session = modes_module.start_profile_session("incremental-user", "dialogue", db_path=db_path)
+    provider_state = {"finished": False}
+
+    class IncrementalRouter:
+        async def chat_stream(self, _task, _messages, **_kwargs):
+            for token in "第一句。第二句。":
+                yield "message", token
+                await asyncio.sleep(0)
+            provider_state["finished"] = True
+
+    monkeypatch.setattr(modes_module, "ModelRouter", IncrementalRouter)
+
+    async def read_until_first_reply_chunk():
+        async for event, _data in modes_module.stream_dialogue_chat_events(
+            session.session_id,
+            user_id=session.user_id,
+            utterance="继续说说",
+            db_path=db_path,
+        ):
+            if event == "message":
+                return provider_state["finished"]
+        raise AssertionError("dialogue stream ended without a visible reply")
+
+    assert asyncio.run(read_until_first_reply_chunk()) is False
 
 
 def test_dialogue_no_key_visible_stream_uses_rule_question_without_mock_marker(tmp_path: Path) -> None:
@@ -622,11 +666,12 @@ def test_dialogue_no_key_visible_stream_uses_rule_question_without_mock_marker(t
     events = _parse_sse(response.text)
     message_text = "".join(str(data.get("delta") or "") for event, data in events if event == "message")
     thinking_text = "".join(str(data.get("delta") or "") for event, data in events if event == "thinking")
-    assert message_text.startswith("我记下了。")
+    assert not message_text.startswith("我记下了。")
+    assert "我还没能从这句话里确认" in message_text
     assert "[MOCK:" not in message_text
     assert "FallbackReason" not in message_text
     assert thinking_text
-    assert [event for event, _ in events][-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+    assert [event for event, _ in events][-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
 
 
 def test_dialogue_session_restore_rejects_another_user(tmp_path: Path) -> None:
@@ -679,8 +724,11 @@ def test_dialogue_chat_extraction_error_still_emits_visible_done(monkeypatch, tm
     events = _parse_sse(response.text)
     event_names = [event for event, _ in events]
     assert "message_done" in event_names
-    assert "error" in event_names
-    assert event_names.index("message_done") < event_names.index("error")
+    assert "error" not in event_names
+    assert "audit" in event_names
+    audit = next(data for event, data in events if event == "audit")
+    assert audit["model_result"]["failure_reason"] == "extraction_pipeline_error:RuntimeError"
+    assert audit["model_result"]["collected_count"] == 0
     assert event_names[-1] == "done"
     state = next(data for event, data in events if event == "state")
     assert state["finished"] is False
@@ -796,6 +844,21 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
             calls.append({"task_type": task_type, "messages": messages, "kw": kw})
             return json.dumps(
                 {
+                    "turn_id": 2,
+                    "dimension_scan": [
+                        {"dimension": "learning_goal", "status": "evidence_found", "reason": "回答表达了明确的学习目标意向。", "components": ["expression_certainty"], "excluded_candidates": []}
+                    ],
+                    "atomic_evidence": [
+                        {
+                            "evidence_id": "ev-goal-parser", "dimension": "learning_goal", "component": "goal_specificity",
+                            "evidence_group_id": "turn-2-goal", "source_turn_ids": [2], "quote": "可能要考试",
+                            "normalized_claim": "用户提到考试目标", "evidence_type": "self_report", "supports": ["goal_specificity"],
+                            "collection_status": "scorable", "assessment": "提到考试但未说明科目和期限",
+                            "confirmed_aspects": ["存在考试目标线索"], "pending_aspects": ["科目和期限"],
+                            "semantic_relation": "new", "related_evidence_ids": [],
+                            "quality_factors": {"source_reliability": 0.8, "expression_clarity": 0.8, "content_specificity": 0.6, "freshness": 1.0, "consistency": 0.8, "independence_note": "本轮原话"},
+                        }
+                    ],
                     "extraction": {
                         "major": {
                             "value": "中药学",
@@ -808,6 +871,14 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
                             "confidence": 0.55,
                             "basis": "inferred",
                             "evidence": ["可能要考试"],
+                            "assessment": {"radar_score": 68, "confidence_contribution": 0.23, "coverage": 0.2, "priority_strength": 0.5, "independence": 0.9, "unknown_reasons": ["其他目标尚未谈及"], "assessment_reason": "目标已出现但组成未充分了解"},
+                        },
+                        "resource_preference": {
+                            "value": "知识图谱",
+                            "confidence": 0.85,
+                            "basis": "explicit",
+                            "evidence": ["我更喜欢图谱"],
+                            "assessment": {"radar_score": 63, "confidence_contribution": 0.28, "coverage": 0.18, "priority_strength": 0.6, "independence": 0.9, "unknown_reasons": ["其他资源偏好尚未谈及"], "assessment_reason": "出现了明确资源偏好"},
                         },
                         "motivation": {
                             "value": "被动",
@@ -821,7 +892,7 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
             )
 
     monkeypatch.setattr(modes_module, "ModelRouter", CapturingRouter)
-    history = "assistant: 你为什么想学？\nuser: 我是中药学学生\nassistant: 更偏什么目标？\nuser: 可能要考试"
+    history = "assistant: 你为什么想学？\nuser: 我是中药学学生\nassistant: 更偏什么目标？\nuser: 可能要考试，我更喜欢图谱"
 
     extraction, next_question = asyncio.run(
         modes_module._try_llm_dialogue_turn(
@@ -837,6 +908,14 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
     assert next_question == ""
     assert extraction.major.value == "中药学"
     assert extraction.learning_goal.value == {"应试提分": 0.6, "兴趣科普": 0.4}
+    # The current question targets learning_goal, but an answer may contain an
+    # unrelated seven-dimension clue and the agent must retain it.
+    assert extraction.resource_preference.value == "知识图谱"
+    assert extraction.resource_preference.assessment.radar_score == 63
+    assert extraction.dimension_scan[0].dimension == "learning_goal"
+    assert extraction.dimension_scan[0].status == "evidence_found"
+    assert extraction.turn_id == 2
+    assert extraction.atomic_evidence[0].quote == "可能要考试"
     assert extraction.motivation.value is None
     assert extraction.motivation.evidence == []
     assert calls[0]["task_type"] == "profile_extract"
@@ -845,6 +924,311 @@ def test_dialogue_llm_extractor_reads_full_history_and_disables_thinking(monkeyp
     payload = json.loads(calls[0]["messages"][1]["content"].split("\n", 1)[0])
     assert "我是中药学学生" in payload["dialogue_history"]
     assert "可能要考试" in payload["dialogue_history"]
+    assert "绝不限制提取范围" in calls[0]["messages"][0]["content"]
+
+
+def test_dialogue_extraction_adapter_preserves_common_model_shapes() -> None:
+    normalized = modes_module._normalize_dialogue_extraction_payload({
+        "dimension_scan": {
+            "learning_goal": {"status": "partial_evidence", "evidence": ["用户表达了明确方向"]},
+            "motivation": {"status": "no_usable_evidence", "evidence": []},
+        },
+        "component_collection": {
+            "learning_goal": {
+                "expression_certainty": {"status": "confirmed", "evidence_ids": ["ev-1"]},
+                "action_orientation": {"status": "no_usable_evidence", "missing_information": ["行动计划"]},
+            },
+        },
+        "atomic_evidence": [{
+            "evidence_id": "ev-1", "dimension": "learning_goal", "component": "expression_certainty",
+            "evidence_group_id": "turn-1-goal", "source_turn_ids": [1], "quote": "我想治病救人",
+            "normalized_claim": "用户表达了学习医学并帮助患者的意向", "evidence_type": "self_report",
+            "supports": "expression_certainty", "collection_status": "confirmed",
+            "assessment": {"reason": "目标表达明确，但行动和持续性未确认"},
+            "confirmed_aspects": ["表达了学习医学并帮助患者的意向"], "pending_aspects": ["行动计划"],
+            "semantic_relation": "new", "related_evidence_ids": [],
+            "quality_factors": {"directness": "high", "specificity": "medium", "independence": "同一原话"},
+        }],
+    })
+
+    from app.profile.component_model import AtomicEvidence, ComponentCollection, DimensionScan
+    from app.profile.nodes import DialogueExtraction
+
+    extraction = DialogueExtraction.model_validate(normalized)
+    extraction.atomic_evidence = [AtomicEvidence.model_validate(item) for item in extraction.atomic_evidence]
+    extraction.dimension_scan = [DimensionScan.model_validate(item) for item in extraction.dimension_scan]
+    extraction.component_collection = [ComponentCollection.model_validate(item) for item in extraction.component_collection]
+    assert [(item.dimension, item.status) for item in extraction.dimension_scan] == [
+        ("learning_goal", "evidence_found"), ("motivation", "no_usable_evidence")
+    ]
+    assert extraction.atomic_evidence[0].quote == "我想治病救人"
+    assert extraction.atomic_evidence[0].collection_status == "scorable"
+    assert extraction.atomic_evidence[0].assessment == "目标表达明确，但行动和持续性未确认"
+    assert extraction.atomic_evidence[0].quality_factors.expression_clarity == .9
+    assert extraction.component_collection[0].status == "scorable"
+
+
+def test_dialogue_sse_extraction_keeps_atomic_scan_in_audit_contract(monkeypatch, tmp_path: Path) -> None:
+    from app.profile.component_model import QualityFactors
+    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
+
+    session = modes_module.start_profile_session("dialogue-audit-target", "dialogue", db_path=tmp_path / "audit-target.db")
+    extraction = DialogueExtraction(
+        turn_id=1,
+        dimension_scan=[
+            DimensionScan(dimension="learning_goal", status="evidence_found", reason="明确表达了希望学医并帮助患者的目标。", components=["expression_certainty", "goal_specificity"]),
+            DimensionScan(dimension="motivation", status="evidence_found", reason="表达了帮助他人的价值取向。", components=["intrinsic_value"]),
+        ],
+        atomic_evidence=[
+            AtomicEvidence(
+                evidence_id="ev-goal-1", dimension="learning_goal", component="expression_certainty",
+                evidence_group_id="turn-1-intent", source_turn_ids=[1], quote="我想学医救疾病折磨的人",
+                normalized_claim="用户希望学习医学并帮助受疾病困扰的人", evidence_type="self_report",
+                supports=["expression_certainty", "goal_specificity"], collection_status="scorable",
+                assessment="明确愿望，但尚无行动路径或期限", confirmed_aspects=["存在学医并帮助患者的意向"],
+                pending_aspects=["行动计划和期限"], semantic_relation="new",
+                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.9, content_specificity=.7, freshness=1, consistency=.8, independence_note="本轮原话"),
+            ),
+        ],
+    )
+
+    async def mocked_extract(**kwargs):
+        return extraction, ""
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
+    cards = asyncio.run(modes_module._dialogue_extract_cards_for_chat(
+        session=session, utterance="我想学医救疾病折磨的人", assistant_text="", history_messages=[],
+        target="learning_goal", turn_index=1, response_time_ms=100, current_prompt="你为什么想学？",
+    ))
+
+    contract = session.step_data["_last_component_contract"]
+    assert contract["dimension_scan"][0]["reason"].startswith("明确表达")
+    assert contract["dimension_scan"][1]["dimension"] == "motivation"
+    assert contract["atomic_evidence"][0]["quote"] == "我想学医救疾病折磨的人"
+    assert cards[0].quote == "我想学医救疾病折磨的人"
+
+
+def test_dialogue_chat_sse_audit_exposes_full_scan_for_healing_goal(monkeypatch, tmp_path: Path) -> None:
+    from app.profile.component_model import QualityFactors
+    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
+
+    quote = "我想学医救疾病折磨的人"
+    extraction = DialogueExtraction(
+        turn_id=1,
+        dimension_scan=[
+            DimensionScan(dimension=dimension, status="evidence_found" if dimension in {"learning_goal", "motivation"} else "no_usable_evidence",
+                          reason="明确表达学习医学并帮助患者的意向。" if dimension == "learning_goal" else "体现帮助他人的内在价值。" if dimension == "motivation" else "本句没有提供该维度的可追溯信息。",
+                          components=["expression_certainty", "goal_specificity"] if dimension == "learning_goal" else ["intrinsic_value"] if dimension == "motivation" else [])
+            for dimension in modes_module.DIMENSION_LABELS
+        ],
+        atomic_evidence=[
+            AtomicEvidence(
+                evidence_id="ev-live-goal", dimension="learning_goal", component="expression_certainty",
+                evidence_group_id="turn-1-intent", source_turn_ids=[1], quote=quote,
+                normalized_claim="用户希望学习医学并帮助患者", evidence_type="self_report", supports=["expression_certainty", "intrinsic_value"],
+                collection_status="scorable", assessment="表达明确意向，暂无路径和期限", confirmed_aspects=["存在学医并帮助患者的目标"],
+                pending_aspects=["目标期限和行动路径"], semantic_relation="new",
+                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.9, content_specificity=.7, freshness=1, consistency=.8, independence_note="同一原话来源"),
+            ),
+            AtomicEvidence(
+                evidence_id="ev-live-motivation", dimension="motivation", component="intrinsic_value",
+                evidence_group_id="turn-1-intent", source_turn_ids=[1], quote=quote,
+                normalized_claim="用户希望帮助受疾病困扰的人", evidence_type="self_report", supports=["intrinsic_value"],
+                collection_status="scorable", assessment="呈现帮助他人的价值取向", confirmed_aspects=["帮助他人的价值"],
+                pending_aspects=["长期投入表现"], semantic_relation="new",
+                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.8, content_specificity=.7, freshness=1, consistency=.8, independence_note="与目标证据同句同源"),
+            ),
+            AtomicEvidence(
+                evidence_id="ev-live-specificity", dimension="learning_goal", component="goal_specificity",
+                evidence_group_id="turn-1-intent", source_turn_ids=[1], quote=quote,
+                normalized_claim="学习医学并帮助患者是可辨识的目标方向", evidence_type="self_report", supports=["goal_specificity"],
+                collection_status="scorable", assessment="目标方向可辨，但缺少具体成果和期限", confirmed_aspects=["目标方向是学习医学并帮助患者"],
+                pending_aspects=["具体成果和期限"], semantic_relation="new",
+                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.8, content_specificity=.65, freshness=1, consistency=.8, independence_note="与同轮目标证据同源"),
+            ),
+        ],
+    )
+
+    pipeline_order: list[str] = []
+    answer_payloads: list[list[dict[str, str]]] = []
+
+    async def mocked_extract(**kwargs):
+        pipeline_order.append("scan")
+        return extraction, ""
+
+    class OrderedAnswerRouter:
+        def select(self, _task: str):
+            return object()
+
+        async def chat_stream(self, _task: str, messages: list[dict[str, str]], **_kwargs):
+            pipeline_order.append("answer")
+            answer_payloads.append(messages)
+            yield "message", "我听到了你想帮助患者的方向。"
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
+    monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
+    monkeypatch.setattr(modes_module, "ModelRouter", OrderedAnswerRouter)
+    started = _start("dialogue", user_id="dialogue-healing-goal")
+    response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": quote})
+
+    assert response.status_code == 200, response.text
+    events = _parse_sse(response.text)
+    audit = next(data for event, data in events if event == "audit")
+    goal_scan = next(item for item in audit["model_result"]["dimension_scan"] if item["dimension"] == "learning_goal")
+    motivation_scan = next(item for item in audit["model_result"]["dimension_scan"] if item["dimension"] == "motivation")
+    assert audit["model_result"]["scan_available"] is True
+    assert audit["model_result"]["scan_complete"] is True
+    assert goal_scan["status"] == "evidence_found"
+    assert motivation_scan["status"] == "evidence_found"
+    assert [item["quotes"] for item in audit["model_result"]["evidence"]] == [[quote], [quote], [quote]]
+    assert {item["evidence_group_id"] for item in audit["model_result"]["evidence"]} == {"turn-1-intent"}
+    learning_goal = next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
+    assert learning_goal["scoring_phase"] == "collecting"
+    assert learning_goal["radar_score"] is None
+    assert learning_goal["matrix_after"]["expression_certainty"] is True
+    assert learning_goal["matrix_after"]["goal_specificity"] is True
+    assert learning_goal["matrix_after"]["action_orientation"] is False
+    assert pipeline_order == ["scan", "answer"]
+    steering = json.loads(answer_payloads[0][1]["content"].removeprefix("profile_steering="))
+    assert steering["target_dimension"] == "learning_goal"
+    assert steering["component_focus"]["component"] == "action_orientation"
+    visible_answer = "".join(str(data.get("delta", "")) for event, data in events if event == "message")
+    assert "你为这个方向做过哪些准备" in visible_answer
+    assert [stage["label"] for stage in audit["stages"]] == [
+        "七维扫描", "原话与来源校验", "组件矩阵更新", "组件评分门禁", "分数与确认度", "补问规划", "回答组织"
+    ]
+
+
+def test_dialogue_complete_component_set_is_scored_and_revealed(monkeypatch, tmp_path: Path) -> None:
+    from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS, QualityFactors
+    from app.profile.jury import ScoringResult
+    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
+
+    quote = "我想考研，已经开始准备"
+    keys = COMPONENTS["learning_goal"]
+    extraction = DialogueExtraction(
+        turn_id=1,
+        dimension_scan=[
+            DimensionScan(
+                dimension=dimension,
+                status="evidence_found" if dimension == "learning_goal" else "no_usable_evidence",
+                reason="原话提供了目标信息。" if dimension == "learning_goal" else "本句没有该维度的可追溯内容。",
+                components=list(keys) if dimension == "learning_goal" else [],
+            )
+            for dimension in modes_module.DIMENSION_LABELS
+        ],
+        atomic_evidence=[
+            AtomicEvidence(
+                evidence_id=f"ev-goal-{index}", dimension="learning_goal", component=component,
+                evidence_group_id="turn-1-intent", source_turn_ids=[1], quote=quote,
+                normalized_claim=f"目标组件证据：{COMPONENT_RUBRICS['learning_goal'][component]['label']}",
+                evidence_type="self_report", supports=[component], collection_status="scorable",
+                assessment="用户给出与该组件直接相关的信息", confirmed_aspects=["存在相关目标线索"],
+                pending_aspects=[], semantic_relation="new",
+                quality_factors=QualityFactors(source_reliability=.9, expression_clarity=.9, content_specificity=.8, freshness=1, consistency=.9, independence_note="评分门槛回归样例"),
+            )
+            for index, component in enumerate(keys, start=1)
+        ],
+    )
+
+    async def mocked_extract(**_kwargs):
+        return extraction, ""
+
+    score_call_count = 0
+
+    async def mocked_score(dimension, _cards):
+        nonlocal score_call_count
+        assert dimension == "learning_goal"
+        score_call_count += 1
+        returned_components = keys if score_call_count == 2 else keys[:-1]
+        return ScoringResult(
+            dimension="目标锚定度", dimension_key="learning_goal",
+            component_scores={component: 70 + index for index, component in enumerate(returned_components)},
+            method="fusion" if score_call_count == 1 else "jury",
+            provenance="rule_fallback" if score_call_count == 1 else "test_scoring_model",
+            narrative="五项评分完成；本结果为可复核的理由摘要。",
+        )
+
+    class AnswerRouter:
+        async def chat_stream(self, _task, _messages, **_kwargs):
+            yield "message", "目标已经逐渐清楚了。你为此做了哪些准备？"
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
+    monkeypatch.setattr(modes_module, "score_dimension", mocked_score)
+    monkeypatch.setattr(modes_module, "ModelRouter", AnswerRouter)
+    monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
+    started = _start("dialogue", user_id="dialogue-complete-component-score")
+
+    response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": quote})
+    assert response.status_code == 200, response.text
+    events = _parse_sse(response.text)
+    audit = next(data for event, data in events if event == "audit")
+    goal = next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
+    radar = next(data for event, data in events if event == "radar")
+
+    assert goal["component_collection"]["collected"] == 5
+    assert goal["scoring_phase"] == "scored"
+    assert goal["scoring_provenance"] == "test_scoring_model"
+    assert goal["scoring_attempts"] == 2
+    assert score_call_count == 2
+    assert goal["radar_score"] is not None
+    assert goal["scoring_output"] and len(goal["scoring_output"]) == 5
+    assert goal["confidence_audit"]["combination_type"] == "single_clear_self_report"
+    assert radar["axes"][1]["scoring_phase"] == "scored"
+
+
+def test_dialogue_restore_recovers_a_complete_but_unscored_dimension(monkeypatch, tmp_path: Path) -> None:
+    from app.profile.component_model import COMPONENTS
+    from app.profile.jury import ScoringResult
+    from app.profile.schema import EvidenceCard, EvidenceTier
+
+    session = modes_module.start_profile_session(
+        "dialogue-restore-score", "dialogue", db_path=tmp_path / "restore-score.db"
+    )
+    keys = COMPONENTS["learning_goal"]
+    session.evidence_cards = [
+        EvidenceCard(
+            dimension="learning_goal", source="dialogue", tier=EvidenceTier.SELF_REPORT,
+            fact="我想考研", quote="我想考研", objective_signal={}, weight=1,
+            component=component, collection_status="scorable",
+        )
+        for component in keys
+    ]
+    calls = 0
+
+    async def mocked_score(dimension, _cards):
+        nonlocal calls
+        calls += 1
+        return ScoringResult(
+            dimension="目标锚定度", dimension_key=dimension,
+            component_scores={component: 70 for component in keys},
+            provenance="test_scoring_model", narrative="恢复时补全组件评分。",
+        )
+
+    monkeypatch.setattr(modes_module, "score_dimension", mocked_score)
+
+    recovered = asyncio.run(
+        modes_module.recover_dialogue_component_scores(session, db_path=tmp_path / "restore-score.db")
+    )
+    fusion = modes_module._dialogue_fusion(session.evidence_cards)
+
+    assert recovered is True
+    assert calls == 1
+    assert all(card.objective_signal["component_score"] == 70 for card in session.evidence_cards)
+    assert fusion["learning_goal"].metadata["component_collection"]["scoring_phase"] == "scored"
+    assert fusion["learning_goal"].radar_score == 70
+
+
+def test_dialogue_visible_reply_removes_internal_rubric_sentence_without_losing_question() -> None:
+    reason = "自然追问实际投入的具体例子、限制和后续表现"
+    reply = f"关于实际投入，{reason}。你能结合最近一次学习经历具体说说吗？"
+
+    cleaned = modes_module._remove_component_rubric_leak(
+        reply,
+        {"label": "实际投入", "reason": reason},
+    )
+
+    assert cleaned == "你能结合最近一次学习经历具体说说吗？"
 
 
 def test_json_object_rejects_mock_prefix() -> None:
@@ -895,6 +1279,72 @@ def test_dialogue_target_rotates_after_repeated_unfilled_dimension() -> None:
     )
 
     assert target != "weak_points"
+
+
+def test_dialogue_target_finishes_a_partially_collected_dimension_first() -> None:
+    from app.profile.component_model import AtomicEvidence, QualityFactors
+    from app.profile.nodes import DialogueExtraction, _dialogue_cards
+
+    utterance = "我想治病救人"
+    extraction = DialogueExtraction(
+        turn_id=1,
+        dimension_scan=[{
+            "dimension": "learning_goal",
+            "status": "evidence_found",
+            "reason": "表达了希望通过学习达成的职业/助人方向，可作为目标锚点；同一句也可弱支持内在价值动机。",
+            "components": ["expression_certainty", "goal_specificity"],
+            "excluded_candidates": [],
+        }, {
+            "dimension": "motivation",
+            "status": "evidence_found",
+            "reason": "治病救人表达了利他价值线索，但不能单独证明持续投入或受阻后的坚持。",
+            "components": ["intrinsic_value"],
+            "excluded_candidates": [],
+        }],
+        atomic_evidence=[
+            AtomicEvidence(
+                evidence_id="ev-goal",
+                dimension="learning_goal",
+                component="expression_certainty",
+                evidence_group_id="turn-1",
+                source_turn_ids=[1],
+                quote=utterance,
+                normalized_claim="用户表达了治病救人的学习目标方向",
+                evidence_type="self_report",
+                supports=["expression_certainty", "goal_specificity"],
+                collection_status="scorable",
+                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.8, content_specificity=.7, freshness=1, consistency=.8, independence_note="同一轮用户原话"),
+                assessment="有方向和助人意向，但单句不能证明长期稳定或行动承诺",
+                confirmed_aspects=["目标方向：治病救人"],
+                pending_aspects=["具体目标对象、期限和路径", "行动和优先级", "跨轮稳定性"],
+                semantic_relation="new",
+            ),
+            AtomicEvidence(
+                evidence_id="ev-motivation",
+                dimension="motivation",
+                component="intrinsic_value",
+                evidence_group_id="turn-1",
+                source_turn_ids=[1],
+                quote=utterance,
+                normalized_claim="用户表达了助人价值取向",
+                evidence_type="self_report",
+                supports=["intrinsic_value"],
+                collection_status="scorable",
+                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.8, content_specificity=.7, freshness=1, consistency=.8, independence_note="同一轮用户原话"),
+                assessment="作为内在价值线索，尚需询问其个人意义与实际投入",
+                confirmed_aspects=["助人价值取向"],
+                pending_aspects=["是否为持续内在驱动", "实际投入"],
+                semantic_relation="new",
+            ),
+        ],
+    )
+    cards = _dialogue_cards(extraction)
+
+    assert modes_module._dialogue_target(cards) == "learning_goal"
+    question = modes_module._fallback_dialogue_question("learning_goal", 1, evidence_cards=cards)
+    assert question == "学医救人对你来说，最希望实现的具体变化是什么？"
+    assert {card.dimension for card in cards} == {"learning_goal", "motivation"}
+    assert {card.evidence_group_id for card in cards} == {"turn-1"}
 
 
 def test_dialogue_companion_steering_prompt_receives_current_target_and_confidences() -> None:
@@ -1006,16 +1456,12 @@ def test_dialogue_scripted_answers_collect_six_axes_with_traceable_quotes() -> N
     evidence_panel = modes_module._dialogue_evidence_panel(cards, fusion=fusion)
     source_text = "\n".join(utterances)
 
-    assert progress["collected"] >= 6
-    for item in evidence_panel:
-        if item["status"] != "已取证":
-            continue
-        assert item["value"] != "待取证"
-        assert item["quotes"]
-        assert any(quote["text"] in source_text for quote in item["quotes"])
+    assert progress["collected"] < 6
+    assert all(result.score is None and result.radar_score is None for result in fusion.values())
+    assert all(result.metadata["component_collection"]["scoring_phase"] == "collecting" for result in fusion.values())
 
 
-def test_dialogue_extract_cards_for_chat_collects_weak_points_with_traceable_quote(monkeypatch, tmp_path: Path) -> None:
+def test_dialogue_extract_cards_for_chat_without_key_keeps_weak_points_uncollected(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(modes_module, "get_settings", lambda: Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None))
     session = modes_module.start_profile_session("dialogue-weak-user", "dialogue", db_path=tmp_path / "weak.db")
     utterance = "我总记不住归经，分不清相似药，方剂配伍也老错。"
@@ -1036,10 +1482,8 @@ def test_dialogue_extract_cards_for_chat_collects_weak_points_with_traceable_quo
     fusion = modes_module._dialogue_fusion(cards)
     progress = modes_module._dialogue_profile_progress(cards, fusion=fusion)
 
-    assert len(weak_cards) == 1
-    assert weak_cards[0].objective_signal["label"] in utterance
-    assert all(quote in utterance for quote in weak_cards[0].objective_signal["evidence"])
-    assert any(item["key"] == "weak_points" and item["collected"] for item in progress["dimensions"])
+    assert weak_cards == []
+    assert not any(item["key"] == "weak_points" and item["collected"] for item in progress["dimensions"])
 
     no_cards = asyncio.run(
         modes_module._dialogue_extract_cards_for_chat(
@@ -1056,7 +1500,7 @@ def test_dialogue_extract_cards_for_chat_collects_weak_points_with_traceable_quo
     assert [card for card in no_cards if card.dimension == "weak_points"] == []
 
 
-def test_dialogue_real_extract_path_collects_all_seven_axes_with_quotes(monkeypatch, tmp_path: Path) -> None:
+def test_dialogue_no_key_path_never_claims_all_seven_axes(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(modes_module, "get_settings", lambda: Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None))
     session = modes_module.start_profile_session("dialogue-seven-user", "dialogue", db_path=tmp_path / "seven.db")
     utterances = [
@@ -1089,16 +1533,12 @@ def test_dialogue_real_extract_path_collects_all_seven_axes_with_quotes(monkeypa
     fusion = modes_module._dialogue_fusion(cards)
     progress = modes_module._dialogue_profile_progress(cards, fusion=fusion)
     evidence_panel = modes_module._dialogue_evidence_panel(cards, fusion=fusion)
-    source_text = "\n".join(utterances)
-
-    assert progress["collected"] == 7
-    for item in evidence_panel:
-        assert item["status"] == "已取证"
-        assert item["quotes"]
-        assert any(quote["text"] in source_text for quote in item["quotes"])
+    assert progress["collected"] == 0
+    assert cards == []
+    assert all(item["status"] == "待取证" and not item["quotes"] for item in evidence_panel)
 
 
-def test_dialogue_identity_cards_distribution_ratios_and_skins_from_real_cards(monkeypatch, tmp_path: Path) -> None:
+def test_dialogue_identity_cards_without_key_remain_unrevealed(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(modes_module, "get_settings", lambda: Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None))
     session = modes_module.start_profile_session("dialogue-cards-user", "dialogue", db_path=tmp_path / "cards.db")
     utterances = [
@@ -1135,13 +1575,10 @@ def test_dialogue_identity_cards_distribution_ratios_and_skins_from_real_cards(m
     resource_cards = by_key["resource_preference"]["cards"]
     motivation_cards = by_key["motivation"]["cards"]
 
-    assert round(sum(card["ratio"] for card in goal_cards), 4) == 1.0
-    assert any(card["canonical_label"] == "其他" for card in goal_cards)
-    other = next(card for card in goal_cards if card["canonical_label"] == "其他")
-    assert other["display_name"] in utterances[1]
-    assert other["quotes"] and all(quote in "\n".join(utterances) for quote in other["quotes"])
-    assert any(card["display_name"] == "观脉者" for card in resource_cards)
-    assert any(card["display_name"] in {"赶考人", "双修者"} for card in motivation_cards)
+    assert goal_cards == []
+    assert resource_cards == []
+    assert motivation_cards == []
+    assert all(not item["revealed"] for item in by_key.values())
 
 
 def test_dialogue_identity_cards_level_names_align_fusion_anchors() -> None:
@@ -1153,10 +1590,10 @@ def test_dialogue_identity_cards_level_names_align_fusion_anchors() -> None:
     view = modes_module._dialogue_identity_cards_view(cards, fusion=fusion, revealed_flags={})
     by_key = {item["key"]: item for item in view}
 
-    assert fusion["knowledge_base"].score == 70
-    assert by_key["knowledge_base"]["cards"][0]["level_name"] == "杏林手"
-    assert fusion["pace"].score == 85
-    assert by_key["pace"]["cards"][0]["level_name"] == "武火急煎"
+    assert fusion["knowledge_base"].score is None
+    assert fusion["pace"].score is None
+    assert not by_key["knowledge_base"]["revealed"]
+    assert not by_key["pace"]["revealed"]
 
 
 def test_dialogue_identity_cards_reveal_threshold_and_no_rollback() -> None:
@@ -1185,8 +1622,8 @@ def test_dialogue_identity_cards_reveal_threshold_and_no_rollback() -> None:
     )
 
     assert {item["key"]: item for item in low_view}["learning_goal"]["revealed"] is False
-    assert {item["key"]: item for item in high_view}["learning_goal"]["revealed"] is True
-    assert {item["key"]: item for item in rollback_view}["learning_goal"]["revealed"] is True
+    assert {item["key"]: item for item in high_view}["learning_goal"]["revealed"] is False
+    assert {item["key"]: item for item in rollback_view}["learning_goal"]["revealed"] is False
 
 
 def test_dialogue_evidence_panel_marks_pending_dimensions_without_fabricating_quotes() -> None:
@@ -1532,8 +1969,8 @@ def test_dialogue_client_turn_id_scopes_replay_and_allows_same_text_next_turn(tm
             )
         ]
 
-    assert asyncio.run(submit(first.session_id, user_id, "turn-a"))[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
-    assert asyncio.run(submit(first.session_id, user_id, "turn-b"))[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+    assert asyncio.run(submit(first.session_id, user_id, "turn-a"))[-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
+    assert asyncio.run(submit(first.session_id, user_id, "turn-b"))[-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
     assert modes_module.get_profile_session(first.session_id, user_id=user_id, db_path=db_path).step_index == 2
     assert len(list_chat_messages(user_id, first.session_id, db_path=db_path)) == 4
 

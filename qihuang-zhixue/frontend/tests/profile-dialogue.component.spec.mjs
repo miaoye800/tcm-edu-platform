@@ -12,6 +12,8 @@ const profileApiPath = join(root, 'src/services/profileApi.ts')
 const profileTypesPath = join(root, 'src/types/profile.ts')
 const streamStatePath = join(root, 'src/components/profile/profileDialogueStreamState.ts')
 const onboardingStoragePath = join(root, 'src/services/onboardingStorage.ts')
+const radarPath = join(root, 'src/components/profile/RadarChart.vue')
+const developerAuditPath = join(root, 'src/components/profile/ProfileDeveloperAudit.vue')
 
 const compileModel = () => {
   const source = readFileSync(modelPath, 'utf8')
@@ -185,15 +187,18 @@ test('assistant bubbles include Xiaoqi avatar', () => {
   assert(component.includes('v-if="message.role === \'assistant\'"'), 'avatar should be scoped to assistant messages')
 })
 
-test('dialogue pending renders a collapsible thinking panel instead of page overlay', () => {
+test('dialogue pending renders a lightweight staged status before the streamed answer', () => {
   assert(component.includes('pending?: boolean'), 'ProfileDialogue should accept a pending prop')
   assert(profileTypes.includes('reasoning: string'), 'assistant messages should carry per-message reasoning text')
   assert(profileTypes.includes('reasoningStreaming: boolean'), 'assistant messages should track reasoning streaming state')
   assert(profileTypes.includes('reasoningCollapsed: boolean'), 'assistant messages should track reasoning collapsed state')
   assert(component.includes('appendAssistantReasoning'), 'thinking deltas should append to the active assistant message')
-  assert(component.includes('message.reasoning'), 'reasoning should render inside each assistant bubble')
-  assert(component.includes('toggleReasoning'), 'reasoning details should be collapsible per message')
-  assert(component.includes('小岐正在思考'), 'streaming reasoning should render a visible label')
+  assert(component.includes('reasoningStatus(message)'), 'reasoning should map to a concise user-facing processing status')
+  assert(component.includes('正在处理你的回答'), 'the first processing phase should acknowledge incoming information')
+  assert(component.includes("message.reasoning.split('\\n')"), 'the processing label should show the latest real workflow stage')
+  assert(component.includes('reasoning-sheen'), 'streaming status should use a restrained passing light effect')
+  assert(component.includes('message.reasoning && !message.text'), 'the processing status should disappear as soon as visible answer text starts')
+  assert(!component.includes('toggleReasoning'), 'internal reasoning should not be expandable in the conversation')
   assert(component.includes("event.type === 'thinking'"), 'thinking stream events should update per-message reasoning')
   assert(!component.includes('thinkingText'), 'global thinking text state should be removed')
   assert(!component.includes('thinking-panel'), 'global thinking panel should not remain')
@@ -201,6 +206,15 @@ test('dialogue pending renders a collapsible thinking panel instead of page over
   assert(onboarding.includes(':stream-events="dialogueStreamEvents"'), 'Onboarding should pass the ordered stream event queue into ProfileDialogue')
   assert(onboarding.includes('const pageLoading = computed'), 'Onboarding should compute page loading separately')
   assert(onboarding.includes('v-loading="pageLoading"'), 'full-screen loading should use the computed page loading state')
+})
+
+test('profile dialogue switches from thinking to answering on the first message delta', () => {
+  const { applyProfileDialogueStreamEvent, createProfileDialogueMessageState } = streamState
+  const state = createProfileDialogueMessageState()
+  applyProfileDialogueStreamEvent(state, { id: 1, type: 'thinking', delta: '正在整理线索' })
+  assert(state.messages[0]?.reasoningStreaming === true, 'thinking events should activate processing status')
+  applyProfileDialogueStreamEvent(state, { id: 2, type: 'message', delta: '先从基础开始。' })
+  assert(state.messages[0]?.reasoningStreaming === false, 'the first answer delta should end processing status')
 })
 
 test('dialogue chat box is height constrained and internally scrollable', () => {
@@ -430,6 +444,13 @@ test('active profile session storage survives refresh and clears after finish', 
   assert(module.readActiveProfileSession('guest-a') === null, 'finish should remove the active session marker')
 })
 
+test('dialogue component restores persisted chat history for the active session', () => {
+  assert(component.includes('chatHistory?: Array<{ role: \'assistant\' | \'user\'; content: string }>'), 'dialogue component should accept server-owned chat history')
+  assert(component.includes('for (const item of props.chatHistory)'), 'dialogue component should rebuild visible messages after session restoration')
+  assert(onboarding.includes(':chat-history="session.chat_history ?? []"'), 'Onboarding should pass restored chat history into the dialogue')
+  assert(profileTypes.includes('chat_history?: Array<{ role: \'assistant\' | \'user\'; content: string }>'), 'session response type should expose restored chat history')
+})
+
 test('pending dialogue turn storage preserves retry identity and remains user scoped', () => {
   const values = new Map()
   const storage = {
@@ -462,14 +483,15 @@ test('radar axes honor backend status states', () => {
   assert(component.includes("return `暂定 ${axis.value}`"), 'dashed axes should show provisional values')
 })
 
-test('dialogue radar side panel renders completion and evidence list', () => {
+test('dialogue radar summary renders after the two-column content without pending tags', () => {
   assert(profileTypes.includes('export type ProfileProgress'), 'profile types should include structured progress payload')
   assert(profileTypes.includes('export type EvidencePanelDimension'), 'profile types should include evidence panel payload')
   assert(component.includes('profileProgress?: ProfileProgress | null'), 'ProfileDialogue should accept profile progress')
   assert(component.includes('evidencePanel?: EvidencePanelDimension[]'), 'ProfileDialogue should accept evidence panel data')
   assert(component.includes('画像完成度 {{ profileCompletionText }}'), 'radar panel should render x/7 completion')
-  assert(component.includes('pendingDimensions'), 'radar panel should render pending dimensions')
-  assert(component.includes('<details class="evidence-panel">'), 'evidence list should be a collapsible side panel')
+  assert(!component.includes('pending-dimensions'), 'radar summary must not render pending-verification tags')
+  assert(component.includes('grid-column: 1 / -1'), 'radar summary should span beneath the two-column content')
+  assert(component.includes('<details class="evidence-panel">'), 'evidence list should remain available from the summary')
   assert(component.includes('命格收藏册'), 'merged evidence panel summary should be visible')
   assert(component.includes('置信度{{ formatConfidence(group.confidence) }}'), 'merged panel should render confidence')
   assert(component.includes('“{{ quote }}”'), 'merged panel should render original quotes')
@@ -515,6 +537,16 @@ test('dialogue identity cards consume Phase2 payload independently of text strea
   assert(onboarding.includes('latestIdentityCards'), 'the following state event must preserve the dedicated reveal event snapshot')
   assert(!onboarding.includes("pushDialogueStreamEvent('identity_cards'"), 'identity card events must not enter the text stream queue')
   assert(component.includes('while (consumedStreamEventCount < props.streamEvents.length)'), 'message/thinking queue cursor should remain intact')
+})
+
+test('destiny card board exposes an interactive archive and readable server-authored metrics', () => {
+  const board = readFileSync(join(root, 'src/components/profile/DestinyCardBoard.vue'), 'utf8')
+  assert(board.includes(':aria-expanded="vaultOpen"'), 'the stacked card back should expose its expanded state')
+  assert(board.includes('class="vault-drawer"'), 'archived cards should open in a dedicated drawer')
+  assert(board.includes('@click="restoreDimension(dimension.key)"'), 'an archived card should restore its dimension to the main board')
+  assert(board.includes('{{ dimension.display_value }}'), 'archive labels should remain driven by backend display values')
+  assert(board.includes('{{ percent(slot.ratio) }}'), 'card percentages should remain driven by backend ratios')
+  assert(board.includes('prefers-reduced-motion:reduce'), 'archive and card motion should have a reduced-motion fallback')
 })
 
 test('dialogue identity cards render one evidence-backed dimension card with accessible popover and reduced motion fallback', () => {
@@ -630,4 +662,40 @@ test('refuted identity card replacement adds Xiaoqi discrepancy notice', () => {
   assert(component.includes('identityCardRefutedDescriptionFor(dimension)'), 'ProfileDialogue should use the centralized refuted copy')
   assert(component.includes('addAssistantPrompt(identityCardRefutedDescriptionFor(dimension))'), 'refuted replacement should add a Xiaoqi bubble before card rendering')
   assert(messages.messages[0]?.text === '看来你的底子和你说的有些出入，师父重新看过了。', 'refuted replacement should show Xiaoqi discrepancy bubble')
+})
+
+test('developer audit exposes the explainable pipeline and low-confidence radar is gold dashed', () => {
+  const radar = readFileSync(radarPath, 'utf8')
+  const audit = readFileSync(developerAuditPath, 'utf8')
+
+  assert(audit.includes('user-quote'), 'audit should show the exact user answer')
+  assert(audit.includes('确认：'), 'audit should show model-confirmed aspects')
+  assert(audit.includes('待确认：'), 'audit should show remaining unknown aspects')
+  assert(audit.includes('确认度账本'), 'audit should expose calculation details')
+  assert(audit.includes('隐藏思维链'), 'audit should state the boundary for private reasoning')
+  assert(radar.includes("dark: axisStatus(axis) === 'dark' && axisStatus(props.axes[nextIndex]) === 'dark'"), 'a dashed endpoint must not be overwritten by a dark segment')
+  assert(radar.includes('stroke: var(--qh-color-gold);'), 'low-confidence segments should use the gold stroke')
+})
+
+test('component collection, source groups, and observed distribution scope stay visible in contracts', () => {
+  const types = readFileSync(profileTypesPath, 'utf8')
+  const dialogue = readFileSync(componentPath, 'utf8')
+  const audit = readFileSync(developerAuditPath, 'utf8')
+  assert(types.includes('scoring_phase'), 'frontend types should carry the collecting/scored phase')
+  assert(types.includes('evidence_group_id'), 'frontend audit types should carry source groups')
+  assert(dialogue.includes('distribution_scope'), 'distribution cards should disclose observed scope')
+  assert(audit.includes('评分暂缓'), 'audit should expose the score gate before final scoring')
+  assert(audit.includes('evidence_group_id'), 'audit should render source relation details')
+})
+
+test('audit is a compact nine-part turn ledger rather than generic process chatter', () => {
+  const audit = readFileSync(developerAuditPath, 'utf8')
+  for (const section of ['全维扫描', 'failure_reason', '原子证据', '七维组件矩阵', '评分暂缓', '评分证据包与统分', '确认度账本', 'excluded_candidates', 'matrix_before', 'matrix_after']) {
+    assert(audit.includes(section), `audit should expose ${section}`)
+  }
+  assert(audit.includes('本轮处理流程'), 'audit should expose the ordered per-turn workflow')
+  assert(audit.includes('class="developer-audit" aria-label="画像开发审计记录" open'), 'audit should open automatically so the current turn is visible')
+  assert(audit.includes('查看轮次') && audit.includes('currentRecord'), 'audit should show one selected turn and keep older turns switchable')
+  assert(audit.includes('确认度收集中') && audit.includes('尚未发布最终确认度'), 'audit should expose confidence progress before score completion without presenting it as final')
+  assert(!audit.includes('正在融合证据，校准画像维度'), 'audit should not echo transient process chatter')
 })

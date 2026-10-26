@@ -44,20 +44,48 @@ test('a backend step is submitted once despite repeat clicks or rerender state',
   assert(view.includes('submittedStepIds.filter'), 'failed transport should release only the active step lock')
 })
 
-test('free prescription posts through the existing session API and renders backend evidence', () => {
+test('free prescription and method preferences post through the existing session API', () => {
   assert(view.includes('answerProfileSession(state.value.session!.session_id, current.id, stepPayload())'))
-  assert(view.includes('next.evidence_cards?.find'), 'view should consume backend evidence cards')
-  assert(view.includes('prescription_findings'), 'findings must come from objective_signal')
+  assert(view.includes('preferences: prescriptionPreferences.value, preference_note: prescriptionPreferenceNote.value.trim()'))
   assert(!view.includes('evaluatePrescription'), 'frontend must not implement prescription grading')
 })
 
-test('media mapping is independent by scene and formal scenes do not fake delivered MP4 files', () => {
+test('herb recognition pauses the video and presents one photographic herb with dialogue choices', () => {
+  assert(view.includes(':pause-after-seconds="scene.kind === \'quiz\' ? 3.6 : undefined"'), 'the story clip should play briefly before the herb question')
+  assert(view.includes('@quiz-intro-complete="quizVideoPaused = true"'), 'show the herb question only after the clip has paused')
+  assert(view.includes('v-else-if="scene.kind === \'quiz\' && currentQuestion"'), 'only the active herb question should be mounted')
+  assert(!view.includes('v-for="(question, index) in questions"'), 'do not show every recognition question as a form list')
+  assert(view.includes('这幅图中，${question.herb_name}的代表功效之一是？'))
+  assert(view.includes('class="dialogue-option"'))
+  assert(view.includes('我想自己作答 / 补充辨析'))
+  assert(view.includes('activeQuestionIndex.value += 1'), 'confirmed answers should advance to the next herb')
+  assert(view.includes('questionAnswers[question.id]?.trim() || \'\', free_text: questionNotes[question.id]?.trim() || \'\''), 'every answer and explanation should be submitted together for backend evidence collection')
+  assert(view.includes('herb_jinyinhua: \'/story/herbs/jinyinhua.jpg\''), 'all diagnostic herb ids should have a matching photo')
+  assert(!view.includes('component-strip'), 'component chips should not obscure the scene')
+})
+
+test('story answer UI uses the apothecary-paper redesign with immediate reply tags', () => {
+  assert.equal(config.apprenticeVisual.replyCommitMs, 420)
+  assert(view.includes('class="herb-sheet"'), 'herb questions should use the specimen sheet')
+  assert(view.includes('class="story-tags"'), 'answers should render as the right-side tag stack')
+  assert(view.includes('@click="finishDialogue"'), 'the paper dialogue should skip the typewriter on click')
+  assert(view.includes('question.image_url ||'), 'per-question image URLs should take precedence')
+  assert(view.includes('@click="chooseQuizOption(option)"'))
+  assert(view.includes('@click="chooseIdentity(card)"'))
+  assert(!view.includes('quiz-panel'), 'the old frosted quiz panel should be gone')
+})
+
+test('delivered chapter videos are mapped to their matching story beats', () => {
   const wake = assets.storyAssetForScene('wake-apothecary')
   const memory = assets.storyAssetForScene('injury-memory')
-  assert.equal(wake.delivery.fileName, 'seg_01_wake.mp4')
-  assert.equal(memory.delivery.fileName, 'seg_02_rain-steps.mp4')
+  const quiz = assets.storyAssetForScene('herb-dialogue')
+  const prescription = assets.storyAssetForScene('prescription-counter')
+  assert.equal(wake.delivery.fileName, 'section-one-1.mp4')
+  assert.equal(quiz.delivery.fileName, 'section-two-1.mp4')
+  assert.equal(prescription.delivery.fileName, 'section-three-1.mp4')
   assert.notEqual(wake.backdrop, memory.backdrop)
-  assert.equal(wake.video, undefined)
+  assert.equal(wake.video.src, '/story/section-one-1.mp4')
+  assert.equal(quiz.video.poster, '/story/posters/section-two-1-story.jpg')
   assert(config.apprenticeScenes.every((scene) => !Object.hasOwn(scene, 'video')), 'narrative config must not carry resource paths')
 })
 
@@ -71,7 +99,9 @@ test('ready media uses its matching poster and missing or failed media falls bac
   assert.equal(media.deriveStoryMediaState(ready.video, false, true, false), 'video-failed')
   assert.equal(media.mediaStatusCopy('video-failed'), '视频未能播放，已切换静态演出')
   assert(stage.includes('@error="onVideoError"'))
-  assert(stage.includes('object-fit:cover'))
+  assert(stage.includes('object-fit:contain'))
+  assert(stage.includes('video.pause()'), 'the question transition should stop playback on its frame')
+  assert(!stage.includes('stage-grain'), 'decorative scan lines should not soften delivered footage')
 })
 
 test('reduced motion initializes synchronously and prevents the first video render', () => {

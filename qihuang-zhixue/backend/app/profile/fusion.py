@@ -10,13 +10,14 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from math import isfinite
 from typing import Any
 
 from app.profile.anchors import base_level_midpoints, midpoint_from_signal
 from app.profile.schema import CATEGORY_DIMENSIONS, DIMENSION_LABELS, DimensionKey, EvidenceCard, EvidenceTier
+from app.profile.component_model import AtomicEvidence, COMPONENTS, COMPONENT_WEIGHTS, confidence_from_evidence
 
 HALF_LIFE_DAYS: dict[DimensionKey, float | None] = {
     "knowledge_base": 30.0,
@@ -32,7 +33,7 @@ ALLOWED_LABELS: dict[DimensionKey, tuple[str, ...]] = {
     # Assumption for dialogue cards: "其他" is only a traceable fallback bucket for
     # goals outside the four canonical classes; fusion still uses the same vote
     # and confidence formula and does not infer any new semantic score.
-    "learning_goal": ("应试提分", "临床实用", "兴趣科普", "学术深造", "其他"),
+    "learning_goal": ("应试提分", "临床实用", "兴趣科普", "学术深造", "基础巩固", "能力提升", "其他"),
     "learning_style": ("视觉型", "文字型", "记忆(口诀)型"),
     "motivation": ("内驱", "外驱", "内外混合", "被动"),
     "resource_preference": ("知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"),
@@ -114,6 +115,13 @@ class FusionResult:
     variance: float
     evidence_refs: list[str]
     narrative: str
+    # ``distribution`` is the observed composition of cards.  These fields are
+    # intentionally separate: a single observed card can occupy 100% of the
+    # observed distribution without claiming the whole person is known.
+    radar_score: float | None = None
+    coverage: float = 0.0
+    unknown_reasons: list[str] = field(default_factory=list)
+    confidence_breakdown: dict[str, float] = field(default_factory=dict)
     method: str = "fusion"
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -131,6 +139,10 @@ class FusionResult:
             "variance": self.variance,
             "evidence_refs": self.evidence_refs,
             "narrative": self.narrative,
+            "radar_score": self.radar_score,
+            "coverage": self.coverage,
+            "unknown_reasons": self.unknown_reasons,
+            "confidence_breakdown": self.confidence_breakdown,
             "metadata": self.metadata,
         }
 
@@ -173,27 +185,291 @@ def fuse_dimension(
 
     cards = [card for card in evidence_cards if card.dimension == dimension]
     if dimension in CATEGORY_DIMENSIONS or dimension == "weak_points":
-        return _fuse_label_dimension(
+        result = _fuse_label_dimension(
             dimension,
             cards,
             now=now,
             confidence_weight_k=confidence_weight_k,
             self_report_trust=self_report_trust,
         )
-    if dimension == "motivation":
-        return _fuse_motivation(
+    elif dimension == "motivation":
+        result = _fuse_motivation(
             cards,
             now=now,
             confidence_weight_k=confidence_weight_k,
             self_report_trust=self_report_trust,
         )
-    return _fuse_numeric_dimension(
-        dimension,
-        cards,
-        now=now,
-        confidence_weight_k=confidence_weight_k,
-        self_report_trust=self_report_trust,
+    else:
+        result = _fuse_numeric_dimension(
+            dimension,
+            cards,
+            now=now,
+            confidence_weight_k=confidence_weight_k,
+            self_report_trust=self_report_trust,
+        )
+    return _with_agent_assessment(result, cards, now=now)
+
+
+def _with_agent_assessment(
+    result: FusionResult,
+    cards: list[EvidenceCard],
+    *,
+    now: datetime | None,
+) -> FusionResult:
+    """Aggregate semantic values supplied by the extraction agent.
+
+    This function deliberately does *not* interpret wording or labels. It
+    validates the already structured agent judgment, keeps one strongest
+    contribution per source utterance, and combines independent confirmations
+    probabilistically. Therefore a second independently expressed statement
+    raises confirmation, while several cards from a single answer do not.
+    """
+
+    unit_candidates: dict[str, tuple[EvidenceCard, dict[str, float | str | list[str]]]] = {}
+    for index, card in enumerate(cards):
+        raw = card.objective_signal.get("agent_assessment")
+        if not isinstance(raw, dict):
+            continue
+        assessment = _valid_agent_assessment(raw)
+        if assessment is None:
+            continue
+        unit_id = str(card.objective_signal.get("evidence_unit_id") or f"card:{index}")
+        existing = unit_candidates.get(unit_id)
+        if existing is None or float(assessment["confidence_contribution"]) > float(existing[1]["confidence_contribution"]):
+            unit_candidates[unit_id] = (card, assessment)
+
+    component_cards = [card for card in cards if card.component]
+    component_gate: dict[str, Any] | None = None
+    component_weighted_score: float | None = None
+    if component_cards:
+        required = set(COMPONENTS.get(result.dimension, ()))
+        collected = {
+            card.component for card in component_cards
+            if card.component in required and card.collection_status == "scorable"
+        }
+        component_scores: dict[str, float] = {}
+        for card in component_cards:
+            raw_score = card.objective_signal.get("component_score")
+            try:
+                parsed_score = float(raw_score)
+            except (TypeError, ValueError):
+                continue
+            if card.component in required and 5 <= parsed_score <= 95:
+                component_scores[card.component] = parsed_score
+        missing = sorted(required - collected)
+        unscored = sorted(required - set(component_scores))
+        component_gate = {
+            "collected": len(collected), "total": len(required), "missing_components": missing,
+            "unscored_components": unscored, "component_scores": component_scores,
+            "scoring_phase": "scored" if not missing and not unscored else "collecting",
+        }
+        if missing or unscored:
+            result = replace(
+                result, score=None, radar_score=None,
+                narrative=f"{result.dimension_label}已收集 {len(collected)}/{len(required)} 个组件，评分暂缓。",
+                metadata={**result.metadata, "component_collection": component_gate},
+            )
+    if not unit_candidates:
+        if not component_cards:
+            return result
+        # Component-contract evidence has its own confidence formula and does
+        # not require the legacy one-card assessment fields. Keep the score
+        # pending until all components have a score, but still expose the
+        # verified collection/confidence ledger.
+        atoms: list[AtomicEvidence] = []
+        for card in component_cards:
+            try:
+                atoms.append(AtomicEvidence(
+                    evidence_id=card.evidence_id,
+                    dimension=card.dimension,
+                    component=card.component or "",
+                    evidence_group_id=card.evidence_group_id or str(card.objective_signal.get("evidence_group_id") or card.evidence_id),
+                    source_turn_ids=card.source_turn_ids,
+                    quote=card.quote or "",
+                    normalized_claim=card.normalized_claim or card.fact,
+                    evidence_type=card.objective_signal.get("evidence_type", "self_report"),
+                    collection_status=card.collection_status or "pending",
+                    semantic_relation=card.semantic_relation or "new",
+                    quality_factors=card.quality_factors or card.objective_signal.get("quality_factors", {}),
+                ))
+            except Exception:
+                continue
+        if not atoms:
+            return result
+        raw_type = str(component_cards[0].objective_signal.get("combination_type") or "single_clear_self_report")
+        allowed_types = {"single_vague_self_report", "single_clear_self_report", "multi_turn_clear_pending_crosscheck", "multi_turn_clear_consistent", "multi_turn_self_report_with_priority", "dialogue_behavior_consistent", "dialogue_behavior_measurement_long_term"}
+        component_confidence = confidence_from_evidence(atoms, raw_type if raw_type in allowed_types else "single_clear_self_report")
+        metadata = {
+            **result.metadata,
+            "semantic_assessment": True,
+            "component_collection": component_gate or {},
+            "component_confidence": component_confidence,
+            "confidence_formula": component_confidence["formula"],
+            "confidence_units": [],
+            "observed_composition_is_not_coverage": True,
+        }
+        complete_scores = component_gate is not None and component_gate.get("scoring_phase") == "scored"
+        weighted = None
+        if complete_scores:
+            scores = component_gate.get("component_scores", {})
+            weighted = round(max(5.0, min(95.0, sum(scores[key] * COMPONENT_WEIGHTS[result.dimension][key] for key in COMPONENTS[result.dimension]))), 2)
+        return replace(
+            result,
+            score=weighted,
+            radar_score=weighted,
+            confidence=component_confidence["confidence"],
+            confidence_breakdown={"semantic_evidence": component_confidence["confidence"], "independent_units": float(len(component_confidence["independent_source_groups"]))},
+            metadata=metadata,
+        )
+
+    contributions: list[float] = []
+    coverage_terms: list[tuple[float, float]] = []
+    radar_terms: list[tuple[float, float]] = []
+    unknown_reasons: list[str] = []
+    confidence_units: list[dict[str, float | str | None]] = []
+    for card, assessment in unit_candidates.values():
+        decay = decay_factor(card, now=now)
+        contribution = float(assessment["confidence_contribution"]) * float(assessment["independence"]) * decay
+        contribution = _clamp01(contribution)
+        contributions.append(contribution)
+        confidence_units.append(
+            {
+                "source_unit": str(card.objective_signal.get("evidence_unit_id") or card.evidence_id),
+                "fact": card.fact,
+                "agent_contribution": round(float(assessment["confidence_contribution"]), 4),
+                "independence": round(float(assessment["independence"]), 4),
+                "decay": round(decay, 4),
+                "effective_contribution": round(contribution, 4),
+                "agent_radar_score": assessment.get("radar_score"),
+            }
+        )
+        evidence_weight = contribution
+        coverage_terms.append((float(assessment["coverage"]), evidence_weight))
+        radar_score = assessment.get("radar_score")
+        if isinstance(radar_score, (int, float)):
+            # Contribution, coverage and priority are all agent authored;
+            # their mean is only an aggregation weight, not a lexical rule.
+            radar_weight = (
+                float(assessment["confidence_contribution"])
+                + float(assessment["coverage"])
+                + float(assessment["priority_strength"])
+            ) / 3
+            if radar_weight > 0:
+                radar_terms.append((float(radar_score), radar_weight * decay))
+        for reason in assessment["unknown_reasons"]:
+            if reason not in unknown_reasons:
+                unknown_reasons.append(reason)
+
+    semantic_confidence = 1.0
+    for contribution in contributions:
+        semantic_confidence *= 1.0 - contribution
+    semantic_confidence = round(_clamp01(1.0 - semantic_confidence), 4)
+    component_confidence: dict[str, Any] | None = None
+    if component_cards and all(card.quality_factors for card in component_cards):
+        atoms: list[AtomicEvidence] = []
+        for card in component_cards:
+            try:
+                atoms.append(AtomicEvidence(
+                    evidence_id=card.evidence_id,
+                    dimension=card.dimension,
+                    component=card.component or "",
+                    evidence_group_id=card.evidence_group_id or str(card.objective_signal.get("evidence_group_id") or card.evidence_id),
+                    source_turn_ids=card.source_turn_ids,
+                    quote=card.quote or "",
+                    normalized_claim=card.normalized_claim or card.fact,
+                    evidence_type=card.objective_signal.get("evidence_type", "self_report"),
+                    collection_status=card.collection_status or "pending",
+                    semantic_relation=card.semantic_relation or "new",
+                    quality_factors=card.quality_factors,
+                ))
+            except Exception:
+                continue
+        if atoms:
+            raw_type = str(component_cards[0].objective_signal.get("combination_type") or "single_clear_self_report")
+            allowed_types = {"single_vague_self_report", "single_clear_self_report", "multi_turn_clear_pending_crosscheck", "multi_turn_clear_consistent", "multi_turn_self_report_with_priority", "dialogue_behavior_consistent", "dialogue_behavior_measurement_long_term"}
+            component_confidence = confidence_from_evidence(atoms, raw_type if raw_type in allowed_types else "single_clear_self_report")
+            semantic_confidence = component_confidence["confidence"]
+    coverage = _weighted_mean(coverage_terms)
+    radar_score = _weighted_mean(radar_terms)
+    if radar_score is not None:
+        radar_score = round(max(5.0, min(95.0, radar_score)), 2)
+    metadata = {
+        **result.metadata,
+        "semantic_assessment": True,
+        "assessment_units": len(unit_candidates),
+        "confidence_formula": "1-product(1-agent_contribution*independence*decay)",
+        "radar_formula": "weighted_mean(agent_radar_score, (agent_contribution+coverage+priority_strength)/3*decay)",
+        "confidence_units": confidence_units,
+        "observed_composition_is_not_coverage": True,
+    }
+    if component_confidence is not None:
+        metadata["component_confidence"] = component_confidence
+    if component_gate is not None:
+        metadata["component_collection"] = component_gate
+        if component_gate["scoring_phase"] == "scored":
+            component_scores = {
+                card.component: float(card.objective_signal["component_score"])
+                for card in component_cards
+                if card.component and isinstance(card.objective_signal.get("component_score"), (int, float))
+            }
+            weighted = sum(component_scores[key] * COMPONENT_WEIGHTS[result.dimension][key] for key in COMPONENTS[result.dimension])
+            component_weighted_score = round(max(5.0, min(95.0, weighted)), 2)
+            result = replace(result, score=component_weighted_score, radar_score=component_weighted_score)
+    return replace(
+        result,
+        confidence=semantic_confidence,
+        radar_score=component_weighted_score if component_weighted_score is not None else radar_score,
+        coverage=round(coverage or 0.0, 4),
+        unknown_reasons=unknown_reasons[:5],
+        confidence_breakdown={
+            "semantic_evidence": semantic_confidence,
+            "independent_units": float(len(unit_candidates)),
+            "coverage": round(coverage or 0.0, 4),
+        },
+        metadata=metadata,
     )
+
+
+def _valid_agent_assessment(raw: dict[str, Any]) -> dict[str, float | str | list[str]] | None:
+    """Validate an LLM assessment without adding semantic interpretation."""
+
+    try:
+        contribution = float(raw.get("confidence_contribution", 0.0))
+        coverage = float(raw.get("coverage", 0.0))
+        priority = float(raw.get("priority_strength", 0.0))
+        independence = float(raw.get("independence", 1.0))
+    except (TypeError, ValueError):
+        return None
+    if not all(isfinite(value) for value in (contribution, coverage, priority, independence)):
+        return None
+    radar_score: float | None = None
+    raw_score = raw.get("radar_score")
+    if raw_score is not None:
+        try:
+            parsed_score = float(raw_score)
+        except (TypeError, ValueError):
+            return None
+        if not isfinite(parsed_score) or not 5.0 <= parsed_score <= 95.0:
+            return None
+        radar_score = parsed_score
+    reasons = raw.get("unknown_reasons")
+    if not isinstance(reasons, list):
+        reasons = []
+    return {
+        "radar_score": radar_score,
+        "confidence_contribution": _clamp01(min(contribution, 0.95)),
+        "coverage": _clamp01(coverage),
+        "priority_strength": _clamp01(priority),
+        "independence": _clamp01(independence),
+        "unknown_reasons": list(dict.fromkeys(str(reason).strip() for reason in reasons if str(reason).strip()))[:5],
+    }
+
+
+def _weighted_mean(terms: list[tuple[float, float]]) -> float | None:
+    denominator = sum(weight for _, weight in terms if weight > 0)
+    if denominator <= 0:
+        return None
+    return sum(value * weight for value, weight in terms if weight > 0) / denominator
 
 
 def score_from_evidence_value(card: EvidenceCard) -> float | None:

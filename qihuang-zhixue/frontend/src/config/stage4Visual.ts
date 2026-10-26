@@ -14,7 +14,8 @@ export const stage4Visual = {
     actionBarBlur: '18px',
   },
   dialogue: {
-    identityFlipMs: 680,
+    // A reveal is a moment of confirmation, not a transition to be missed.
+    identityFlipMs: 1500,
   },
 } as const
 

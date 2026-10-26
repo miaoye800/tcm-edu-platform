@@ -10,8 +10,24 @@ from typing import Any
 from app.profile.store import DB_PATH, connect
 
 
+_INITIALIZED: set[Path] = set()
+
+
+def reset_init_cache(db_path: Path | None = None) -> None:
+    """表结构被外部改动后清掉「已初始化」标记，下次调用会重新建表。"""
+
+    if db_path is None:
+        _INITIALIZED.clear()
+    else:
+        _INITIALIZED.discard(Path(db_path))
+
+
 def init_db(db_path: Path = DB_PATH) -> None:
-    with closing(connect(db_path)) as conn:
+    # 逐条写入时这里会被调上千次；DDL 只需在进程内跑一次。
+    key = Path(db_path)
+    if key in _INITIALIZED:
+        return
+    with closing(connect(key)) as conn:
         conn.execute("""CREATE TABLE IF NOT EXISTS knowledge_node (
             id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', level TEXT NOT NULL DEFAULT 'point',
             parent_id TEXT, description TEXT NOT NULL DEFAULT '', exam_frequency REAL NOT NULL DEFAULT 0,
@@ -26,7 +42,7 @@ def init_db(db_path: Path = DB_PATH) -> None:
         conn.execute("""CREATE TABLE IF NOT EXISTS herb_relation (
             id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT NOT NULL, target_id TEXT NOT NULL,
             relation_type TEXT NOT NULL CHECK(relation_type IN
-                ('功效相通','相须','相使','相畏','相杀','相恶','相反','性味相通','性味相反','归经聚类','药证链','证方链','同类鉴别')),
+                ('功效相通','相须','相使','相畏','相杀','相恶','相反','性味相通','性味相反','归经聚类','药证链','证方链','组成','同类鉴别')),
             label TEXT NOT NULL, sources_json TEXT NOT NULL, confidence REAL NOT NULL,
             created_at TEXT NOT NULL, meta_json TEXT NOT NULL DEFAULT '{}',
             UNIQUE(source_id,target_id,relation_type,label)
@@ -39,6 +55,7 @@ def init_db(db_path: Path = DB_PATH) -> None:
         )""")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_herb_relation_source ON herb_relation(source_id)")
         conn.commit()
+    _INITIALIZED.add(key)
 
 
 def get_graph(center_id: str, db_path: Path = DB_PATH) -> dict[str, Any] | None:

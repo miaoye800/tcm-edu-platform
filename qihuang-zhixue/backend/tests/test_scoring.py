@@ -33,6 +33,31 @@ def test_fusion_uses_weighted_decay_formula() -> None:
     assert result.confidence < 1
 
 
+def test_agent_assessment_keeps_observed_card_ratio_separate_from_confirmation() -> None:
+    assessment = {
+        "radar_score": 72,
+        "confidence_contribution": 0.31,
+        "coverage": 0.24,
+        "priority_strength": 0.7,
+        "independence": 0.9,
+        "unknown_reasons": ["其他目标尚未谈及"],
+    }
+    cards = [
+        _card("learning_goal", {"label": "学术深造", "agent_assessment": assessment, "evidence_unit_id": "turn-1"}, 1.0),
+        # A second card from the same answer must not become a second independent confirmation.
+        _card("learning_goal", {"label": "学术深造", "agent_assessment": {**assessment, "confidence_contribution": 0.2}, "evidence_unit_id": "turn-1"}, 1.0),
+    ]
+
+    result = fuse_dimension("learning_goal", cards)
+
+    assert result.distribution == {"学术深造": 1.0}
+    assert result.radar_score == 72
+    assert result.confidence == 0.279
+    assert result.coverage == 0.24
+    assert result.unknown_reasons == ["其他目标尚未谈及"]
+    assert result.confidence_breakdown["independent_units"] == 1.0
+
+
 def test_no_key_skips_jury_and_uses_rule_fusion() -> None:
     result = asyncio.run(
         score_dimension(
@@ -149,7 +174,7 @@ def test_jury_single_call_outputs_three_views_and_median_score() -> None:
     assert result.jury["严师"].reasoning_chain == ["剂量证据扣分"]
 
 
-def test_jury_router_call_uses_pro_model_with_thinking_high() -> None:
+def test_jury_router_call_uses_flash_model_without_thinking() -> None:
     router = CapturingRouter(settings=_key_settings())
 
     result = asyncio.run(
@@ -165,8 +190,8 @@ def test_jury_router_call_uses_pro_model_with_thinking_high() -> None:
     assert router.calls == [
         {
             "task_type": "profile_jury",
-            "thinking": {"type": "enabled"},
-            "reasoning_effort": "high",
+            "thinking": {"type": "disabled"},
+            "max_tokens": 1200,
             "temperature": 0,
         }
     ]
@@ -642,7 +667,7 @@ class CapturingRouter(ModelRouter):
             {
                 "task_type": task_type,
                 "thinking": kw.get("thinking"),
-                "reasoning_effort": kw.get("reasoning_effort"),
+                "max_tokens": kw.get("max_tokens"),
                 "temperature": kw.get("temperature"),
             }
         )

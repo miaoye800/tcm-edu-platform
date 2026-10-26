@@ -10,7 +10,7 @@ export const dimensionKeys = [
 
 export type DimensionKey = (typeof dimensionKeys)[number]
 
-export type ConfidenceStatus = '待取证' | '已取证'
+export type ConfidenceStatus = '待取证' | '已收集到' | '已取证'
 
 export type EvidenceCard = {
   evidence_id: string
@@ -27,6 +27,10 @@ export type EvidenceCard = {
   extraction_confidence?: number
   extraction_method?: 'llm' | 'no_key_rule_fallback' | 'rule_fallback' | 'legacy' | string
   knowledge_base_ref?: string | null
+  component?: string | null
+  evidence_group_id?: string | null
+  collection_status?: 'scorable' | 'pending' | 'conflict' | 'invalid' | string | null
+  normalized_claim?: string | null
 }
 
 export type WeakPoint = {
@@ -52,6 +56,11 @@ export type DimensionPayload = {
   items?: WeakPoint[]
   jury?: Partial<Record<TeacherName | string, JuryPayload>>
   provenance?: string
+  component_matrix?: Record<string, { status?: string; evidence_ids?: string[]; missing_information?: string[] }>
+  component_scores?: Record<string, number>
+  scoring_phase?: 'collecting' | 'scored' | string
+  pending_components?: string[]
+  score_summary?: string
 }
 
 export type PlanningParams = {
@@ -173,9 +182,13 @@ export type RadarAxis = {
   confidenceStatus: ConfidenceStatus
   lowConfidence: boolean
   anchor: string
-  kind: 'numeric' | 'derived' | 'hotspot'
+  kind: 'numeric' | 'derived' | 'hotspot' | 'agent_estimate'
   pending_verification?: boolean
   provenance?: string
+  scoring_phase?: 'collecting' | 'scored' | string
+  component_collected?: number
+  component_total?: number
+  pending_components?: string[]
 }
 
 export type ProfileProgressDimension = {
@@ -183,7 +196,7 @@ export type ProfileProgressDimension = {
   label: string
   confidence: number
   collected: boolean
-  status: ConfidenceStatus
+  status: ConfidenceStatus | '已收集到'
 }
 
 export type ProfileProgress = {
@@ -208,7 +221,7 @@ export type EvidencePanelDimension = {
   tag?: string | null
   distribution?: Record<string, number>
   confidence: number
-  status: ConfidenceStatus
+  status: ConfidenceStatus | '已收集到'
   evidence_refs: string[]
   narrative?: string
   quotes: EvidenceQuote[]
@@ -222,6 +235,7 @@ export type IdentityCardProvenance = 'fusion' | 'rule_fallback' | 'no_key_rule_f
 export type IdentityCardItem = {
   canonical_label?: string
   display_name?: string
+  meaning?: string
   ratio?: number
   level_name?: string
   score?: number | null
@@ -248,8 +262,13 @@ export type IdentityCardView = {
   confidence: number
   confidence_status: ConfidenceStatus
   score?: number | null
+  radar_score?: number | null
+  coverage?: number
+  unknown_reasons?: string[]
+  confidence_breakdown?: Record<string, number>
   display_value: string
   distribution: Record<string, number>
+  distribution_scope?: 'observed_evidence' | 'complete_profile' | string
   items: IdentityCardItem[]
   cards?: IdentityCardItem[]
   evidence_refs: string[]
@@ -293,6 +312,11 @@ export type ProfileSessionQuestion = {
   options: string[]
   topic?: string
   skill?: string
+  herb_id?: string
+  herb_name?: string
+  herb_hint?: string
+  image_url?: string
+  image_caption?: string
 }
 
 export type ProfileSessionStep = {
@@ -348,6 +372,8 @@ export type ProfileSessionResponse = {
   next_question?: string | null
   radar_changes?: RadarChange[]
   summary_text?: string
+  developer_audit?: ProfileDeveloperAuditRecord[]
+  chat_history?: Array<{ role: 'assistant' | 'user'; content: string }>
 }
 
 export type RadarChange = {
@@ -378,4 +404,105 @@ export type ProfileDialogueStreamUiEvent = {
   id: number
   type: 'thinking' | 'message' | 'message_done' | 'done' | 'reset'
   delta?: string
+}
+
+export type ProfileDeveloperAuditEvidence = {
+  evidence_id?: string
+  dimension: DimensionKey
+  dimension_label: string
+  fact: string
+  normalized_claim?: string | null
+  assessment?: string | null
+  supports?: string[]
+  quotes: string[]
+  basis: 'explicit' | 'inferred' | string
+  extraction_confidence: number
+  extraction_method: string
+  agent_assessment?: {
+    radar_score?: number | null
+    confidence_contribution?: number
+    coverage?: number
+    priority_strength?: number
+    independence?: number
+    confirmed_aspects?: string[]
+    unknown_reasons?: string[]
+    assessment_reason?: string
+  } | null
+  validation: { quote_traceable: boolean; same_response_unit: string }
+  component?: string | null
+  evidence_group_id?: string | null
+  source_turn_ids?: number[]
+  semantic_relation?: 'new' | 'reinforcement' | 'semantic_duplicate' | 'conflict' | string
+  related_evidence_ids?: string[]
+  confirmed_aspects?: string[]
+  pending_aspects?: string[]
+  quality_factors?: Record<string, unknown>
+}
+
+export type ProfileDeveloperAuditRecord = {
+  turn_index: number
+  stages: Array<{ actor: '模型' | '系统'; label: string; detail: string }>
+  current_target: DimensionKey
+  next_target: DimensionKey
+  user_input: string
+  model_result: {
+    method: string
+    failure_reason?: string | null
+    collected_count: number
+    scan_available?: boolean
+    scan_complete?: boolean
+    evidence: ProfileDeveloperAuditEvidence[]
+    combination_type?: string
+    dimension_scan?: Array<{ dimension: DimensionKey; status: string; reason: string; components?: string[]; excluded_candidates?: Array<{ dimension?: string; component?: string; reason: string }> }>
+    component_collection?: Array<{ dimension: DimensionKey; component: string; status: string; evidence_ids: string[]; missing_information: string[] }>
+  }
+  system_result: {
+    dimensions: Array<{
+      key: DimensionKey
+      label: string
+      status: string
+      confidence_before: number
+      radar_score?: number | null
+      confidence: number
+      coverage: number
+      confidence_breakdown: Record<string, number>
+      confidence_formula: string
+      radar_formula: string
+      confidence_units: Array<{
+        source_unit: string
+        fact: string
+        agent_contribution: number
+        independence: number
+        decay: number
+        effective_contribution: number
+        agent_radar_score?: number | null
+      }>
+      confirmed_aspects: string[]
+      unknown_reasons: string[]
+      observed_distribution: Record<string, number>
+      evidence_count: number
+      component_collection?: { collected?: number; total?: number; missing_components?: string[]; unscored_components?: string[]; scoring_phase?: string }
+      scoring_deferred?: boolean
+      component_matrix?: Array<{ key: string; label: string; weight: number; rubric: Record<string, unknown>; collected: boolean; score?: number | null; reason?: string | null; conflict_handling?: string | null; evidence_ids: string[] }>
+      matrix_before?: Record<string, boolean>
+      matrix_after?: Record<string, boolean>
+      pending_components?: string[]
+      followup_reasons?: Record<string, string>
+      dimension_scan?: { status?: string; reason?: string; components?: string[]; excluded_candidates?: Array<{ dimension?: string; component?: string; reason: string }> }
+      score_formula?: string
+      score_weight_sum?: number
+      deduplicated_evidence_package?: Array<{ evidence_id: string; component?: string | null; quote?: string | null; claim: string; group_id?: string | null; relation?: string | null; source_turn_ids: number[]; conflict: boolean }>
+      confidence_audit?: Record<string, unknown>
+      scoring_phase?: 'collecting' | 'scored' | string
+      scoring_provenance?: string | null
+      scoring_attempts?: number
+      unscored_components?: string[]
+      dimension_summary?: string | null
+      scoring_input?: { dimension: string; components: Array<{ key: string; weight: number; rubric: Record<string, unknown>; deduplicated_evidence: Array<Record<string, unknown>>; conflicts: Array<Record<string, unknown>>; source_groups: string[] }> }
+      scoring_output?: Array<{ component: string; score?: number | null; reason?: string | null; conflict_handling?: string | null }>
+      scoring_deferred_reason?: string | null
+    }>
+    confidence_explanation: string
+    radar_explanation: string
+  }
 }

@@ -607,9 +607,15 @@ h3 {
   min-height: 100%;
 }
 
+.narrative-panel .eyebrow,
+.narrative-panel .narrative-source,
+.narrative-panel .narrative-columns span {
+  color: var(--qh-color-gold-readable);
+}
+
 .narrative-text {
   margin: 0;
-  color: rgba(238, 245, 239, 0.86);
+  color: var(--qh-narrative-text);
   font-size: 16px;
   line-height: 1.95;
 }
@@ -646,7 +652,7 @@ h3 {
   display: block;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(238, 245, 239, 0.08), rgba(238, 245, 239, 0.2), rgba(238, 245, 239, 0.08));
+  background: var(--qh-narrative-skeleton);
 }
 
 .narrative-skeleton-line-lg {
@@ -660,9 +666,9 @@ h3 {
 .narrative-columns section {
   min-width: 0;
   padding: 14px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-narrative-border);
   border-radius: 16px;
-  background: rgba(238, 245, 239, 0.05);
+  background: var(--qh-narrative-surface);
 }
 
 .narrative-columns span {

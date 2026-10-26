@@ -29,7 +29,7 @@ def _mock_settings() -> Settings:
             "route": "deepseek_model_flash",
             "reason": "deepseek_model_flash",
             "generate": "deepseek_model_flash",
-            "profile_jury": "deepseek_model_pro",
+            "profile_jury": "deepseek_model_flash",
             "profile_extract": "deepseek_model_flash",
             "profile_update": "deepseek_model_flash",
             "vision": "glm-4.5v",
@@ -50,7 +50,7 @@ def test_router_selects_expected_models() -> None:
     assert router.resolve("generate").model_name == "deepseek-v4-flash"
     assert router.resolve("profile_extract").model_name == "deepseek-v4-flash"
     assert router.resolve("profile_update").model_name == "deepseek-v4-flash"
-    assert router.resolve("profile_jury").model_name == "deepseek-v4-pro"
+    assert router.resolve("profile_jury").model_name == "deepseek-v4-flash"
     assert router.resolve("vision").model_name == "glm-4.5v"
 
 
@@ -86,13 +86,13 @@ def test_router_treats_blank_deepseek_key_as_mock() -> None:
 def test_router_passes_deepseek_base_url_and_model_to_real_client() -> None:
     settings = _real_key_settings()
     settings.deepseek_base_url = "https://example.deepseek.test/v1/"
-    settings.deepseek_model_pro = "deepseek-v4-pro-custom"
+    settings.deepseek_model_flash = "deepseek-v4-flash-custom"
     router = ModelRouter(settings=settings)
 
     client = router.select("profile_jury")
 
     assert isinstance(client, DeepSeekClient)
-    assert client.model_name == "deepseek-v4-pro-custom"
+    assert client.model_name == "deepseek-v4-flash-custom"
     assert client.base_url == "https://example.deepseek.test/v1"
 
 

@@ -66,6 +66,19 @@ class EvidenceCard(BaseModel):
     extraction_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     extraction_method: ExtractionMethod = "legacy"
     knowledge_base_ref: str | None = None
+    # Agent-authored component contract. These fields are intentionally kept
+    # beside the legacy objective_signal so old stored cards remain readable.
+    component: str | None = None
+    evidence_group_id: str | None = None
+    source_turn_ids: list[int] = Field(default_factory=list)
+    normalized_claim: str | None = None
+    supports: list[str] = Field(default_factory=list)
+    collection_status: Literal["scorable", "pending", "conflict", "invalid"] | None = None
+    semantic_relation: Literal["new", "reinforcement", "semantic_duplicate", "conflict"] | None = None
+    related_evidence_ids: list[str] = Field(default_factory=list)
+    quality_factors: dict[str, Any] = Field(default_factory=dict)
+    confirmed_aspects: list[str] = Field(default_factory=list)
+    pending_aspects: list[str] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @classmethod

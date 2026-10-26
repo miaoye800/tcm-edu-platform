@@ -40,7 +40,11 @@ class Settings(BaseSettings):
             "route": "deepseek_model_flash",
             "reason": "deepseek_model_flash",
             "generate": "deepseek_model_flash",
-            "profile_jury": "deepseek_model_pro",
+            # 画像评分是有固定 JSON schema、规则融合和护栏兜底的批量任务。
+            # 默认使用 Flash，避免一次完成画像时对七个维度重复消耗 Pro 推理额度。
+            # 如需更强的人工复核，可通过 LLM_TASK_MODEL_MAP 单独改回
+            # "profile_jury": "deepseek_model_pro"。
+            "profile_jury": "deepseek_model_flash",
             "profile_extract": "deepseek_model_flash",
             "profile_update": "deepseek_model_flash",
             "profile_narrative": "deepseek_model_flash",
@@ -51,7 +55,8 @@ class Settings(BaseSettings):
     )
     mock_stream_delay: float = Field(default=0.03, alias="MOCK_STREAM_DELAY")
     llm_timeout_seconds: float = Field(default=60.0, alias="LLM_TIMEOUT_SECONDS")
-    llm_max_retries: int = Field(default=1, alias="LLM_MAX_RETRIES")
+    # 请求在服务端已受理后发生网络超时仍可能产生费用；默认不自动重发。
+    llm_max_retries: int = Field(default=0, alias="LLM_MAX_RETRIES")
     llm_fallback_to_mock: bool = Field(default=True, alias="LLM_FALLBACK_TO_MOCK")
     retrieval_score_threshold: float = Field(default=0.35, alias="RETRIEVAL_SCORE_THRESHOLD")
     auth_secret: str = Field(default=DEFAULT_DEV_AUTH_SECRET, alias="AUTH_SECRET")

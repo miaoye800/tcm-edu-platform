@@ -64,7 +64,7 @@ const submitSearch = async () => {
   min-height: var(--qh-topbar-height);
   padding: 18px 24px 14px;
   border-bottom: 1px solid rgba(143, 208, 173, 0.08);
-  background: linear-gradient(180deg, rgba(17, 29, 32, 0.88), rgba(17, 29, 32, 0.58));
+  background: var(--qh-topbar-fill);
   backdrop-filter: blur(18px);
 }
 

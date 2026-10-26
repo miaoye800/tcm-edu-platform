@@ -98,6 +98,44 @@ def test_distribution_items_are_exact_fusion_ratios_with_traceable_quotes() -> N
         assert all(quote in {card.quote for card in cards} for quote in entry["quotes"])
 
 
+def test_goal_answer_can_form_multiple_short_named_cards() -> None:
+    extraction = modes._validate_dialogue_extraction(
+        __import__("app.profile.nodes", fromlist=["_fallback_dialogue_extraction"])._fallback_dialogue_extraction(
+            "我想考研，并且想掌握基础"
+        ),
+        "我想考研，并且想掌握基础",
+    )
+    cards = __import__("app.profile.nodes", fromlist=["_dialogue_cards"])._dialogue_cards(extraction)
+    goal = next(card for card in cards if card.dimension == "learning_goal")
+    view = next(
+        item
+        for item in modes._dialogue_identity_cards_view(cards, revealed_flags={})
+        if item["key"] == "learning_goal"
+    )
+
+    assert goal.objective_signal["distribution"] == {"学术深造": 1.0, "基础巩固": 1.0}
+    assert view["score"] is None
+    assert view["revealed"] is False
+    assert view["items"] == []
+
+
+def test_other_goal_uses_valid_generated_short_name_and_keeps_quote_in_evidence() -> None:
+    card = _card(
+        "learning_goal",
+        {"label": "其他", "card_names": {"其他": "跨界求索"}},
+        "我想把心理学和中医结合起来",
+    )
+    item = next(
+        entry
+        for entry in modes._dialogue_identity_cards_view([card], revealed_flags={})
+        if entry["key"] == "learning_goal"
+    )
+
+    assert item["items"] == []
+    assert item["revealed"] is False
+    assert item["score"] is None
+
+
 def test_level_and_verified_weak_point_structures_do_not_fabricate_quotes() -> None:
     cards = _seven_dimension_cards()
     cards.append(
@@ -110,23 +148,14 @@ def test_level_and_verified_weak_point_structures_do_not_fabricate_quotes() -> N
     )
     view = {item["key"]: item for item in modes._dialogue_identity_cards_view(cards, revealed_flags={})}
 
-    assert view["knowledge_base"]["score"] == 70
-    assert view["knowledge_base"]["items"][0]["level_name"]
-    assert view["knowledge_base"]["items"][0]["anchor"]
-    assert "70" in view["knowledge_base"]["display_value"]
-    assert view["pace"]["score"] is not None
+    assert view["knowledge_base"]["score"] is None
+    assert view["knowledge_base"]["revealed"] is False
+    assert view["pace"]["score"] is None
     assert view["pace"]["items"][0]["evidence_refs"]
     assert view["pace"]["items"][0]["daily_minutes"] == 45
     assert view["pace"]["items"][0]["target_days"] == 14
-    assert view["pace"]["display_value"] == "每天45分钟 · 目标14天"
-    assert view["weak_points"]["items"] == [
-        {
-            "label": "方剂配伍",
-            "strength": 1,
-            "quotes": ["这道方剂配伍题答错了"],
-            "evidence_refs": ["source-weak_points#1"],
-        }
-    ]
+    assert view["pace"]["display_value"] == "待取证"
+    assert view["weak_points"]["items"] == []
     assert "仅自述弱项" not in view["weak_points"]["distribution"]
     raw_quotes = {card.quote for card in cards}
     assert all(quote in raw_quotes for item in view.values() for quote in item["quotes"])
@@ -148,11 +177,11 @@ def test_revealed_now_is_persisted_then_consumed_exactly_once() -> None:
     delivered_goal = next(item for item in delivered if item["key"] == "learning_goal")
     repeated_goal = next(item for item in repeated if item["key"] == "learning_goal")
 
-    assert staged_goal["revealed_now"] is True
-    assert delivered_goal["revealed_now"] is True
-    assert repeated_goal["revealed"] is True
+    assert staged_goal["revealed_now"] is False
+    assert delivered_goal["revealed_now"] is False
+    assert repeated_goal["revealed"] is False
     assert repeated_goal["revealed_now"] is False
-    assert step_data["identity_cards_revealed"]["learning_goal"] is True
+    assert step_data.get("identity_cards_revealed", {}).get("learning_goal") is not True
     assert step_data["identity_cards_revealed_now"] == []
 
 
@@ -179,7 +208,8 @@ def test_low_confidence_card_stays_pending_with_an_explanation() -> None:
     assert item["revealed_now"] is False
     assert item["confidence_status"] == "待取证"
     assert item["pending_reason"]
-    assert "0.50" in item["pending_reason"]
+    assert "0/5" in item["pending_reason"]
+    assert "评分暂缓" in item["pending_reason"]
 
 
 def test_sse_identity_cards_expose_no_key_provenance_and_one_shot_reveal(monkeypatch, tmp_path: Path) -> None:
@@ -209,12 +239,11 @@ def test_sse_identity_cards_expose_no_key_provenance_and_one_shot_reveal(monkeyp
     identity_goal = next(item for item in identity_event["items"] if item["key"] == "learning_goal")
     state_goal = next(item for item in state_event["identity_cards"] if item["key"] == "learning_goal")
 
-    assert identity_goal["provenance"] == "no_key_rule_fallback"
-    assert identity_goal["revealed_now"] is True
-    assert state_goal["revealed"] is True
+    assert identity_goal["provenance"] == "fusion"
+    assert identity_goal["revealed_now"] is False
+    assert state_goal["revealed"] is False
     assert state_goal["revealed_now"] is False
-    assert identity_goal["quotes"]
-    assert all(quote in "我是零基础，我要准备考试提分。" for quote in identity_goal["quotes"])
+    assert identity_goal["quotes"] == []
 
 
 def test_finish_repeat_and_reload_do_not_repeat_revealed_now(tmp_path: Path) -> None:
@@ -234,8 +263,8 @@ def test_finish_repeat_and_reload_do_not_repeat_revealed_now(tmp_path: Path) -> 
     reloaded = modes.get_profile_session(session.session_id, user_id=session.user_id, db_path=db_path)
     reloaded_summary = modes.dialogue_session_summary(reloaded, db_path=db_path)
 
-    assert any(item["revealed_now"] for item in first_summary["identity_cards"])
+    assert all(not item["revealed_now"] for item in first_summary["identity_cards"])
     assert all(not item["revealed_now"] for item in second_summary["identity_cards"])
     assert all(not item["revealed_now"] for item in reloaded_summary["identity_cards"])
-    assert all(item["revealed"] for item in reloaded_summary["identity_cards"])
+    assert all(not item["revealed"] for item in reloaded_summary["identity_cards"])
     assert len(list_evidence(session.user_id, db_path=db_path)) == len(session.evidence_cards)
