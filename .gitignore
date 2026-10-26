@@ -127,3 +127,4 @@ qihuang-zhixue/frontend/graph-interaction-qa.png
 /session*-pytest-*/
 /tmp_pytest_*/
 /.pytest-tmp*/
+**/.pytest-tmp*/

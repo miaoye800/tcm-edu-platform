@@ -43,7 +43,8 @@ echo.
 set "msg="
 set /p "msg=提交说明（直接回车用时间戳）: "
 if "!msg!"=="" (
-  set "msg=chore: sync %date% %time%"
+  for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "d=%%i"
+  set "msg=chore: sync !d!"
 )
 
 git commit -m "!msg!"
