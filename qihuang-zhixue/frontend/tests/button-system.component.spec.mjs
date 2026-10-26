@@ -56,5 +56,5 @@ test('unrevealed destiny cards cannot mount an evidence action or reveal card da
 test('reduced-motion button branch remains present', () => {
   assert(tokens.includes('@media (prefers-reduced-motion: reduce)'), 'shared controls need a reduced-motion branch')
   assert(tokens.includes('.qh-icon-button'), 'shared reduced-motion branch should cover icon controls')
-  assert(/\.story-controls \.qh-icon-button[^}]*transition: none;/.test(story), 'story control motion should be removed for reduced motion')
+  assert(/\.story-controls \.exit-story[^}]*transition: none;/.test(story), 'story control motion should be removed for reduced motion')
 })

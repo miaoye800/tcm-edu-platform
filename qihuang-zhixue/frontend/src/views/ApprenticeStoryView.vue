@@ -124,7 +124,7 @@
         <label class="story-rx__note"><span>也可以补充你的配伍想法</span><input v-model="prescriptionPreferenceNote" type="text" placeholder="例如：我喜欢先辨寒热，再按君臣佐使配伍" /></label>
         <footer class="story-rx__foot">
           <span class="story-rx__sign">弟子 <b>＿＿＿＿</b></span>
-          <button class="story-rx__submit" type="submit" :disabled="!canSubmit || submitting">{{ submitting ? '记录中…' : '落笔呈上' }} <span class="story-rx__seal" aria-hidden="true">呈</span></button>
+          <button class="story-rx__submit" type="submit" :aria-busy="submitting" :disabled="!canSubmit">{{ submitting ? '记录中…' : '落笔呈上' }} <span class="story-rx__seal" aria-hidden="true">呈</span></button>
         </footer>
       </form>
 
@@ -137,7 +137,7 @@
         </div>
         <label class="story-rule__check"><input v-model="acceptChallenge" type="checkbox" /> 接受每周一次挑战</label>
         <label class="story-rule__note"><span>你愿意守住的学习方式</span><textarea v-model="learningNote" rows="2" placeholder="例如：先看图识药，再用病例复盘；如果出差就改成周末集中学习。" /></label>
-        <button class="story-rule__submit" type="submit" :disabled="!canSubmit || submitting">{{ submitting ? '记录中…' : '立下此约' }} <span class="story-rule__seal" aria-hidden="true">约</span></button>
+        <button class="story-rule__submit" type="submit" :aria-busy="submitting" :disabled="!canSubmit">{{ submitting ? '记录中…' : '立下此约' }} <span class="story-rule__seal" aria-hidden="true">约</span></button>
       </form>
     </template>
 
@@ -737,6 +737,7 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .story-controls .exit-story { transition: none; }
   .story-dialogue, .dialogue-option, .reply-note, .story-rx, .story-rule, .story-cert, .story-note, .story-toast { transition: none !important; animation: none !important; }
   .dialogue-option:hover, .dialogue-option:active, .dialogue-option.is-committing { transform: none; }
 }
