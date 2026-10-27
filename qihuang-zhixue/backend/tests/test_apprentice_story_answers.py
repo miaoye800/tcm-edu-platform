@@ -12,6 +12,44 @@ def test_diagnostic_questions_carry_random_herb_identity_metadata() -> None:
     assert len({question["herb_name"] for question in questions}) >= 2
 
 
+def test_photo_quiz_returns_all_five_illustrated_herbs() -> None:
+    """陈皮 once had no seed file, so the story silently ran on four questions."""
+
+    questions = load_diagnostic_questions(limit=5, photo_ready_only=True)
+
+    assert len(questions) == 5
+    assert {question["herb_id"] for question in questions} == {
+        "herb_taizishen",
+        "herb_dangshen",
+        "herb_huangqi",
+        "herb_chenpi",
+        "herb_jinyinhua",
+    }
+
+
+def test_options_never_repeat_the_same_distractor_set() -> None:
+    """Every question used to get the three alphabetically-first effects."""
+
+    questions = load_diagnostic_questions(limit=5, photo_ready_only=True)
+
+    distractor_sets = {frozenset(set(question["options"]) - {question["answer"]}) for question in questions}
+    assert len(distractor_sets) > 1
+
+
+def test_options_never_offer_another_effect_of_the_same_herb() -> None:
+    """A herb's own second effect must not appear as a wrong option."""
+
+    for question in load_diagnostic_questions(limit=500):
+        own = set(question["accepted_answers"])
+        options = question["options"]
+        distractors = set(options) - {question["answer"]}
+
+        assert len(options) == 4, f"{question['herb_name']} 的选项数量不是 4"
+        assert len(set(options)) == 4, f"{question['herb_name']} 的选项有重复"
+        assert question["answer"] in options
+        assert not (distractors & own), f"{question['herb_name']} 的干扰项混入了它自己的功效"
+
+
 def test_photo_quiz_has_illustrated_fallback_and_general_pool_stays_broad(tmp_path) -> None:
     fallback = load_diagnostic_questions(limit=5, data_dir=tmp_path, photo_ready_only=True)
     general_pool = load_diagnostic_questions(limit=500)

@@ -1,0 +1,106 @@
+// Story sub-theme: the only place the apprentice narrative may take colors from.
+//
+// Two layers, one palette:
+//   stage  - the video sits underneath and owns the dark end of the range
+//   cream  - every readable surface floats above the stage in warm off-white
+//
+// Do not add colors here without removing one. The whole point of this file is
+// that a reviewer can read the entire visual vocabulary in one screen.
+
+@font-face {
+  font-family: "QH Serif SC";
+  src: url("/fonts/noto-serif-sc-subset.woff2") format("woff2-variations");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "QH Sans SC";
+  src: url("/fonts/noto-sans-sc-subset.woff2") format("woff2-variations");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  // Stage layer
+  --story-stage: #16211d;
+  --story-stage-rail: #2b3b33;
+  --story-stage-veil: rgba(11, 18, 16, 0.55);
+
+  // Cream layer
+  --story-cream: #fdf8e7;
+  --story-cream-soft: #e9e1cb;
+  --story-ink: #3d2e1f;
+  --story-ink-soft: #6b5842;
+  --story-ink-faint: #8a7657;
+
+  // Accents
+  --story-gold: #f0c24a;
+  --story-gold-deep: #f0a93c;
+  --story-cinnabar: #a8402c;
+  --story-jade: #3f6b58;
+
+  // Choice pills
+  --story-pill: rgba(34, 31, 26, 0.88);
+  --story-pill-hover: rgba(48, 44, 37, 0.94);
+  --story-pill-icon: #3d3830;
+  --story-pill-text: #f2ede3;
+
+  // Geometry shared by every story surface
+  --story-dialog-inset: 24px;
+  --story-dialog-height: 128px;
+}
+
+.story-scope {
+  color: var(--story-ink);
+  font-family: var(--qh-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+// Screen-reader-only text. Components use this to expose the settled copy of a
+// typewriter line without painting a second visible paragraph.
+.story-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+// The stage is always full-bleed and always dark. Every scene relies on this
+// so that cream surfaces never need a border to separate themselves.
+.story-stage-surface {
+  position: absolute;
+  inset: 0;
+  background: var(--story-stage);
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-scope *,
+  .story-scope *::before,
+  .story-scope *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// 2K and up: the same six-step scale, re-anchored one notch higher. The overlay
+// is sized in px, so without this the dialogue reads like a postage stamp in the
+// middle of a very large stage.
+@media (min-width: 1600px) {
+  .story-scope {
+    --qh-text-lead: 20px;
+    --qh-text-ui: 16px;
+    --qh-text-option: 15px;
+    --qh-text-footnote: 13px;
+  }
+}

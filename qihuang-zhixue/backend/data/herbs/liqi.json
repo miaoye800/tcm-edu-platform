@@ -1,0 +1,39 @@
+[
+  {
+    "id": "herb_chenpi",
+    "name": "陈皮",
+    "pinyin": "chen pi",
+    "aliases": ["橘皮", "广陈皮", "新会皮"],
+    "category": "理气药",
+    "subcategory": "行气药",
+    "nature": "温",
+    "flavor": ["辛", "苦"],
+    "toxicity": "无毒",
+    "meridians": ["脾", "肺"],
+    "effects": ["理气健脾", "燥湿化痰"],
+    "indications": [
+      {"syndrome": "脾胃气滞证", "description": "脘腹胀满、食少倦怠、恶心呕吐"},
+      {"syndrome": "湿浊中阻", "description": "湿阻气机，胸闷腹胀、大便溏泄"},
+      {"syndrome": "痰湿壅肺", "description": "咳嗽痰多、胸闷气促，痰白易咯"},
+      {"syndrome": "胃气上逆", "description": "呕吐、呃逆，属寒者尤宜"}
+    ],
+    "dosage": {"text": "3~10g", "min_g": 3, "max_g": 10, "usage_notes": ""},
+    "cautions": ["气虚证、阴虚燥咳及吐血者慎用", "舌红少津、内有实热者不宜单用"],
+    "incompatibility": {"shibafan": [], "shijiuwei": []},
+    "combinations": [
+      {"with": ["herb_baizhu"], "purpose": "健脾理气，用于脾虚气滞、食少腹胀", "formula_ref": ""},
+      {"with": ["herb_shengjiang"], "purpose": "和胃降逆止呕，用于胃气上逆之呕吐", "formula_ref": ""},
+      {"with": ["herb_renshen", "herb_baizhu", "herb_gancao"], "purpose": "益气健脾兼行气化滞，用于脾胃气虚兼气滞", "formula_ref": ""}
+    ],
+    "differentiation": [
+      {"compare_with": "herb_baizhu", "key_points": "陈皮偏理气健脾、燥湿化痰，长于行气；白术偏补气健脾、燥湿利水，长于补虚"}
+    ],
+    "tags": {"learning_difficulty": 1, "high_frequency_exam": true, "common_confusions": ["herb_baizhu"]},
+    "sources": [
+      {"type": "教材", "ref": "《中药学》(钟赣生·新世纪第四版)·第十五章·第一节·陈皮"}
+    ],
+    "verified": true,
+    "confidence": "high",
+    "embedding_text": "陈皮 橘皮 广陈皮 新会皮 理气药 行气药 辛苦温 归脾肺经 理气健脾 燥湿化痰 脾胃气滞证 湿浊中阻 痰湿壅肺 胃气上逆呕吐"
+  }
+]

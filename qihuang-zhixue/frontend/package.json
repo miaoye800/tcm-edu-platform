@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --configLoader runner",
-    "test": "node tests/profile-dialogue.component.spec.mjs && node tests/onboarding-dialogue.component.spec.mjs && node tests/profile-enhancements.component.spec.mjs && node tests/apprentice-story.component.spec.mjs && node tests/button-system.component.spec.mjs && node tests/meridian-map.component.spec.mjs && node tests/immersive-resources.component.spec.mjs && node tests/immersive-doc.component.spec.mjs && node tests/graph-view.component.spec.mjs && node tests/doc-graph-polish.component.spec.mjs && node tests/mindmap-resource.component.spec.mjs && node tests/assessment.component.spec.mjs",
+    "test": "node tests/profile-dialogue.component.spec.mjs && node tests/onboarding-dialogue.component.spec.mjs && node tests/profile-enhancements.component.spec.mjs && node tests/apprentice-story.component.spec.mjs && node tests/button-system.component.spec.mjs && node tests/story-kit.component.spec.mjs && node tests/meridian-map.component.spec.mjs && node tests/immersive-resources.component.spec.mjs && node tests/immersive-doc.component.spec.mjs && node tests/graph-view.component.spec.mjs && node tests/doc-graph-polish.component.spec.mjs && node tests/mindmap-resource.component.spec.mjs && node tests/assessment.component.spec.mjs",
     "test:e2e:graph": "node tests/graph-interactions.e2e.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
     "build": "vue-tsc --noEmit && vite build --configLoader runner",
-    "preview": "vite preview --host 127.0.0.1 --configLoader runner"
+    "preview": "vite preview --host 127.0.0.1 --configLoader runner",
+    "shot:story": "node scripts/shot-story.mjs",
+    "build:fonts": "python scripts/build-fonts.py"
   },
   "dependencies": {
     "@antv/g6": "^5.1.1",

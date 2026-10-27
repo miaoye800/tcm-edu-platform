@@ -574,6 +574,16 @@ def load_diagnostic_questions(
     questions: list[dict[str, Any]] = []
     all_effects = sorted({effect for herb in herbs for effect in _string_list(herb.get("effects"))})
     all_names = sorted({str(herb.get("name", "")).strip() for herb in herbs if str(herb.get("name", "")).strip()})
+    # Effects grouped by subcategory, so a question can offer confusable options
+    # ("补气药的题就用补气药的功效当干扰") instead of the same three words every time.
+    effects_by_subcategory: dict[str, list[str]] = {}
+    for herb in herbs:
+        bucket = str(herb.get("subcategory") or "").strip()
+        if not bucket:
+            continue
+        effects_by_subcategory.setdefault(bucket, []).extend(_string_list(herb.get("effects")))
+    for bucket, values in effects_by_subcategory.items():
+        effects_by_subcategory[bucket] = sorted(set(values))
     # A new session gets a fresh set/order of herbs so the same answer path is
     # not memorised. Tests that need a stable fixture pass their own empty data
     # directory and use the explicit fallback list below.
@@ -587,10 +597,17 @@ def load_diagnostic_questions(
         effects = _string_list(herb.get("effects"))
         if name and effects:
             answer = effects[0]
-            distractors = [effect for effect in all_effects if effect != answer]
+            # Every effect of this herb is a defensible answer, so none of them
+            # may be used as a distractor - otherwise a correct answer gets
+            # graded wrong.
+            own = set(effects)
+            local = [effect for effect in effects_by_subcategory.get(str(herb.get("subcategory") or "").strip(), []) if effect not in own]
+            distractors = local if len(local) >= 3 else local + [effect for effect in all_effects if effect not in own]
             questions.append(
                 {
                     "id": f"kb_{_safe_id(herb.get('id') or name)}_effect",
+                    # 题面仅供非剧情入口使用（quickcard / 问诊），剧情题面由前端
+                    # apprenticeQuizPrompt 渲染，因为剧情里不能出现药名。
                     "question": f"{name}的代表功效之一是？",
                     "options": _options(answer, distractors, rng),
                     "answer": answer,
@@ -3959,8 +3976,10 @@ def _is_quiz_step(step_id: str) -> bool:
 
 
 def _options(answer: str, distractors: list[str], rng: random.Random) -> list[str]:
-    pool = [item for item in distractors if item and item != answer]
-    chosen = pool[:3]
+    # Sample instead of slicing the head of a sorted pool: slicing gave every
+    # question the same three distractors, which let players win without reading.
+    pool = list(dict.fromkeys(item for item in distractors if item and item != answer))
+    chosen = rng.sample(pool, 3) if len(pool) >= 3 else pool
     while len(chosen) < 3:
         chosen.append(f"干扰项{len(chosen) + 1}")
     options = [answer, *chosen[:3]]

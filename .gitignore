@@ -113,6 +113,8 @@ _cleanup_root_pytest.ps1
 
 # 本地素材与备份：体积大、与源码无关，留在本机即可
 ai-video/
+# 六段正片是页面实际使用的资源；section-all.mp4 只是本机的完整合辑，页面不引用
+qihuang-zhixue/frontend/public/story/section-all.mp4
 qihuang-zhixue/CardImg/
 qihuang-zhixue/_archive_*/
 _archive_*/

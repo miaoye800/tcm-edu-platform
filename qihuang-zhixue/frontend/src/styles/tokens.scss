@@ -41,9 +41,25 @@
   --qh-sidebar-width: 236px;
   --qh-sidebar-collapsed: 78px;
   --qh-topbar-height: 84px;
-  --qh-font-body: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-  --qh-font-display: "Nunito", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-  --qh-font-reading: "Noto Serif SC", "Songti SC", STSong, serif;
+  --qh-font-body: "QH Sans SC", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  --qh-font-display: "Nunito", "QH Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --qh-font-reading: "QH Serif SC", "Noto Serif SC", "Songti SC", STSong, serif;
+  // Six-step type scale. Every story surface must pick from this list; the
+  // check-tokens script rejects any other font-size inside the story module.
+  --qh-text-display: 32px;
+  --qh-text-title: 24px;
+  --qh-text-lead: 17px;
+  --qh-text-ui: 15px;
+  --qh-text-option: 14px;
+  --qh-text-footnote: 12px;
+  --qh-radius-seal: 4px;
+  --qh-radius-media: 10px;
+  --qh-radius-panel: 16px;
+  --qh-radius-bubble: 20px;
+  --qh-radius-dialog: 26px;
+  --qh-radius-pill: 999px;
+  --qh-shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --qh-ease: cubic-bezier(0.32, 0.72, 0, 1);
   --qh-color-night-raised: rgba(20, 37, 35, 0.9);
   --qh-color-night-glass: rgba(13, 23, 24, 0.8);
   --qh-color-night-overlay: rgba(8, 20, 24, 0.86);

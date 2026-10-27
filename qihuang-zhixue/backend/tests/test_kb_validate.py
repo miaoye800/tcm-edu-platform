@@ -39,6 +39,18 @@ def test_herb_seed_file_passes_validation() -> None:
     assert report.issues == []
 
 
+def test_chenpi_seed_entry_is_present_and_typed_as_qi_regulating() -> None:
+    """陈皮 was whitelisted for the photo quiz but had no seed file, so the
+    apprentice story silently asked four questions instead of five."""
+
+    herbs = load_herbs(Path("data/herbs"))
+    chenpi = next((herb for herb in herbs if herb.id == "herb_chenpi"), None)
+
+    assert chenpi is not None, "data/herbs 里缺少 herb_chenpi"
+    assert chenpi.category == "理气药"
+    assert chenpi.effects[0] == "理气健脾", "effects[0] 是出题时的正确答案"
+
+
 def test_herb_model_accepts_enum_values() -> None:
     herb = Herb.model_validate(
         {

@@ -13,6 +13,7 @@ class Category(StrEnum):
 
     JIE_BIAO = "解表药"
     QING_RE = "清热药"
+    LI_QI = "理气药"
     BU_XU = "补虚药"
 
 

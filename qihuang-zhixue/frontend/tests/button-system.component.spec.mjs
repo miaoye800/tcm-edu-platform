@@ -17,7 +17,10 @@ const test = (name, fn) => {
 const tokens = read('src/styles/tokens.scss')
 const onboarding = read('src/views/OnboardingView.vue')
 const dialogue = read('src/components/profile/ProfileDialogue.vue')
-const story = read('src/views/ApprenticeStoryView.vue')
+const chapterBar = read('src/components/story/StoryChapterBar.vue')
+const storyView = read('src/views/ApprenticeStoryView.vue')
+const prescription = read('src/views/apprentice/PrescriptionScene.vue')
+const rule = read('src/views/apprentice/RuleScene.vue')
 
 test('shared button vocabulary uses token-backed primary, secondary, option, and icon controls', () => {
   for (const className of ['.qh-button--primary', '.qh-button--secondary', '.qh-option-button', '.qh-icon-button']) {
@@ -29,11 +32,12 @@ test('shared button vocabulary uses token-backed primary, secondary, option, and
 })
 
 test('story uses a text-labelled exit control and has no sound or click-to-continue actions', () => {
-  assert(story.includes('退出剧情'), 'exit action should be visibly labelled')
-  assert(story.includes('@click="leaveStory"'), 'exit action should leave the story immediately')
-  assert(!story.includes('开启音效') && !story.includes('静音'), 'sound is enabled by default without a toggle')
-  assert(!story.includes('点击对白继续'), 'dialogue should advance automatically')
-  assert(story.includes("muted: false") || story.includes(':muted="false"'), 'story playback should default to sound on')
+  assert(chapterBar.includes('退出剧情'), 'exit action should be visibly labelled')
+  assert(chapterBar.includes("@click=\"emit('exit')\""), 'the exit control emits instead of navigating itself')
+  assert(storyView.includes('@exit="leaveStory"'), 'the container owns the navigation')
+  assert(!storyView.includes('开启音效') && !storyView.includes('静音'), 'sound is enabled by default without a toggle')
+  assert(!storyView.includes('点击对白继续'), 'dialogue advances with the video, not on click')
+  assert(storyView.includes(':muted="false"'), 'story playback defaults to sound on')
 })
 
 test('loading and disabled dialogue controls guard against repeat submission', () => {
@@ -41,7 +45,8 @@ test('loading and disabled dialogue controls guard against repeat submission', (
   assert(dialogue.includes(':disabled="disabled || pending || !draft.trim()"'), 'send action should lock while pending')
   assert(dialogue.includes(':disabled="disabled || pending"'), 'quick replies should lock while pending')
   assert(dialogue.includes('if (props.disabled || props.pending) return'), 'both emission paths should reject a repeated pending submit')
-  assert(story.includes(':aria-busy="submitting"') && story.includes(':disabled="!canSubmit"'), 'story submit should retain a stable busy/disabled state')
+  assert(prescription.includes(':aria-busy="submitting"') && prescription.includes('disabled: !props.canSubmit'), 'the prescription submit pill keeps a stable busy/disabled state')
+  assert(rule.includes(':aria-busy="submitting"') && rule.includes('disabled: !props.canSubmit'), 'the study-rule submit pill keeps a stable busy/disabled state')
 })
 
 test('unrevealed destiny cards cannot mount an evidence action or reveal card data', () => {
@@ -53,8 +58,8 @@ test('unrevealed destiny cards cannot mount an evidence action or reveal card da
   assert(!collectionBlock.includes('evidenceOnlyGroups'), 'evidence panel data must not bypass reveal privacy')
 })
 
-test('reduced-motion button branch remains present', () => {
+test('reduced-motion handling covers the shared controls and the story scope', () => {
   assert(tokens.includes('@media (prefers-reduced-motion: reduce)'), 'shared controls need a reduced-motion branch')
   assert(tokens.includes('.qh-icon-button'), 'shared reduced-motion branch should cover icon controls')
-  assert(/\.story-controls \.exit-story[^}]*transition: none;/.test(story), 'story control motion should be removed for reduced motion')
+  assert(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.story-scope/.test(read('src/styles/story.scss')), 'story motion should collapse for reduced motion')
 })

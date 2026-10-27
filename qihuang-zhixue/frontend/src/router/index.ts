@@ -54,6 +54,24 @@ const routes: RouteRecordRaw[] = [
     component: MeridianDemo,
     meta: { title: '经络学习脉络样张', public: true },
   },
+  // Dev-only component gallery for the apprentice story. Lazy so production
+  // builds never ship the review surface.
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '/story-kit',
+          name: 'story-kit',
+          component: () => import('../views/StoryKitView.vue'),
+          meta: { title: '剧情组件画廊', public: true },
+        } satisfies RouteRecordRaw,
+        {
+          path: '/story-preview',
+          name: 'story-preview',
+          component: () => import('../views/StoryPreviewView.vue'),
+          meta: { title: '剧情整屏预览', public: true },
+        } satisfies RouteRecordRaw,
+      ]
+    : []),
   {
     path: '/login',
     name: 'login',
