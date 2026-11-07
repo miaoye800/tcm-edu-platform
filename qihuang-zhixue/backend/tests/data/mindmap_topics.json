@@ -1,0 +1,25 @@
+{
+  "note": "20 条中药学问法评测集：8 类问法各 2~3 条，外加 2 条域外兜底。断言口径见 tests/test_mindmap_intents.py：节点数 ≥8、一级分支 ≥3、空壳节点 = 0、三档依据之和 = 节点总数、域外全为 model。",
+  "topics": [
+    {"topic": "麻黄", "kind": "monograph", "why": "单味药，最基础的一条"},
+    {"topic": "黄芪的用量", "kind": "monograph", "why": "带限定语的单味药"},
+    {"topic": "细辛", "kind": "monograph", "why": "有毒药，看禁忌与用量是否都取到"},
+    {"topic": "解表药", "kind": "taxonomy", "why": "教材一级分类"},
+    {"topic": "清热药的分类", "kind": "taxonomy", "why": "分类章节的显式说法"},
+    {"topic": "补虚药", "kind": "taxonomy", "why": "亚类最多的章节"},
+    {"topic": "麻黄与桂枝的区别", "kind": "comparison", "why": "同类药对比"},
+    {"topic": "人参与黄芪的鉴别", "kind": "comparison", "why": "补气药对比"},
+    {"topic": "苍术与白术异同", "kind": "comparison", "why": "同章节易混药对"},
+    {"topic": "哪些药能安神", "kind": "reverse", "why": "功效反查，教材写作养心安神/镇惊安神"},
+    {"topic": "什么药能止咳平喘", "kind": "reverse", "why": "功效反查，跨多个药类"},
+    {"topic": "入肺经的温性药", "kind": "filter", "why": "归经 + 性味双条件筛选"},
+    {"topic": "性寒的清热药", "kind": "filter", "why": "性味 + 药类筛选"},
+    {"topic": "十八反有哪些", "kind": "relation", "why": "硬约束关系，68 条边"},
+    {"topic": "十九畏", "kind": "relation", "why": "另一类硬约束"},
+    {"topic": "桂枝配白芍", "kind": "relation", "why": "配伍题，图谱无边时要回退到药材配伍条目"},
+    {"topic": "风寒表证用什么药", "kind": "syndrome", "why": "证 → 药 → 方"},
+    {"topic": "易混淆的清热药", "kind": "exam", "why": "应试专题"},
+    {"topic": "十二经脉", "kind": "concept", "why": "域外：中基内容，不在中药学语料"},
+    {"topic": "气血津液", "kind": "concept", "why": "域外：必须诚实降级"}
+  ]
+}

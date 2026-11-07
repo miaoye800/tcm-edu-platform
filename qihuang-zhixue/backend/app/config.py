@@ -34,6 +34,20 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("ZHIPU_API_KEY", "ZHIPUAI_API_KEY"),
     )
+    qwen_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("QWEN_API_KEY", "DASHSCOPE_API_KEY"),
+    )
+    qwen_base_url: str = Field(
+        default="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        alias="QWEN_BASE_URL",
+    )
+    # 百炼给每个模型独立赠送 100 万 token，换模型即换额度，所以按档位留三个槽位。
+    # 注意：qwen-flash 的免费额度已耗尽（403 Free quota exhausted），
+    # 默认改用 qwen3.8-flash；额度再耗尽时改这里的默认值或设 QWEN_MODEL_FLASH 即可。
+    qwen_model_flash: str = Field(default="qwen3.8-flash", alias="QWEN_MODEL_FLASH")
+    qwen_model_plus: str = Field(default="qwen-plus", alias="QWEN_MODEL_PLUS")
+    qwen_model_max: str = Field(default="qwen-max", alias="QWEN_MODEL_MAX")
     llm_task_model_map: dict[str, str] = Field(
         default_factory=lambda: {
             "classify": "deepseek_model_flash",
@@ -53,12 +67,39 @@ class Settings(BaseSettings):
         },
         alias="LLM_TASK_MODEL_MAP",
     )
+    # 录制回放开关：live=真调并录制，replay=只回放（e2e 用），auto=先回放后真调，
+    # mock=强制 MockClient。默认 auto，本地开发无感，测试脚本显式设 replay。
+    llm_mode: str = Field(default="auto", alias="LLM_MODE")
+    # 默认关闭思考模式。未显式指定 thinking 的调用点一律走这个值，
+    # 避免抽取/评分类任务误用推理 token。需要推理的任务在调用侧显式传 enabled。
+    llm_thinking_default: str = Field(default="disabled", alias="LLM_THINKING_DEFAULT")
     mock_stream_delay: float = Field(default=0.03, alias="MOCK_STREAM_DELAY")
     llm_timeout_seconds: float = Field(default=60.0, alias="LLM_TIMEOUT_SECONDS")
     # 请求在服务端已受理后发生网络超时仍可能产生费用；默认不自动重发。
     llm_max_retries: int = Field(default=0, alias="LLM_MAX_RETRIES")
     llm_fallback_to_mock: bool = Field(default=True, alias="LLM_FALLBACK_TO_MOCK")
     retrieval_score_threshold: float = Field(default=0.35, alias="RETRIEVAL_SCORE_THRESHOLD")
+    # GraphRAG 图扩展（P5）。三个开关分开，是为了出问题时能只关扩展、
+    # 不动基础检索：基础检索坏了是「查不到药」，扩展坏了只是「少几条关系」。
+    kg_expand_enabled: bool = Field(default=True, alias="KG_EXPAND_ENABLED")
+    #: 一次检索最多补几味「图上有关系、但向量没召回」的药。太大等于把图摊成
+    #: 一张毛毯，讲解文档会被无关药材撑散；小一点才有「补充」的意思。
+    kg_expand_max_docs: int = Field(default=2, ge=0, le=8, alias="KG_EXPAND_MAX_DOCS")
+    #: 只有分数够高的命中才配当「扩展起点」。阈值比基础检索低，因为这里的
+    #: 分数只用来筛种子，不决定「要不要回答」——筛错了只是少扩一跳。
+    kg_seed_threshold: float = Field(default=0.28, alias="KG_SEED_THRESHOLD")
+    # GraphRAG 主问答链路（M1-S4）。和上面三个 ``kg_expand_*`` 不是一件事：
+    # 那组是**资源生成**时沿图补药材，这组是**问答**时沿图补关系依据。
+    # 分开配的理由很实际——问答补进来的是「为什么配」，资源补进来的是「还有哪味药」，
+    # 出问题时得能只关一半。
+    kg_agent_enabled: bool = Field(default=True, alias="KG_AGENT_ENABLED")
+    #: 本地只读 SQLite 单次查询正常 <20ms。2 秒是「明显出问题了」的界线，
+    #: 超过它宁可退化成普通检索，也不让用户对着转圈等图。
+    kg_agent_timeout_seconds: float = Field(default=2.0, gt=0, le=10, alias="KG_AGENT_TIMEOUT_SECONDS")
+    #: 一张关系卡最多几条关系。太多会把讲解挤成配伍清单，用户要的是依据不是目录。
+    kg_agent_max_relations: int = Field(default=6, ge=0, le=20, alias="KG_AGENT_MAX_RELATIONS")
+    #: 图扩展时每个种子最多取多少条边。
+    kg_agent_limit: int = Field(default=40, ge=4, le=200, alias="KG_AGENT_LIMIT")
     auth_secret: str = Field(default=DEFAULT_DEV_AUTH_SECRET, alias="AUTH_SECRET")
     auth_token_expire_days: int = Field(default=7, alias="AUTH_TOKEN_EXPIRE_DAYS")
     qihuang_db_path: Path = Field(default=DEFAULT_DATABASE_PATH, alias="QIHUANG_DB_PATH")

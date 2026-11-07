@@ -130,3 +130,39 @@ qihuang-zhixue/frontend/graph-interaction-qa.png
 /tmp_pytest_*/
 /.pytest-tmp*/
 **/.pytest-tmp*/
+
+# 本地 AI 工作区状态、规划草稿与审计输出（非项目源码）
+.workbuddy/
+/.p2-plan*
+/_plan.md
+/audit-*.json
+/page-check-report.json
+/generated-images/
+
+# 本地视觉核验截图、临时构建产物与缓存备份（体积大、可复现）
+qihuang-zhixue/audit-shots/
+qihuang-zhixue/frontend/audit-shots/
+qihuang-zhixue/ui-check-*.png
+qihuang-zhixue/frontend/dist-doc*/
+qihuang-zhixue/frontend/.vite-cache.bak-*/
+qihuang-zhixue/backend/.backup-herbs-*/
+qihuang-zhixue/deliverables/_shot_atlas.png
+qihuang-zhixue/deliverables/review_sheet_preview.png
+qihuang-zhixue/deliverables/review_sheet.html
+
+# 退役代码（已被 tsconfig exclude）、待发布中间数据、一次性迭代探针脚本
+qihuang-zhixue/frontend/src/**/_legacy/
+qihuang-zhixue/backend/data/herbs/_pending/
+qihuang-zhixue/frontend/scripts/capture-refs-round*.mjs
+# 教材 PDF 的页文本缓存：extract_text.py 在缺失时自动重建，且含教材正文抽取内容
+qihuang-zhixue/backend/scripts/textbook/_cache/
+
+# 本地视觉核验/探针脚本：依赖本机 Chrome 路径、本地 dev-server 与本地 token 文件，
+# 不被 package.json 或测试套件引用，属于本机专用工具。
+qihuang-zhixue/frontend/scripts/capture-*.mjs
+qihuang-zhixue/frontend/scripts/diag-*.mjs
+qihuang-zhixue/frontend/scripts/page-audit-check.mjs
+qihuang-zhixue/frontend/scripts/probe*.mjs
+qihuang-zhixue/frontend/scripts/shot-*.mjs
+qihuang-zhixue/frontend/scripts/verify-*.mjs
+qihuang-zhixue/frontend/scripts/lib/

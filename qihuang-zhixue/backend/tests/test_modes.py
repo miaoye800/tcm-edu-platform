@@ -110,7 +110,9 @@ def test_apprentice_flow_emits_cards_for_all_acts_without_scores(tmp_path: Path)
     }
     assert any(card["dimension"] == "resource_preference" for card in cards)
     assert all("score" not in card["objective_signal"] for card in cards)
-    assert any(card["objective_signal"].get("response_time_ms") == 9000 for card in cards)
+    # 原始毫秒不再落库：9000ms 在数字题基准（5–20 秒）里属于"正常"。
+    assert any(card["objective_signal"].get("response_speed") == "正常" for card in cards)
+    assert all("response_time_ms" not in card["objective_signal"] for card in cards)
 
 
 def test_quickcard_emits_identity_and_timed_judgement_cards() -> None:
@@ -149,7 +151,8 @@ def test_practice_uses_high_weight_prescription_evidence() -> None:
     assert cards[0]["weight"] == 1.5
     assert cards[0]["objective_signal"]["对症"] is True
     assert cards[0]["objective_signal"]["配伍"] is True
-    assert cards[0]["objective_signal"]["response_time_ms"] == 7000
+    # 7000ms 在行为题基准（5–20 秒）里属于"正常"。
+    assert cards[0]["objective_signal"]["response_speed"] == "正常"
 
 
 def test_prescription_uses_shared_trace_metadata_and_no_key_marker(monkeypatch) -> None:
@@ -210,7 +213,9 @@ def test_cough_with_ginseng_is_not_automatically_symptom_matched() -> None:
     mismatch = next(item for item in evaluation.findings if item["kind"] == "case_mismatch")
     assert mismatch["quote"] == "咳嗽痰多"
     assert mismatch["knowledge_base_refs"]
-    assert mismatch["rule"] == "prescription_rule_v1"
+    # 规则 id 现在按检查项细分（kg.rx.v1.case），不再是笼统的 prescription_rule_v1，
+    # 这样错题归因能直接指到「是哪一条规则判错的」。
+    assert mismatch["rule"] == "kg.rx.v1.case"
 
 
 def test_incremental_prescription_cards_keep_shared_trace_metadata() -> None:
@@ -279,7 +284,8 @@ def test_passive_events_convert_to_evidence_cards() -> None:
 
     assert [card["dimension"] for card in cards] == ["resource_preference", "weak_points"]
     assert cards[1]["objective_signal"]["event_type"] == "skip"
-    assert cards[1]["objective_signal"]["response_time_ms"] == 300
+    # 300ms 在行为题基准里属于"快"。
+    assert cards[1]["objective_signal"]["response_speed"] == "快"
 
 
 def test_dialogue_flow_without_key_does_not_fabricate_semantic_cards(tmp_path: Path) -> None:
@@ -493,9 +499,17 @@ def test_dialogue_exceeds_legacy_max_turns_without_finishing(monkeypatch, tmp_pa
         return {}, f"follow up {current_turn['value']}"
 
     def fake_cards_from_extraction(_extraction):
+        # Convergence now hangs on component coverage, not on confidence: a
+        # dimension counts as ready only once 3 of its 5 components are
+        # collected, and a half-baked one keeps the dialogue going. So the fake
+        # turn has to land real components instead of one anonymous card.
         return [
-            _evidence_card("learning_goal", {"label": ALLOWED_LABELS["learning_goal"][0]}, weight=1.0),
-            _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0], "motivation_score": 80}, weight=1.0),
+            _evidence_card("learning_goal", {"label": ALLOWED_LABELS["learning_goal"][0]}, weight=1.0, component="expression_certainty"),
+            _evidence_card("learning_goal", {"label": ALLOWED_LABELS["learning_goal"][0]}, weight=1.0, component="goal_specificity"),
+            _evidence_card("learning_goal", {"label": ALLOWED_LABELS["learning_goal"][0]}, weight=1.0, component="action_orientation"),
+            _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0], "motivation_score": 80}, weight=1.0, component="intrinsic_value"),
+            _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0], "motivation_score": 80}, weight=1.0, component="external_commitment"),
+            _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0], "motivation_score": 80}, weight=1.0, component="actual_investment"),
         ]
 
     monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", fake_extract_and_question)
@@ -1092,8 +1106,18 @@ def test_dialogue_chat_sse_audit_exposes_full_scan_for_healing_goal(monkeypatch,
     steering = json.loads(answer_payloads[0][1]["content"].removeprefix("profile_steering="))
     assert steering["target_dimension"] == "learning_goal"
     assert steering["component_focus"]["component"] == "action_orientation"
-    visible_answer = "".join(str(data.get("delta", "")) for event, data in events if event == "message")
+    # 纠偏走 replace 而不是追加：可见正文以最后一次 replace 为准。
+    visible_answer = ""
+    for event, data in events:
+        if event == "message":
+            visible_answer += str(data.get("delta", ""))
+        elif event == "replace":
+            visible_answer = str(data.get("text", ""))
     assert "你为这个方向做过哪些准备" in visible_answer
+    # 漂移的追问被替换掉，正文里只留一个问号。
+    assert visible_answer.count("？") == 1
+    # 首字不能重复：前缀探测释放时曾把第一个分片写两遍（"我我听到了…"）。
+    assert visible_answer.startswith("我听到了")
     assert [stage["label"] for stage in audit["stages"]] == [
         "七维扫描", "原话与来源校验", "组件矩阵更新", "组件评分门禁", "分数与确认度", "补问规划", "回答组织"
     ]
@@ -1175,6 +1199,269 @@ def test_dialogue_complete_component_set_is_scored_and_revealed(monkeypatch, tmp
     assert goal["scoring_output"] and len(goal["scoring_output"]) == 5
     assert goal["confidence_audit"]["combination_type"] == "single_clear_self_report"
     assert radar["axes"][1]["scoring_phase"] == "scored"
+
+
+def test_dialogue_partial_component_set_still_scores_and_lights_the_radar(monkeypatch, tmp_path: Path) -> None:
+    """4/5 已收集就要出分：覆盖 80% 已过 60% 门槛，雷达不能是暗的。
+
+    实测用户在对话里收齐了"表达确定性/目标具体度/行动指向/优先级信号"四个
+    组件，界面上写着"已收集 4/5 个组件 · 雷达 —"——因为旧实现要 5 个全收齐
+    才肯调评分模型。维度分的门槛本来就是 coverage ≥ 0.6，两者必须一致。
+    """
+
+    from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS, QualityFactors
+    from app.profile.jury import JurorAssessment, ScoringResult
+    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
+
+    quote = "我想考研，已经列了复习计划，每天先看中药学"
+    keys = COMPONENTS["learning_goal"]
+    collected = keys[:4]
+
+    def build_extraction(turn_id: int, components: list[str]) -> DialogueExtraction:
+        return DialogueExtraction(
+            turn_id=turn_id,
+            dimension_scan=[
+                DimensionScan(
+                    dimension=dimension,
+                    status="evidence_found" if dimension == "learning_goal" else "no_usable_evidence",
+                    reason="原话提供了目标信息。" if dimension == "learning_goal" else "本句没有该维度的可追溯内容。",
+                    components=list(components) if dimension == "learning_goal" else [],
+                )
+                for dimension in modes_module.DIMENSION_LABELS
+            ],
+            atomic_evidence=[
+                AtomicEvidence(
+                    evidence_id=f"ev-partial-{turn_id}-{index}", dimension="learning_goal", component=component,
+                    evidence_group_id=f"turn-{turn_id}-goal", source_turn_ids=[turn_id], quote=quote,
+                    normalized_claim=f"目标组件证据：{COMPONENT_RUBRICS['learning_goal'][component]['label']}",
+                    evidence_type="self_report", supports=[component], collection_status="scorable",
+                    assessment="用户给出与该组件直接相关的信息", confirmed_aspects=["存在相关目标线索"],
+                    pending_aspects=[], semantic_relation="new",
+                    quality_factors=QualityFactors(
+                        source_reliability=.9, expression_clarity=.9, content_specificity=.8,
+                        freshness=1, consistency=.9, independence_note="部分覆盖回归样例",
+                    ),
+                )
+                for index, component in enumerate(components, start=1)
+            ],
+        )
+
+    extractions = [build_extraction(1, collected), build_extraction(2, [])]
+    score_calls: list[list[str]] = []
+
+    async def mocked_extract(**_kwargs):
+        return extractions.pop(0), ""
+
+    async def mocked_score(dimension, cards):
+        assert dimension == "learning_goal"
+        score_calls.append([card.component for card in cards])
+        return ScoringResult(
+            dimension="目标锚定度", dimension_key="learning_goal",
+            component_scores={component: 76.0 for component in collected},
+            jury={
+                "严师": JurorAssessment(score=72, reasoning_chain=["目标有具体院校和时间"], comment="方向明确"),
+                "宽师": JurorAssessment(score=80, reasoning_chain=["已列复习计划"], comment="可执行"),
+                "中立": JurorAssessment(score=76, reasoning_chain=["有意向也有初步动作"], comment="中等偏上"),
+            },
+            jury_mean=76.0,
+            coverage=0.8,
+            radar_score=70.8,
+            narrative="四项组件已评分，覆盖 80%。",
+            method="jury",
+            provenance="test_partial_scoring",
+        )
+
+    class AnswerRouter:
+        async def chat_stream(self, _task, _messages, **_kwargs):
+            yield "message", "目标已经比较清楚了。你打算怎么安排每周的时间？"
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
+    monkeypatch.setattr(modes_module, "score_dimension", mocked_score)
+    monkeypatch.setattr(modes_module, "ModelRouter", AnswerRouter)
+    monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
+    started = _start("dialogue", user_id="dialogue-partial-component-score")
+
+    response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": quote})
+    assert response.status_code == 200, response.text
+    events = _parse_sse(response.text)
+    audit = next(data for event, data in events if event == "audit")
+    goal = next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
+    radar = next(data for event, data in events if event == "radar")
+    goal_axis = next(axis for axis in radar["axes"] if axis["key"] == "learning_goal")
+
+    assert goal["component_collection"]["collected"] == 4
+    assert goal["scoring_phase"] == "scored"
+    assert goal["radar_score"] is not None
+    assert goal["component_collection"]["coverage"] == 0.8
+    assert goal["scoring_deferred_reason"] is None
+    assert goal["scoring_provenance"] == "test_partial_scoring"
+    # 审计要能回答"模型怎么打分的"：三师的分数、逐条比对摘要、评语都要透出，
+    # 否则页面上只剩一个结论分，用户没法判断这个分是怎么来的。
+    assert [item["teacher"] for item in goal["jury_panel"]] == ["严师", "宽师", "中立"]
+    assert goal["jury_panel"][0]["reasoning_chain"] == ["目标有具体院校和时间"]
+    assert goal["jury_panel"][0]["comment"] == "方向明确"
+    assert goal["jury_mean"] == 76.0
+    assert goal_axis["lit"] is True
+    assert goal_axis["status"] == "solid"
+    assert goal_axis["value"] > 0
+    assert len(score_calls) == 1
+
+    # 第二轮没有新组件：同一批已收组件不能每轮重复打分。
+    second = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": "每周三晚上看两小时"})
+    assert second.status_code == 200, second.text
+    assert len(score_calls) == 1
+
+
+def test_dialogue_rerun_waits_for_three_more_evidence(monkeypatch, tmp_path: Path) -> None:
+    """重评节奏：首评在组件达 60%，之后每新增 3 条去重证据才重评一次。
+
+    时效性让位给成本：+2 条就重评等于白烧一次模型调用，而 +3 条才说明
+    "用户又说了新东西、分数该动了"。水位线用去重后的条数，避免同一句话
+    被抽成三张卡时每轮都触发。
+    """
+
+    from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS, QualityFactors
+    from app.profile.jury import JurorAssessment, ScoringResult
+    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
+
+    keys = COMPONENTS["learning_goal"][:3]
+    quote = "我想考研，目标定在北中医，每天先背方剂"
+    score_calls: list[int] = []
+
+    def evidence(turn_id: int, component: str, slot: int) -> AtomicEvidence:
+        return AtomicEvidence(
+            evidence_id=f"ev-rerun-{turn_id}-{slot}", dimension="learning_goal", component=component,
+            # 每次新增都换来源组，否则会被当成同源重复，水位线永远不涨。
+            evidence_group_id=f"turn-{turn_id}-slot-{slot}", source_turn_ids=[turn_id], quote=quote,
+            normalized_claim=f"目标组件证据：{COMPONENT_RUBRICS['learning_goal'][component]['label']}",
+            evidence_type="self_report", supports=[component], collection_status="scorable",
+            assessment="与组件直接相关", confirmed_aspects=["存在相关线索"], pending_aspects=[],
+            semantic_relation="new",
+            quality_factors=QualityFactors(
+                source_reliability=.9, expression_clarity=.82, content_specificity=.78,
+                freshness=1, consistency=.85, independence_note="重评节奏回归样例",
+            ),
+        )
+
+    def build_extraction(turn_id: int, items: list[AtomicEvidence]) -> DialogueExtraction:
+        return DialogueExtraction(
+            turn_id=turn_id,
+            dimension_scan=[
+                DimensionScan(
+                    dimension=dimension,
+                    status="evidence_found" if items and dimension == "learning_goal" else "no_usable_evidence",
+                    reason="原话提供了目标信息。" if items and dimension == "learning_goal" else "本句没有该维度的可追溯内容。",
+                    components=sorted({item.component for item in items}) if dimension == "learning_goal" else [],
+                )
+                for dimension in modes_module.DIMENSION_LABELS
+            ],
+            atomic_evidence=items,
+        )
+
+    # 第 1 轮 3 条（3 个组件各 1 条）→ 首评；第 2 轮 +2 条 → 不重评；第 3 轮 +1 条 → 重评。
+    extractions = [
+        build_extraction(1, [evidence(1, key, index) for index, key in enumerate(keys, start=1)]),
+        build_extraction(2, [evidence(2, keys[0], index) for index in (1, 2)]),
+        build_extraction(3, [evidence(3, keys[0], 3)]),
+    ]
+
+    async def mocked_extract(**_kwargs):
+        return extractions.pop(0), ""
+
+    async def mocked_score(dimension, cards):
+        assert dimension == "learning_goal"
+        score_calls.append(len(cards))
+        return ScoringResult(
+            dimension="目标锚定度", dimension_key="learning_goal",
+            component_scores={key: 66.0 for key in keys},
+            rescored_components=list(keys),
+            jury={
+                "严师": JurorAssessment(score=60, reasoning_chain=["目标有对象"], comment="方向明确"),
+                "宽师": JurorAssessment(score=72, reasoning_chain=["有每日动作"], comment="可执行"),
+                "中立": JurorAssessment(score=66, reasoning_chain=["有目标有动作"], comment="中等偏上"),
+            },
+            jury_mean=66.0,
+            coverage=0.6,
+            radar_score=59.6,
+            narrative="三个组件已评分。",
+            method="jury",
+            provenance="test_rerun_pacing",
+        )
+
+    class AnswerRouter:
+        async def chat_stream(self, _task, _messages, **_kwargs):
+            yield "message", "你的目标方向清楚了。你打算用什么材料复习？"
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
+    monkeypatch.setattr(modes_module, "score_dimension", mocked_score)
+    monkeypatch.setattr(modes_module, "ModelRouter", AnswerRouter)
+    monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
+    started = _start("dialogue", user_id="dialogue-rerun-pacing")
+
+    def chat(utterance: str) -> dict[str, object]:
+        response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": utterance})
+        assert response.status_code == 200, response.text
+        events = _parse_sse(response.text)
+        audit = next(data for event, data in events if event == "audit")
+        return next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
+
+    first = chat(quote)
+    assert len(score_calls) == 1
+    assert first["scoring_watermark"] == 3
+    assert first["next_scoring_watermark"] == 6
+    assert "首评" in str(first["scoring_trigger"])
+
+    # +2 条：水位线 3 → 5，差 2 条不到步长，不重评。
+    second = chat("我每周三晚上复习两小时")
+    assert len(score_calls) == 1
+    assert second["current_watermark"] == 5
+    assert second["scoring_watermark"] == 3
+
+    # +1 条：水位线 6，刚好涨 3 条，重评一次。
+    third = chat("我还会整理错题本")
+    assert len(score_calls) == 2
+    assert third["scoring_watermark"] == 6
+    assert "重评" in str(third["scoring_trigger"])
+    assert "3" in str(third["scoring_trigger"])
+
+    # 逐轮时间线：置信度每轮都记一行，评分轮打标记。审计里要回答的"这个分是
+    # 在多少置信度下评的"，直接读评分轮那一行，不必再单独存一份快照。
+    timeline = third["confidence_timeline"]
+    assert [row["turn"] for row in timeline] == [1, 2, 3]
+    assert [row["scored_this_turn"] for row in timeline] == [True, False, True]
+    assert [row["evidence"] for row in timeline] == [3, 5, 6]
+    assert all(row["quality_new"] is not None for row in timeline)
+    assert all(0.0 <= row["confidence"] <= 1.0 for row in timeline)
+
+
+def test_dimension_timeline_overwrites_instead_of_duplicating_a_turn() -> None:
+    """同一轮重试/重放只留一行，否则时间线里会出现两条"第 2 轮"。"""
+
+    from app.profile.component_model import QualityFactors
+    from app.profile.schema import EvidenceCard, EvidenceTier
+
+    cards = [
+        EvidenceCard(
+            dimension="learning_goal", source="dialogue", tier=EvidenceTier.SELF_REPORT,
+            fact="我想考研", quote="我想考研", objective_signal={}, weight=1,
+            component="goal_specificity", collection_status="scorable",
+            quality_factors=QualityFactors(
+                source_reliability=.9, expression_clarity=.8, content_specificity=.75,
+                freshness=1, consistency=.85, independence_note="时间线覆盖样例",
+            ).model_dump(),
+        )
+    ]
+    step_data: dict[str, object] = {}
+    fusion = modes_module._dialogue_fusion(cards)
+    for _ in range(3):
+        modes_module._append_dimension_timeline(
+            step_data, turn_index=2, fusion=fusion, cards=cards, all_cards=cards
+        )
+    rows = step_data["dimension_timeline"]["learning_goal"]  # type: ignore[index]
+    assert len(rows) == 1
+    assert rows[0]["turn"] == 2
+    assert rows[0]["quality_new"] is not None
+    assert rows[0]["quality_avg"] is not None
 
 
 def test_dialogue_restore_recovers_a_complete_but_unscored_dimension(monkeypatch, tmp_path: Path) -> None:
@@ -1279,6 +1566,84 @@ def test_dialogue_target_rotates_after_repeated_unfilled_dimension() -> None:
     )
 
     assert target != "weak_points"
+
+
+def test_dialogue_component_focus_hands_off_after_two_unanswered_asks() -> None:
+    """连问两次还填不上的格子必须让位，否则整段对话会围着它打转。
+
+    实测十轮对话里连续五轮都在问同一个"中药里哪块让你觉得有意思"，只是每轮
+    换个说法：那一格始终填不上，软锁定又一直把它选回来。问满两次就该换格子。
+    """
+
+    cards: list[EvidenceCard] = []
+
+    fresh = modes_module._dialogue_component_focus(cards, "motivation")
+    assert fresh is not None
+    assert fresh["component"] == "intrinsic_value"
+
+    once = modes_module._dialogue_component_focus(cards, "motivation", asked_counts={"intrinsic_value": 1})
+    assert once is not None
+    assert once["component"] == "intrinsic_value"
+
+    twice = modes_module._dialogue_component_focus(cards, "motivation", asked_counts={"intrinsic_value": 2})
+    assert twice is not None
+    assert twice["component"] != "intrinsic_value"
+
+
+def test_dialogue_component_focus_abandons_the_last_hole_once_asked_out() -> None:
+    """只剩一个洞但它已经问满两次时，宁可放弃这一维也不要再问第三遍。
+
+    实测节奏可持续度只剩「坚持了多久」一格可问，模型连续 6 轮换个说法重问同一
+    件事。那一维停在 4/5 = 0.8，仍过 60% 门槛、照样出分，硬问第六遍只是折磨用户。
+    """
+
+    cards = [
+        _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0]}, weight=1.0, component="external_commitment"),
+        _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0]}, weight=1.0, component="conflict_regulation"),
+    ]
+
+    focus = modes_module._dialogue_component_focus(cards, "motivation", asked_counts={"intrinsic_value": 2})
+
+    assert focus is None
+    assert modes_module._dialogue_answerable_holes(
+        "motivation", cards, asked_counts={"intrinsic_value": 2}
+    ) == []
+
+
+def test_dialogue_target_skips_the_stalled_dimension() -> None:
+    """卡住的那一维必须先出局，否则"先补完半满维度"会把它自己选回来。"""
+
+    cards = [
+        _evidence_card("pace", {"daily_minutes": 60}, weight=1.0, component="sustained_period"),
+        _evidence_card("pace", {"daily_minutes": 60}, weight=1.0, component="weekly_rhythm"),
+        _evidence_card("pace", {"daily_minutes": 60}, weight=1.0, component="session_length"),
+        _evidence_card("pace", {"daily_minutes": 60}, weight=1.0, component="adjustment_flexibility"),
+        _evidence_card("motivation", {"label": ALLOWED_LABELS["motivation"][0]}, weight=1.0, component="intrinsic_value"),
+    ]
+    fusion = modes_module._dialogue_fusion(cards)
+
+    target = modes_module._dialogue_target(
+        cards,
+        fusion=fusion,
+        current_target="pace",
+        stalled=True,
+        stalled_dimension="pace",
+    )
+
+    assert target != "pace"
+
+
+def test_dialogue_ask_ledger_survives_until_the_component_is_filled() -> None:
+    step_data: dict[str, object] = {}
+    focus = {"component": "intrinsic_value"}
+
+    modes_module._dialogue_note_asked_component(step_data, focus)
+    modes_module._dialogue_note_asked_component(step_data, focus)
+
+    assert modes_module._dialogue_asked_components(step_data) == {"intrinsic_value": 2}
+    # 空 focus（这一维没有可问的洞）不该凭空记一笔。
+    modes_module._dialogue_note_asked_component(step_data, None)
+    assert modes_module._dialogue_asked_components(step_data) == {"intrinsic_value": 2}
 
 
 def test_dialogue_target_finishes_a_partially_collected_dimension_first() -> None:
@@ -1728,7 +2093,13 @@ def test_prescription_signal_falls_back_to_rule_parser_without_key() -> None:
     assert signal == {"对症": True, "配伍": True, "剂量": True, "误用毒烈": False}
 
 
-def test_prescription_signal_llm_extract_uses_flash_with_thinking(monkeypatch) -> None:
+def test_prescription_signal_llm_extract_skips_thinking(monkeypatch) -> None:
+    """抽取 4 个布尔字段不需要推理 token，调用侧不应显式开思考。
+
+    默认值由 ModelRouter._with_default_params 注入 disabled，这里只验证
+    调用点没有覆盖它。
+    """
+
     import asyncio
 
     settings = Settings(DEEPSEEK_API_KEY="test-key", ZHIPU_API_KEY=None, MOCK_STREAM_DELAY=0.0)
@@ -1761,8 +2132,8 @@ def test_prescription_signal_llm_extract_uses_flash_with_thinking(monkeypatch) -
     assert calls == [
         {
             "task_type": "profile_extract",
-            "thinking": {"type": "enabled"},
-            "reasoning_effort": "medium",
+            "thinking": None,
+            "reasoning_effort": None,
         }
     ]
 
@@ -1831,7 +2202,13 @@ def test_diagnostic_eval_no_longer_defaults_to_all_correct() -> None:
     assert len(evaluated["quiz_features"]["weak_points"]) == len(evaluated["questions"])
 
 
-def _evidence_card(dimension: DimensionKey, objective_signal: dict[str, object], *, weight: float) -> EvidenceCard:
+def _evidence_card(
+    dimension: DimensionKey,
+    objective_signal: dict[str, object],
+    *,
+    weight: float,
+    component: str | None = None,
+) -> EvidenceCard:
     return EvidenceCard(
         dimension=dimension,
         source="test",
@@ -1839,6 +2216,8 @@ def _evidence_card(dimension: DimensionKey, objective_signal: dict[str, object],
         objective_signal=objective_signal,
         weight=weight,
         timestamp=datetime.now(UTC),
+        component=component,
+        collection_status="scorable" if component else None,
     )
 
 
@@ -2080,3 +2459,53 @@ def _streaming_router_factory():
                 yield ("message", token)
 
     return StreamingRouter
+
+
+def test_lenient_dialogue_validation_keeps_the_good_evidence() -> None:
+    """一轮里只要还有一条好证据，就不能整轮归零。
+
+    实测：十轮里有八轮因为 legacy 字段形状不对（或一条 atomic_evidence 缺字段）
+    整轮判废，界面上显示"0 条原子证据"，用户那句话等于白说。
+    """
+
+    from app.profile.modes import _normalize_dialogue_extraction_payload, _validate_dialogue_payload_leniently
+
+    raw = {
+        "turn_id": "2",  # 字符串轮次号：丢掉，用默认值
+        "combination_type": "自造的类型",  # 非法枚举：丢掉
+        "learning_goal": {"value": {"action_orientation": "已给出第一步"}},  # legacy 形状不合法
+        "dimension_scan": [
+            {"dimension": "base_level", "status": "evidence_found", "reason": "提到背过性味"},
+            {"dimension": "不存在的维度", "status": "pending"},
+        ],
+        "atomic_evidence": [
+            {
+                "evidence_id": "e1",
+                "dimension": "base_level",
+                "component": "concept_foundation",
+                "evidence_group_id": "g1",
+                "quote": "我背过性味归经",
+                "normalized_claim": "用户自述背过性味归经",
+                "evidence_type": "self_report",
+                "collection_status": "confirmed",
+                "quality_factors": {
+                    "source_reliability": 0.8,
+                    "expression_clarity": 0.8,
+                    "content_specificity": 0.7,
+                    "freshness": 1.0,
+                    "consistency": 0.7,
+                },
+            },
+            {"evidence_id": "e2", "dimension": "base_level"},  # 缺必填字段：丢掉
+        ],
+        "component_collection": [],
+    }
+
+    extraction = _validate_dialogue_payload_leniently(_normalize_dialogue_extraction_payload(raw))
+
+    assert [item.evidence_id for item in extraction.atomic_evidence] == ["e1"]
+    # base_level 是 legacy 维度名，必须归一成 knowledge_base 才留得住
+    assert extraction.atomic_evidence[0].dimension == "knowledge_base"
+    assert [item.dimension for item in extraction.dimension_scan] == ["knowledge_base"]
+    assert extraction.turn_id is None
+    assert extraction.extraction_error

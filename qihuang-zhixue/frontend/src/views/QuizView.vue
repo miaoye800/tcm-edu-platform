@@ -99,7 +99,7 @@ onMounted(() => {
 }
 
 .quiz-hero {
-  @include glass-panel(26px);
+  @include glass-panel;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
   gap: 18px;

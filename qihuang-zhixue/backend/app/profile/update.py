@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from app.config import Settings, get_settings
 from app.llm.router import ModelRouter
+from app.profile.component_model import COMPONENTS, COMPONENT_WEIGHTS, score_interval
 from app.profile.fusion import FusionResult, fuse_dimension, fuse_profile
 from app.profile.jury import LLMCall, ScoringResult, score_dimension
 from app.profile.prescription import evaluate_prescription
@@ -471,6 +472,15 @@ def _apply_fusion_to_profile(
         dim.label = fusion.label
     if hasattr(dim, "distribution"):
         dim.distribution = fusion.distribution
+    gate = fusion.metadata.get("component_collection") if isinstance(fusion.metadata, dict) else None
+    _apply_component_state(
+        dim,
+        dimension,
+        gate=gate if isinstance(gate, dict) else None,
+        score=fusion.score,
+        coverage=fusion.coverage,
+        confidence=fusion.confidence,
+    )
     if dimension == "weak_points":
         dim.items = _weak_points_from_cards(cards)
     _record_dimension_change(profile, dimension, old_value, reason, source_event, cards, db_path)
@@ -496,12 +506,25 @@ def _apply_scoring_to_profile(
     dim.evidence = cards
     _stamp_scoring_provenance(cards, result.provenance)
     dim.narrative = result.narrative
-    if hasattr(dim, "score") and result.aggregated_score is not None:
+    if hasattr(dim, "score"):
+        # Assign even when the score is None.  Keeping a stale score while the
+        # confidence has just been reset to zero produced a lit axis with
+        # "置信度 0" -- the worst of both worlds, and the reason the no-key
+        # contract leaked through the read path.
         dim.score = result.aggregated_score
     if hasattr(dim, "label") and result.label is not None:
         dim.label = result.label
     if hasattr(dim, "distribution") and result.distribution:
         dim.distribution = result.distribution
+    _apply_component_state(
+        dim,
+        dimension,
+        gate=None,
+        component_scores=result.component_scores,
+        score=result.aggregated_score,
+        coverage=result.coverage,
+        confidence=result.confidence,
+    )
     if dimension == "weak_points":
         dim.items = _weak_points_from_cards(cards)
     warning_text = "、".join(warning.reason for warning in result.warnings)
@@ -509,6 +532,54 @@ def _apply_scoring_to_profile(
     if warning_text:
         reason = f"{reason}；护栏钳制：{warning_text}"
     _record_dimension_change(profile, dimension, old_value, reason, source_event, cards, db_path)
+
+
+def _apply_component_state(
+    dim: Any,
+    dimension: DimensionKey,
+    *,
+    gate: dict[str, Any] | None,
+    score: float | None,
+    coverage: float,
+    confidence: float,
+    component_scores: dict[str, float] | None = None,
+) -> None:
+    """Persist the component ledger and the honest error bar.
+
+    Without this the radar could only render a bare number: the collection
+    progress, the pending components and the interval width all lived in the
+    in-memory ``FusionResult`` and were dropped on the way to disk.
+    """
+
+    components = COMPONENTS[dimension]
+    weights = COMPONENT_WEIGHTS[dimension]
+    scores = {
+        key: float(value)
+        for key, value in (component_scores or (gate or {}).get("component_scores") or {}).items()
+        if key in components
+    }
+    missing = set((gate or {}).get("missing_components") or ())
+    matrix: dict[str, dict[str, Any]] = {}
+    for component in components:
+        entry: dict[str, Any] = {"weight": weights[component]}
+        if component in scores:
+            entry["status"] = "scored"
+            entry["score"] = scores[component]
+        elif component in missing:
+            entry["status"] = "pending"
+        else:
+            entry["status"] = "collected"
+        matrix[component] = entry
+    dim.component_matrix = matrix
+    dim.component_scores = scores
+    dim.pending_components = [component for component in components if component not in scores]
+    dim.scoring_phase = "scored" if score is not None else "collecting"
+    dim.coverage = round(max(0.0, min(1.0, float(coverage or 0.0))), 4)
+    if score is None:
+        dim.score_interval = None
+    else:
+        low, high = score_interval(float(score), dim.coverage, confidence)
+        dim.score_interval = {"low": low, "high": high}
 
 
 def _dimension_snapshot(dim: Any) -> dict[str, Any]:

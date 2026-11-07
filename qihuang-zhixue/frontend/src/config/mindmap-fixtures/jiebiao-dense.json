@@ -1,0 +1,721 @@
+{
+ "id": "root",
+ "topic": "解表药",
+ "children": [
+  {
+   "id": "n17",
+   "topic": "发散风寒药",
+   "children": [
+    {
+     "id": "n21",
+     "topic": "麻黄",
+     "children": [
+      {
+       "id": "n18",
+       "topic": "发汗解表",
+       "children": []
+      },
+      {
+       "id": "n19",
+       "topic": "宣肺平喘",
+       "children": []
+      },
+      {
+       "id": "n20",
+       "topic": "利水消肿",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n26",
+     "topic": "桂枝",
+     "children": [
+      {
+       "id": "n22",
+       "topic": "发汗解肌",
+       "children": []
+      },
+      {
+       "id": "n23",
+       "topic": "温通经脉",
+       "children": []
+      },
+      {
+       "id": "n24",
+       "topic": "助阳化气",
+       "children": []
+      },
+      {
+       "id": "n25",
+       "topic": "平冲降逆",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n29",
+     "topic": "紫苏叶",
+     "children": [
+      {
+       "id": "n27",
+       "topic": "解表散寒",
+       "children": []
+      },
+      {
+       "id": "n28",
+       "topic": "行气和胃",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n34",
+     "topic": "生姜",
+     "children": [
+      {
+       "id": "n30",
+       "topic": "解表散寒",
+       "children": []
+      },
+      {
+       "id": "n31",
+       "topic": "温中止呕",
+       "children": []
+      },
+      {
+       "id": "n32",
+       "topic": "化痰止咳",
+       "children": []
+      },
+      {
+       "id": "n33",
+       "topic": "解鱼蟹毒",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n38",
+     "topic": "香薷",
+     "children": [
+      {
+       "id": "n35",
+       "topic": "发汗解表",
+       "children": []
+      },
+      {
+       "id": "n36",
+       "topic": "化湿和中",
+       "children": []
+      },
+      {
+       "id": "n37",
+       "topic": "利水消肿",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n42",
+     "topic": "荆芥",
+     "children": [
+      {
+       "id": "n39",
+       "topic": "解表散风",
+       "children": []
+      },
+      {
+       "id": "n40",
+       "topic": "透疹",
+       "children": []
+      },
+      {
+       "id": "n41",
+       "topic": "消疮",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n46",
+     "topic": "防风",
+     "children": [
+      {
+       "id": "n43",
+       "topic": "祛风解表",
+       "children": []
+      },
+      {
+       "id": "n44",
+       "topic": "胜湿止痛",
+       "children": []
+      },
+      {
+       "id": "n45",
+       "topic": "止痉",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n50",
+     "topic": "羌活",
+     "children": [
+      {
+       "id": "n47",
+       "topic": "解表散寒",
+       "children": []
+      },
+      {
+       "id": "n48",
+       "topic": "祛风湿",
+       "children": []
+      },
+      {
+       "id": "n49",
+       "topic": "止痛",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n55",
+     "topic": "白芷",
+     "children": [
+      {
+       "id": "n51",
+       "topic": "解表散寒",
+       "children": []
+      },
+      {
+       "id": "n52",
+       "topic": "祛风止痛",
+       "children": []
+      },
+      {
+       "id": "n53",
+       "topic": "宣通鼻窍",
+       "children": []
+      },
+      {
+       "id": "n54",
+       "topic": "燥湿止带",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n60",
+     "topic": "细辛",
+     "children": [
+      {
+       "id": "n56",
+       "topic": "解表散寒",
+       "children": []
+      },
+      {
+       "id": "n57",
+       "topic": "祛风止痛",
+       "children": []
+      },
+      {
+       "id": "n58",
+       "topic": "通窍",
+       "children": []
+      },
+      {
+       "id": "n59",
+       "topic": "温肺化饮",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n63",
+     "topic": "辛夷",
+     "children": [
+      {
+       "id": "n61",
+       "topic": "散风寒",
+       "children": []
+      },
+      {
+       "id": "n62",
+       "topic": "通鼻窍",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n66",
+     "topic": "藁本",
+     "children": [
+      {
+       "id": "n64",
+       "topic": "祛风散寒",
+       "children": []
+      },
+      {
+       "id": "n65",
+       "topic": "除湿止痛",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n71",
+     "topic": "苍耳子",
+     "children": [
+      {
+       "id": "n67",
+       "topic": "散风寒",
+       "children": []
+      },
+      {
+       "id": "n68",
+       "topic": "通鼻窍",
+       "children": []
+      },
+      {
+       "id": "n69",
+       "topic": "祛风湿",
+       "children": []
+      },
+      {
+       "id": "n70",
+       "topic": "止痛",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n74",
+     "topic": "葱白",
+     "children": [
+      {
+       "id": "n72",
+       "topic": "发汗解表",
+       "children": []
+      },
+      {
+       "id": "n73",
+       "topic": "散寒通阳",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n77",
+     "topic": "胡荽",
+     "children": [
+      {
+       "id": "n75",
+       "topic": "发表透疹",
+       "children": []
+      },
+      {
+       "id": "n76",
+       "topic": "开胃消食",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n80",
+     "topic": "西河柳",
+     "children": [
+      {
+       "id": "n78",
+       "topic": "发表透疹",
+       "children": []
+      },
+      {
+       "id": "n79",
+       "topic": "祛风湿",
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "n81",
+   "topic": "发散风热药",
+   "children": [
+    {
+     "id": "n86",
+     "topic": "薄荷",
+     "children": [
+      {
+       "id": "n82",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n83",
+       "topic": "清利头目",
+       "children": []
+      },
+      {
+       "id": "n84",
+       "topic": "利咽",
+       "children": []
+      },
+      {
+       "id": "n85",
+       "topic": "透疹",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n91",
+     "topic": "牛蒡子",
+     "children": [
+      {
+       "id": "n87",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n88",
+       "topic": "宣肺祛痰",
+       "children": []
+      },
+      {
+       "id": "n89",
+       "topic": "利咽透疹",
+       "children": []
+      },
+      {
+       "id": "n90",
+       "topic": "解毒消肿",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n96",
+     "topic": "蝉蜕",
+     "children": [
+      {
+       "id": "n92",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n93",
+       "topic": "利咽开音",
+       "children": []
+      },
+      {
+       "id": "n94",
+       "topic": "透疹",
+       "children": []
+      },
+      {
+       "id": "n95",
+       "topic": "明目退翳",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n101",
+     "topic": "桑叶",
+     "children": [
+      {
+       "id": "n97",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n98",
+       "topic": "清肺润燥",
+       "children": []
+      },
+      {
+       "id": "n99",
+       "topic": "平抑肝阳",
+       "children": []
+      },
+      {
+       "id": "n100",
+       "topic": "清肝明目",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n106",
+     "topic": "菊花",
+     "children": [
+      {
+       "id": "n102",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n103",
+       "topic": "平抑肝阳",
+       "children": []
+      },
+      {
+       "id": "n104",
+       "topic": "清肝明目",
+       "children": []
+      },
+      {
+       "id": "n105",
+       "topic": "清热解毒",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n109",
+     "topic": "蔓荆子",
+     "children": [
+      {
+       "id": "n107",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n108",
+       "topic": "清利头目",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n113",
+     "topic": "柴胡",
+     "children": [
+      {
+       "id": "n110",
+       "topic": "疏散退热",
+       "children": []
+      },
+      {
+       "id": "n111",
+       "topic": "疏肝解郁",
+       "children": []
+      },
+      {
+       "id": "n112",
+       "topic": "升举阳气",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n117",
+     "topic": "升麻",
+     "children": [
+      {
+       "id": "n114",
+       "topic": "发表透疹",
+       "children": []
+      },
+      {
+       "id": "n115",
+       "topic": "清热解毒",
+       "children": []
+      },
+      {
+       "id": "n116",
+       "topic": "升举阳气",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n122",
+     "topic": "葛根",
+     "children": [
+      {
+       "id": "n118",
+       "topic": "解肌退热",
+       "children": []
+      },
+      {
+       "id": "n119",
+       "topic": "生津止渴",
+       "children": []
+      },
+      {
+       "id": "n120",
+       "topic": "透疹",
+       "children": []
+      },
+      {
+       "id": "n121",
+       "topic": "升阳止泻",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n126",
+     "topic": "淡豆豉",
+     "children": [
+      {
+       "id": "n123",
+       "topic": "解表",
+       "children": []
+      },
+      {
+       "id": "n124",
+       "topic": "除烦",
+       "children": []
+      },
+      {
+       "id": "n125",
+       "topic": "宣发郁热",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n130",
+     "topic": "浮萍",
+     "children": [
+      {
+       "id": "n127",
+       "topic": "宣散风热",
+       "children": []
+      },
+      {
+       "id": "n128",
+       "topic": "透疹止痒",
+       "children": []
+      },
+      {
+       "id": "n129",
+       "topic": "利尿消肿",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n133",
+     "topic": "木贼",
+     "children": [
+      {
+       "id": "n131",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n132",
+       "topic": "明目退翳",
+       "children": []
+      }
+     ]
+    },
+    {
+     "id": "n136",
+     "topic": "谷精草",
+     "children": [
+      {
+       "id": "n134",
+       "topic": "疏散风热",
+       "children": []
+      },
+      {
+       "id": "n135",
+       "topic": "明目退翳",
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "n1",
+   "topic": "分类依据",
+   "children": [
+    {
+     "id": "n2",
+     "topic": "以功效为纲",
+     "children": []
+    },
+    {
+     "id": "n3",
+     "topic": "性味归经为目",
+     "children": []
+    },
+    {
+     "id": "n4",
+     "topic": "主治证候为断",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "n5",
+   "topic": "使用注意",
+   "children": [
+    {
+     "id": "n6",
+     "topic": "中病即止，不可过汗",
+     "children": []
+    },
+    {
+     "id": "n7",
+     "topic": "表虚自汗慎用",
+     "children": []
+    },
+    {
+     "id": "n8",
+     "topic": "阴虚盗汗忌用",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "n9",
+   "topic": "配伍规律",
+   "children": [
+    {
+     "id": "n10",
+     "topic": "风寒配桂枝",
+     "children": []
+    },
+    {
+     "id": "n11",
+     "topic": "风热配薄荷",
+     "children": []
+    },
+    {
+     "id": "n12",
+     "topic": "夹湿配藿香",
+     "children": []
+    }
+   ]
+  },
+  {
+   "id": "n13",
+   "topic": "相似药鉴别",
+   "children": [
+    {
+     "id": "n14",
+     "topic": "麻黄 vs 桂枝",
+     "children": []
+    },
+    {
+     "id": "n15",
+     "topic": "荆芥 vs 防风",
+     "children": []
+    },
+    {
+     "id": "n16",
+     "topic": "薄荷 vs 牛蒡子",
+     "children": []
+    }
+   ]
+  }
+ ]
+}

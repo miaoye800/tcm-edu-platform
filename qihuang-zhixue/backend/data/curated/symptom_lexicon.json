@@ -1,0 +1,42 @@
+{
+  "_note": "**功效层**词表：病例文本 → 功效关键词。只在证候层（教材倒排索引）没命中时兜底用，属弱证据。这里不再放 syndromes 字段——「话 → 证」已交给 app/kg/symptoms.py 从教材自动生成的倒排索引（664 条症状短语），手写清单只保留机器学不出来的口语别名（见 symptom_aliases.json）。",
+  "_generated_by": "hand-curated",
+  "version": 2,
+  "entries": [
+    {
+      "id": "wind_cold_exterior",
+      "label": "风寒表实",
+      "terms": ["风寒", "恶寒", "无汗", "表寒"],
+      "effect_tags": ["解表", "散寒", "发汗", "风寒"],
+      "require_all_effect_tags": false
+    },
+    {
+      "id": "heat_toxin",
+      "label": "热毒",
+      "terms": ["热毒", "咽痛", "口渴", "高热"],
+      "effect_tags": ["清热", "泻火", "解毒", "生津"],
+      "require_all_effect_tags": false
+    },
+    {
+      "id": "qi_deficiency",
+      "label": "气虚",
+      "terms": ["气虚", "乏力", "自汗", "脏气不足"],
+      "effect_tags": ["补气", "健脾", "益气", "固表"],
+      "require_all_effect_tags": false
+    },
+    {
+      "id": "water_swelling",
+      "label": "水湿内停",
+      "terms": ["水肿", "小便不利", "浮肿"],
+      "effect_tags": ["利水", "消肿", "渗湿"],
+      "require_all_effect_tags": false
+    },
+    {
+      "id": "cough_phlegm",
+      "label": "咳嗽痰多",
+      "terms": ["咳嗽", "痰多", "痰"],
+      "effect_tags": ["咳嗽", "痰"],
+      "require_all_effect_tags": true
+    }
+  ]
+}

@@ -1,0 +1,376 @@
+{
+  "_note": "近似证候名候选，仅用于人工裁决，不自动合并。",
+  "candidates": [
+    {
+      "left": "脾胃气滞",
+      "right": "脾胃气滞证",
+      "score": 0.857,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "温病高热神昏",
+      "right": "温病高热神昏发斑",
+      "score": 0.833,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "风热感冒、温病初起",
+      "right": "风热感冒温病初起",
+      "score": 0.8,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "丹毒痈肿",
+      "right": "痄腮丹毒痈肿",
+      "score": 0.75,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "湿热泻痢",
+      "right": "湿热泻痢黄疸",
+      "score": 0.75,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肠燥便秘",
+      "right": "血虚肠燥便秘",
+      "score": 0.75,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肾虚胎动不安",
+      "right": "胎动不安",
+      "score": 0.75,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "胎动不安",
+      "right": "胎热胎动不安",
+      "score": 0.75,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "风热感冒",
+      "right": "风热感冒头痛",
+      "score": 0.75,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "咽痛目赤",
+      "right": "目赤咽痛",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "崩漏胎漏胎动不安",
+      "right": "胎动不安",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "带下",
+      "right": "带下证",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "带下阴痒",
+      "right": "阴痒带下",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "心气不足",
+      "right": "脾气不足",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "气血亏虚",
+      "right": "精血亏虚",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "湿热泻痢便血黄疸",
+      "right": "湿热泻痢黄疸",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "痈肿疮毒",
+      "right": "痈肿疮疡",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺气虚弱",
+      "right": "肺气虚证",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺气虚弱",
+      "right": "脾气虚弱",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺气虚弱",
+      "right": "脾肺气虚",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺气虚证",
+      "right": "脾气虚证",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺气虚证",
+      "right": "脾肺气虚",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺热咳嗽",
+      "right": "肺热咳嗽、燥热咳嗽",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "脾气虚弱",
+      "right": "脾气虚证",
+      "score": 0.667,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "内热消渴",
+      "right": "津伤口渴内热消渴",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "惊风抽搐",
+      "right": "惊风抽搐、破伤风",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "津伤口渴",
+      "right": "津伤口渴内热消渴",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "津伤口渴",
+      "right": "胃阴不足津伤口渴",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "温病伤阴阴虚发热",
+      "right": "阴虚发热",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "温病初起",
+      "right": "风热感冒温病初起",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "温病高热神昏",
+      "right": "高热神昏心烦",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "湿热泻痢",
+      "right": "湿热泻痢便血黄疸",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "湿热黄疸",
+      "right": "湿热黄疸阴肿阴痒",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "疮疡肿毒",
+      "right": "疮疡肿毒湿疹湿疮",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "痈疽瘰疬肠燥便秘",
+      "right": "肠燥便秘",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "痈肿疮毒",
+      "right": "痈肿疮毒瘰疬痰核",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "痈肿疮毒",
+      "right": "痈肿疮毒药食中毒",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "痈肿疮毒",
+      "right": "瘰疬白喉痈肿疮毒",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "痈肿疮毒",
+      "right": "跌扑伤痛痈肿疮毒",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "精血亏虚",
+      "right": "肾阳不足精血亏虚",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肝肾不足",
+      "right": "肝肾不足目昏耳鸣",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肝肾不足",
+      "right": "肝肾不足腰膝酸痛",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肝肾阴虚",
+      "right": "肝肾阴虚精血不足",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肺热咳嗽",
+      "right": "肺痈吐脓肺热咳嗽",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肾虚胎动不安",
+      "right": "胎热胎动不安",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "肾阳不足",
+      "right": "肾阳不足精血亏虚",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "胃阴不足",
+      "right": "胃阴不足津伤口渴",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "虚寒腹痛风湿痹痛",
+      "right": "风湿痹痛",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "血虚萎黄",
+      "right": "血虚萎黄月经不调",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "血虚萎黄",
+      "right": "血虚萎黄眩晕心悸",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "阴虚发热",
+      "right": "阴虚发热盗汗骨蒸",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "阴虚发热",
+      "right": "阴虚发热骨蒸劳热",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    },
+    {
+      "left": "风热感冒",
+      "right": "风热感冒温病初起",
+      "score": 0.6,
+      "decision": "pending",
+      "note": "人工裁决：是同一证的不同表述才合并，否则保留两者"
+    }
+  ]
+}

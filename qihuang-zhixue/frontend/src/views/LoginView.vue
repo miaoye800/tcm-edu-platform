@@ -138,9 +138,7 @@ const quickLogin = async (username: string) => {
   min-height: 100vh;
   place-items: center;
   padding: 24px;
-  background:
-    linear-gradient(135deg, rgba(22, 42, 38, 0.94), rgba(19, 31, 36, 0.9)),
-    var(--qh-page-bg);
+  background: var(--qh-bg);
 }
 
 .login-stage {
@@ -152,11 +150,13 @@ const quickLogin = async (username: string) => {
 }
 
 .brand-panel {
-  @include glass-panel(28px);
+  @include glass-panel;
   display: grid;
   align-content: center;
   min-height: 520px;
   padding: 34px;
+  // 品牌卡沉一档，和右侧表单卡分开。同色并排会糊成一片，看不出是两块。
+  background: var(--qh-surface-sunken);
 }
 
 .brand-panel img {
@@ -167,7 +167,7 @@ const quickLogin = async (username: string) => {
 
 .eyebrow {
   margin: 20px 0 8px;
-  color: var(--qh-color-jade);
+  color: var(--qh-fg-muted);
   font-size: 13px;
   font-weight: 900;
 }

@@ -1,4 +1,4 @@
-from app.llm.clients import BaseLLMClient, DeepSeekClient, MockClient, ZhipuClient
+from app.llm.clients import BaseLLMClient, DeepSeekClient, MockClient, QwenClient, ZhipuClient
 from app.llm.router import ModelRouter, ModelSpec
 
 __all__ = [
@@ -7,5 +7,6 @@ __all__ = [
     "MockClient",
     "ModelRouter",
     "ModelSpec",
+    "QwenClient",
     "ZhipuClient",
 ]

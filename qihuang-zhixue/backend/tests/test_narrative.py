@@ -168,7 +168,11 @@ def test_profile_narrative_endpoint_returns_description_and_structured_fields(tm
     assert len(payload["dimensions"]) == 7
     assert len(user_payload["dimensions"]) == 7
     assert payload["method"] == "template"
-    assert payload["weak_points"]
+    # 无 key 时不再造 0 分：知识基础没有分，就不再被当成"低分薄弱项"引用。
+    # 薄弱点维度本身置信度 0.4 未过 0.5 门槛，因此整份叙述按"待补充"呈现，
+    # 但原话里的标签仍然进得了建议引子。
+    assert payload["weak_points"] == []
+    assert "待补充" in payload["description"]
     assert "清热药·剂量" in payload["description"]
     assert payload["dimensions"][0]["evidence_refs"]
 

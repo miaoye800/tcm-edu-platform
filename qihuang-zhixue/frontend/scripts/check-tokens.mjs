@@ -5,7 +5,13 @@ import { join, relative } from 'node:path'
 const root = fileURLToPath(new URL('../src/', import.meta.url))
 // Legacy Stage 1-4 surfaces are frozen; new work must use tokens. Keep the
 // whitelist explicit so the scan remains deterministic and reviewable.
-const allow = new Set(['styles/tokens.scss', 'styles/reset.scss', 'styles/story.scss', 'main.ts'])
+const allow = new Set([
+  'styles/palette.scss',
+  'styles/tokens.scss',
+  'styles/reset.scss',
+  'styles/story.scss',
+  'main.ts',
+])
 const legacy = /^(components\/|views\/|config\/)/
 const literal = /#(?:[0-9a-f]{3,8})\b|rgba?\([^)]*\)/gi
 const files = []

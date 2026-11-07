@@ -101,17 +101,17 @@ strong {
 .mindmap-svg {
   width: 100%;
   min-height: 320px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 18px;
-  background: rgba(238, 245, 239, 0.035);
+  background: var(--qh-line);
 }
 
 :deep(.markmap-link) {
-  stroke: rgba(143, 208, 173, 0.58);
+  stroke: var(--qh-accent-line);
 }
 
 :deep(.markmap-node > circle) {
-  fill: #162a28;
+  fill: var(--qh-surface);
   stroke: #e7c274;
 }
 

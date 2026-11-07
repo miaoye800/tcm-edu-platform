@@ -34,7 +34,7 @@ const fixtureCards: IdentityCardView[] = [
       { canonical_label: '兴趣科普', display_name: '兴趣阅读', ratio: 0.12 },
     ], cards: [], evidence_refs: ['对话第 1 轮#1'],
     quotes: ['下个月要考中药学，我想先把常用药性记牢，尤其是功效相近但配伍禁忌不同的几组药，希望复习时能把它们放在一起对照，不要只靠死记硬背。', '每天能抽出半小时复习。'],
-    explanation: '当前目标由本轮对话中的备考时间与复习诉求归纳。', provenance: 'no_key_rule_fallback', pending_reason: null,
+    explanation: '当前目标由本轮对话中的备考时间与复习诉求归纳。', provenance: 'no_key', pending_reason: null,
   },
   {
     key: 'motivation', label: '学习动机', kind: 'distribution', revealed: true, revealable: true, revealed_now: false,

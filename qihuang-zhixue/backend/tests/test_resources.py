@@ -10,14 +10,18 @@ from app.agents.quiz_agent import generate_quiz_resource
 from app.agents.resource_cache import clear_resource_cache
 from app.agents.resource_context import build_whitelist, retrieve_resource_docs
 from app.agents.resource_schemas import (
+    GraphLink,
+    GraphNode,
+    GraphNodeCategory,
     GraphPayload,
+    GraphRelation,
     QuizOption,
     QuizQuestion,
     QuizType,
     ResourceEnvelope,
 )
 from app.agents.resources_graph import run_resource_generation
-from app.agents.verify_agent import verify_claims
+from app.agents.verify_agent import _verify_graph, verify_claims
 from app.api.resources import get_resource_db_path
 from app.path.store import upsert_node
 from app.resources import service as resource_service
@@ -57,6 +61,53 @@ async def _assert_graph_nodes_all_in_retrieval_whitelist() -> None:
     allowed = set().union(whitelist["herbs"], whitelist["syndromes"], whitelist["formulas"])
     assert resource.payload.nodes
     assert {node.name for node in resource.payload.nodes} <= allowed
+
+
+def test_formula_whitelist_holds_display_name_not_only_id() -> None:
+    """方剂白名单必须同时收 id 和正名，否则方剂节点会被静默删光。
+
+    ``docs`` 里的 ``formula_ref`` 是 id（``formula_yupingfengsan``），
+    模型生成的节点 ``name`` 是正名（「玉屏风散」），校验比的是 ``node.name``。
+    只收 id 的话，每个方剂节点都会被判成「无依据」——不报错，图里悄悄少一类节点。
+    """
+
+    docs = asyncio.run(retrieve_resource_docs("黄芪"))
+    whitelist = build_whitelist(docs)
+
+    assert whitelist["formulas"], "黄芪的配伍里应该有方剂"
+    assert any(item.startswith("formula_") for item in whitelist["formulas"]), "id 要保留，下游还要反查"
+    assert "玉屏风散" in whitelist["formulas"], f"正名没进白名单：{whitelist['formulas']}"
+
+
+def test_formula_node_named_by_display_name_survives_verification() -> None:
+    docs = asyncio.run(retrieve_resource_docs("黄芪"))
+    whitelist = build_whitelist(docs)
+
+    payload = GraphPayload(
+        nodes=[
+            GraphNode(id="黄芪", name="黄芪", category=GraphNodeCategory.HERB, symbolSize=58),
+            GraphNode(
+                id="formula_yupingfengsan",
+                name="玉屏风散",
+                category=GraphNodeCategory.FORMULA,
+                symbolSize=36,
+            ),
+        ],
+        links=[
+            GraphLink(
+                source="黄芪",
+                target="formula_yupingfengsan",
+                relation=GraphRelation.XIANG_XU,
+                evidence="益气固表止汗，用于表虚自汗",
+            )
+        ],
+    )
+
+    kept, unsupported = _verify_graph(payload, whitelist)
+
+    assert "玉屏风散" not in unsupported, "方剂正名被误判成越界节点"
+    assert {node.name for node in kept.nodes} == {"黄芪", "玉屏风散"}
+    assert kept.links
 
 
 def test_quiz_quality_blacklist_is_blocked() -> None:
@@ -163,6 +214,43 @@ def test_node_resource_task_sse_resume_and_library(tmp_path: Path, monkeypatch: 
 
 async def _collect(iterator):
     return [event async for event in iterator]
+
+
+def test_doc_task_uses_params_topic(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """doc 的 layout 步必须读 params.topic 自由主题，而不是写死节点名。
+
+    文档工坊以 node_id=general + params.topic 起稿；若 layout 步回落到
+    storage.node_name，生成内容会永远是「中药学总论」而不是用户输入的话题。
+    """
+    db_path = tmp_path / "qihuang.db"
+    upsert_node({"id": "general", "name": "中药学总论", "level": "domain"}, db_path)
+    app.dependency_overrides[get_resource_db_path] = lambda: db_path
+
+    seen: dict[str, str] = {}
+
+    async def stub(resource_type: str, topic: str):
+        if resource_type == "doc":
+            seen["topic"] = topic
+            return ({"blocks": [{"type": "heading", "text": topic}]}, [])
+        return ({"nodes": []}, [])
+
+    monkeypatch.setattr(resource_service, "generate_content", stub)
+    client = TestClient(app)
+    session = auth_session(client, "doc-topic-user", db_path)
+    created = client.post(
+        "/api/resource/tasks",
+        json={"node_id": "general", "resource_type": "doc", "params": {"topic": "五行学说的临床应用"}},
+        headers=session["headers"],
+    )
+    assert created.status_code == 201, created.text
+    events = asyncio.run(_collect(resource_service.stream_task(created.json()["task_id"], session["user"]["user_id"], db_path)))
+    assert events[-1]["event"] == "done"
+    assert seen["topic"] == "五行学说的临床应用"
+    # 标题同样跟随自由主题（_task_topic），资源卡不再显示「中药学总论」。
+    resource_id = events[-1]["payload"]["resource_id"]
+    detail = client.get(f"/api/resources/{resource_id}", headers=session["headers"])
+    assert detail.status_code == 200
+    assert detail.json()["title"].startswith("五行学说的临床应用")
 
 
 def test_resource_storage_migration_is_idempotent(tmp_path: Path) -> None:

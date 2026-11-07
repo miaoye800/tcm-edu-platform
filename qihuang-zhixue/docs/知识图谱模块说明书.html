@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识图谱模块说明书 · 岐黄知学</title>
+<style>
+:root{
+  --bg:#FBFAF8; --card:#FFFFFF; --text:#22211E; --muted:#6B6A65; --faint:#96948C;
+  --line:#E6E3DB; --line-soft:#F0EEE7; --accent:#185FA5; --accent-soft:#EAF2FA;
+  --danger:#A32D2D; --danger-soft:#FBEDED; --warn:#854F0B; --warn-soft:#FBF3E4;
+  --ok:#3B6D11; --ok-soft:#EFF5E6; --code:#F5F3EE;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#191817; --card:#222120; --text:#E9E7E1; --muted:#A3A19A; --faint:#7C7A74;
+    --line:#35332E; --line-soft:#2B2A27; --accent:#85B7EB; --accent-soft:#1E2A36;
+    --danger:#F09595; --danger-soft:#33211F; --warn:#EF9F27; --warn-soft:#2E2517;
+    --ok:#97C459; --ok-soft:#242C1B; --code:#26251F;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px;display:flex;gap:48px}
+nav{flex:0 0 200px;position:sticky;top:0;align-self:flex-start;padding:56px 0 40px;max-height:100vh;overflow:auto}
+nav .nt{font-size:11px;letter-spacing:.08em;color:var(--faint);margin-bottom:12px}
+nav a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 0 4px 10px;border-left:2px solid var(--line-soft)}
+nav a:hover{color:var(--text);border-left-color:var(--accent)}
+main{flex:1;min-width:0;padding:56px 0 100px}
+header{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:36px}
+.eyebrow{font-size:12px;color:var(--faint);letter-spacing:.04em;margin-bottom:10px}
+h1{font-size:28px;font-weight:600;margin:0 0 10px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;margin:0}
+.meta{margin-top:16px;font-size:12px;color:var(--faint);font-family:ui-monospace,"SF Mono",Consolas,monospace}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:28px 0 0}
+.stat{background:var(--card);padding:14px 16px}
+.stat b{display:block;font-size:22px;font-weight:600;letter-spacing:-.02em}
+.stat span{font-size:11.5px;color:var(--muted)}
+h2{font-size:19px;font-weight:600;margin:52px 0 14px;padding-top:8px;letter-spacing:-.01em}
+h2 .num{color:var(--faint);font-weight:400;font-size:14px;margin-right:8px;font-family:ui-monospace,monospace}
+h3{font-size:15px;font-weight:600;margin:28px 0 10px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin:3px 0}
+code{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12.5px;background:var(--code);padding:1.5px 5px;border-radius:4px}
+pre{background:var(--code);border:1px solid var(--line-soft);border-radius:10px;padding:14px 16px;overflow:auto;font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12.5px;line-height:1.65;margin:0 0 16px}
+pre code{background:none;padding:0;font-size:inherit}
+table{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:13px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:11.5px;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--line-soft)}
+td{padding:8px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+td.mono,th.mono{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.box{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 16px;font-size:13.5px}
+.box.red{border-left-color:var(--danger);background:var(--danger-soft)}
+.box.amber{border-left-color:var(--warn);background:var(--warn-soft)}
+.box.green{border-left-color:var(--ok);background:var(--ok-soft)}
+.box .lab{display:block;font-size:11px;letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:0 0 16px}
+.card .sig{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12.5px;color:var(--accent);word-break:break-all;margin-bottom:8px;line-height:1.6}
+.card .one{font-size:13.5px;color:var(--text);margin-bottom:10px}
+.card dl{margin:0;display:grid;grid-template-columns:72px 1fr;gap:4px 12px;font-size:13px}
+.card dt{color:var(--faint);font-size:11.5px;padding-top:2px}
+.card dd{margin:0;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);color:var(--muted);margin-right:4px;font-family:ui-monospace,monospace}
+.pill.t1{border-color:var(--danger);color:var(--danger)}
+.pill.t2{border-color:var(--accent);color:var(--accent)}
+.pill.t3{border-color:var(--faint);color:var(--faint)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--faint)}
+@media (max-width:900px){
+  .wrap{display:block;padding:0 20px}
+  nav{display:none}
+  main{padding:36px 0 60px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="nt">目录</div>
+  <a href="#s1">1 · 这个模块是什么</a>
+  <a href="#s2">2 · 数据模型</a>
+  <a href="#s3">3 · 关系的类型与分层</a>
+  <a href="#s4">4 · 九个查询能力</a>
+  <a href="#s5">5 · HTTP 接口手册</a>
+  <a href="#s6">6 · 构建流水线</a>
+  <a href="#s7">7 · 与智能体的关系</a>
+  <a href="#s8">8 · 边界与缺口</a>
+</nav>
+<main>
+
+<header>
+  <div class="eyebrow">qihuang-zhixue · backend/app/kg</div>
+  <h1>知识图谱模块说明书</h1>
+  <p class="sub">从教材事实到可查服务的完整说明：数据模型、关系分层、查询能力、接口契约与已知边界。</p>
+  <div class="meta">SCHEMA_VERSION 3 · 数据截至 2026-11-05 · 全部数字取自 .data/qihuang.db 实测</div>
+  <div class="stats">
+    <div class="stat"><b>1708</b><span>实体（药 465 · 证 1203 · 方 40）</span></div>
+    <div class="stat"><b>5512</b><span>关系边（T1 80 · T2 5432 · T3 0）</span></div>
+    <div class="stat"><b>1804</b><span>别名（药名、炮制品、教材别名）</span></div>
+    <div class="stat"><b>0</b><span>悬空引用 dangling_links</span></div>
+  </div>
+</header>
+
+<h2 id="s1"><span class="num">01</span>这个模块是什么</h2>
+
+<p>一句话：<strong>把教材里“谁和谁有什么关系”抽成机器可查的结构，做成一堆纯代码查询函数，供页面和智能体调用。</strong></p>
+
+<p>它不是“一张画给人看的图”。画布只是它的一个出口。真正的本体是四张 SQLite 表和九个查询函数——每条关系都带出处，每个查询都不调模型。</p>
+
+<h3>它替掉的是什么</h3>
+<table>
+  <tr><th style="width:26%">以前</th><th>问题</th><th style="width:34%">现在</th></tr>
+  <tr>
+    <td>图谱是“要被生成的资源”，<code>GraphAgent</code> 现编</td>
+    <td>同一个主题两次生成结果不同，评审当场复现不了</td>
+    <td>图谱是服务，Agent 是调用方。结构层离线固化，查询层纯代码，只有表达层交给模型</td>
+  </tr>
+  <tr>
+    <td>1571 条边里 915 条（58%）是“同归经、同功效、同性味”</td>
+    <td>相似度是药材属性的函数，落库后必然与属性不同步，且占掉大半存储却答不了任何真实提问</td>
+    <td>相似度改为运行时计算（<code>similar_neighbors</code>），<code>tier3_persisted: 0</code> 作为自检位</td>
+  </tr>
+  <tr>
+    <td>知识树 117 个知识点对 76 味药，名字交集只有 24 个</td>
+    <td>前端拿树节点 id 查药，查不到 → 404 → 回落 15 个硬编码的假节点</td>
+    <td>实体对齐后 209 个 point 中 206 个挂上实体，悬空引用 0</td>
+  </tr>
+  <tr>
+    <td>十八反、剂量、毒性校验埋在画像流程里，靠关键词硬匹配</td>
+    <td>没有 API、没有页码、没有 edge_id，问“凭什么”答不上来</td>
+    <td>独立审查器，每条结论带 <code>kind</code> + 教材页码 + 原文</td>
+  </tr>
+</table>
+
+<div class="box">
+  <span class="lab">设计总原则</span>
+  答案要唯一、可审计、可复现、离线、省钱 → 固化进结构；问题开放、要措辞、要多步推理 → 才交给模型。
+  这条线划错，后面所有取舍都会跟着错。
+</div>
+
+<h2 id="s2"><span class="num">02</span>数据模型</h2>
+
+<p>四张核心表，分工是“我是谁 / 我还叫什么 / 我和谁什么关系 / 这条关系凭什么”。</p>
+
+<h3>2.1 kg_entity —— 一个东西的身份</h3>
+<p>表里存的是“这个东西存在”，不是“这个内容的全文”。正文放在 <code>payload_ref</code> 指向的 JSON 文件里。</p>
+<table>
+  <tr><th class="mono" style="width:20%">字段</th><th style="width:14%">类型</th><th>含义与约束</th></tr>
+  <tr><td class="mono">id</td><td>TEXT PK</td><td>主键。<code>herb_mahuang</code> / <code>syndrome_&lt;hash&gt;</code> / <code>formula_&lt;slug&gt;</code>。由名字稳定生成，改名字不会改 id。</td></tr>
+  <tr><td class="mono">kind</td><td>TEXT</td><td>实体种类，七值闭集：<code>herb</code> 药、<code>syndrome</code> 证候、<code>formula</code> 方剂、<code>category</code> 类属、<code>meridian</code> 归经、<code>effect</code> 功效、<code>symptom</code> 症状。后四种在 CHECK 里预留了位子，目前没有实体——归经与功效现在还是药材身上的属性数组。</td></tr>
+  <tr><td class="mono">name</td><td>TEXT</td><td>正名，与 kind 组成唯一索引 <code>kg_entity_kind_name</code>。同名不同类可以共存（“补气”既可能是功效也可能是证候）。</td></tr>
+  <tr><td class="mono">pinyin</td><td>TEXT</td><td>全拼，用于检索与纠错（<code>fuiing</code> → <code>fuling</code> 这类历史拼写靠 <code>_load_pinyin_fix</code> 修正）。</td></tr>
+  <tr><td class="mono">canonical_id</td><td>TEXT FK</td><td>指向“正身”。别名实体、异名实体用得到，避免同一味药出现两个独立身份。</td></tr>
+  <tr><td class="mono">knowledge_node_id</td><td>TEXT</td><td>挂到知识树的哪个节点。这是实体与学习路径唯一的桥；为 NULL 表示不在树上（如方剂、多数证候）。</td></tr>
+  <tr><td class="mono">status</td><td>TEXT</td><td>五值：<code>orphan</code> 教材没立条目 / <code>draft</code> 立了但字段没抽 / <code>pending</code> 待复核 / <code>approved</code> 可用 / <code>rejected</code>。<strong>当前 1694 approved + 14 orphan</strong>。</td></tr>
+  <tr><td class="mono">payload_ref</td><td>TEXT</td><td>正文字典文件的路径，如 <code>data/herbs/mahuang.json</code>。只存路径不复制正文——JSON 是 source of truth。</td></tr>
+  <tr><td class="mono">extra_json</td><td>TEXT</td><td>不常用字段的兜底袋，避免为一个小字段加一列。</td></tr>
+  <tr><td class="mono">created_at / updated_at</td><td>TEXT</td><td>ISO 时间戳，用于增量同步与审计。</td></tr>
+</table>
+
+<h3>2.2 kg_alias —— 它还能叫什么</h3>
+<table>
+  <tr><th class="mono" style="width:20%">字段</th><th>含义</th></tr>
+  <tr><td class="mono">alias</td><td>别名本身。与 entity_id 组成复合主键，同一个别名可以指向多个实体（“参”既可能指人参也可能指党参），解析时按 kind 优先。</td></tr>
+  <tr><td class="mono">entity_id</td><td>指向 kg_entity。</td></tr>
+  <tr><td class="mono">source</td><td>别名从哪来，四类：<code>name</code> 正名本身（1708）、<code>preparation</code> 炮制品前缀（48，如“炙麻黄”“蜜黄芪”）、<code>herb.aliases</code> 药材条目自带的别名（45）、<code>textbook_alias</code> 教材别名表（3）。<strong>来源必须记，否则分不清“教材说的”和“我们推的”。</strong></td></tr>
+</table>
+
+<h3>2.3 kg_edge —— 一条关系</h3>
+<p>这是整个模块的核心表。<code>UNIQUE(source_id, target_id, relation_type, label)</code> 保证同一条关系不会重复入库；<code>relation_type</code> 刻意<strong>不加 CHECK</strong>——枚举演进由 <code>constants.py</code> 管，SQLite 没法 ALTER CHECK，加一个类型就得 DROP 整表。</p>
+<table>
+  <tr><th class="mono" style="width:20%">字段</th><th style="width:12%">类型</th><th>含义</th></tr>
+  <tr><td class="mono">id</td><td>INTEGER PK</td><td>自增。<strong>这就是前端“依据”按钮背后的 edge_id</strong>，所有归因、路径、详情都靠它回溯。</td></tr>
+  <tr><td class="mono">source_id</td><td>TEXT FK</td><td>起点实体。方向有语义：药→方是“组成”，方→药则不是。</td></tr>
+  <tr><td class="mono">target_id</td><td>TEXT FK</td><td>终点实体。</td></tr>
+  <tr><td class="mono">relation_type</td><td>TEXT</td><td>关系类型，12 值（见第 3 节）。决定 tier、方向性、是否对称，是唯一权威定义。</td></tr>
+  <tr><td class="mono">tier</td><td>INTEGER 1/2/3</td><td>可信层。<code>1</code> 硬约束、<code>2</code> 教材事实、<code>3</code> 相似（永不落库）。</td></tr>
+  <tr><td class="mono">label</td><td>TEXT</td><td>人读短句，如“人参反藜芦”“麻黄发汗力强，桂枝发汗力缓”。前端不拼字符串，直接显示它。</td></tr>
+  <tr><td class="mono">evidence_json</td><td>TEXT</td><td>出处块：<code>[{page, quote, ref}]</code>。页码、原文、章节。空数组意味着这条边无法溯源——属于缺陷。</td></tr>
+  <tr><td class="mono">confidence</td><td>REAL</td><td>0~1。T1 恒为 1.0（人工核过）；T2 实测均值 0.709、区间 0.6~0.97。用途是排序与截断，不是真假判断。</td></tr>
+  <tr><td class="mono">derived</td><td>INTEGER</td><td><code>0</code> 从教材直接抽取（2056 条），<code>1</code> 脚本反推（3456 条，如“证方链”由方剂组成药的主治倒推）。反推的置信度会被压低。</td></tr>
+  <tr><td class="mono">status</td><td>TEXT</td><td><code>pending</code> / <code>approved</code> / <code>rejected</code>。当前 5512 条全部 approved。</td></tr>
+  <tr><td class="mono">reviewed_by / reviewed_at</td><td>TEXT</td><td>谁在什么时候核的。T1 边必须有人签字。</td></tr>
+  <tr><td class="mono">meta_json</td><td>TEXT</td><td>扩展属性（如方剂是否 <code>incomplete</code>）。</td></tr>
+</table>
+
+<div class="box red">
+  <span class="lab">最容易踩的坑</span>
+  <strong>组成边的方向是“药 → 方”，不是“方 → 药”。</strong>
+  旧代码直接套“source 含 target”，念出来成了“人参含参附汤”，把成分当成了容器。
+  现在 <code>ask.py</code> 按实体种类判断方向再念，而不是依赖建边时的书写习惯。
+</div>
+
+<h3>2.4 为什么 JSON 是 source of truth</h3>
+<pre><code>data/herbs/*.json      真人维护的药材专著     ← 唯一事实来源
+data/formulas/*.json   方剂主数据
+data/curated/*.json    十八反 / 十九畏 / 七情实例 / 症状别名
+        ↓  build_kg.py 可重跑
+kg_entity / kg_edge    SQLite 索引             ← 可随时删了重建</code></pre>
+<p>判据：<strong>人工签字的东西不能丢，机器算的东西随时可重建。</strong> 所以 <code>reset_db()</code> 清空五张 KG 表，但<strong>故意不清</strong> <code>herb_draft*</code> 三张——那存的是“谁在什么时候看过哪味药”的签字记录，不是索引。索引重建十次，不该让审计痕迹消失。</p>
+
+<h2 id="s3"><span class="num">03</span>关系的类型与分层</h2>
+
+<p>分层不是为了“打分”，而是因为三类知识在<strong>决策里的性质完全不同</strong>。混在一起，调用方只能靠比字符串来判，那正是重构要消灭的做法。</p>
+
+<table>
+  <tr><th style="width:12%">层</th><th style="width:22%">性质</th><th>为什么单独一层</th></tr>
+  <tr>
+    <td><span class="pill t1">T1</span></td>
+    <td>硬约束 / 禁忌</td>
+    <td>错了就是教学事故。<strong>只能来自人工 curated 表</strong>——LLM 候选一律拒绝，因为模型一定会“补充”出不存在的反药。当前 80 条：十八反 68、十九畏 12。</td>
+  </tr>
+  <tr>
+    <td><span class="pill t2">T2</span></td>
+    <td>教材明文记载的事实</td>
+    <td>配伍、方剂组成、药证链、鉴别。可被引用、可被质疑、可翻页核对。当前 5432 条。</td>
+  </tr>
+  <tr>
+    <td><span class="pill t3">T3</span></td>
+    <td>按属性算出来的相似</td>
+    <td><strong>不落库</strong>。它是药材属性的纯函数，落库必然与属性不同步。只用于召回扩展，不进图、不进证据链。</td>
+  </tr>
+</table>
+
+<h3>3.1 十二种关系类型（当前实测计数）</h3>
+<table>
+  <tr><th style="width:14%">关系</th><th style="width:8%">层</th><th style="width:9%">方向</th><th style="width:9%">条数</th><th>含义与来源</th></tr>
+  <tr><td>十八反</td><td><span class="pill t1">T1</span></td><td>对称</td><td>68</td><td>配伍禁忌，教材 p128。人工 curated，禁改。</td></tr>
+  <tr><td>十九畏</td><td><span class="pill t1">T1</span></td><td>对称</td><td>12</td><td>与七情里的“相畏”<strong>不是一回事</strong>，教材 p128 明确警告过名称混用，故单列。</td></tr>
+  <tr><td>相须</td><td><span class="pill t2">T2</span></td><td>对称</td><td>27</td><td>性能功效相似、合用增效。教材七情实例，p124-125。</td></tr>
+  <tr><td>相使</td><td><span class="pill t2">T2</span></td><td>有向</td><td>4</td><td>主辅关系。<strong>方向携带语义</strong>：source 是主药。</td></tr>
+  <tr><td>相畏</td><td><span class="pill t2">T2</span></td><td>有向</td><td>4</td><td>source 的毒副作用被 target 抑制。</td></tr>
+  <tr><td>相杀</td><td><span class="pill t2">T2</span></td><td>有向</td><td>7</td><td>source 能消除 target 的毒副作用。<strong>A 畏 B ⟺ B 杀 A</strong>，两条都要建，方向相反。</td></tr>
+  <tr><td>相恶</td><td><span class="pill t2">T2</span></td><td>有向</td><td>2</td><td>source 的功效被 target 削弱。</td></tr>
+  <tr><td>配伍</td><td><span class="pill t2">T2</span></td><td>对称</td><td>3531</td><td>教材记载两药配伍应用，但<strong>没标具体七情类别</strong>。旧代码把这 217 条全打成“相须”，等于编造；现在诚实叫“配伍”。信息密度低，扩检索时排在最后。</td></tr>
+  <tr><td>组成</td><td><span class="pill t2">T2</span></td><td>有向</td><td>67</td><td>药 → 方。由药材条目的 <code>formula_ref</code> 反推，<strong>覆盖不全</strong>（平均每方 1.7 味）。</td></tr>
+  <tr><td>药证链</td><td><span class="pill t2">T2</span></td><td>有向</td><td>1491</td><td>药 → 证。教材“主治”字段的结构化。</td></tr>
+  <tr><td>证方链</td><td><span class="pill t2">T2</span></td><td>有向</td><td>119</td><td>证 → 方。由方剂组成药的主治倒推（<code>derived=1</code>），置信度低。</td></tr>
+  <tr><td>同类鉴别</td><td><span class="pill t2">T2</span></td><td>对称</td><td>180</td><td>教材写的鉴别句，如“麻黄发汗力强…桂枝发汗力缓…”。<strong>两药对比的结论优先取它</strong>。</td></tr>
+</table>
+
+<h3>3.2 对称与有向</h3>
+<p>这个区分不是洁癖。对称关系（相须、十八反、同类鉴别…）建库时<strong>只写一条</strong>，查询时双向匹配；如果两个方向都建，边数会翻倍，而且迟早出现“A→B 有、B→A 没有”的脏数据。有向关系（相使、相畏、相杀、相恶、组成、药证链、证方链）绝不能自动补反向——补了就是编造。</p>
+
+<h2 id="s4"><span class="num">04</span>九个查询能力</h2>
+
+<p>全部在 <code>app/kg/</code> 下，<strong>零模型调用</strong>。每一个的输出都只取决于库里的数据，同样的输入永远同样的输出。</p>
+
+<div class="card">
+  <div class="sig">entities.resolve(query, db_path) → KgEntity | None</div>
+  <div class="one">把任意写法解析成实体。所有查询的第一步。</div>
+  <dl>
+    <dt>解析顺序</dt><dd>entity.id → alias → name → 知识树节点名 → 旧图实体 id。逐级尝试，命中即返回。</dd>
+    <dt>为什么五级</dt><dd>同一味药有四种写法：<code>herb_mahuang</code> / <code>麻黄</code> / <code>炙麻黄</code> / <code>d17.s1.p1</code>。入口不归一，后面每一层都要各写一份兼容。</dd>
+    <dt>查不到</dt><dd>返回 None，<strong>不猜</strong>。上层负责说“教材未收录”。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">traverse.neighbors(center_id, *, hops=1, tiers=(1,2), limit=60, db_path) → Subgraph</div>
+  <div class="one">从中心实体 BFS 取局部子图。图谱首屏就是它。</div>
+  <dl>
+    <dt>hops</dt><dd>跳数，钳制在 1~3。每跳一次 SQL，深度 3 以内开销可忽略。</dd>
+    <dt>tiers</dt><dd>只走这些层。<strong>默认 (1,2)</strong>——T3 收不到，即使调用方传了 3 也会被剔掉。</dd>
+    <dt>limit</dt><dd>节点上限。超出时优先保留：中心 → 跳数近 → tier 硬 → 置信度高。<code>truncated</code> 标记是否截断，<strong>不静默丢弃</strong>。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">traverse.shortest_path(from_id, to_id, *, max_hops=4, tiers=(1,2), db_path) → list[KgEdge]</div>
+  <div class="one">两实体间最短关系链。回答“这两味药怎么扯上关系的”。</div>
+  <dl>
+    <dt>算法</dt><dd>BFS，<strong>等权</strong>。故意不按置信度加权：真实的“麻黄→细辛→小青龙汤”不该因为某条边置信度低就绕远路。</dd>
+    <dt>代价</dt><dd>等权只回答“最少几跳”，不回答“哪条最重要”。所以经常经甘草这类枢纽中转。</dd>
+    <dt>找不到</dt><dd>返回空列表，上层说“不是没关系，是教材没写这条关系”。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">traverse.similar_neighbors(entity_id, *, limit=12, relation_types=None, db_path) → list[SimilarityHit]</div>
+  <div class="one">T3 相似邻居。<strong>运行时算，从不落库。</strong></div>
+  <dl>
+    <dt>打分</dt><dd>共享功效每个 0.35（最多取 2 个）、共享归经每个 0.20（最多 2 个）、性同且味有交集 0.25，上限 1.0。</dd>
+    <dt>用途</dt><dd>召回扩展、推荐“你可能还需要看”。<strong>不进证据链</strong>，因为它是算出来的，不是教材写的。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">compare.compare(left_key, right_key, *, db_path) → dict</div>
+  <div class="one">两药对比。七个维度逐项求交集与差集。</div>
+  <dl>
+    <dt>七维</dt><dd>四气 / 五味 / 归经 / 功效 / 主治 / 用量 / 毒性，顺序固定，表格列不会因数据缺失而跳动。</dd>
+    <dt>三组</dt><dd>每维给 <code>only_left</code> / <code>only_right</code> / <code>shared</code>。</dd>
+    <dt>为什么不用模型</dt><dd>差异是可枚举的。让模型写，它会把教材原话换个说法，既不可溯源，还可能把“桂枝发汗力缓”说反。</dd>
+    <dt>summary 优先级</dt><dd>有“同类鉴别”边就用教材原句，没有才用差异表拼。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">compare.find_path(from_key, to_key, *, max_hops=4, db_path) → dict</div>
+  <div class="one">最短链 + 每一步的教材引文 + 一句人读的话。</div>
+  <dl>
+    <dt>输出</dt><dd><code>hops</code>、<code>path[]</code>（每步带 <code>edge_id</code>、<code>relation_type</code>、<code>tier</code>、<code>evidence</code>）、<code>sentence</code>（如 <code>麻黄 -[同类鉴别]-&gt; 桂枝</code>）。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">ask.ask(question, *, hops=1, limit=40, max_seeds=3, seed_ids=None, expand=True, db_path) → AskResult</div>
+  <div class="one">问题 → 结构化答案。<strong>确定性模板拼装，不调模型。</strong></div>
+  <dl>
+    <dt>种子</dt><dd>问题里抠实体名。按名字长度倒序 + 区间占用，避免“麻黄”从“麻黄汤”里被抠第二次，也避免“牵牛/牵牛子”被当成两个。</dd>
+    <dt>seed_ids</dt><dd>检索已经给出实体 id 时直接用，不再回头解析文本——那等于把检索白做了。</dd>
+    <dt>expand=False</dt><dd><strong>对照模式</strong>：只认实体不扩图，用来证明“扩展这一步到底贡献了什么”。同一问题关掉扩展后，关系 0 条、原文 0 条。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">prescription.review(payload, db_path, *, syndrome_hint=None) → ReviewResult</div>
+  <div class="one">处方审查。纯规则 + 图遍历，同步、不调模型。</div>
+  <dl>
+    <dt>findings.kind</dt><dd><code>herb_normalized</code> 药名归一、<code>herb_not_structured</code> 无结构化条目、<code>dose_abnormal</code> 剂量越界、<code>toxic_misuse</code> 毒性误用、<code>toxicity_unknown</code> 毒性未录、<code>incompatible_pair</code> 配伍禁忌、<code>case_unresolved</code> 证候解析不了、<code>case_mismatch</code> 证药不符、<code>unrelated_herb</code> 药与证无关、<code>no_recognized_herb</code> 未识别出药。</dd>
+    <dt>syndrome_hint</dt><dd>口语描述（“一咽口水就疼”）匹配不到时，先用模型在<strong>闭集</strong>里挑证候，再把结果从这里喂进来重跑。注意是“从候选里选”，不是“自由生成”。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">reverse.reverse_lookup(target, *, top_k=3, db_path) → dict</div>
+  <div class="one">症 → 证 → 方 → 药。三段全查表。</div>
+  <dl>
+    <dt>四级命中</dt><dd><code>name</code> 证名原样命中（最可靠）→ <code>alias</code> 口语别名 → <code>phrase</code> 教材症状短语倒排（6262 条）→ <code>fuzzy</code> 字符二元组兜底（最弱）。</dd>
+    <dt>为什么 top_k=3</dt><dd>给 5 个以上，用户会以为“这些都是对的”，而实际只有第一两个有真实边支撑。</dd>
+    <dt>空结果</dt><dd>返回 <code>ok:false</code> + <code>reason</code> + <code>hint</code>（该怎么问）。<strong>绝不给“看着像”的证名</strong>——那个证一旦进处方审查，错的不是展示，是一次开方。</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="sig">attribution.attribute_mistake(mistake_id, *, persist=True, db_path) → dict</div>
+  <div class="one">错题归因。五类闭集，每条非 unknown 必须带 edge_id。</div>
+  <dl>
+    <dt>五类</dt><dd><code>概念混淆</code> / <code>禁忌错认</code> / <code>要点缺失</code> / <code>选错药</code> / <code>unknown</code>。</dd>
+    <dt>unknown 是一等公民</dt><dd>没有可用鉴别事实时，必须明说“归因不了”以及卡在哪一步（<code>unknown_reason</code>）。把“不知道”写成“概念混淆”，会骗老师补一个不存在的漏洞。</dd>
+    <dt>写入</dt><dd>先按 <code>mistake_id</code> 删干净再插。SQLite 里 <code>NULL != NULL</code>，edge_id 为空的 unknown 行靠 UNIQUE 去不了重。归因结果<strong>不写回</strong> <code>mistake_record</code>——它是派生数据，重算即覆盖。</dd>
+  </dl>
+</div>
+
+<h2 id="s5"><span class="num">05</span>HTTP 接口手册</h2>
+
+<p>路由集中在 <code>app/api/kg.py</code>，前缀 <code>/api/kg</code>。除 <code>/health</code> 外都需要登录，库路径通过 <code>get_kg_db_path</code> 依赖注入（测试可整体替换）。</p>
+
+<table>
+  <tr><th class="mono" style="width:30%">端点</th><th style="width:10%">方法</th><th>参数与说明</th></tr>
+  <tr><td class="mono">/api/kg/health</td><td>GET</td><td>无需鉴权。返回实体/边分层计数、<code>tier3_persisted</code>（必须 0）、<code>dangling_links</code>（必须 0）、<code>herbs_with_monograph / herbs_draft / herbs_orphan</code> 三类分开数、<code>kg_ready</code>。</td></tr>
+  <tr><td class="mono">/api/kg/search</td><td>GET</td><td><code>q</code> 关键词、<code>kind</code> 限定种类、<code>limit</code>。走名字与别名模糊匹配，给前端下拉框用。</td></tr>
+  <tr><td class="mono">/api/kg/ask</td><td>POST</td><td><code>question</code>、<code>hops</code>、<code>expand</code>、<code>seed_ids</code>。返回 <code>answer</code> + <code>seeds</code> + <code>graph{nodes,edges}</code> + <code>citations</code>。</td></tr>
+  <tr><td class="mono">/api/kg/prescription/review</td><td>POST</td><td>处方 payload（患者描述 + 药味剂量）。返回 <code>findings[]</code> 与 <code>refs[]</code>。</td></tr>
+  <tr><td class="mono">/api/kg/neighbors/{center_id}</td><td>GET</td><td><code>hops</code> 1~3、<code>limit</code> 5~120、<code>tiers</code> 逗号分隔（默认 <code>1,2</code>）。<strong>返回旧 GraphContent 结构 + meta</strong>，所以前端换端点不必改组件。解析不到时返回 200 + 单节点占位，不是 404。</td></tr>
+  <tr><td class="mono">/api/kg/entity/{entity_id}</td><td>GET</td><td>实体详情。边<strong>按 tier 分组</strong>：<code>edges:{"1":[…],"2":[…]}</code>，每条带 <code>edge_id</code>、<code>direction</code>（out/in）、<code>peer</code>、<code>evidence</code>。未知实体<strong>返回 404</strong>——与 neighbors 相反，因为空白药材卡会被读成“这味药没功效”。</td></tr>
+  <tr><td class="mono">/api/kg/reverse</td><td>GET</td><td><code>target</code> 症状或证候名、<code>top_k</code>。返回候选证 + 药 + 方 + 每步 <code>edge_id</code>。</td></tr>
+  <tr><td class="mono">/api/kg/compare</td><td>GET</td><td><code>left</code>、<code>right</code>。返回 <code>differences[]</code>、<code>textbook_differentiation</code>、<code>shared_relations[]</code>、<code>constraints[]</code>、<code>summary</code>、两侧 <code>source</code> 出处。</td></tr>
+  <tr><td class="mono">/api/kg/path</td><td>GET</td><td><code>from_id</code>、<code>to_id</code>、<code>max_hops</code>。返回最短链。</td></tr>
+  <tr><td class="mono">/api/graph/{center_id}</td><td>GET</td><td>旧契约入口，内部同样走 KG 适配层。保留是为了让详情面板与 default-center 不受影响，观察期后下线。</td></tr>
+</table>
+
+<div class="box amber">
+  <span class="lab">两条接口的容错方向相反，这是故意的</span>
+  <code>neighbors</code> 查不到返回 200 + “教材未收录”单节点：如果返 404，前端会回落到 15 个硬编码的假图。
+  <code>entity</code> 查不到返回 404：详情面板拿不到内容就该报错，渲染一张空卡等于说“这味药什么功效都没有”。
+</div>
+
+<h2 id="s6"><span class="num">06</span>构建流水线</h2>
+
+<p>三个脚本，<strong>顺序不能换</strong>，全部幂等可重跑。</p>
+
+<pre><code># 1. 实体对齐：三套名单 → 1708 个实体
+python scripts/kg_align.py [--dry-run]
+
+# 2. 建边：T1 硬约束 + T2 事实关系（先清空再写，--keep 增量）
+python scripts/build_kg.py [--dry-run] [--keep]
+
+# 3. 前置顺序：父子层级 + 章节排序 + 环检测
+python scripts/derive_prerequisites.py [--dry-run]
+
+# 验收：T3 必须为 0，dangling 必须为 0
+curl http://127.0.0.1:8000/api/kg/health</code></pre>
+
+<h3>6.1 kg_align.py 的三条规矩</h3>
+<ul>
+  <li><strong>不追求 orphan = 0</strong>。没有专著的药材显式标 <code>orphan</code>，前端显示“教材未收录”。编一个映射比留空更假。</li>
+  <li><strong>先清残留药材再 upsert</strong>。拼音/slug 校正会改 id（<code>herb_fuilng</code> → <code>herb_fuling</code>），不清就会留下两条同一味药。</li>
+  <li><strong>只写 kg_entity / kg_alias</strong>，不动 <code>knowledge_node</code> 与旧 <code>herb_relation</code>。对齐是加索引，不是搬家。</li>
+</ul>
+
+<h3>6.2 build_kg.py 的数据来源与可信度</h3>
+<table>
+  <tr><th style="width:12%">层</th><th style="width:22%">关系</th><th style="width:38%">来源</th><th>可信度</th></tr>
+  <tr><td><span class="pill t1">T1</span></td><td>十八反 / 十九畏</td><td><code>data/curated/incompatibility.json</code>（人工，教材 p128）</td><td>最高，禁改</td></tr>
+  <tr><td><span class="pill t2">T2</span></td><td>相须 / 相使 / 相畏 / 相杀 / 相恶</td><td>同一 curated 文件的七情实例（p124-125）</td><td>教材明文</td></tr>
+  <tr><td><span class="pill t2">T2</span></td><td>配伍</td><td>药材 JSON 的 <code>combinations</code></td><td>教材级，类别未知故不臆测</td></tr>
+  <tr><td><span class="pill t2">T2</span></td><td>组成 / 药证链</td><td><code>formula_ref</code> / <code>indications</code> 结构化字段</td><td>结构化</td></tr>
+  <tr><td><span class="pill t2">T2</span></td><td>证方链</td><td>由方剂组成药的主治倒推</td><td><code>derived=1</code>，低</td></tr>
+  <tr><td><span class="pill t2">T2</span></td><td>同类鉴别</td><td><code>differentiation</code></td><td>教材级</td></tr>
+</table>
+
+<h3>6.3 derive_prerequisites.py 的四条规则</h3>
+<ol>
+  <li>父子层级 → <code>strict</code>（必须按顺序学）</li>
+  <li>同章节按 <code>sort_hint</code> → <code>free</code>（可并行）</li>
+  <li>方剂组成依赖</li>
+  <li>证候依赖</li>
+</ol>
+<p><strong><code>order_sensitivity</code> 是关键语义</strong>：<code>strict</code> 会让学习计划器锁住后一个节点，<code>free</code> 允许并行。所以脚本遇到已存在的边灵敏度不一致时<strong>只报冲突、不覆盖</strong>——改这个值等于改学习计划的排布方式，属于需要评审的迁移，不该由推导脚本顺手改掉。</p>
+
+<h2 id="s7"><span class="num">07</span>与智能体的关系</h2>
+
+<p>这是目前最需要说清楚的一块，因为<strong>它和直觉不一样</strong>。</p>
+
+<h3>7.1 现状：图被用到了，但不是“模型决定调用”</h3>
+<table>
+  <tr><th style="width:26%">链路</th><th style="width:12%">接入方式</th><th>说明</th></tr>
+  <tr><td>对比页 / 图谱页 / 图谱问答 / 处方审查 / 错题归因</td><td>页面直连</td><td>用户点按钮，前端直接请求 <code>/api/kg/*</code>。模型不参与。</td></tr>
+  <tr><td>资源生成（doc / mindmap / ppt / graph / quiz / story）</td><td>隐式</td><td><code>retrieve_resource_docs()</code> 里做的 GraphRAG，见下。</td></tr>
+  <tr><td>对话（<code>/api/chat/stream</code>，LangGraph）</td><td><strong>未接入</strong></td><td>只有 <code>router → rag_agent / explain_agent / path_agent / profile_agent</code> 四个节点，没有 kg 节点。<strong>所以聊到“麻黄和桂枝什么关系”现在不会走图谱。</strong></td></tr>
+</table>
+
+<h3>7.2 GraphRAG：图是怎么进资源的</h3>
+<pre><code>topic "麻黄为什么配桂枝"
+  ↓ 向量召回 search(topic, top_k)
+  ↓ 精确药名优先 _prioritize_exact_herb（题目点名的药必须进）
+  ↓ 取种子：score ≥ kg_seed_threshold 且带 entity id
+  ↓ 每个种子 neighbors(hops=1) 沿 T1/T2 补一跳
+  ↓ 按关系优先级排序（相须 0 &lt; 相使 1 &lt; 同类鉴别 2 &lt; … &lt; 配伍 7）
+  ↓ 只保留 data/herbs 里有专著的那些
+  → 追加为 ResourceDoc，白名单随之扩大</code></pre>
+<p>三个刻意的约束：只补有专著的药（补进来也是空字段，模型只能编）；只补 <code>ResourceDoc</code> 不补裸药名（白名单从 docs 生成，补裸名会让白名单和正文脱节）；图坏了不影响检索（异常吞掉，扩展是加分项，不该把“查得到麻黄”也拖死）。</p>
+<p>实测效果：问“麻黄”，召回从 5 味扩到 7 味，多出桂枝、柴胡。</p>
+
+<h3>7.3 如果要接成对话工具</h3>
+<p>两条路，取舍很明确：</p>
+<table>
+  <tr><th style="width:16%">方案</th><th style="width:34%">做法</th><th>代价</th></tr>
+  <tr><td>隐式</td><td>对话前先跑一次 <code>ask()</code>，把结构化结果塞进上下文</td><td>稳、可控，但每轮都付一次查询与 token，且模型不知道“我还能再查”</td></tr>
+  <tr><td>显式工具</td><td>注册成 function calling 工具，模型自己决定调</td><td>灵活，但必须加护栏：<strong>工具只返回结构化事实 + 引用，措辞交给模型</strong>。否则等于把唯一能保证可溯源的环节交出去了</td></tr>
+</table>
+<div class="box red">
+  <span class="lab">接工具时最容易破的红线</span>
+  模型拿到 <code>neighbors</code> 的结果后，很自然会“顺手总结一下”，于是多出一批图里没有的关系。
+  护栏写法：工具的返回值里每条关系都带 <code>edge_id</code> 与 <code>evidence</code>，下游校验时只允许引用这些 id；引用不到就删句，不删就报错。
+</div>
+
+<h2 id="s8"><span class="num">08</span>边界与缺口</h2>
+
+<p>下面每一条都是<strong>已知、有原因、暂时不该被当成 bug 修</strong>的。写在这里是为了让下一个人不要在同一个地方绕圈。</p>
+
+<table>
+  <tr><th style="width:24%">边界</th><th style="width:12%">性质</th><th>说明</th></tr>
+  <tr><td>方剂组成不全</td><td>数据</td><td><code>组成</code> 边从药材条目反推，<strong>平均每方 1.7 味</strong>，<code>data/formulas/_index.json</code> 自标 <code>incomplete=true</code>。所以反查“咽喉肿痛”能到证和药，方是空的。补齐要走方剂抽取，不是查询写错了。</td></tr>
+  <tr><td>前置推导 R3/R4 产出 0 条</td><td>数据</td><td>端点是“方剂 / 证候的知识树节点”，而树只覆盖中药学 21 章的药材（209 个 point）。40 个方、1203 个证<strong>都没挂树</strong>，脚本如实报 blocked，不编端点凑数。</td></tr>
+  <tr><td>归经 / 功效 / 症状 暂无实体</td><td>设计</td><td>它们在 <code>kind</code> 的 CHECK 里，但现在是药材的属性数组。变成节点要先定“归脾经”这条边挂什么证据，是次数据改造。</td></tr>
+  <tr><td>15:00 后新增的边不自动生效</td><td>运维</td><td>边是离线构建的。<code>data/herbs</code> 改了不重跑 <code>build_kg.py</code>，图仍是旧的。没有增量触发器。</td></tr>
+  <tr><td><code>/api/graph/*</code> 未下线</td><td>过渡</td><td>详情面板与 <code>default-center</code> 还在用，内部同走 KG 适配层。观察期结束后废弃。</td></tr>
+  <tr><td>T2 置信度是启发式</td><td>设计</td><td>0.6~0.97 的取值来自“字段结构化程度”，不是统计校准。只用于排序，不用于判真假。</td></tr>
+  <tr><td>口语覆盖仍不全</td><td>数据</td><td>症状词表 6262 条来自教材切分 + 少量人工别名（<code>data/curated/symptom_aliases.json</code>）。“嗓子疼”能到“咽喉肿痛”，“头昏脑涨得厉害”不一定。缺口由 <code>symptom_llm.py</code> 的<strong>闭集选择</strong>兜，不用自由生成。</td></tr>
+</table>
+
+<footer>
+  qihuang-zhixue · 知识图谱模块说明书 · 数据取自 .data/qihuang.db 实测，口径见 <code>/api/kg/health</code>。
+  文中所有计数会随数据更新变化，判断标准以 health 为准。
+</footer>
+
+</main>
+</div>
+</body>
+</html>

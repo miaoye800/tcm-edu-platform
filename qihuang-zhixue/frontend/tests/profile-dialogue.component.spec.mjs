@@ -575,7 +575,7 @@ test('unrevealed legacy cards and summaries do not expose conclusions', () => {
 })
 
 test('formal no-key narrative labels do not claim fixture data', () => {
-  assert(onboarding.includes('规则模板叙述（未配置模型密钥）'), 'the no-key narrative source should describe the real rule fallback')
+  assert(onboarding.includes('规则模板叙述（未配置模型，暂不评分）'), 'the no-key narrative source should describe the real rule fallback')
   assert(!onboarding.includes('MOCK 演示来源'), 'formal onboarding copy must not label a backend template as fixture data')
 })
 
@@ -587,8 +587,8 @@ test('dialogue identity cards render distribution, level, tags, quotes, and no-k
   assert(component.includes('item.daily_minutes'), 'pace cards should show daily minutes only when supplied')
   assert(component.includes('item.target_days'), 'pace cards should show target days only when supplied')
   assert(component.includes('tag-content'), 'tag cards should render backend weak-point items')
-  assert(component.includes("provenance === 'no_key_rule_fallback'"), 'no-key rule fallback should have a distinct display path')
-  assert(component.includes('规则评分（未配置模型密钥）'), 'no-key rule fallback should be clearly labeled')
+  assert(component.includes('isNoKeyProvenance(provenance)'), 'no-key provenance should have a distinct display path')
+  assert(component.includes('未配置模型，无法评分'), 'no-key provenance must say the score is withheld, not that rules scored it')
 })
 
 test('identity card reducer consumes revealed_now once per session and never turns a state update into another flip', () => {
@@ -671,7 +671,7 @@ test('developer audit exposes the explainable pipeline and low-confidence radar 
   assert(audit.includes('user-quote'), 'audit should show the exact user answer')
   assert(audit.includes('确认：'), 'audit should show model-confirmed aspects')
   assert(audit.includes('待确认：'), 'audit should show remaining unknown aspects')
-  assert(audit.includes('确认度账本'), 'audit should expose calculation details')
+  assert(audit.includes('确认度怎么算'), 'audit should expose calculation details')
   assert(audit.includes('隐藏思维链'), 'audit should state the boundary for private reasoning')
   assert(radar.includes("dark: axisStatus(axis) === 'dark' && axisStatus(props.axes[nextIndex]) === 'dark'"), 'a dashed endpoint must not be overwritten by a dark segment')
   assert(radar.includes('stroke: var(--qh-color-gold);'), 'low-confidence segments should use the gold stroke')
@@ -690,12 +690,28 @@ test('component collection, source groups, and observed distribution scope stay 
 
 test('audit is a compact nine-part turn ledger rather than generic process chatter', () => {
   const audit = readFileSync(developerAuditPath, 'utf8')
-  for (const section of ['全维扫描', 'failure_reason', '原子证据', '七维组件矩阵', '评分暂缓', '评分证据包与统分', '确认度账本', 'excluded_candidates', 'matrix_before', 'matrix_after']) {
+  for (const section of ['全维扫描', 'failure_reason', '原子证据', '七维组件与评分', '评分暂缓', '送评证据包', '三师会诊', '统分', '确认度怎么算', 'excluded_candidates', 'matrix_before', 'matrix_after']) {
     assert(audit.includes(section), `audit should expose ${section}`)
   }
   assert(audit.includes('本轮处理流程'), 'audit should expose the ordered per-turn workflow')
   assert(audit.includes('class="developer-audit" aria-label="画像开发审计记录" open'), 'audit should open automatically so the current turn is visible')
   assert(audit.includes('查看轮次') && audit.includes('currentRecord'), 'audit should show one selected turn and keep older turns switchable')
-  assert(audit.includes('确认度收集中') && audit.includes('尚未发布最终确认度'), 'audit should expose confidence progress before score completion without presenting it as final')
+  assert(audit.includes('收集中，仍会变'), 'audit should mark an unpublished confidence as still moving instead of presenting it as final')
   assert(!audit.includes('正在融合证据，校准画像维度'), 'audit should not echo transient process chatter')
+})
+
+test('every component shows its own three-teacher scores and its own quality math', () => {
+  const audit = readFileSync(developerAuditPath, 'utf8')
+  const types = readFileSync(profileTypesPath, 'utf8')
+  // 三师必须落到组件：只给维度一个整体分时，"严师 42、宽师 68"的分歧就消失了。
+  assert(audit.includes('componentJuryRows'), 'audit should render per-component jury rows')
+  assert(audit.includes('组件分 = 三师平均'), 'audit should show the component score as the mean of three teachers')
+  assert(audit.includes('teacherSummary'), 'audit should show each teacher own weighted dimension score')
+  assert(audit.includes('jury_derivation'), 'audit should state that the dimension-level jury is derived')
+  assert(types.includes('jury?: Array<{ teacher: string'), 'audit types should carry per-component teacher scores')
+  assert(types.includes('teacher_dimension_scores'), 'audit types should carry per-teacher dimension scores')
+  // 质量分要能追到五项和依据，而不是只出现一个数字。
+  assert(audit.includes('quality_audit'), 'audit should render the per-evidence quality breakdown')
+  assert(audit.includes('规则算'), 'audit should mark the two rule-computed quality factors')
+  assert(types.includes('rule_computed'), 'audit types should say which quality factors are rule-computed')
 })

@@ -58,11 +58,11 @@ const collapsed = ref(false)
   width: 36px;
   height: 36px;
   place-items: center;
-  border: 1px solid rgba(143, 208, 173, 0.22);
-  border-radius: 12px;
+  border: 1px solid var(--qh-line);
+  border-radius: 10px;
   color: var(--qh-text);
-  background: var(--qh-collapse-fill);
-  box-shadow: var(--qh-shadow-soft);
+  background: var(--qh-surface-raised);
+  box-shadow: var(--qh-shadow-1);
   cursor: pointer;
   transition: left 220ms ease;
 }

@@ -66,7 +66,7 @@ const emit = defineEmits<{
 .nav-item:hover,
 .nav-item.router-link-active {
   color: var(--qh-text);
-  background: rgba(143, 208, 173, 0.11);
+  background: var(--qh-line);
 }
 
 .nav-item.is-disabled {
@@ -95,7 +95,7 @@ const emit = defineEmits<{
   place-items: center;
   border-radius: 12px;
   color: var(--qh-color-jade);
-  background: rgba(238, 245, 239, 0.06);
+  background: var(--qh-line);
   font-size: 18px;
 }
 

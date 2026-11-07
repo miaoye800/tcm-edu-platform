@@ -17,7 +17,7 @@ from app.profile.fusion import ALLOWED_LABELS, BASE_LEVEL_SCORES
 from app.profile.jury import ScoringResult, score_profile
 from app.profile.evidence import ExtractionMethod
 from app.profile.component_model import AtomicEvidence, CombinationType, ComponentCollection, DimensionScan, quote_is_traceable
-from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS
+from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS, QUALITY_FACTOR_GUIDE, apply_quality_rules
 from app.profile.modes import load_diagnostic_questions
 from app.profile.schema import (
     DIMENSION_LABELS,
@@ -97,6 +97,19 @@ class ExtractedSignal(BaseModel):
             return None
         return value
 
+    @field_validator("value", mode="before")
+    @classmethod
+    def _list_to_distribution(cls, value: Any) -> Any:
+        """模型把"薄弱点清单"直接写成数组时，按每项权重 1 的分布收下。
+
+        数组本身不是合法形状，但它承载的是真实原话标签；直接报错会让整轮
+        抽取作废，而这些标签正是薄弱点维度要的证据。
+        """
+
+        if isinstance(value, list):
+            return {str(item).strip(): 1.0 for item in value if str(item).strip()}
+        return value
+
     @field_validator("value")
     @classmethod
     def _clean_distribution(cls, value: SignalValue) -> SignalValue:
@@ -159,6 +172,24 @@ class ExtractedNumber(BaseModel):
     @classmethod
     def _clean_evidence(cls, value: Any) -> list[str]:
         return ExtractedSignal._clean_evidence(value)
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _coerce_number(cls, value: Any) -> Any:
+        """模型常把数字字段写成一句话（"能默写 120 味，正确率 90%"）。
+
+        这类 legacy 字段只是旧路径的旁证，新契约用组件证据卡；为了它把整轮
+        结果判废，等于让用户白说一句话。取第一个数字，取不到就当没说。
+        """
+
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, str):
+            match = re.search(r"\d+(?:\.\d+)?", value)
+            return float(match.group()) if match else None
+        if isinstance(value, dict | list):
+            return None
+        return value
 
 
 class ExtractedScore(ExtractedNumber):
@@ -508,7 +539,8 @@ async def _extract_dialogue_structured(text: str) -> DialogueExtraction:
                             "同时必须返回 turn_id、dimension_scan、atomic_evidence、component_collection。atomic_evidence 每项必须含 "
                             "evidence_id,dimension,component,evidence_group_id,source_turn_ids,quote,normalized_claim,evidence_type,supports,"
                             "collection_status,assessment,confirmed_aspects,pending_aspects,semantic_relation,related_evidence_ids,"
-                            "quality_factors(source_reliability,expression_clarity,content_specificity,freshness,consistency,independence_note)。"
+                            "quality_factors(expression_clarity,content_specificity,consistency)、quality_reason 与 quality_thinking。"
+                            + QUALITY_FACTOR_GUIDE
                         ),
                     },
                     ensure_ascii=False,
@@ -573,6 +605,14 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
         # becoming several independent confidence sources.
         cards: list[EvidenceCard] = []
         for item in extraction.atomic_evidence:
+            # 来源可靠与新鲜度按规则算：证据类型和轮次本来就是确定的事实，
+            # 交给模型只会得到解释不清的数。
+            quality = apply_quality_rules(
+                item.quality_factors,
+                evidence_type=item.evidence_type,
+                current_turn=extraction.turn_id,
+                source_turns=item.source_turn_ids,
+            )
             signal = {
                 "evidence": [item.quote],
                 "normalized_claim": item.normalized_claim,
@@ -585,10 +625,12 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                 "assessment": item.assessment,
                 "confirmed_aspects": item.confirmed_aspects,
                 "pending_aspects": item.pending_aspects,
-                "quality_factors": item.quality_factors.model_dump(mode="json"),
+                "quality_factors": quality.model_dump(mode="json"),
+                "quality_reason": item.quality_reason,
+                "quality_thinking": item.quality_thinking,
                 "combination_type": extraction.combination_type,
                 "agent_assessment": {
-                    "confidence_contribution": min(0.95, max(0.0, item.quality_factors.content_specificity)),
+                    "confidence_contribution": min(0.95, max(0.0, quality.content_specificity)),
                     "coverage": 1.0 if item.collection_status == "scorable" else 0.0,
                     "priority_strength": 0.5,
                     "independence": 1.0,
@@ -612,7 +654,9 @@ def _dialogue_cards(extraction: DialogueExtraction | dict[str, Any]) -> list[Evi
                 collection_status=item.collection_status,
                 semantic_relation=item.semantic_relation,
                 related_evidence_ids=item.related_evidence_ids,
-                quality_factors=item.quality_factors.model_dump(mode="json"),
+                quality_factors=quality.model_dump(mode="json"),
+                quality_reason=item.quality_reason,
+                quality_thinking=item.quality_thinking,
                 confirmed_aspects=item.confirmed_aspects,
                 pending_aspects=item.pending_aspects,
                 timestamp=timestamp,

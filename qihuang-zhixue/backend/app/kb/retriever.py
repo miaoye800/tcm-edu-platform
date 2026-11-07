@@ -47,12 +47,20 @@ MOCK_REJECT_CONCEPTS = {"antibiotic": ("抗生素", "消炎药", "头孢", "阿�
 
 @dataclass(frozen=True)
 class SearchHit:
-    """RAG 检索命中结果。"""
+    """RAG 检索命中结果。
+
+    ``id`` 是**图谱实体 id**（``herb_huangqi``），不是名字。没有它有两个后果：
+
+    1. 只能按名字反查知识库，一旦出现同名不同物（炮制品、地方用药）就串了；
+    2. **没法从检索结果接着沿图扩展**——GraphRAG 要的是实体 id，
+       光有名字就只能回头再解析一遍问题文本，等于把检索白做了。
+    """
 
     name: str
     score: float
     verified: bool
     sources: list[dict[str, Any]]
+    id: str = ""
 
 
 async def search(
@@ -88,6 +96,9 @@ async def search(
                 score=round(1.0 - float(distance), 4),
                 verified=bool(metadata.get("verified", False)),
                 sources=_parse_sources(metadata.get("sources", "[]")),
+                # 入库时 ``_metadata_for_herb`` 已经把 id 写进 metadata 了，
+                # 这里只是把它取出来——不要按名字回查，那正是要避免的做法。
+                id=str(metadata.get("id", "")),
             )
         )
     return _apply_threshold(hits, score_threshold)
@@ -101,10 +112,12 @@ def _search_mock_semantic(query: str, top_k: int, category: str | None, threshol
     ]
     ranked = sorted(
         (
-            (_mock_semantic_score(query, herb), herb)
+            (_mock_semantic_score(query, herb), _exact_effect_hits(query, herb), herb)
             for herb in herbs
         ),
-        key=lambda item: (-item[0], item[1].name),
+        # 同分时先比「功效原样命中」的条数，最后才按名字。
+        # 名字只作确定性兜底，它没有任何医学含义，不该决定谁进 top_k。
+        key=lambda item: (-item[0], -item[1], item[2].name),
     )
 
     hits = [
@@ -113,10 +126,25 @@ def _search_mock_semantic(query: str, top_k: int, category: str | None, threshol
             score=round(score, 4),
             verified=herb.verified,
             sources=[source.model_dump(mode="json") for source in herb.sources],
+            id=herb.id,
         )
-        for score, herb in ranked[:top_k]
+        for score, _, herb in ranked[:top_k]
     ]
     return _apply_threshold(hits, threshold)
+
+
+def _exact_effect_hits(query: str, herb: Herb) -> int:
+    """查询里**原样出现**了几条该药的功效项。
+
+    只用于同分排序，不进分数。原因是分数本身分不开：教材写「利水消肿」和写
+    「逐水消肿」是两回事，前者是同一句话，后者只是同一个概念域，但原来的打分
+    对两者完全一样——药材从 76 味扩到 162 味之后，「利水消肿」有 **8 味并列
+    1.0**，top3 直接由汉字码位决定（商陆、桑白皮、海藻），麻黄、黄芪全被挤掉。
+    分数不该为这件事背锅，同分时补一个和原文有关的次序就够了。
+    """
+
+    query_text = _compact_text(query)
+    return sum(1 for effect in herb.effects if effect and _compact_text(effect) in query_text)
 
 
 def _mock_semantic_score(query: str, herb: Herb) -> float:
@@ -202,8 +230,14 @@ def _compact_text(text: str) -> str:
 
 
 def _apply_threshold(hits: list[SearchHit], threshold: float) -> list[SearchHit]:
-    if not hits or hits[0].score < threshold:
-        return []
+    """按分数下限过滤。
+
+    原写法先判 ``hits[0].score < threshold`` 就整体返回空，看起来像「第一名不可信
+    就整批否决」，其实是个多余分支：``hits`` 按分数降序，第一名都不达标，其余只会
+    更低，下面的推导本来就是空的。留着只会让人以为这里有「一票否决」的语义，
+    从而不敢动阈值。
+    """
+
     return [hit for hit in hits if hit.score >= threshold]
 
 

@@ -7,6 +7,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any
 
+from app.path.store import init_db as init_knowledge_tree_db
 from app.profile.store import DB_PATH, connect
 
 
@@ -27,12 +28,10 @@ def init_db(db_path: Path = DB_PATH) -> None:
     key = Path(db_path)
     if key in _INITIALIZED:
         return
+    # knowledge_node 的权威 DDL 在 app/path/store.py（带 level / exam_frequency 的 CHECK）。
+    # 这里不再重复建表，否则两处 DDL 会随字段演进而分叉，测试库和生产库结构不一致。
+    init_knowledge_tree_db(key)
     with closing(connect(key)) as conn:
-        conn.execute("""CREATE TABLE IF NOT EXISTS knowledge_node (
-            id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', level TEXT NOT NULL DEFAULT 'point',
-            parent_id TEXT, description TEXT NOT NULL DEFAULT '', exam_frequency REAL NOT NULL DEFAULT 0,
-            sort_hint INTEGER NOT NULL DEFAULT 0, extra_json TEXT NOT NULL DEFAULT '{}'
-        )""")
         conn.execute("""CREATE TABLE IF NOT EXISTS graph_entity (
             id TEXT PRIMARY KEY, name TEXT NOT NULL, entity_type TEXT NOT NULL
                 CHECK(entity_type IN ('herb','syndrome','formula','category')),

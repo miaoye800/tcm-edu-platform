@@ -92,6 +92,14 @@
         </template>
       </div>
 
+      <StoryExtraQuestions
+        v-if="interactionReady"
+        :questions="storyQuestions"
+        :answers="storyAnswers"
+        :disabled="submitting"
+        @answer="onStoryAnswer"
+      />
+
       <StoryDialogueBox
         v-if="showDialogue"
         class="apprentice-story__dialog"
@@ -112,6 +120,7 @@ import StoryStageFrame from '../components/story/StoryStageFrame.vue'
 import StoryChapterBar from '../components/story/StoryChapterBar.vue'
 import StoryDialogueBox from '../components/story/StoryDialogueBox.vue'
 import StoryToast from '../components/story/StoryToast.vue'
+import StoryExtraQuestions from '../components/story/StoryExtraQuestions.vue'
 import StateError from '../components/state/StateError.vue'
 import StateLoading from '../components/state/StateLoading.vue'
 import IdentityScene from './apprentice/IdentityScene.vue'
@@ -159,6 +168,10 @@ const questionNotes = reactive<Record<string, string>>({})
 // being given. `quizShownAt` is a plain variable on purpose - it never renders.
 const questionResponseTimes = reactive<Record<string, number>>({})
 let quizShownAt: number | null = null
+// Wall clock for the current question, started when the film ends - i.e. the
+// moment the disciple can actually answer - and read once at submission. The
+// backend turns it into a per-question-type speed bucket and never stores ms.
+let stepShownAt: number | null = null
 // Both fields start empty on purpose: the examples belong in the placeholders,
 // so whatever reaches the backend was actually written by the disciple.
 const caseText = ref('')
@@ -188,6 +201,15 @@ const scene = computed(() => sceneForState(state.value))
 const step = computed(() => state.value.session?.step ?? null)
 const identityCards = computed(() => step.value?.payload.identity_cards ?? [])
 const questions = computed<ProfileSessionQuestion[]>(() => step.value?.payload.questions ?? [])
+// The extra questions belong to whichever act is on screen; the backend decides
+// what each one is evidence for, so nothing but the prompt reaches the client.
+const storyQuestions = computed(() => step.value?.payload.story_questions ?? [])
+const storyAnswers = reactive<Record<string, string>>({})
+
+const onStoryAnswer = (id: string, value: string) => {
+  if (value.trim()) storyAnswers[id] = value
+  else delete storyAnswers[id]
+}
 const resourceTypes = computed(() => step.value?.payload.resource_types ?? [])
 const currentQuestion = computed(() => questions.value[activeQuestionIndex.value] ?? null)
 const isLastQuizQuestion = computed(() => activeQuestionIndex.value >= questions.value.length - 1)
@@ -209,6 +231,9 @@ const interactionReady = computed(() => videoEnded.value && INTERACTIVE_KINDS.in
 const playbackLine = computed(() => dialogueAt(scene.value, playbackSeconds.value))
 
 const dialogueText = computed(() => {
+  // 落卷要走模型，五幕结束那次要等十几秒。这期间不给一句话，画面就是静止的，
+  // 看上去像卡死；先用旁白口吻顶住，结果回来自然被下一幕替换。
+  if (submitting.value) return '（师父正在看你的回答…）'
   if (interactionReady.value) {
     if (scene.value.kind === 'quiz' && currentQuestion.value) return currentQuizPrompt.value
     return apprenticeStoryNarration[scene.value.sceneId] ?? scene.value.dialogue
@@ -273,6 +298,10 @@ const startQuizClock = () => {
   quizShownAt = Date.now()
 }
 
+// Null means "never measured". It must stay null rather than fall back to 0,
+// otherwise an unmeasured answer would be reported as a suspiciously fast one.
+const stepElapsedMs = (): number | null => (stepShownAt === null ? null : Math.max(0, Date.now() - stepShownAt))
+
 // Stop before the 420ms commit animation so it never lands in the reaction time.
 const stopQuizClock = (questionId: string) => {
   if (quizShownAt === null) return
@@ -286,7 +315,9 @@ const resetStepFields = () => {
   Object.keys(questionAnswers).forEach((key) => delete questionAnswers[key])
   Object.keys(questionNotes).forEach((key) => delete questionNotes[key])
   Object.keys(questionResponseTimes).forEach((key) => delete questionResponseTimes[key])
+  Object.keys(storyAnswers).forEach((key) => delete storyAnswers[key])
   quizShownAt = null
+  stepShownAt = null
   activeQuestionIndex.value = 0
   quizBubbleOpen.value = false
   identityBubbleOpen.value = false
@@ -452,12 +483,16 @@ const advanceScene = async () => {
 }
 
 const stepPayload = (): Record<string, unknown> => {
-  const responseTime = 1000
-  if (scene.value.kind === 'identity') return { identity_card: identityCard.value, identity_custom: '', utterance: utterance.value.trim(), response_time_ms: responseTime }
-  if (scene.value.kind === 'quiz') return { answers: questions.value.map((question) => ({ question_id: question.id, selected: questionAnswers[question.id]?.trim() || '', free_text: questionNotes[question.id]?.trim() || '', topic: question.topic, clue_type: question.skill, herb_id: question.herb_id, herb_name: question.herb_name, response_time_ms: questionResponseTimes[question.id] ?? 0 })) }
-  if (scene.value.kind === 'prescription') return { case: caseText.value, prescription: prescription.value, response_time_ms: responseTime }
-  if (scene.value.kind === 'resource') return { resource_type: resourceType.value, resource_custom: resourceCustom.value.trim(), response_time_ms: responseTime }
-  return { daily_minutes: dailyMinutes.value, target_days: targetDays.value, response_time_ms: responseTime }
+  // Omitted when unmeasured, so the backend falls back to the session step's own
+  // start time instead of receiving an invented duration.
+  const elapsed = stepElapsedMs()
+  const timing = elapsed === null ? {} : { response_time_ms: elapsed }
+  const extras = Object.keys(storyAnswers).length ? { story_answers: { ...storyAnswers } } : {}
+  if (scene.value.kind === 'identity') return { identity_card: identityCard.value, identity_custom: '', utterance: utterance.value.trim(), ...timing, ...extras }
+  if (scene.value.kind === 'quiz') return { answers: questions.value.map((question) => ({ question_id: question.id, selected: questionAnswers[question.id]?.trim() || '', free_text: questionNotes[question.id]?.trim() || '', topic: question.topic, clue_type: question.skill, herb_id: question.herb_id, herb_name: question.herb_name, response_time_ms: questionResponseTimes[question.id] ?? 0 })), ...extras }
+  if (scene.value.kind === 'prescription') return { case: caseText.value, prescription: prescription.value, ...timing, ...extras }
+  if (scene.value.kind === 'resource') return { resource_type: resourceType.value, resource_custom: resourceCustom.value.trim(), ...timing, ...extras }
+  return { daily_minutes: dailyMinutes.value, target_days: targetDays.value, ...timing, ...extras }
 }
 
 const submitCurrentStep = async () => {
@@ -523,7 +558,10 @@ const startFreshStory = () => {
 // to answer, so the end of its shot simply hands over to the next beat.
 const onVideoEnded = (played: boolean) => {
   videoEnded.value = true
-  if (scene.value.kind !== 'performance') return
+  if (scene.value.kind !== 'performance') {
+    stepShownAt = Date.now()
+    return
+  }
   if (played) {
     void openPrologueQuestion()
     return
@@ -560,6 +598,10 @@ watch(() => scene.value.sceneId, () => {
   prescriptionField.value = ''
   ruleField.value = ''
   quizShownAt = null
+  // A normal step change restarts the clock when its film ends. The prologue
+  // handover keeps `videoEnded` true across the scene switch, so there the clock
+  // has to start now - no new film will end to start it.
+  stepShownAt = videoEnded.value ? Date.now() : null
 })
 
 // The card is mounted by `showQuizChoices` (quiz scene + film finished), so

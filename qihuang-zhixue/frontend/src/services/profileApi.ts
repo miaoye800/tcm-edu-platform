@@ -4,6 +4,11 @@ import { authHeaders, handleUnauthorized, requestJson, requestResponse } from '.
 const PROFILE_TIMEOUT_MS = 800
 const PROFILE_NARRATIVE_TIMEOUT_MS = 8_000
 const PROFILE_STREAM_CONNECT_TIMEOUT_MS = 10_000
+// Finishing the story flow runs the evidence extraction (three batches, real
+// model calls) before it answers. That is tens of seconds, so the 10s default
+// aborted the request and the story dropped into "这一幕暂时无法继续" with the
+// profile never built.
+const PROFILE_SESSION_FINISH_TIMEOUT_MS = 90_000
 
 export const readProfile = (pagination?: { limit?: number; offset?: number }): Promise<ProfileResponse> =>
   requestJson<ProfileResponse>(`/api/profile?limit=${pagination?.limit ?? 20}&offset=${pagination?.offset ?? 0}`, undefined, {
@@ -76,11 +81,15 @@ export const finishProfileSession = (sessionId: string): Promise<ProfileSessionR
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId }),
+  }, {
+    timeoutMs: PROFILE_SESSION_FINISH_TIMEOUT_MS,
+    timeoutMessage: '画像整理超时，五幕答卷已保存，可以稍后在画像页继续',
   })
 
 export type ProfileDialogueStreamEvent =
   | { event: 'thinking'; data: { delta?: string } }
   | { event: 'message'; data: { delta?: string } }
+  | { event: 'replace'; data: { text?: string } }
   | { event: 'message_done'; data: Record<string, never> }
   | { event: 'evidence'; data: { cards?: EvidenceCard[] } }
   | { event: 'audit'; data: ProfileDeveloperAuditRecord }

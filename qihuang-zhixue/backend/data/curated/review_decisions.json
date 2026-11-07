@@ -1,0 +1,24 @@
+{
+  "version": "review_decisions_v1",
+  "note": "人工/复核裁定记录。verdict=ok 表示「疑点已查明，教材本来如此」，该项不再排进复核队列；verdict=bad 表示确认有问题，保留在队列里并附说明。裁定要写 reason 和 evidence，空口说「我看过了」不算。",
+  "decisions": [
+    {
+      "herb": "没药",
+      "code": "S02",
+      "verdict": "ok",
+      "reason": "教材【应用】整段是「与乳香相似」的鉴别叙述，没有编号条目，因此没有证名。syndrome 留空、全文放 description 是正确表示，不是切分失败。",
+      "evidence": "第 496 页【应用】：没药的功效主治与乳香相似，常与乳香相须为用……二者的区别在于，乳香偏于行气、伸筋……",
+      "reviewed_by": "assistant",
+      "reviewed_at": "2026-11-04"
+    },
+    {
+      "herb": "三棱",
+      "code": "S02",
+      "verdict": "ok",
+      "reason": "教材【应用】只有一句与莪术的鉴别，没有编号条目，因此没有证名。留空正确。",
+      "evidence": "第 522 页【应用】：三棱所主治的病证与莪术相同，二者常相须为用。但三棱偏于破血，莪术偏于破气。",
+      "reviewed_by": "assistant",
+      "reviewed_at": "2026-11-04"
+    }
+  ]
+}

@@ -42,8 +42,8 @@
 
 html {
   min-width: 320px;
-  color: var(--qh-text);
-  background: var(--qh-color-night);
+  color: var(--qh-fg);
+  background: var(--qh-bg);
   font-family: var(--qh-font-body);
   font-synthesis: none;
   text-rendering: geometricPrecision;
@@ -56,9 +56,11 @@ body {
   min-height: 100vh;
   margin: 0;
   overflow: hidden;
-  background: var(--qh-page-bg);
+  background: var(--qh-bg);
 }
 
+// 极弱网格：不是装饰，是给近黑底一点肌理，避免大面积死平。
+// 透明度必须低到几乎看不见，否则近黑底上会变成一张方格纸。
 body::before {
   position: fixed;
   inset: 0;
@@ -101,61 +103,98 @@ h4 {
 }
 
 ::selection {
-  color: #10201d;
-  background: var(--qh-color-jade);
+  color: var(--qh-fg);
+  background: var(--qh-accent-soft);
 }
 
-.el-button {
-  --el-button-border-color: rgba(143, 208, 173, 0.22);
-  --el-button-bg-color: rgba(143, 208, 173, 0.1);
-  --el-button-text-color: var(--qh-text);
-  --el-button-hover-bg-color: rgba(143, 208, 173, 0.16);
-  --el-button-hover-border-color: rgba(143, 208, 173, 0.38);
+// Element Plus 的样式表在本地样式之后注入，同特异性会被反超，所以下面统一
+// 用 `html ` 前缀把特异性抬到 0,1,1。不要改成 !important —— 会连它自己的
+// 状态变体（hover / disabled）一起压死。
+html .el-button {
+  --el-button-border-color: var(--qh-line);
+  --el-button-bg-color: var(--qh-surface-raised);
+  --el-button-text-color: var(--qh-fg);
+  --el-button-hover-bg-color: var(--qh-surface-hover);
+  --el-button-hover-border-color: var(--qh-line-strong);
+  --el-button-hover-text-color: var(--qh-fg);
+  --el-button-active-bg-color: var(--qh-surface-sunken);
+  --el-button-active-border-color: var(--qh-line-strong);
+  --el-button-disabled-bg-color: var(--qh-surface-raised);
+  --el-button-disabled-text-color: var(--qh-fg-faint);
+  --el-button-disabled-border-color: var(--qh-line);
   min-height: 40px;
   border-radius: var(--qh-radius-sm);
-  font-weight: 800;
+  font-weight: 600;
 }
 
-.el-button--primary {
-  --el-button-bg-color: linear-gradient(135deg, var(--qh-color-jade), var(--qh-color-blue));
-  --el-button-border-color: rgba(143, 208, 173, 0.55);
-  --el-button-hover-bg-color: linear-gradient(135deg, #9bdbba, #adc4e3);
-  --el-button-hover-border-color: rgba(242, 234, 214, 0.55);
-  --el-button-text-color: #10201d;
-  background: var(--el-button-bg-color);
-  color: #10201d;
-  animation: glow 3.4s ease-in-out infinite;
+// 主按钮是中性近白（深色）/ 近黑（浅色），不是彩色 —— 朱砂只做选中与状态。
+html .el-button--primary {
+  --el-button-bg-color: var(--qh-primary);
+  --el-button-border-color: transparent;
+  --el-button-hover-bg-color: var(--qh-primary-strong);
+  --el-button-hover-border-color: transparent;
+  --el-button-text-color: var(--qh-primary-ink);
+  --el-button-hover-text-color: var(--qh-primary-ink);
+  background: var(--qh-primary);
+  color: var(--qh-primary-ink);
 }
 
-.el-input__wrapper {
-  border: 1px solid rgba(143, 208, 173, 0.18);
+html .el-input__wrapper {
+  border: 1px solid var(--qh-line);
   border-radius: var(--qh-radius-sm);
-  background: var(--qh-input-fill);
-  box-shadow: var(--qh-inner-highlight);
+  background: var(--qh-surface-sunken);
+  box-shadow: none;
 }
 
-.el-input__inner {
-  color: var(--qh-text);
+html .el-input__wrapper:hover {
+  border-color: var(--qh-line-strong);
 }
 
-.el-input__inner::placeholder {
-  color: var(--qh-text-muted);
+html .el-input__wrapper.is-focus {
+  border-color: var(--qh-accent-line);
+  box-shadow: none;
 }
 
-.el-tag {
+html .el-input__inner {
+  color: var(--qh-fg);
+}
+
+html .el-input__inner::placeholder {
+  color: var(--qh-fg-faint);
+}
+
+html .el-tag {
   border-radius: var(--qh-radius-pill);
-  font-weight: 800;
+  font-weight: 600;
 }
 
-.el-progress-bar__outer {
-  background-color: rgba(238, 245, 239, 0.09);
+html .el-progress-bar__outer {
+  background-color: var(--qh-line);
 }
 
-.el-progress-bar__inner {
-  background: linear-gradient(90deg, var(--qh-color-jade-d), var(--qh-color-gold));
+html .el-progress-bar__inner {
+  background: var(--qh-accent);
 }
 
-.el-loading-mask {
-  background-color: rgba(17, 29, 32, 0.55);
-  backdrop-filter: blur(12px);
+html .el-loading-mask {
+  background-color: var(--qh-surface-sunken);
+  opacity: 0.72;
+}
+
+// 弹层挂在 body 下，不走 scoped 样式，这里统一收口
+html .el-popper,
+html .el-select-dropdown,
+html .el-dropdown-menu {
+  border: 1px solid var(--qh-line);
+  border-radius: var(--qh-radius-sm);
+  background: var(--qh-surface-raised);
+  box-shadow: var(--qh-shadow-2);
+}
+
+html .el-select-dropdown__item.is-hovering {
+  background: var(--qh-surface-hover);
+}
+
+html .el-select-dropdown__item.is-selected {
+  color: var(--qh-accent);
 }

@@ -98,10 +98,10 @@ test('screen-reader-only copy is never painted as a second paragraph', () => {
   }
 })
 
-test('the assistant mascot stays off immersive story screens', () => {
+test('the floating assistant mascot is gone from the app shell', () => {
   const app = read('src/App.vue')
-  assert(app.includes("'/apprentice'"), 'the story route hides the mascot')
-  assert(app.includes("'/story-preview'") && app.includes("'/story-kit'"), 'the dev story harnesses hide it too')
+  assert(!app.includes('MascotBubble'), 'the bottom-right mascot was retired with the 2026-10 visual refresh')
+  assert(!existsSync(new URL('../src/components/ui/MascotBubble.vue', import.meta.url)), 'and its component file is deleted, not just unmounted')
 })
 
 test('no story surface can print the herb name it is asking about', () => {

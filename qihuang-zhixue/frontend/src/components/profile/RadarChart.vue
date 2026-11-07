@@ -146,7 +146,7 @@ const segments = computed(() =>
   position: absolute;
   inset: 8%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(231, 194, 116, 0.16), transparent 65%);
+  background: radial-gradient(circle, var(--qh-line), transparent 65%);
   filter: blur(12px);
   animation: pulse 4s ease-in-out infinite;
   content: "";
@@ -161,28 +161,28 @@ const segments = computed(() =>
 
 .radar-grid {
   fill: none;
-  stroke: rgba(143, 208, 173, 0.16);
+  stroke: var(--qh-line);
   stroke-width: 1;
 }
 
 .radar-axis-line {
-  stroke: rgba(159, 182, 214, 0.3);
+  stroke: var(--qh-line-strong);
   stroke-width: 1.1;
 }
 
 .radar-axis-line.is-dashed {
-  stroke: rgba(231, 194, 116, 0.68);
+  stroke: var(--qh-color-gold);
   stroke-dasharray: 5 5;
 }
 
 .radar-axis-line.is-dark {
-  stroke: rgba(223, 236, 228, 0.1);
+  stroke: var(--qh-line);
 }
 
 .radar-axis-line.is-highlighted {
   stroke: var(--qh-color-gold);
   stroke-width: 2.2;
-  filter: drop-shadow(0 0 8px rgba(231, 194, 116, 0.75));
+  filter: drop-shadow(0 0 8px var(--qh-color-gold));
 }
 
 .radar-label {
@@ -216,18 +216,18 @@ const segments = computed(() =>
   stroke: var(--qh-color-jade);
   stroke-linecap: round;
   stroke-width: 3;
-  filter: drop-shadow(0 0 8px rgba(143, 208, 173, 0.36));
+  filter: drop-shadow(0 0 8px var(--qh-line-strong));
 }
 
 .radar-data-segment.is-dashed {
   stroke: var(--qh-color-gold);
   stroke-dasharray: 8 7;
   stroke-width: 2.8;
-  filter: drop-shadow(0 0 6px rgba(231, 194, 116, 0.62));
+  filter: drop-shadow(0 0 6px var(--qh-color-gold));
 }
 
 .radar-data-segment.is-dark {
-  stroke: rgba(159, 182, 214, 0.16);
+  stroke: var(--qh-line-strong);
   stroke-dasharray: 2 9;
   stroke-width: 1.8;
   filter: none;
@@ -235,7 +235,7 @@ const segments = computed(() =>
 
 .radar-point {
   fill: var(--qh-color-jade);
-  stroke: rgba(17, 29, 32, 0.9);
+  stroke: var(--qh-surface);
   stroke-width: 2;
 }
 
@@ -243,26 +243,26 @@ const segments = computed(() =>
   fill: var(--qh-color-gold);
   stroke: var(--qh-color-paper-ink);
   stroke-dasharray: 2 2;
-  filter: drop-shadow(0 0 5px rgba(231, 194, 116, 0.68));
+  filter: drop-shadow(0 0 5px var(--qh-color-gold));
 }
 
 .radar-point.is-dark {
-  fill: rgba(223, 236, 228, 0.2);
+  fill: var(--qh-line);
 }
 
 .radar-point.is-highlighted {
   fill: var(--qh-color-gold);
-  stroke: rgba(238, 245, 239, 0.96);
+  stroke: var(--qh-fg);
   stroke-width: 3;
   transform-box: fill-box;
   transform-origin: center;
-  filter: drop-shadow(0 0 10px rgba(231, 194, 116, 0.9));
+  filter: drop-shadow(0 0 10px var(--qh-color-gold));
   animation: highlight-pop 900ms ease both;
 }
 
 .radar-center {
   fill: var(--qh-color-gold);
-  filter: drop-shadow(0 0 10px rgba(231, 194, 116, 0.8));
+  filter: drop-shadow(0 0 10px var(--qh-color-gold));
 }
 
 .radar-legend { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:-8px; color:var(--qh-text-muted); font-size:11px; }

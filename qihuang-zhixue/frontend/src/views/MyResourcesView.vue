@@ -7,7 +7,7 @@ import { StateEmpty, StateLoading } from '../components/state'
 import { useResourcesStore } from '../stores/resources'
 import type { ResourceType } from '../types/resource'
 const resources = useResourcesStore(); const router = useRouter(); const query = ref(''); const resourceType = ref<ResourceType | undefined>(); const favorited = ref(false)
-const types: Array<{ label: string; value: ResourceType | undefined }> = [{ label: '全部', value: undefined }, { label: '书卷', value: 'doc' }, { label: '图谱', value: 'graph' }, { label: '导图', value: 'mindmap' }, { label: '签筒', value: 'quiz' }, { label: '戏台', value: 'story' }]
+const types: Array<{ label: string; value: ResourceType | undefined }> = [{ label: '全部', value: undefined }, { label: '书卷', value: 'doc' }, { label: '图谱', value: 'graph' }, { label: '导图', value: 'mindmap' }, { label: '签筒', value: 'quiz' }, { label: '戏台', value: 'story' }, { label: '幻灯', value: 'ppt' }]
 const load = () => void resources.load({ q: query.value || undefined, type: resourceType.value, favorited: favorited.value || undefined })
 const chooseType = (value: ResourceType | undefined) => { resourceType.value = value; load() }
 const open = (item: { id: string }) => void router.push({ name: 'resource-detail', params: { id: item.id } })

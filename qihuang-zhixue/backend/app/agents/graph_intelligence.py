@@ -16,7 +16,7 @@ from app.agents.graph_contract import GraphContent, GraphEdgeContent, GraphNodeC
 from app.agents.prompts import GRAPH_AGENT_SYSTEM_PROMPT
 from app.agents.resource_context import ResourceDoc, _herb_to_doc, herb_name_by_id, retrieve_resource_docs
 from app.graph_storage import get_graph, node_exists, put_entity, put_graph, put_relations
-from app.kb.ingest import load_herbs
+from app.kb.ingest import load_formulas, load_herbs
 from app.llm.clients import MockClient
 from app.llm.router import ModelRouter
 from app.profile.store import DB_PATH
@@ -24,51 +24,23 @@ from app.profile.store import DB_PATH
 logger = logging.getLogger(__name__)
 _relation_list = TypeAdapter(list[GraphRelationDraft])
 
-# The source corpus stores formula ids but not a formula table.  This map is the
-# single place that turns those ids into display names; keep it in sync with the
-# `formula_ref` values found in backend/data/herbs/*.json.
-FORMULA_NAMES = {
-    "formula_mahuangtang": "麻黄汤",
-    "formula_guizhitang": "桂枝汤",
-    "formula_gegentang": "葛根汤",
-    "formula_xiaoqinglongtang": "小青龙汤",
-    "formula_sijunzi_tang": "四君子汤",
-    "formula_qingyingtang": "清营汤",
-    "formula_siwu_tang": "四物汤",
-    "formula_zengyetang": "增液汤",
-    "formula_yinqiaosan": "银翘散",
-    "formula_wuwei_xiaoduyin": "五味消毒饮",
-    "formula_qinghaobiejiatang": "青蒿鳖甲汤",
-    "formula_shengmai_san": "生脉散",
-    "formula_yupingfengsan": "玉屏风散",
-    "formula_danggui_buxue_tang": "当归补血汤",
-    "formula_liuwei_dihuang_wan": "六味地黄丸",
-    "formula_shaoyao_gancao_tang": "芍药甘草汤",
-    "formula_shashenmaidongtang": "沙参麦冬汤",
-    "formula_sangjuyin": "桑菊饮",
-    "formula_buzhongyiqitang": "补中益气汤",
-    "formula_baitouwengtang": "白头翁汤",
-    "formula_baihutang": "白虎汤",
-    "formula_zhibaidihuangwan": "知柏地黄丸",
-    "formula_gegen_qinlian_tang": "葛根芩连汤",
-    "formula_sanhuang_xiexin_tang": "三黄泻心汤",
-    "formula_longdan_xiegan_tang": "龙胆泻肝汤",
-    "formula_shenfu_tang": "参附汤",
-    "formula_shenling_baizhu_san": "参苓白术散",
-    "formula_zhigancao_tang": "炙甘草汤",
-    "formula_ganmai_dazao_tang": "甘麦大枣汤",
-    "formula_qiju_dihuang_wan": "杞菊地黄丸",
-    "formula_erzhiwan": "二至丸",
-    "formula_xiangrusan": "香薷散",
-    "formula_cangerzisan": "苍耳子散",
-    "formula_xiaochaihutang": "小柴胡汤",
-    "formula_maxingshigantang": "麻杏石甘汤",
-    "formula_zhizichitang": "栀子豉汤",
-    "formula_yinchenhaotang": "茵陈蒿汤",
-    "formula_zuojinwan": "左金丸",
-    "formula_ermiaosan": "二妙散",
-    "formula_xiebaisan": "泻白散",
-}
+def formula_display_name(formula_ref: str) -> str:
+    """方剂 id → 中文名。**查主数据，不再维护第二份映射表。**
+
+    这里原有一张 40 条的硬编码 ``FORMULA_NAMES``，和
+    ``data/formulas/_index.json`` 构成两份真相：新增方剂忘了同步，图上就会直接
+    显示 ``formula_xxx`` 这种原始 id。现在只留一条查表路径，查不到才退回剥前缀。
+    """
+
+    ref = (formula_ref or "").strip()
+    if not ref:
+        return ""
+    entry = load_formulas().get(ref)
+    if entry:
+        name = str(entry.get("name") or "").strip()
+        if name:
+            return name
+    return ref.removeprefix("formula_")
 
 
 def entity_id(kind: str, name: str) -> str:
@@ -195,7 +167,7 @@ class GraphAgent:
 
             if not formula_ref:
                 continue
-            formula_name = FORMULA_NAMES.get(formula_ref, formula_ref.removeprefix('formula_'))
+            formula_name = formula_display_name(formula_ref)
             formula_id = entity_id('formula', formula_ref)
             nodes[formula_id] = GraphNodeContent(id=formula_id, name=formula_name, type='formula', brief=purpose[:80])
             excerpt = f"{formula_name}：{purpose}" if purpose else f"{formula_name}含{center['name']}"

@@ -11,8 +11,16 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "preserve",
-    "strict": true
+    "strict": true,
+    /*
+     * 不自动吃 node_modules/@types。pptxgenjs 把 @types/node 写进了 dependencies
+     * （它同时要在 Node 里跑），一旦自动加载，`setTimeout` 就按 Node 的签名返回
+     * NodeJS.Timeout，DOM 侧那批 `ReturnType<typeof setTimeout> = number` 的计时器
+     * 全会报类型错。需要的全局类型由 src/env.d.ts 里的三斜线指令显式引入。
+     */
+    "types": []
   },
   "include": ["src/**/*.ts", "src/**/*.vue"],
+  "exclude": ["src/_legacy", "src/**/_legacy/**"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -229,7 +229,7 @@ export type EvidencePanelDimension = {
 
 export type IdentityCardKind = 'distribution' | 'level' | 'tags'
 
-export type IdentityCardProvenance = 'fusion' | 'rule_fallback' | 'no_key_rule_fallback' | string
+export type IdentityCardProvenance = 'fusion' | 'rule_fallback' | 'no_key' | 'no_key_rule_fallback' | string
 
 /** A server-authored item displayed inside one seven-dimension identity card. */
 export type IdentityCardItem = {
@@ -319,6 +319,14 @@ export type ProfileSessionQuestion = {
   image_caption?: string
 }
 
+// 剧情里每幕追加的追问。组件标签留在服务端，前端只拿到题干和选项。
+export type ProfileSessionStoryQuestion = {
+  id: string
+  kind: 'text' | 'choice' | string
+  prompt: string
+  options: string[]
+}
+
 export type ProfileSessionStep = {
   id: string
   title: string
@@ -327,6 +335,7 @@ export type ProfileSessionStep = {
   payload: {
     identity_cards?: string[]
     questions?: ProfileSessionQuestion[]
+    story_questions?: ProfileSessionStoryQuestion[]
     time_limit_seconds?: number
     resource_types?: string[]
     fields?: string[]
@@ -402,7 +411,9 @@ export type ProfileDialogueChatMessage = {
 
 export type ProfileDialogueStreamUiEvent = {
   id: number
-  type: 'thinking' | 'message' | 'message_done' | 'done' | 'reset'
+  // `replace` 用于事后纠偏：漂移的追问已经在流里显示出来了，后端给出整段
+  // 修正文本时把它整段换掉，而不是再追加一个问句。
+  type: 'thinking' | 'message' | 'replace' | 'message_done' | 'done' | 'reset'
   delta?: string
 }
 
@@ -437,6 +448,21 @@ export type ProfileDeveloperAuditEvidence = {
   confirmed_aspects?: string[]
   pending_aspects?: string[]
   quality_factors?: Record<string, unknown>
+  quality_audit?: {
+    factors: Record<string, number>
+    score: number
+    model_judged: string[]
+    rule_computed: string[]
+    evidence_type?: string | null
+    reason: string
+    // 逐项明细：模型判的三项带档位与档内区间，规则算的两项标 source='rule'。
+    items?: Array<{ key: string; label: string; value: number; source: 'model' | 'rule'; tier?: string | null; tier_label?: string | null; tier_range?: [number, number] | null }>
+    // 几何平均算式，如 "(0.85 × 0.72 × 0.88 × 1 × 0.6)^(1/5)"。
+    formula?: string
+    weight_note?: string
+    // 判定过程：看到什么原话 → 命中哪档 → 档内为什么落这里。
+    thinking?: string
+  }
 }
 
 export type ProfileDeveloperAuditRecord = {
@@ -481,9 +507,9 @@ export type ProfileDeveloperAuditRecord = {
       unknown_reasons: string[]
       observed_distribution: Record<string, number>
       evidence_count: number
-      component_collection?: { collected?: number; total?: number; missing_components?: string[]; unscored_components?: string[]; scoring_phase?: string }
+      component_collection?: { collected?: number; total?: number; coverage?: number; weighted_mean?: number; missing_components?: string[]; unscored_components?: string[]; scoring_phase?: string }
       scoring_deferred?: boolean
-      component_matrix?: Array<{ key: string; label: string; weight: number; rubric: Record<string, unknown>; collected: boolean; score?: number | null; reason?: string | null; conflict_handling?: string | null; evidence_ids: string[] }>
+      component_matrix?: Array<{ key: string; label: string; weight: number; rubric: Record<string, unknown>; collected: boolean; score?: number | null; score_source?: 'rescored' | 'carried' | null; reason?: string | null; conflict_handling?: string | null; evidence_ids: string[]; jury?: Array<{ teacher: string; score?: number | null; reason?: string }>; jury_mean?: number | null }>
       matrix_before?: Record<string, boolean>
       matrix_after?: Record<string, boolean>
       pending_components?: string[]
@@ -496,10 +522,25 @@ export type ProfileDeveloperAuditRecord = {
       scoring_phase?: 'collecting' | 'scored' | string
       scoring_provenance?: string | null
       scoring_attempts?: number
+      scoring_turn?: number | null
+      // 评分节奏：本次为什么评、水位线在哪、下次要涨到多少条证据才重评。
+      scoring_trigger?: string | null
+      scoring_watermark?: number | null
+      current_watermark?: number | null
+      // 逐轮时间线：置信度每轮都动、维度分只在触发轮动，同一行才是同一时刻。
+      confidence_timeline?: Array<{ turn: number; evidence: number; new_evidence: number; watermark: number; confidence: number; quality_new?: number | null; quality_avg?: number | null; score?: number | null; scored_this_turn: boolean }>
+      next_scoring_watermark?: number | null
+      rescored_components?: string[]
+      carried_components?: string[]
       unscored_components?: string[]
       dimension_summary?: string | null
       scoring_input?: { dimension: string; components: Array<{ key: string; weight: number; rubric: Record<string, unknown>; deduplicated_evidence: Array<Record<string, unknown>>; conflicts: Array<Record<string, unknown>>; source_groups: string[] }> }
-      scoring_output?: Array<{ component: string; score?: number | null; reason?: string | null; conflict_handling?: string | null }>
+      scoring_output?: Array<{ component: string; score?: number | null; source?: 'rescored' | 'carried'; reason?: string | null; conflict_handling?: string | null; jury?: Array<{ teacher: string; score?: number | null; reason?: string }> }>
+      jury_panel?: Array<{ teacher: string; score?: number | null; reasoning_chain: string[]; comment?: string | null }>
+      jury_derivation?: string
+      teacher_dimension_scores?: Record<string, number>
+      jury_mean?: number | null
+      scoring_warnings?: Array<{ reason: string; original?: unknown; corrected?: unknown }>
       scoring_deferred_reason?: string | null
     }>
     confidence_explanation: string

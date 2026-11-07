@@ -224,7 +224,7 @@ import {
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
 import type { ProfileBuildMode, ProfileDialogueStreamUiEvent, ProfileSessionQuestion, ProfileSessionResponse } from '../types/profile'
-import { buildRadarAxes } from '../utils/profileMath'
+import { buildRadarAxes, isNoKeyProvenance } from '../utils/profileMath'
 
 type ModeCard = {
   mode: ProfileBuildMode
@@ -378,8 +378,8 @@ const showNarrativeRetry = computed(
 )
 const showTemplateSource = computed(() => !showNarrativePlaceholder.value && profileStore.narrative.method === 'template')
 const narrativeTemplateSourceText = computed(() =>
-  Object.values(profileStore.profile.provenance ?? {}).includes('no_key_rule_fallback')
-    ? '当前展示的是规则模板叙述（未配置模型密钥）。'
+  Object.values(profileStore.profile.provenance ?? {}).some(isNoKeyProvenance)
+    ? '当前展示的是规则模板叙述（未配置模型，暂不评分）。'
     : '当前展示的是规则模板叙述。',
 )
 const resultNarrativeBadgeTone = computed(() => {
@@ -556,6 +556,10 @@ const answerDialogue = async (payload: AnswerPayload) => {
     }
     if (event === 'message') {
       pushDialogueStreamEvent('message', String(data.delta ?? ''))
+      return
+    }
+    if (event === 'replace') {
+      pushDialogueStreamEvent('replace', String(data.text ?? ''))
       return
     }
     if (event === 'message_done') {
@@ -751,7 +755,7 @@ const enterApp = async () => {
 }
 
 .onboarding-hero {
-  @include glass-panel(26px);
+  @include glass-panel;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -821,10 +825,10 @@ h3 {
   width: 46px;
   height: 46px;
   place-items: center;
-  border: 1px solid rgba(143, 208, 173, 0.18);
+  border: 1px solid var(--qh-line);
   border-radius: 16px;
   color: var(--qh-color-gold);
-  background: rgba(238, 245, 239, 0.06);
+  background: var(--qh-line);
   font-size: 22px;
 }
 
@@ -872,9 +876,9 @@ h3 {
   display: grid;
   gap: 12px;
   padding: 14px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 16px;
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
 }
 
 :deep(.question-card strong) {
@@ -929,9 +933,9 @@ h3 {
   gap: 7px;
   min-height: 112px;
   padding: 14px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 16px;
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
 }
 
 .resource-grid strong {

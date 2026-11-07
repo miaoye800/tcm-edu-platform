@@ -63,9 +63,8 @@ const submitSearch = async () => {
   gap: 18px;
   min-height: var(--qh-topbar-height);
   padding: 18px 24px 14px;
-  border-bottom: 1px solid rgba(143, 208, 173, 0.08);
+  border-bottom: 1px solid var(--qh-line);
   background: var(--qh-topbar-fill);
-  backdrop-filter: blur(18px);
 }
 
 .title-stack {

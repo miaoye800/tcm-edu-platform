@@ -33,6 +33,8 @@ backend/app/profile/*.mmd
 node_modules/
 frontend/dist/
 dist/
+# 本地端到端核验用的临时构建目录（如 dist-check、dist-check2）
+frontend/dist-check*/
 .vite/
 .vite-temp/
 **/.vite-temp/
@@ -56,3 +58,6 @@ frontend/vite.step2.proxy.config.ts
 backend/app/llm/*副本.py
 dialogue-radar-change-list.md
 batch2-evidence-extractor-v2-code-update.md
+
+# 探针脚本用的开发态 token（本地生成，勿提交）
+.dev-session.json

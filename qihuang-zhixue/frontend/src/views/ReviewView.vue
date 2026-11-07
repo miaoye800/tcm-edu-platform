@@ -104,7 +104,7 @@ onMounted(() => {
 }
 
 .review-hero {
-  @include glass-panel(26px);
+  @include glass-panel;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -174,9 +174,9 @@ h3 {
   gap: 14px;
   align-items: center;
   padding: 14px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 16px;
-  background: rgba(238, 245, 239, 0.045);
+  background: var(--qh-line);
 }
 
 .due-list strong {

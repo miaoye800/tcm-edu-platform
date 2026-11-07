@@ -1,7 +1,10 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-addopts = ["--basetemp=.pytest-tmp"]
+# 不要在项目内固定 --basetemp。pytest 每轮开场都会 rm_rf 整个 basetemp，
+# 一旦这个目录累积到几十上百个子目录，就会命中运行环境的批量删除守卫，
+# 表现为 345 个用例 setup 阶段集体 SystemExit。走默认的
+# %TEMP%/pytest-of-<user>/pytest-<n>（只保留最近 3 轮）即可自动收敛。
 cache_dir = ".pytest-cache"
 filterwarnings = [
     "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning",

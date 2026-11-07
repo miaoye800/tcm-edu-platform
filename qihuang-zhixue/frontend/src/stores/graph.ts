@@ -62,7 +62,10 @@ export const useGraphStore = defineStore('graph', {
       if (!centerId) return false
       this.loading = true
       try {
-        const content = await getGraph(centerId)
+        // 参数显式传死，不吃后端默认值：默认 limit=40 时前端永远拿不到 40 个以上
+        // 节点，于是「已隐藏 N 条」永远显示不出来——不是没截断，是截断发生在
+        // 后端而我们没告诉它要多少。60 与 graphVisual.maxVisibleNodes 对齐。
+        const content = await getGraph(centerId, { hops: 1, limit: 60, tiers: '1,2' })
         if (!content?.nodes?.length) return false
         this.content = content
         this.usingMock = false

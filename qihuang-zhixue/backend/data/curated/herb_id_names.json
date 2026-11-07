@@ -1,0 +1,507 @@
+{
+  "_note": "教材与知识库引用中出现、但尚无 monograph 的药材 id → 名称与拼音。id 沿用「herb_+拼音」约定，与 data/herbs/*.json 一致，避免 P4 教材抽取时生成重复实体。本表只提供「身份」（名字/拼音），不提供任何性味功效——对应实体一律标 status='orphan'，前端显示「教材未收录」。等 P4 抽取补齐 monograph 后自动转 approved。",
+  "_source": "被 combinations.with / differentiation.compare_with / tags.common_confusions 引用的悬空 id，加上 data/curated/incompatibility.json 中十八反、十九畏、妊娠禁忌、七情示例涉及的药材。",
+  "_generated_at": "2026-10-29",
+  "herbs": {
+    "herb_badou": {
+      "name": "巴豆",
+      "pinyin": "ba dou",
+      "has_monograph": false
+    },
+    "herb_baiji": {
+      "name": "白及",
+      "pinyin": "bai ji",
+      "has_monograph": false
+    },
+    "herb_bailian": {
+      "name": "白蔹",
+      "pinyin": "bai lian",
+      "has_monograph": false
+    },
+    "herb_baixianpi": {
+      "name": "白鲜皮",
+      "pinyin": "bai xian pi",
+      "has_monograph": false
+    },
+    "herb_banmao": {
+      "name": "斑蝥",
+      "pinyin": "ban mao",
+      "has_monograph": false
+    },
+    "herb_banxia": {
+      "name": "半夏",
+      "pinyin": "ban xia",
+      "has_monograph": false
+    },
+    "herb_beimu": {
+      "name": "贝母",
+      "pinyin": "bei mu",
+      "has_monograph": false
+    },
+    "herb_biandou": {
+      "name": "白扁豆",
+      "pinyin": "bian dou",
+      "has_monograph": false
+    },
+    "herb_biejia": {
+      "name": "鳖甲",
+      "pinyin": "bie jia",
+      "has_monograph": false
+    },
+    "herb_cangerzi": {
+      "name": "苍耳子",
+      "pinyin": "cang er zi",
+      "has_monograph": false
+    },
+    "herb_cangzhu": {
+      "name": "苍术",
+      "pinyin": "cang zhu",
+      "has_monograph": false
+    },
+    "herb_caowu": {
+      "name": "草乌",
+      "pinyin": "cao wu",
+      "has_monograph": false
+    },
+    "herb_changshan": {
+      "name": "常山",
+      "pinyin": "chang shan",
+      "has_monograph": false
+    },
+    "herb_cheqianzi": {
+      "name": "车前子",
+      "pinyin": "che qian zi",
+      "has_monograph": false
+    },
+    "herb_chishizhi": {
+      "name": "赤石脂",
+      "pinyin": "chi shi zhi",
+      "has_monograph": false
+    },
+    "herb_chuanbeimu": {
+      "name": "川贝母",
+      "pinyin": "chuan bei mu",
+      "has_monograph": false
+    },
+    "herb_chuanwu": {
+      "name": "川乌",
+      "pinyin": "chuan wu",
+      "has_monograph": false
+    },
+    "herb_chuanxiong": {
+      "name": "川芎",
+      "pinyin": "chuan xiong",
+      "has_monograph": false
+    },
+    "herb_dahuang": {
+      "name": "大黄",
+      "pinyin": "da huang",
+      "has_monograph": false
+    },
+    "herb_daji": {
+      "name": "大戟",
+      "pinyin": "da ji",
+      "has_monograph": false
+    },
+    "herb_dandouchi": {
+      "name": "淡豆豉",
+      "pinyin": "dan dou chi",
+      "has_monograph": false
+    },
+    "herb_danshen": {
+      "name": "丹参",
+      "pinyin": "dan shen",
+      "has_monograph": false
+    },
+    "herb_dingxiang": {
+      "name": "丁香",
+      "pinyin": "ding xiang",
+      "has_monograph": false
+    },
+    "herb_dongkuizi": {
+      "name": "冬葵子",
+      "pinyin": "dong kui zi",
+      "has_monograph": false
+    },
+    "herb_duhuo": {
+      "name": "独活",
+      "pinyin": "du huo",
+      "has_monograph": false
+    },
+    "herb_ezhu": {
+      "name": "莪术",
+      "pinyin": "e zhu",
+      "has_monograph": false
+    },
+    "herb_fuling": {
+      "name": "茯苓",
+      "pinyin": "fu ling",
+      "has_monograph": false
+    },
+    "herb_fuzi": {
+      "name": "附子",
+      "pinyin": "fu zi",
+      "has_monograph": false
+    },
+    "herb_ganjiang": {
+      "name": "干姜",
+      "pinyin": "gan jiang",
+      "has_monograph": false
+    },
+    "herb_gansui": {
+      "name": "甘遂",
+      "pinyin": "gan sui",
+      "has_monograph": false
+    },
+    "herb_gouwen": {
+      "name": "钩吻",
+      "pinyin": "gou wen",
+      "has_monograph": false
+    },
+    "herb_gualou": {
+      "name": "瓜蒌",
+      "pinyin": "gua lou",
+      "has_monograph": false
+    },
+    "herb_gualoupi": {
+      "name": "瓜蒌皮",
+      "pinyin": "gua lou pi",
+      "has_monograph": false
+    },
+    "herb_gualouzi": {
+      "name": "瓜蒌子",
+      "pinyin": "gua lou zi",
+      "has_monograph": false
+    },
+    "herb_guangui": {
+      "name": "官桂",
+      "pinyin": "guan gui",
+      "has_monograph": false
+    },
+    "herb_gusuibu": {
+      "name": "骨碎补",
+      "pinyin": "gu sui bu",
+      "has_monograph": false
+    },
+    "herb_haizao": {
+      "name": "海藻",
+      "pinyin": "hai zao",
+      "has_monograph": false
+    },
+    "herb_hongdaji": {
+      "name": "红大戟",
+      "pinyin": "hong da ji",
+      "has_monograph": false
+    },
+    "herb_honghua": {
+      "name": "红花",
+      "pinyin": "hong hua",
+      "has_monograph": false
+    },
+    "herb_houpo": {
+      "name": "厚朴",
+      "pinyin": "hou po",
+      "has_monograph": false
+    },
+    "herb_hubeibeimu": {
+      "name": "湖北贝母",
+      "pinyin": "hu bei bei mu",
+      "has_monograph": false
+    },
+    "herb_jiegeng": {
+      "name": "桔梗",
+      "pinyin": "jie geng",
+      "has_monograph": false
+    },
+    "herb_jingdaji": {
+      "name": "京大戟",
+      "pinyin": "jing da ji",
+      "has_monograph": false
+    },
+    "herb_jinqiancao": {
+      "name": "金钱草",
+      "pinyin": "jin qian cao",
+      "has_monograph": false
+    },
+    "herb_juemingzi": {
+      "name": "决明子",
+      "pinyin": "jue ming zi",
+      "has_monograph": false
+    },
+    "herb_laifuzi": {
+      "name": "莱菔子",
+      "pinyin": "lai fu zi",
+      "has_monograph": false
+    },
+    "herb_langdu": {
+      "name": "狼毒",
+      "pinyin": "lang du",
+      "has_monograph": false
+    },
+    "herb_leigongteng": {
+      "name": "雷公藤",
+      "pinyin": "lei gong teng",
+      "has_monograph": false
+    },
+    "herb_lilu": {
+      "name": "藜芦",
+      "pinyin": "li lu",
+      "has_monograph": false
+    },
+    "herb_liuhuang": {
+      "name": "硫黄",
+      "pinyin": "liu huang",
+      "has_monograph": false
+    },
+    "herb_longyanrou": {
+      "name": "龙眼肉",
+      "pinyin": "long yan rou",
+      "has_monograph": false
+    },
+    "herb_lvdou": {
+      "name": "绿豆",
+      "pinyin": "lv dou",
+      "has_monograph": false
+    },
+    "herb_mangxiao": {
+      "name": "芒硝",
+      "pinyin": "mang xiao",
+      "has_monograph": false
+    },
+    "herb_maqianzi": {
+      "name": "马钱子",
+      "pinyin": "ma qian zi",
+      "has_monograph": false
+    },
+    "herb_mituoseng": {
+      "name": "密陀僧",
+      "pinyin": "mi tuo seng",
+      "has_monograph": false
+    },
+    "herb_mohanlian": {
+      "name": "墨旱莲",
+      "pinyin": "mo han lian",
+      "has_monograph": false
+    },
+    "herb_mutong": {
+      "name": "木通",
+      "pinyin": "mu tong",
+      "has_monograph": false
+    },
+    "herb_muxiang": {
+      "name": "木香",
+      "pinyin": "mu xiang",
+      "has_monograph": false
+    },
+    "herb_nanshashen": {
+      "name": "南沙参",
+      "pinyin": "nan sha shen",
+      "has_monograph": false
+    },
+    "herb_niuxi": {
+      "name": "牛膝",
+      "pinyin": "niu xi",
+      "has_monograph": false
+    },
+    "herb_pingbeimu": {
+      "name": "平贝母",
+      "pinyin": "ping bei mu",
+      "has_monograph": false
+    },
+    "herb_pishi": {
+      "name": "砒石",
+      "pinyin": "pi shi",
+      "has_monograph": false
+    },
+    "herb_pishuang": {
+      "name": "砒霜",
+      "pinyin": "pi shuang",
+      "has_monograph": false
+    },
+    "herb_qianniu": {
+      "name": "牵牛",
+      "pinyin": "qian niu",
+      "has_monograph": false
+    },
+    "herb_qianniuzi": {
+      "name": "牵牛子",
+      "pinyin": "qian niu zi",
+      "has_monograph": false
+    },
+    "herb_qinpi": {
+      "name": "秦皮",
+      "pinyin": "qin pi",
+      "has_monograph": false
+    },
+    "herb_quanxie": {
+      "name": "全蝎",
+      "pinyin": "quan xie",
+      "has_monograph": false
+    },
+    "herb_qumai": {
+      "name": "瞿麦",
+      "pinyin": "qu mai",
+      "has_monograph": false
+    },
+    "herb_rougui": {
+      "name": "肉桂",
+      "pinyin": "rou gui",
+      "has_monograph": false
+    },
+    "herb_sangbaipi": {
+      "name": "桑白皮",
+      "pinyin": "sang bai pi",
+      "has_monograph": false
+    },
+    "herb_sangjisheng": {
+      "name": "桑寄生",
+      "pinyin": "sang ji sheng",
+      "has_monograph": false
+    },
+    "herb_sanleng": {
+      "name": "三棱",
+      "pinyin": "san leng",
+      "has_monograph": false
+    },
+    "herb_shanglu": {
+      "name": "商陆",
+      "pinyin": "shang lu",
+      "has_monograph": false
+    },
+    "herb_shanzhuyu": {
+      "name": "山茱萸",
+      "pinyin": "shan zhu yu",
+      "has_monograph": false
+    },
+    "herb_sharen": {
+      "name": "砂仁",
+      "pinyin": "sha ren",
+      "has_monograph": false
+    },
+    "herb_shengbaimi": {
+      "name": "生白蜜",
+      "pinyin": "sheng bai mi",
+      "has_monograph": false
+    },
+    "herb_shexiang": {
+      "name": "麝香",
+      "pinyin": "she xiang",
+      "has_monograph": false
+    },
+    "herb_shuiyin": {
+      "name": "水银",
+      "pinyin": "shui yin",
+      "has_monograph": false
+    },
+    "herb_shuizhi": {
+      "name": "水蛭",
+      "pinyin": "shui zhi",
+      "has_monograph": false
+    },
+    "herb_taoren": {
+      "name": "桃仁",
+      "pinyin": "tao ren",
+      "has_monograph": false
+    },
+    "herb_wugong": {
+      "name": "蜈蚣",
+      "pinyin": "wu gong",
+      "has_monograph": false
+    },
+    "herb_wulingzhi": {
+      "name": "五灵脂",
+      "pinyin": "wu ling zhi",
+      "has_monograph": false
+    },
+    "herb_wutou": {
+      "name": "乌头",
+      "pinyin": "wu tou",
+      "has_monograph": false
+    },
+    "herb_wuweizi": {
+      "name": "五味子",
+      "pinyin": "wu wei zi",
+      "has_monograph": false
+    },
+    "herb_wuzhuyu": {
+      "name": "吴茱萸",
+      "pinyin": "wu zhu yu",
+      "has_monograph": false
+    },
+    "herb_xiaomai": {
+      "name": "浮小麦",
+      "pinyin": "fu xiao mai",
+      "has_monograph": false
+    },
+    "herb_xijiao": {
+      "name": "犀角",
+      "pinyin": "xi jiao",
+      "has_monograph": false
+    },
+    "herb_xingren": {
+      "name": "杏仁",
+      "pinyin": "xing ren",
+      "has_monograph": false
+    },
+    "herb_xionghuang": {
+      "name": "雄黄",
+      "pinyin": "xiong huang",
+      "has_monograph": false
+    },
+    "herb_xiyangshen": {
+      "name": "西洋参",
+      "pinyin": "xi yang shen",
+      "has_monograph": false
+    },
+    "herb_yangxue": {
+      "name": "羊血",
+      "pinyin": "yang xue",
+      "has_monograph": false
+    },
+    "herb_yaxiao": {
+      "name": "牙硝",
+      "pinyin": "ya xiao",
+      "has_monograph": false
+    },
+    "herb_yibeimu": {
+      "name": "伊贝母",
+      "pinyin": "yi bei mu",
+      "has_monograph": false
+    },
+    "herb_yinchen": {
+      "name": "茵陈",
+      "pinyin": "yin chen",
+      "has_monograph": false
+    },
+    "herb_yuanhua": {
+      "name": "芫花",
+      "pinyin": "yuan hua",
+      "has_monograph": false
+    },
+    "herb_yujin": {
+      "name": "郁金",
+      "pinyin": "yu jin",
+      "has_monograph": false
+    },
+    "herb_zhebeimu": {
+      "name": "浙贝母",
+      "pinyin": "zhe bei mu",
+      "has_monograph": false
+    },
+    "herb_zhishi": {
+      "name": "枳实",
+      "pinyin": "zhi shi",
+      "has_monograph": false
+    },
+    "herb_zhuru": {
+      "name": "竹茹",
+      "pinyin": "zhu ru",
+      "has_monograph": false
+    },
+    "herb_zihuadiding": {
+      "name": "紫花地丁",
+      "pinyin": "zi hua di ding",
+      "has_monograph": false
+    }
+  }
+}

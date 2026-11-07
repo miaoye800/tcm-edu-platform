@@ -17,7 +17,18 @@ from typing import Any
 
 from app.profile.anchors import base_level_midpoints, midpoint_from_signal
 from app.profile.schema import CATEGORY_DIMENSIONS, DIMENSION_LABELS, DimensionKey, EvidenceCard, EvidenceTier
-from app.profile.component_model import AtomicEvidence, COMPONENTS, COMPONENT_WEIGHTS, confidence_from_evidence
+from app.profile.component_model import (
+    AtomicEvidence,
+    CLEAR_EVIDENCE_QUALITY,
+    COMBINATION_INTERVALS,
+    COMBINATION_RANK,
+    COMPONENTS,
+    confidence_from_evidence,
+    deduplicate_evidence,
+    dimension_score,
+    geometric_quality,
+    infer_combination_type,
+)
 
 HALF_LIFE_DAYS: dict[DimensionKey, float | None] = {
     "knowledge_base": 30.0,
@@ -210,6 +221,97 @@ def fuse_dimension(
     return _with_agent_assessment(result, cards, now=now)
 
 
+def _component_atoms(cards: list[EvidenceCard]) -> list[AtomicEvidence]:
+    """Atomic view of the component cards, skipping any card that cannot be built."""
+
+    atoms: list[AtomicEvidence] = []
+    for card in cards:
+        try:
+            atoms.append(AtomicEvidence(
+                evidence_id=card.evidence_id,
+                dimension=card.dimension,
+                component=card.component or "",
+                evidence_group_id=card.evidence_group_id or str(card.objective_signal.get("evidence_group_id") or card.evidence_id),
+                source_turn_ids=card.source_turn_ids,
+                quote=card.quote or "",
+                normalized_claim=card.normalized_claim or card.fact,
+                evidence_type=card.objective_signal.get("evidence_type", "self_report"),
+                collection_status=card.collection_status or "pending",
+                semantic_relation=card.semantic_relation or "new",
+                quality_factors=card.quality_factors or card.objective_signal.get("quality_factors", {}),
+            ))
+        except Exception:
+            continue
+    return atoms
+
+
+def _combination_band(cards: list[EvidenceCard]) -> dict[str, Any]:
+    """Derive the evidence-combination band from countable facts.
+
+    The band caps confidence, so it must describe the whole evidence body
+    rather than whichever card happened to arrive first. Two sources feed it:
+    the band an agent wrote onto a card (cold-start / legacy paths), and one
+    inferred from the cards themselves. Only the higher wins — a model may
+    raise the band, never lower it.
+
+    The dialogue extraction path never wrote ``combination_type``, so every
+    dimension used to fall back to "single clear self-report" (20%–38%) no
+    matter how many independent turns confirmed it. Six pieces of evidence
+    across four independent source groups were still capped at 38%, which is
+    why confidence looked frozen while evidence kept growing.
+    """
+
+    atoms = _component_atoms(cards)
+    deduped, conflicts = deduplicate_evidence(atoms)
+    groups = {atom.evidence_group_id for atom in deduped}
+    turns = {turn for atom in deduped for turn in (atom.source_turn_ids or [])}
+    qualities = [geometric_quality(atom.quality_factors) for atom in deduped]
+    mean_quality = sum(qualities) / len(qualities) if qualities else 0.0
+    is_clear = bool(deduped) and mean_quality >= CLEAR_EVIDENCE_QUALITY
+    # 同一组件被两个以上独立来源确认，才算"多轮一致"。不同组件各说一件事
+    # 只能算多个侧面，不能互相印证——把它们当一致会把置信度凭空抬高一档。
+    groups_per_component: dict[str, set[str]] = {}
+    for atom in deduped:
+        groups_per_component.setdefault(atom.component, set()).add(atom.evidence_group_id)
+    cross_confirmed = sorted(key for key, value in groups_per_component.items() if len(value) >= 2)
+    consistent = not conflicts and bool(cross_confirmed) and len(turns) >= 2
+    inferred = infer_combination_type(
+        group_count=len(groups),
+        is_clear=is_clear,
+        consistent=consistent,
+    )
+    declared = [str(card.objective_signal.get("combination_type") or "") for card in cards]
+    declared = [value for value in declared if value in COMBINATION_INTERVALS]
+    declared_best = max(declared, key=lambda value: COMBINATION_RANK[value]) if declared else None  # type: ignore[index]
+    band = (
+        declared_best
+        if declared_best and COMBINATION_RANK[declared_best] >= COMBINATION_RANK[inferred]  # type: ignore[index]
+        else inferred
+    )
+    return {
+        "type": band,
+        "inferred": inferred,
+        "declared": declared_best,
+        # 档位依据要能被用户自己按一遍，所以只列可数的事实。
+        "basis": {
+            "source_groups": len(groups),
+            "turns": sorted(turns),
+            "mean_quality": round(mean_quality, 4),
+            "quality_floor": CLEAR_EVIDENCE_QUALITY,
+            "is_clear": is_clear,
+            "cross_confirmed_components": cross_confirmed,
+            "conflicts": len(conflicts),
+            "consistent": consistent,
+        },
+    }
+
+
+def _strongest_combination_type(cards: list[EvidenceCard]) -> str:
+    """兼容入口：只要档位名，不要依据。"""
+
+    return str(_combination_band(cards)["type"])
+
+
 def _with_agent_assessment(
     result: FusionResult,
     cards: list[EvidenceCard],
@@ -240,7 +342,7 @@ def _with_agent_assessment(
 
     component_cards = [card for card in cards if card.component]
     component_gate: dict[str, Any] | None = None
-    component_weighted_score: float | None = None
+    component_outcome: dict[str, Any] | None = None
     if component_cards:
         required = set(COMPONENTS.get(result.dimension, ()))
         collected = {
@@ -256,49 +358,59 @@ def _with_agent_assessment(
                 continue
             if card.component in required and 5 <= parsed_score <= 95:
                 component_scores[card.component] = parsed_score
-        missing = sorted(required - collected)
-        unscored = sorted(required - set(component_scores))
+        # Coverage counts *scored* components, never merely collected ones: a
+        # grid with evidence but a null score is still unknown.
+        component_outcome = dimension_score(result.dimension, component_scores)
         component_gate = {
-            "collected": len(collected), "total": len(required), "missing_components": missing,
-            "unscored_components": unscored, "component_scores": component_scores,
-            "scoring_phase": "scored" if not missing and not unscored else "collecting",
+            "collected": len(collected),
+            "total": len(required),
+            "coverage": component_outcome["coverage"],
+            "weighted_mean": component_outcome["weighted_mean"],
+            "missing_components": sorted(required - collected),
+            "unscored_components": list(component_outcome["missing"]),
+            "component_scores": component_outcome["component_scores"],
+            "scoring_phase": "scored" if component_outcome["gate_ok"] else "collecting",
         }
-        if missing or unscored:
+        if not component_outcome["gate_ok"]:
             result = replace(
                 result, score=None, radar_score=None,
-                narrative=f"{result.dimension_label}已收集 {len(collected)}/{len(required)} 个组件，评分暂缓。",
+                narrative=(
+                    f"{result.dimension_label}已评分 {len(component_scores)}/5 个组件"
+                    f"（覆盖 {component_outcome['coverage']:.0%}），未达 60%，评分暂缓。"
+                ),
                 metadata={**result.metadata, "component_collection": component_gate},
             )
     if not unit_candidates:
         if not component_cards:
             return result
         # Component-contract evidence has its own confidence formula and does
-        # not require the legacy one-card assessment fields. Keep the score
-        # pending until all components have a score, but still expose the
-        # verified collection/confidence ledger.
-        atoms: list[AtomicEvidence] = []
-        for card in component_cards:
-            try:
-                atoms.append(AtomicEvidence(
-                    evidence_id=card.evidence_id,
-                    dimension=card.dimension,
-                    component=card.component or "",
-                    evidence_group_id=card.evidence_group_id or str(card.objective_signal.get("evidence_group_id") or card.evidence_id),
-                    source_turn_ids=card.source_turn_ids,
-                    quote=card.quote or "",
-                    normalized_claim=card.normalized_claim or card.fact,
-                    evidence_type=card.objective_signal.get("evidence_type", "self_report"),
-                    collection_status=card.collection_status or "pending",
-                    semantic_relation=card.semantic_relation or "new",
-                    quality_factors=card.quality_factors or card.objective_signal.get("quality_factors", {}),
-                ))
-            except Exception:
-                continue
+        # not require the legacy one-card assessment fields. The score stays
+        # pending until the coverage gate opens, but the verified
+        # collection/confidence ledger is still exposed.
+        atoms = _component_atoms(component_cards)
+        weighted = component_outcome["score"] if component_outcome else None
+        component_coverage = round(component_outcome["coverage"], 4) if component_outcome else 0.0
         if not atoms:
-            return result
-        raw_type = str(component_cards[0].objective_signal.get("combination_type") or "single_clear_self_report")
-        allowed_types = {"single_vague_self_report", "single_clear_self_report", "multi_turn_clear_pending_crosscheck", "multi_turn_clear_consistent", "multi_turn_self_report_with_priority", "dialogue_behavior_consistent", "dialogue_behavior_measurement_long_term"}
-        component_confidence = confidence_from_evidence(atoms, raw_type if raw_type in allowed_types else "single_clear_self_report")
+            # No usable quality factors means no confidence -- but the component
+            # score is already computed and must not be thrown away with it.
+            return replace(
+                result,
+                score=weighted,
+                radar_score=weighted,
+                coverage=component_coverage,
+                metadata={
+                    **result.metadata,
+                    "semantic_assessment": True,
+                    "component_collection": component_gate or {},
+                    "confidence_missing": "no_quality_factors",
+                },
+            )
+        band = _combination_band(component_cards)
+        component_confidence = confidence_from_evidence(atoms, band["type"])  # type: ignore[arg-type]
+        # 档位依据跟着置信度一起进审计：用户看到"38%"要能问出"为什么是这一档"。
+        component_confidence["band_basis"] = band["basis"]
+        component_confidence["band_declared"] = band["declared"]
+        component_confidence["band_inferred"] = band["inferred"]
         metadata = {
             **result.metadata,
             "semantic_assessment": True,
@@ -308,15 +420,13 @@ def _with_agent_assessment(
             "confidence_units": [],
             "observed_composition_is_not_coverage": True,
         }
-        complete_scores = component_gate is not None and component_gate.get("scoring_phase") == "scored"
-        weighted = None
-        if complete_scores:
-            scores = component_gate.get("component_scores", {})
-            weighted = round(max(5.0, min(95.0, sum(scores[key] * COMPONENT_WEIGHTS[result.dimension][key] for key in COMPONENTS[result.dimension]))), 2)
+        # The score itself comes from the one shared formula, never from a
+        # local re-implementation of the weights.
         return replace(
             result,
             score=weighted,
             radar_score=weighted,
+            coverage=component_coverage,
             confidence=component_confidence["confidence"],
             confidence_breakdown={"semantic_evidence": component_confidence["confidence"], "independent_units": float(len(component_confidence["independent_source_groups"]))},
             metadata=metadata,
@@ -366,28 +476,13 @@ def _with_agent_assessment(
     semantic_confidence = round(_clamp01(1.0 - semantic_confidence), 4)
     component_confidence: dict[str, Any] | None = None
     if component_cards and all(card.quality_factors for card in component_cards):
-        atoms: list[AtomicEvidence] = []
-        for card in component_cards:
-            try:
-                atoms.append(AtomicEvidence(
-                    evidence_id=card.evidence_id,
-                    dimension=card.dimension,
-                    component=card.component or "",
-                    evidence_group_id=card.evidence_group_id or str(card.objective_signal.get("evidence_group_id") or card.evidence_id),
-                    source_turn_ids=card.source_turn_ids,
-                    quote=card.quote or "",
-                    normalized_claim=card.normalized_claim or card.fact,
-                    evidence_type=card.objective_signal.get("evidence_type", "self_report"),
-                    collection_status=card.collection_status or "pending",
-                    semantic_relation=card.semantic_relation or "new",
-                    quality_factors=card.quality_factors,
-                ))
-            except Exception:
-                continue
+        atoms = _component_atoms(component_cards)
         if atoms:
-            raw_type = str(component_cards[0].objective_signal.get("combination_type") or "single_clear_self_report")
-            allowed_types = {"single_vague_self_report", "single_clear_self_report", "multi_turn_clear_pending_crosscheck", "multi_turn_clear_consistent", "multi_turn_self_report_with_priority", "dialogue_behavior_consistent", "dialogue_behavior_measurement_long_term"}
-            component_confidence = confidence_from_evidence(atoms, raw_type if raw_type in allowed_types else "single_clear_self_report")
+            band = _combination_band(component_cards)
+            component_confidence = confidence_from_evidence(atoms, band["type"])  # type: ignore[arg-type]
+            component_confidence["band_basis"] = band["basis"]
+            component_confidence["band_declared"] = band["declared"]
+            component_confidence["band_inferred"] = band["inferred"]
             semantic_confidence = component_confidence["confidence"]
     coverage = _weighted_mean(coverage_terms)
     radar_score = _weighted_mean(radar_terms)
@@ -404,27 +499,25 @@ def _with_agent_assessment(
     }
     if component_confidence is not None:
         metadata["component_confidence"] = component_confidence
+    # A component-scored dimension always overrides the legacy per-unit
+    # aggregate, and it does so through the single shared formula.
+    component_score: float | None = None
     if component_gate is not None:
         metadata["component_collection"] = component_gate
-        if component_gate["scoring_phase"] == "scored":
-            component_scores = {
-                card.component: float(card.objective_signal["component_score"])
-                for card in component_cards
-                if card.component and isinstance(card.objective_signal.get("component_score"), (int, float))
-            }
-            weighted = sum(component_scores[key] * COMPONENT_WEIGHTS[result.dimension][key] for key in COMPONENTS[result.dimension])
-            component_weighted_score = round(max(5.0, min(95.0, weighted)), 2)
-            result = replace(result, score=component_weighted_score, radar_score=component_weighted_score)
+        if component_outcome is not None:
+            component_score = component_outcome["score"]
+    if component_score is not None:
+        result = replace(result, score=component_score, radar_score=component_score)
     return replace(
         result,
         confidence=semantic_confidence,
-        radar_score=component_weighted_score if component_weighted_score is not None else radar_score,
-        coverage=round(coverage or 0.0, 4),
+        radar_score=component_score if component_score is not None else radar_score,
+        coverage=round(component_outcome["coverage"], 4) if component_outcome else round(coverage or 0.0, 4),
         unknown_reasons=unknown_reasons[:5],
         confidence_breakdown={
             "semantic_evidence": semantic_confidence,
             "independent_units": float(len(unit_candidates)),
-            "coverage": round(coverage or 0.0, 4),
+            "coverage": round(component_outcome["coverage"], 4) if component_outcome else round(coverage or 0.0, 4),
         },
         metadata=metadata,
     )

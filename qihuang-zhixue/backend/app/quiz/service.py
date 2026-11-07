@@ -47,12 +47,20 @@ def public_question(question: QuizQuestion) -> dict[str, Any]:
     return QuizQuestionPublic.model_validate(question.model_dump(exclude={"answer", "analysis"})).model_dump()
 
 
-def _select_questions(rows: list[dict[str, Any]], *, user_id: str, profile: Any, db_path: Path, count: int, question_type: str | None = None) -> list[dict[str, Any]]:
+def _select_questions(rows: list[dict[str, Any]], *, user_id: str, profile: Any, db_path: Path, count: int, question_type: str | None = None, preferred_ids: set[str] | None = None) -> list[dict[str, Any]]:
     recent_qids, recent_points = recent_history(user_id, db_path, RECENT_QUESTION_LIMIT)
     mastery = get_mastery(user_id, db_path=db_path)
     goal = str(profile.learning_goal.label or profile.goal.normalized or "")
     base_score = profile.knowledge_base.score if profile.knowledge_base.score is not None else 50
     candidates = [row for row in rows if question_type is None or row["question_type"] == question_type] or rows
+    # 当前知识点的题必须排在最前。
+    #
+    # 踩过的坑：调用方把 `targeted` 拼到 `rows` 前面就以为「先考这个知识点」，
+    # 但这里按 rank 重排，拼接顺序被完全抹平——实测请求「人参」返回的是「麻黄」的题，
+    # 576 道题里只有 3~4 道属于当前知识点，不优先就几乎选不中。
+    # 用一个大到不会被其他因子抵消的加分，而不是改排序逻辑：frequency、掌握度、
+    # 最近作答这些因子仍然在**当前知识点的题内部**起作用。
+    preferred = preferred_ids or set()
 
     def rank(row: dict[str, Any]) -> tuple[float, str]:
         if goal == "应试提分":
@@ -62,6 +70,8 @@ def _select_questions(rows: list[dict[str, Any]], *, user_id: str, profile: Any,
             value = 1.0 - row["frequency"]
         else:
             value = row["frequency"] * 0.7
+        if row["id"] in preferred:
+            value += 100.0
         snapshot = mastery.get(row["node_id"])
         current_mastery = snapshot.get("p_mastery", 0.35) if isinstance(snapshot, dict) else (snapshot.p_mastery if snapshot else 0.35)
         value += max(0.0, 1.0 - current_mastery)
@@ -76,7 +86,16 @@ def _select_questions(rows: list[dict[str, Any]], *, user_id: str, profile: Any,
     for item in ordered:
         if len(picked) >= count: break
         # Avoid repeating a point in one group whenever the bank offers alternatives.
-        if item["exam_point_id"] in point_ids and len({x["exam_point_id"] for x in ordered}) >= count: continue
+        #
+        # 但**当前知识点的题不受这条限制**：每味药只有一个考点，7 道人参题全挂在
+        # 同一个 `exam_point` 上，按「考点不重复」筛完只剩 1 道。学生点开人参，
+        # 本该把这几道都做掉；去重是为了组卷时的多样性，不是为了把同一味药的题砍掉。
+        if (
+            item["id"] not in preferred
+            and item["exam_point_id"] in point_ids
+            and len({x["exam_point_id"] for x in ordered}) >= count
+        ):
+            continue
         picked.append(item); point_ids.add(item["exam_point_id"])
     return picked or ordered[:count]
 
@@ -85,6 +104,10 @@ def _source_level(row: dict[str, Any]) -> str:
     source = str(row["source"])
     if source.startswith("original:"): return "original"
     if source.startswith("adapted:"): return "adapted"
+    # 依据教材自编的题：有出处（教材页码）但没有年份，不是历年真题。
+    # 归到 real 会被 `QuizQuestion` 校验器拒掉——它要求 real 必须带可核实年份，
+    # 那条规则是对的，别为了跑通就放松它，改来源标注才是对的。
+    if source.startswith("教材自编"): return "original"
     return "real"
 
 
@@ -95,7 +118,16 @@ def _to_internal(row: dict[str, Any]) -> QuizQuestion:
     elif level == "adapted":
         detail = {"adapted_from_question_id": str(row["source"]).split(":", 2)[1], "changes": str(row["source"]).split(":", 2)[-1]}
     else:
-        detail = {"knowledge_node_id": row["node_id"], "source": row["source"]}
+        detail: dict[str, Any] = {"knowledge_node_id": row["node_id"], "source": row["source"]}
+        # 依据教材自编的题要跟「模型原创」分开标。学生有权知道这题是谁出的、
+        # 有没有人核过——把教材字段拼成的题标成「AI 原创」是错的（模型没写它），
+        # 反过来把模型编的题标成「教材」更是错的。
+        source_text = str(row["source"])
+        if source_text.startswith("教材自编"):
+            detail["origin"] = "textbook_template"
+            # 目前没有任何一道经过人工校对。标 True 之前必须先真的有人逐题看过。
+            detail["verified"] = False
+            detail["citation"] = source_text.split("：", 1)[-1]
     return QuizQuestion(id=row["id"], stem=row["stem"], options=row["options"], answer=row["answer"], analysis=row["analysis"], question_type=row["question_type"], exam_point_id=row["exam_point_id"], source_level=level, source_detail=detail)
 
 
@@ -145,18 +177,39 @@ async def start_assessment(*, user_id: str, node_id: str, db_path: Path) -> dict
     ensure_seed_questions(db_path); profile = await get_latest_profile(user_id, db_path=db_path)
     targeted = list_questions_for_node(node_id, db_path)
     all_rows = list_all_questions(db_path)
-    rows = targeted + [row for row in all_rows if row["id"] not in {item["id"] for item in targeted}]
-    case = _select_questions(rows, user_id=user_id, profile=profile, db_path=db_path, count=1, question_type="case")
-    quick_rows = [row for row in rows if row["question_type"] in {"single", "multi"} and row["id"] not in {item["id"] for item in case}]
-    quick = _select_questions(quick_rows or rows, user_id=user_id, profile=profile, db_path=db_path, count=QUICK_QUESTION_COUNT)
+    targeted_ids = {item["id"] for item in targeted}
+    rows = targeted + [row for row in all_rows if row["id"] not in targeted_ids]
+    # 关卡只在**题库真有这种题型**时才出现。
+    #
+    # 之前是「先选题、再无条件挂三道关」：`_select_questions` 在候选为空时会退回全表，
+    # 于是题库里一道病例题都没有时，`case` 关照样出现，装着一道单选题。
+    # 前端会给 `case` 关渲染成三页病例纸（辨证 / 选药 / 剂量），学生看到的是
+    # 「病例情境」标题配一道「下列哪味药…」——这不是缺内容，是把别的东西说成病例题。
+    # 宁可少一关，也不冒充。
+    case_pool = [row for row in rows if row["question_type"] == "case"]
+    case = (
+        _select_questions(case_pool, user_id=user_id, profile=profile, db_path=db_path, count=1, preferred_ids=targeted_ids)
+        if case_pool else []
+    )
+    used_ids = {item["id"] for item in case}
+    quick_rows = [row for row in rows if row["question_type"] in {"single", "multi"} and row["id"] not in used_ids]
+    quick = _select_questions(quick_rows or rows, user_id=user_id, profile=profile, db_path=db_path, count=QUICK_QUESTION_COUNT, preferred_ids=targeted_ids)
+    used_ids |= {item["id"] for item in quick}
     optional: list[dict[str, Any]] = []
     optional_name = None
-    if profile.planning_params.fun_preference >= HIGH_FUN_PREFERENCE:
-        optional, optional_name = _select_questions([row for row in rows if row["id"] not in {item["id"] for item in [*quick, *case]}], user_id=user_id, profile=profile, db_path=db_path, count=1, question_type="short"), "feynman"
-    elif profile.planning_params.assessment_strictness == "宽松":
-        optional, optional_name = _select_questions([row for row in rows if row["id"] not in {item["id"] for item in [*quick, *case]}], user_id=user_id, profile=profile, db_path=db_path, count=1, question_type="short"), "oral"
-    gates = [{"id":"quick","name":"快问快答","recommended_seconds":QUICK_RECOMMENDED_SECONDS,"questions":[public_question(_to_internal(x)) for x in quick]}, {"id":"case","name":"病例情境","recommended_seconds":CASE_RECOMMENDED_SECONDS,"questions":[public_question(_to_internal(x)) for x in case]}]
-    if optional_name: gates.append({"id":"optional","name":"费曼关" if optional_name == "feynman" else "小岐口试","recommended_seconds":OPTIONAL_RECOMMENDED_SECONDS,"questions":[public_question(_to_internal(x)) for x in optional]})
+    short_pool = [row for row in rows if row["question_type"] == "short" and row["id"] not in used_ids]
+    wants_optional = (
+        profile.planning_params.fun_preference >= HIGH_FUN_PREFERENCE
+        or profile.planning_params.assessment_strictness == "宽松"
+    )
+    if wants_optional and short_pool:
+        optional_name = "feynman" if profile.planning_params.fun_preference >= HIGH_FUN_PREFERENCE else "oral"
+        optional = _select_questions(short_pool, user_id=user_id, profile=profile, db_path=db_path, count=1, preferred_ids=targeted_ids)
+    gates = [{"id":"quick","name":"快问快答","recommended_seconds":QUICK_RECOMMENDED_SECONDS,"questions":[public_question(_to_internal(x)) for x in quick]}]
+    if case:
+        gates.append({"id":"case","name":"病例情境","recommended_seconds":CASE_RECOMMENDED_SECONDS,"questions":[public_question(_to_internal(x)) for x in case]})
+    if optional_name and optional:
+        gates.append({"id":"optional","name":"费曼关" if optional_name == "feynman" else "小岐口试","recommended_seconds":OPTIONAL_RECOMMENDED_SECONDS,"questions":[public_question(_to_internal(x)) for x in optional]})
     payload = {"gates":gates,"strictness":profile.planning_params.assessment_strictness,"threshold":ASSESSMENT_PASS_THRESHOLDS[profile.planning_params.assessment_strictness]}
     assessment_id = create_assessment(user_id=user_id,node_id=node_id,payload=payload,db_path=db_path)
     return {"assessment_id":assessment_id,**payload}

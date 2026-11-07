@@ -8,6 +8,7 @@ from app.config import Settings
 from app.mindmap.agent import MindmapAgent
 from app.mindmap.rules import ALLOWED_TEMPLATE_IDS
 from app.mindmap.schemas import MindElixirData, MindmapNode, merge_branch
+from tests.helpers import keyless_settings
 
 
 def test_template_is_from_rule_candidate_and_reason_cites_feature_or_profile():
@@ -39,7 +40,7 @@ def test_expand_merge_is_idempotent():
 
 def test_no_key_falls_back_to_two_level_map_and_default_template():
     docs = asyncio.run(retrieve_resource_docs("麻黄"))
-    result = asyncio.run(MindmapAgent(settings=Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None)).generate("麻黄", docs, {}))
+    result = asyncio.run(MindmapAgent(settings=keyless_settings()).generate("麻黄", docs, {}))
     assert result.template_id == "warm-gold"
     assert result.mindmap_data.nodeData.children
     assert any(node.children for node in result.mindmap_data.nodeData.children)

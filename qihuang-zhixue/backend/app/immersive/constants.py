@@ -16,4 +16,5 @@ RESOURCE_PROFILE_LABELS: Final[dict[str, str]] = {
     "mindmap": "知识图谱",
     "quiz": "汤头歌诀",
     "story": "拟人化短剧",
+    "ppt": "讲稿幻灯",
 }

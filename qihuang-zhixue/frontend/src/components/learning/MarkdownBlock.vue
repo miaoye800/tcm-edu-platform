@@ -29,7 +29,7 @@ const html = computed(() => md.render(props.source || ''))
 }
 
 .markdown-body {
-  color: rgba(238, 245, 239, 0.88);
+  color: var(--qh-fg);
   font-size: 15px;
   line-height: 1.85;
 }
@@ -69,7 +69,7 @@ const html = computed(() => md.render(props.source || ''))
   padding: 2px 6px;
   border-radius: 8px;
   color: var(--qh-color-gold);
-  background: rgba(238, 245, 239, 0.08);
+  background: var(--qh-line);
 }
 
 .markdown-body :deep(blockquote) {
@@ -77,13 +77,13 @@ const html = computed(() => md.render(props.source || ''))
   padding: 8px 12px;
   border-left: 3px solid var(--qh-color-jade);
   color: var(--qh-text-muted);
-  background: rgba(143, 208, 173, 0.07);
+  background: var(--qh-line);
 }
 
 .stream-pending {
   display: inline;
   margin: 0;
-  color: rgba(238, 245, 239, 0.62);
+  color: var(--qh-fg-soft);
   line-height: 1.85;
 }
 

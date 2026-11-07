@@ -31,9 +31,9 @@ defineProps<{
   display: grid;
   gap: 9px;
   padding: 12px;
-  border: 1px solid rgba(143, 208, 173, 0.13);
+  border: 1px solid var(--qh-line);
   border-radius: 14px;
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
 }
 
 .dim-row__head {
@@ -73,7 +73,7 @@ p {
   height: 7px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(238, 245, 239, 0.08);
+  background: var(--qh-line);
 }
 
 .dim-row__bar span {
@@ -84,6 +84,6 @@ p {
 }
 
 .is-low .dim-row__bar span {
-  background: linear-gradient(90deg, rgba(223, 236, 228, 0.3), rgba(159, 182, 214, 0.24));
+  background: linear-gradient(90deg, var(--qh-fg-muted), var(--qh-line-strong));
 }
 </style>

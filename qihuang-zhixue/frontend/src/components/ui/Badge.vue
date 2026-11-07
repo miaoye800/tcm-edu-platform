@@ -31,31 +31,31 @@ withDefaults(
   font-size: 12px;
   font-weight: 900;
   line-height: 1;
-  animation: bp 2.8s ease-in-out infinite;
 }
 
+// 状态标签不呼吸：一直在动的标签会持续抢注意力，而它只是信息编码。
 .is-jade {
-  color: var(--qh-color-jade);
-  background: rgba(143, 208, 173, 0.1);
+  color: var(--qh-fg-soft);
+  background: var(--qh-line);
 }
 
 .is-blue {
-  color: var(--qh-color-blue);
-  background: rgba(159, 182, 214, 0.1);
+  color: var(--qh-slate-300);
+  background: var(--qh-line);
 }
 
 .is-gold {
   color: var(--qh-color-gold);
-  background: rgba(231, 194, 116, 0.1);
+  background: var(--qh-line);
 }
 
 .is-coral {
-  color: var(--qh-color-coral);
-  background: rgba(233, 167, 156, 0.1);
+  color: var(--qh-accent);
+  background: var(--qh-accent-soft);
 }
 
 .is-muted {
   color: var(--qh-text-muted);
-  background: rgba(238, 245, 239, 0.06);
+  background: var(--qh-line);
 }
 </style>

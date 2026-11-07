@@ -730,7 +730,7 @@ onBeforeUnmount(() => {
 }
 
 .path-hero {
-  @include glass-panel(26px);
+  @include glass-panel;
   display: grid;
   grid-template-columns: minmax(320px, 0.92fr) minmax(420px, 1.08fr);
   gap: 18px;
@@ -806,7 +806,7 @@ h4 {
 }
 
 .overview-item {
-  @include glass-panel(18px);
+  @include glass-panel;
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -842,7 +842,7 @@ h4 {
   padding: 6px 10px;
   border-radius: 999px;
   color: var(--qh-text-muted);
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
   font-size: 12px;
   font-weight: 900;
 }
@@ -866,9 +866,9 @@ h4 {
   align-items: center;
   min-height: 58px;
   padding: 12px 16px;
-  border: 1px solid rgba(143, 208, 173, 0.16);
+  border: 1px solid var(--qh-line);
   border-radius: var(--qh-radius-card-sm);
-  background: rgba(238, 245, 239, 0.05);
+  background: var(--qh-line);
 }
 
 .generation-strip strong {
@@ -910,7 +910,7 @@ h4 {
 
 .category-children {
   padding-left: clamp(12px, 3vw, 34px);
-  border-left: 1px solid rgba(143, 208, 173, 0.18);
+  border-left: 1px solid var(--qh-line);
 }
 
 .subcategory-block {
@@ -920,14 +920,14 @@ h4 {
 
 .subcategory-children {
   padding-left: clamp(10px, 2.4vw, 28px);
-  border-left: 1px dashed rgba(159, 182, 214, 0.24);
+  border-left: 1px dashed var(--qh-line-strong);
 }
 
 .skill-node {
   position: relative;
   min-height: 166px;
   padding: 16px;
-  border: 1px solid rgba(143, 208, 173, 0.14);
+  border: 1px solid var(--qh-line);
   border-radius: var(--qh-radius-card-sm);
   background: var(--qh-card-fill);
   box-shadow: var(--qh-inner-highlight);
@@ -941,7 +941,7 @@ h4 {
 
 .skill-node:hover {
   transform: translateY(-2px);
-  border-color: rgba(231, 194, 116, 0.38);
+  border-color: var(--qh-line-strong);
 }
 
 .skill-node.is-locked {
@@ -949,11 +949,11 @@ h4 {
 }
 
 .skill-node.is-locked:hover {
-  border-color: rgba(238, 245, 239, 0.12);
+  border-color: var(--qh-line);
 }
 
 .skill-node.is-focused {
-  border-color: rgba(231, 194, 116, 0.72);
+  border-color: var(--qh-color-gold);
   animation: glow 1.6s ease-in-out 2;
 }
 
@@ -991,7 +991,7 @@ h4 {
   place-items: center;
   border-radius: 12px;
   color: var(--qh-color-jade);
-  background: rgba(238, 245, 239, 0.06);
+  background: var(--qh-line);
 }
 
 .toggle-icon {
@@ -1038,31 +1038,31 @@ h4 {
 }
 
 .kind-category {
-  border-color: rgba(231, 194, 116, 0.28);
+  border-color: var(--qh-line-strong);
 }
 
 .kind-subcategory {
-  border-color: rgba(143, 208, 173, 0.22);
+  border-color: var(--qh-line);
 }
 
 .kind-herb {
-  border-color: rgba(143, 208, 173, 0.16);
+  border-color: var(--qh-line);
 }
 
 .kind-differentiation {
-  border-color: rgba(159, 182, 214, 0.25);
+  border-color: var(--qh-line-strong);
 }
 
 .is-mastered {
-  border-color: rgba(143, 208, 173, 0.36);
+  border-color: var(--qh-line-strong);
 }
 
 .is-in_progress {
-  border-color: rgba(231, 194, 116, 0.3);
+  border-color: var(--qh-line-strong);
 }
 
 .is-unlocked {
-  border-color: rgba(159, 182, 214, 0.24);
+  border-color: var(--qh-line-strong);
 }
 
 .list-section,
@@ -1098,10 +1098,10 @@ h4 {
   min-height: 54px;
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid rgba(159, 182, 214, 0.2);
+  border: 1px solid var(--qh-line-strong);
   border-radius: var(--qh-radius-card-sm);
   color: var(--qh-text);
-  background: rgba(238, 245, 239, 0.045);
+  background: var(--qh-line);
   cursor: pointer;
   font-family: var(--qh-font-display);
   font-size: 15px;

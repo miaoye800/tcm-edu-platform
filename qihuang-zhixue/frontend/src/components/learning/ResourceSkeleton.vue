@@ -33,7 +33,7 @@ defineProps<{
 .resource-skeleton span {
   width: 42px;
   height: 42px;
-  border: 3px solid rgba(143, 208, 173, 0.16);
+  border: 3px solid var(--qh-line);
   border-top-color: var(--qh-color-jade);
   border-radius: 50%;
   animation: spin 1s linear infinite;

@@ -80,7 +80,7 @@
           </div>
           <span>{{ activeIdentityDimension?.revealed ? `${activeIdentityDimension.confidence_status} ${formatConfidence(activeIdentityDimension.confidence)}` : '待取证' }}</span>
         </div>
-        <p v-if="hasNoKeyRuleFallback" class="identity-board__notice">规则评分（未配置模型密钥）</p>
+        <p v-if="hasNoKeyRuleFallback" class="identity-board__notice">未配置模型，暂不评分</p>
 
         <div class="dimension-tabs" role="tablist" aria-label="切换命格维度">
           <button
@@ -145,7 +145,7 @@
                   <span class="card-confidence">{{ formatConfidence(activeIdentityDimension.confidence) }}</span>
                 </div>
                 <strong class="card-display-value">{{ activeIdentityDimension.display_value }}</strong>
-                <span v-if="activeIdentityDimension.provenance === 'no_key_rule_fallback'" class="provenance-badge">规则评分（未配置模型密钥）</span>
+                <span v-if="isNoKeyProvenance(activeIdentityDimension.provenance)" class="provenance-badge">未配置模型，无法评分</span>
                 <div v-if="activeIdentityDimension.kind === 'distribution'" class="distribution-content">
                   <small class="distribution-scope">{{ activeIdentityDimension.distribution_scope === 'complete_profile' ? '完整画像组成' : '当前已观察证据组成，不代表全部构成' }}</small>
                   <div class="distribution-bar" :aria-label="activeIdentityDimension.distribution_scope === 'complete_profile' ? '完整画像组成' : '当前已观察证据组成'">
@@ -320,6 +320,7 @@ import {
   type IdentityCardName,
 } from './profileDialogueModel'
 import { dimensionLabelFor, identityCardRefutedDescriptionFor } from './profileIdentityCardDescriptions'
+import { isNoKeyProvenance } from '../../utils/profileMath'
 import { confirmProfileGoal, proposeProfileGoal } from '../../services/profileApi'
 import type { GoalCandidate } from '../../types/profile'
 import {
@@ -633,7 +634,7 @@ const hasDimensionCards = computed(() => renderedIdentityCards.value.length > 0)
 const hasLegacyInference = computed(() => Boolean(props.inferredCard) || Object.values(props.cardScores).some((score) => Number(score) > 0))
 const showConfirmPanel = computed(() => props.converged || (!hasDimensionCards.value && hasLegacyInference.value))
 const hasNoKeyRuleFallback = computed(() =>
-  renderedIdentityCards.value.some((dimension) => dimension.provenance === 'no_key_rule_fallback'),
+  renderedIdentityCards.value.some((dimension) => isNoKeyProvenance(dimension.provenance)),
 )
 
 const dimensionLabel = (dimension?: IdentityCardsDimensionView | null) => {
@@ -696,7 +697,7 @@ const scoreText = (card: IdentityDimensionCard) => {
 }
 
 const provenanceText = (provenance: string) => {
-  if (provenance === 'no_key_rule_fallback') return '规则评分（未配置模型密钥）'
+  if (isNoKeyProvenance(provenance)) return '未配置模型，无法评分'
   if (provenance === 'rule_fallback') return '规则评分'
   if (provenance === 'fusion') return '证据融合'
   return ''
@@ -850,7 +851,7 @@ watch(
 .dialogue-main,
 .confirm-panel,
 .mini-radar {
-  @include glass-panel(24px);
+  @include glass-panel;
 }
 
 .dialogue-main {
@@ -866,7 +867,7 @@ watch(
   padding: 22px;
 }
 
-.dialogue-goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; border: 1px solid rgba(231, 194, 116, .24); border-radius: 8px; background: rgba(231, 194, 116, .06); }
+.dialogue-goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; border: 1px solid var(--qh-line-strong); border-radius: 8px; background: var(--qh-line); }
 .dialogue-goal p { grid-column: 1 / -1; margin: 0; color: var(--qh-text-muted); font-size: 13px; line-height: 1.6; }.dialogue-goal div { display: flex; gap: 8px; }
 
 .dialogue-head {
@@ -874,7 +875,7 @@ watch(
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
-  border-bottom: 1px solid rgba(143, 208, 173, 0.1);
+  border-bottom: 1px solid var(--qh-line);
 }
 
 
@@ -905,18 +906,18 @@ h3 {
 .status-pill {
   flex: 0 0 auto;
   padding: 8px 12px;
-  border: 1px solid rgba(159, 182, 214, 0.22);
+  border: 1px solid var(--qh-line-strong);
   border-radius: var(--qh-radius-pill);
   color: var(--qh-color-blue);
-  background: rgba(159, 182, 214, 0.1);
+  background: var(--qh-line);
   font-size: 12px;
   font-weight: 900;
 }
 
 .status-pill.is-ready {
-  border-color: rgba(231, 194, 116, 0.42);
+  border-color: var(--qh-line-strong);
   color: var(--qh-color-gold);
-  background: rgba(231, 194, 116, 0.13);
+  background: var(--qh-line);
 }
 
 .bubble-flow {
@@ -957,9 +958,9 @@ h3 {
 .chat-bubble {
   max-width: min(620px, 88%);
   padding: 14px 16px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 18px;
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
 }
 
 .message-reasoning {
@@ -990,7 +991,7 @@ h3 {
 /* Legacy toggle styles are intentionally removed: processing status is not a
    user-expandable chain-of-thought. */
 .reasoning-toggle {
-  color: rgba(238, 245, 239, 0.78);
+  color: var(--qh-fg-soft);
   background: transparent;
 }
 
@@ -1008,14 +1009,14 @@ h3 {
 .chat-bubble.is-assistant {
   border-top-left-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(143, 208, 173, 0.14), rgba(159, 182, 214, 0.08)),
-    rgba(238, 245, 239, 0.045);
+    linear-gradient(135deg, var(--qh-line), var(--qh-line)),
+    var(--qh-line);
 }
 
 .chat-bubble.is-user {
   border-top-right-radius: 8px;
-  border-color: rgba(231, 194, 116, 0.2);
-  background: rgba(231, 194, 116, 0.1);
+  border-color: var(--qh-line);
+  background: var(--qh-line);
 }
 
 .speaker {
@@ -1057,7 +1058,7 @@ h3 {
 .answer-dock {
   display: grid;
   gap: 14px;
-  border-top: 1px solid rgba(143, 208, 173, 0.1);
+  border-top: 1px solid var(--qh-line);
 }
 
 .quick-chips {
@@ -1133,7 +1134,7 @@ h3 {
   --tone-color: var(--qh-color-jade);
   flex: 0 0 auto;
   border: 1px solid color-mix(in srgb, var(--tone-color) 22%, transparent);
-  color: rgba(238, 245, 239, 0.76);
+  color: var(--qh-fg-soft);
   background: color-mix(in srgb, var(--tone-color) 9%, transparent);
   cursor: pointer;
   font-size: 12px;
@@ -1208,17 +1209,17 @@ h3 {
   border-radius: 8px;
   overflow: hidden;
   backface-visibility: hidden;
-  box-shadow: inset 0 0 0 1px rgba(238, 245, 239, 0.04);
+  box-shadow: inset 0 0 0 1px var(--qh-line);
 }
 
 .tarot-back {
   justify-items: center;
   text-align: center;
-  color: rgba(238, 245, 239, 0.64);
+  color: var(--qh-fg-soft);
   background:
     radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--tone-color) 22%, transparent), transparent 36%),
-    repeating-linear-gradient(45deg, rgba(238, 245, 239, 0.035) 0 2px, transparent 2px 10px),
-    linear-gradient(145deg, rgba(19, 33, 31, 0.96), rgba(8, 14, 16, 0.9));
+    repeating-linear-gradient(45deg, var(--qh-line) 0 2px, transparent 2px 10px),
+    linear-gradient(145deg, var(--qh-surface), var(--qh-surface-sunken));
 }
 
 .tarot-back p {
@@ -1234,12 +1235,12 @@ h3 {
   color: var(--qh-text);
   background:
     radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tone-color) 28%, transparent), transparent 36%),
-    linear-gradient(145deg, rgba(238, 245, 239, 0.12), rgba(18, 31, 31, 0.9));
+    linear-gradient(145deg, var(--qh-line), var(--qh-surface));
 }
 
 .identity-tarot-card.is-veiled .tarot-front { opacity: .58; }
-.identity-tarot-card.is-veiled .tarot-front::before { position: absolute; inset: 0; z-index: 1; background: repeating-linear-gradient(135deg, rgba(242, 234, 214, .2) 0 1px, transparent 1px 7px); content: ""; pointer-events: none; }
-.veil-copy { position: absolute; right: 9px; bottom: 9px; z-index: 2; padding: 4px 7px; border: 1px solid var(--qh-color-gold); border-radius: var(--qh-radius-pill); color: var(--qh-color-gold); background: rgba(16, 32, 29, .72); font-size: 11px; font-weight: 900; }
+.identity-tarot-card.is-veiled .tarot-front::before { position: absolute; inset: 0; z-index: 1; background: repeating-linear-gradient(135deg, var(--qh-line-strong) 0 1px, transparent 1px 7px); content: ""; pointer-events: none; }
+.veil-copy { position: absolute; right: 9px; bottom: 9px; z-index: 2; padding: 4px 7px; border: 1px solid var(--qh-color-gold); border-radius: var(--qh-radius-pill); color: var(--qh-color-gold); background: var(--qh-surface); font-size: 11px; font-weight: 900; }
 .identity-tarot-card.is-flipping:not(.is-veiled) .tarot-front { animation: unveil-card var(--identity-flip-duration) ease both; }
 @keyframes unveil-card { from { clip-path: inset(0 0 0 100%); opacity: .45; } to { clip-path: inset(0); opacity: 1; } }
 
@@ -1329,10 +1330,10 @@ h3 {
   width: min(260px, calc(100% - 16px));
   margin: 0;
   padding: 10px 12px;
-  border: 1px solid rgba(238, 245, 239, 0.16);
+  border: 1px solid var(--qh-line);
   border-radius: 8px;
-  color: rgba(238, 245, 239, 0.88);
-  background: rgba(9, 16, 18, 0.96);
+  color: var(--qh-fg);
+  background: var(--qh-surface);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.36);
   font-size: 12px;
   line-height: 1.65;
@@ -1364,10 +1365,10 @@ h3 {
   align-content: center;
   gap: 10px;
   padding: 28px;
-  border: 1px solid rgba(143, 208, 173, 0.14);
+  border: 1px solid var(--qh-line);
   border-radius: 8px;
   color: var(--qh-text-muted);
-  background: rgba(238, 245, 239, 0.035);
+  background: var(--qh-line);
   text-align: center;
 }
 
@@ -1390,9 +1391,9 @@ h3 {
   display: grid;
   min-height: 174px;
   padding: 0;
-  border: 1px solid rgba(143, 208, 173, 0.14);
+  border: 1px solid var(--qh-line);
   border-radius: 18px;
-  background: rgba(238, 245, 239, 0.05);
+  background: var(--qh-line);
   cursor: pointer;
   perspective: 1000px;
   opacity: 0;
@@ -1430,10 +1431,10 @@ h3 {
 
 .card-back {
   gap: 10px;
-  color: rgba(238, 245, 239, 0.46);
+  color: var(--qh-fg-muted);
   background:
-    linear-gradient(145deg, rgba(20, 34, 33, 0.84), rgba(10, 18, 20, 0.62)),
-    radial-gradient(circle at 50% 35%, rgba(238, 245, 239, 0.08), transparent 48%);
+    linear-gradient(145deg, var(--qh-surface), var(--qh-surface-sunken)),
+    radial-gradient(circle at 50% 35%, var(--qh-line), transparent 48%);
 }
 
 .card-front {
@@ -1441,8 +1442,8 @@ h3 {
   gap: 12px;
   justify-items: start;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--tone-color) 18%, transparent), rgba(238, 245, 239, 0.055)),
-    rgba(18, 31, 31, 0.78);
+    linear-gradient(145deg, color-mix(in srgb, var(--tone-color) 18%, transparent), var(--qh-line)),
+    var(--qh-surface);
   transform: rotateY(180deg);
 }
 
@@ -1468,7 +1469,7 @@ h3 {
   width: 52px;
   height: 52px;
   place-items: center;
-  border: 1px solid rgba(238, 245, 239, 0.14);
+  border: 1px solid var(--qh-line);
   border-radius: 16px;
   color: var(--tone-color);
   font-family: var(--qh-font-display);
@@ -1488,8 +1489,8 @@ h3 {
   place-items: center;
   border-radius: 50%;
   background:
-    radial-gradient(circle, #172421 54%, transparent 56%),
-    conic-gradient(var(--tone-color) var(--score), rgba(238, 245, 239, 0.11) 0);
+    radial-gradient(circle, var(--qh-surface) 54%, transparent 56%),
+    conic-gradient(var(--tone-color) var(--score), var(--qh-line) 0);
   color: var(--tone-color);
   font-family: var(--qh-font-display);
   font-weight: 900;
@@ -1575,7 +1576,7 @@ h3 {
 
 .evidence-panel {
   margin-top: 12px;
-  border-top: 1px solid rgba(143, 208, 173, 0.1);
+  border-top: 1px solid var(--qh-line);
 }
 
 .evidence-panel summary {
@@ -1619,7 +1620,7 @@ h3 {
   border: 1px solid color-mix(in srgb, var(--tone-color) 28%, transparent);
   border-radius: 8px;
   overflow: hidden;
-  color: rgba(238, 245, 239, 0.88);
+  color: var(--qh-fg);
   background: color-mix(in srgb, var(--tone-color) 12%, transparent);
   box-shadow: -10px 0 18px rgba(0, 0, 0, 0.18);
   font-size: 12px;
@@ -1660,9 +1661,9 @@ h3 {
   display: grid;
   gap: 7px;
   padding: 10px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 8px;
-  background: rgba(238, 245, 239, 0.045);
+  background: var(--qh-line);
 }
 
 .evidence-item.is-pending {
@@ -1689,7 +1690,7 @@ h3 {
 
 .evidence-item p {
   margin: 0;
-  color: rgba(238, 245, 239, 0.78);
+  color: var(--qh-fg-soft);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -1699,7 +1700,7 @@ h3 {
   gap: 5px;
   margin: 0;
   padding-left: 16px;
-  color: rgba(238, 245, 239, 0.72);
+  color: var(--qh-fg-soft);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -1713,9 +1714,9 @@ h3 {
   display: grid;
   gap: 6px;
   padding: 8px;
-  border: 1px solid rgba(238, 245, 239, 0.08);
+  border: 1px solid var(--qh-line);
   border-radius: 8px;
-  background: rgba(9, 16, 18, 0.16);
+  background: var(--qh-line);
 }
 
 .collection-card > div {
@@ -1753,15 +1754,15 @@ h3 {
   justify-content: space-between;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 12px;
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
 }
 
 .radar-axis-chip span {
   min-width: 0;
   overflow: hidden;
-  color: rgba(238, 245, 239, 0.82);
+  color: var(--qh-fg);
   font-size: 12px;
   font-weight: 900;
   text-overflow: ellipsis;
@@ -1775,12 +1776,12 @@ h3 {
 }
 
 .radar-axis-chip.is-dark {
-  border-color: rgba(223, 236, 228, 0.08);
+  border-color: var(--qh-line);
   opacity: 0.54;
 }
 
 .radar-axis-chip.is-dark strong {
-  color: rgba(223, 236, 228, 0.58);
+  color: var(--qh-fg-muted);
 }
 
 .radar-axis-chip.is-dashed strong {

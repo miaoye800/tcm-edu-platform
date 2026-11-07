@@ -1,0 +1,3863 @@
+{
+  "_note": "由 data/herbs/*.json 的 indications.syndrome 反推。只做精确去重；症状/舌脉尚未从教材证候条目抽取，verified=false。",
+  "_generated_by": "scripts/derive_master_data.py",
+  "syndromes": {
+    "丹毒痈肿": {
+      "id": "syn_丹毒痈肿",
+      "name": "丹毒痈肿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "大青叶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "久疟体虚": {
+      "id": "syn_久疟体虚",
+      "name": "久疟体虚",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "何首乌"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "乳痈肿痛": {
+      "id": "syn_乳痈肿痛",
+      "name": "乳痈肿痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "夏枯草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "产后瘀阻腹痛": {
+      "id": "syn_产后瘀阻腹痛",
+      "name": "产后瘀阻腹痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "败酱草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "产后血虚发热": {
+      "id": "syn_产后血虚发热",
+      "name": "产后血虚发热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白薇"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "内热消渴": {
+      "id": "syn_内热消渴",
+      "name": "内热消渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "地骨皮",
+        "天花粉",
+        "山药",
+        "枸杞子",
+        "知母",
+        "麦冬"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_liuwei_dihuang_wan",
+        "formula_qiju_dihuang_wan",
+        "formula_shashenmaidongtang",
+        "formula_shengmai_san",
+        "formula_shenling_baizhu_san",
+        "formula_xiebaisan",
+        "formula_zengyetang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "冲任虚寒": {
+      "id": "syn_冲任虚寒",
+      "name": "冲任虚寒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "鹿茸"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "半身不遂痹痛麻木": {
+      "id": "syn_半身不遂痹痛麻木",
+      "name": "半身不遂痹痛麻木",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "发热咽痛": {
+      "id": "syn_发热咽痛",
+      "name": "发热咽痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "板蓝根"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "咳嗽气喘": {
+      "id": "syn_咳嗽气喘",
+      "name": "咳嗽气喘",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "麻黄"
+      ],
+      "related_formulas": [
+        "formula_mahuangtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "咳嗽痰多": {
+      "id": "syn_咳嗽痰多",
+      "name": "咳嗽痰多",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "甘草"
+      ],
+      "related_formulas": [
+        "formula_shaoyao_gancao_tang",
+        "formula_sijunzi_tang",
+        "formula_zhigancao_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "咽喉肿痛": {
+      "id": "syn_咽喉肿痛",
+      "name": "咽喉肿痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "射干"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "咽痛目赤": {
+      "id": "syn_咽痛目赤",
+      "name": "咽痛目赤",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蒲公英"
+      ],
+      "related_formulas": [
+        "formula_wuwei_xiaoduyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "喉痹丹毒": {
+      "id": "syn_喉痹丹毒",
+      "name": "喉痹丹毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "金银花"
+      ],
+      "related_formulas": [
+        "formula_wuwei_xiaoduyin",
+        "formula_yinqiaosan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "外感热病": {
+      "id": "syn_外感热病",
+      "name": "外感热病",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石膏"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_maxingshigantang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "外感表证": {
+      "id": "syn_外感表证",
+      "name": "外感表证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "荆芥",
+        "防风"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "头痛、牙痛、痹痛": {
+      "id": "syn_头痛、牙痛、痹痛",
+      "name": "头痛、牙痛、痹痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "细辛"
+      ],
+      "related_formulas": [
+        "formula_xiaoqinglongtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "妇人脏躁": {
+      "id": "syn_妇人脏躁",
+      "name": "妇人脏躁",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "大枣"
+      ],
+      "related_formulas": [
+        "formula_ganmai_dazao_tang",
+        "formula_guizhitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "寒凝血滞诸痛证": {
+      "id": "syn_寒凝血滞诸痛证",
+      "name": "寒凝血滞诸痛证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桂枝"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_mahuangtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "寒饮伏肺": {
+      "id": "syn_寒饮伏肺",
+      "name": "寒饮伏肺",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "细辛"
+      ],
+      "related_formulas": [
+        "formula_xiaoqinglongtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "小便不利": {
+      "id": "syn_小便不利",
+      "name": "小便不利",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "苦参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "小儿发育迟缓": {
+      "id": "syn_小儿发育迟缓",
+      "name": "小儿发育迟缓",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "鹿茸"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "小儿疳热": {
+      "id": "syn_小儿疳热",
+      "name": "小儿疳热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "胡黄连"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "崩漏胎漏胎动不安": {
+      "id": "syn_崩漏胎漏胎动不安",
+      "name": "崩漏胎漏胎动不安",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "续断"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "带下": {
+      "id": "syn_带下",
+      "name": "带下",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "山药"
+      ],
+      "related_formulas": [
+        "formula_liuwei_dihuang_wan",
+        "formula_shenling_baizhu_san"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "带下证": {
+      "id": "syn_带下证",
+      "name": "带下证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白芷"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "带下阴痒": {
+      "id": "syn_带下阴痒",
+      "name": "带下阴痒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "苦参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "心气不足": {
+      "id": "syn_心气不足",
+      "name": "心气不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "甘草"
+      ],
+      "related_formulas": [
+        "formula_shaoyao_gancao_tang",
+        "formula_sijunzi_tang",
+        "formula_zhigancao_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "心烦不眠": {
+      "id": "syn_心烦不眠",
+      "name": "心烦不眠",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "阿胶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "心烦失眠": {
+      "id": "syn_心烦失眠",
+      "name": "心烦失眠",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "麦冬"
+      ],
+      "related_formulas": [
+        "formula_shashenmaidongtang",
+        "formula_shengmai_san",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "心神不安": {
+      "id": "syn_心神不安",
+      "name": "心神不安",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "人参"
+      ],
+      "related_formulas": [
+        "formula_shenfu_tang",
+        "formula_shengmai_san",
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "惊风抽搐": {
+      "id": "syn_惊风抽搐",
+      "name": "惊风抽搐",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "龙胆"
+      ],
+      "related_formulas": [
+        "formula_longdan_xiegan_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "惊风抽搐、破伤风": {
+      "id": "syn_惊风抽搐、破伤风",
+      "name": "惊风抽搐、破伤风",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蝉蜕"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "惊风癫狂": {
+      "id": "syn_惊风癫狂",
+      "name": "惊风癫狂",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "水牛角"
+      ],
+      "related_formulas": [
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "暑热外感": {
+      "id": "syn_暑热外感",
+      "name": "暑热外感",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "青蒿"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "更年期高血压": {
+      "id": "syn_更年期高血压",
+      "name": "更年期高血压",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "淫羊藿"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "月经不调经闭痛经": {
+      "id": "syn_月经不调经闭痛经",
+      "name": "月经不调经闭痛经",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "当归"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气津两伤": {
+      "id": "syn_气津两伤",
+      "name": "气津两伤",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "党参"
+      ],
+      "related_formulas": [
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气虚下陷": {
+      "id": "syn_气虚下陷",
+      "name": "气虚下陷",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "升麻",
+        "柴胡"
+      ],
+      "related_formulas": [
+        "formula_buzhongyiqitang",
+        "formula_xiaochaihutang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气虚欲脱": {
+      "id": "syn_气虚欲脱",
+      "name": "气虚欲脱",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "人参"
+      ],
+      "related_formulas": [
+        "formula_shenfu_tang",
+        "formula_shengmai_san",
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气虚水肿": {
+      "id": "syn_气虚水肿",
+      "name": "气虚水肿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气虚自汗": {
+      "id": "syn_气虚自汗",
+      "name": "气虚自汗",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白术",
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_sijunzi_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气血不足": {
+      "id": "syn_气血不足",
+      "name": "气血不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "党参"
+      ],
+      "related_formulas": [
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气血亏虚": {
+      "id": "syn_气血亏虚",
+      "name": "气血亏虚",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "气阴不足自汗口渴": {
+      "id": "syn_气阴不足自汗口渴",
+      "name": "气阴不足自汗口渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "太子参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "水肿脚气": {
+      "id": "syn_水肿脚气",
+      "name": "水肿脚气",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "香薷"
+      ],
+      "related_formulas": [
+        "formula_xiangrusan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "津伤便秘": {
+      "id": "syn_津伤便秘",
+      "name": "津伤便秘",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "玄参"
+      ],
+      "related_formulas": [
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "津伤口渴": {
+      "id": "syn_津伤口渴",
+      "name": "津伤口渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "北沙参"
+      ],
+      "related_formulas": [
+        "formula_shashenmaidongtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "津伤口渴内热消渴": {
+      "id": "syn_津伤口渴内热消渴",
+      "name": "津伤口渴内热消渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "人参"
+      ],
+      "related_formulas": [
+        "formula_shenfu_tang",
+        "formula_shengmai_san",
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温毒发斑": {
+      "id": "syn_温毒发斑",
+      "name": "温毒发斑",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "板蓝根",
+        "牡丹皮",
+        "玄参",
+        "生地黄",
+        "赤芍"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_qingyingtang",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温疫时毒": {
+      "id": "syn_温疫时毒",
+      "name": "温疫时毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "板蓝根"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温病伤阴阴虚发热": {
+      "id": "syn_温病伤阴阴虚发热",
+      "name": "温病伤阴阴虚发热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "牡丹皮"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温病初起": {
+      "id": "syn_温病初起",
+      "name": "温病初起",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "薄荷"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温病高热神昏": {
+      "id": "syn_温病高热神昏",
+      "name": "温病高热神昏",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "水牛角"
+      ],
+      "related_formulas": [
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温病高热神昏发斑": {
+      "id": "syn_温病高热神昏发斑",
+      "name": "温病高热神昏发斑",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "大青叶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温邪伤营发热": {
+      "id": "syn_温邪伤营发热",
+      "name": "温邪伤营发热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白薇"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "温邪伤阴": {
+      "id": "syn_温邪伤阴",
+      "name": "温邪伤阴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "青蒿"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿浊中阻": {
+      "id": "syn_湿浊中阻",
+      "name": "湿浊中阻",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "陈皮"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿温暑湿": {
+      "id": "syn_湿温暑湿",
+      "name": "湿温暑湿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芩"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热带下热淋": {
+      "id": "syn_湿热带下热淋",
+      "name": "湿热带下热淋",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄柏"
+      ],
+      "related_formulas": [
+        "formula_ermiaosan",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热泻痢": {
+      "id": "syn_湿热泻痢",
+      "name": "湿热泻痢",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "胡黄连",
+        "黄连"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zuojinwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热泻痢便血黄疸": {
+      "id": "syn_湿热泻痢便血黄疸",
+      "name": "湿热泻痢便血黄疸",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "苦参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热泻痢黄疸": {
+      "id": "syn_湿热泻痢黄疸",
+      "name": "湿热泻痢黄疸",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄柏",
+        "黄芩"
+      ],
+      "related_formulas": [
+        "formula_ermiaosan",
+        "formula_gegen_qinlian_tang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热淋证": {
+      "id": "syn_湿热淋证",
+      "name": "湿热淋证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "鱼腥草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热痞满呕吐": {
+      "id": "syn_湿热痞满呕吐",
+      "name": "湿热痞满呕吐",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄连"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zuojinwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热黄疸": {
+      "id": "syn_湿热黄疸",
+      "name": "湿热黄疸",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "栀子",
+        "蒲公英",
+        "青蒿"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_wuwei_xiaoduyin",
+        "formula_yinchenhaotang",
+        "formula_zhizichitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿热黄疸阴肿阴痒": {
+      "id": "syn_湿热黄疸阴肿阴痒",
+      "name": "湿热黄疸阴肿阴痒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "龙胆"
+      ],
+      "related_formulas": [
+        "formula_longdan_xiegan_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿疹湿疮皮肤瘙痒": {
+      "id": "syn_湿疹湿疮皮肤瘙痒",
+      "name": "湿疹湿疮皮肤瘙痒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "苦参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "湿疹瘙痒": {
+      "id": "syn_湿疹瘙痒",
+      "name": "湿疹瘙痒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "龙胆"
+      ],
+      "related_formulas": [
+        "formula_longdan_xiegan_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "火毒疮疡": {
+      "id": "syn_火毒疮疡",
+      "name": "火毒疮疡",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "栀子"
+      ],
+      "related_formulas": [
+        "formula_yinchenhaotang",
+        "formula_zhizichitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热入营血": {
+      "id": "syn_热入营血",
+      "name": "热入营血",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "牡丹皮",
+        "玄参",
+        "生地黄",
+        "赤芍"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_qingyingtang",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热毒疮痈": {
+      "id": "syn_热毒疮痈",
+      "name": "热毒疮痈",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "鱼腥草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热毒血痢": {
+      "id": "syn_热毒血痢",
+      "name": "热毒血痢",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白头翁",
+        "金银花"
+      ],
+      "related_formulas": [
+        "formula_baitouwengtang",
+        "formula_wuwei_xiaoduyin",
+        "formula_yinqiaosan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热毒证": {
+      "id": "syn_热毒证",
+      "name": "热毒证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "升麻"
+      ],
+      "related_formulas": [
+        "formula_buzhongyiqitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热泻热痢、脾虚泄泻": {
+      "id": "syn_热泻热痢、脾虚泄泻",
+      "name": "热泻热痢、脾虚泄泻",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "葛根"
+      ],
+      "related_formulas": [
+        "formula_gegentang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热淋涩痛": {
+      "id": "syn_热淋涩痛",
+      "name": "热淋涩痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "栀子",
+        "芦根",
+        "蒲公英",
+        "连翘"
+      ],
+      "related_formulas": [
+        "formula_wuwei_xiaoduyin",
+        "formula_yinchenhaotang",
+        "formula_yinqiaosan",
+        "formula_zhizichitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热淋血淋": {
+      "id": "syn_热淋血淋",
+      "name": "热淋血淋",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白薇"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热病伤阴": {
+      "id": "syn_热病伤阴",
+      "name": "热病伤阴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "生地黄"
+      ],
+      "related_formulas": [
+        "formula_qingyingtang",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热病口渴、阴虚消渴": {
+      "id": "syn_热病口渴、阴虚消渴",
+      "name": "热病口渴、阴虚消渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "葛根"
+      ],
+      "related_formulas": [
+        "formula_gegentang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热病心烦": {
+      "id": "syn_热病心烦",
+      "name": "热病心烦",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "栀子"
+      ],
+      "related_formulas": [
+        "formula_yinchenhaotang",
+        "formula_zhizichitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "热病烦渴": {
+      "id": "syn_热病烦渴",
+      "name": "热病烦渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "天花粉",
+        "知母",
+        "芦根",
+        "黄芩"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_gegen_qinlian_tang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疟疾寒热": {
+      "id": "syn_疟疾寒热",
+      "name": "疟疾寒热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "青蒿"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疥癣麻风": {
+      "id": "syn_疥癣麻风",
+      "name": "疥癣麻风",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "苦参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疮疡久溃不敛": {
+      "id": "syn_疮疡久溃不敛",
+      "name": "疮疡久溃不敛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "鹿茸"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疮疡初起": {
+      "id": "syn_疮疡初起",
+      "name": "疮疡初起",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "荆芥"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疮疡湿疹": {
+      "id": "syn_疮疡湿疹",
+      "name": "疮疡湿疹",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石膏"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_maxingshigantang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疮疡肿毒": {
+      "id": "syn_疮疡肿毒",
+      "name": "疮疡肿毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "天花粉"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疮疡肿毒湿疹湿疮": {
+      "id": "syn_疮疡肿毒湿疹湿疮",
+      "name": "疮疡肿毒湿疹湿疮",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄柏"
+      ],
+      "related_formulas": [
+        "formula_ermiaosan",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疮痈肿毒": {
+      "id": "syn_疮痈肿毒",
+      "name": "疮痈肿毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白芷",
+        "菊花"
+      ],
+      "related_formulas": [
+        "formula_sangjuyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "疳积发热": {
+      "id": "syn_疳积发热",
+      "name": "疳积发热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "银柴胡"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痄腮丹毒痈肿": {
+      "id": "syn_痄腮丹毒痈肿",
+      "name": "痄腮丹毒痈肿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "板蓝根"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痄腮喉痹": {
+      "id": "syn_痄腮喉痹",
+      "name": "痄腮喉痹",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "大青叶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "病后虚弱": {
+      "id": "syn_病后虚弱",
+      "name": "病后虚弱",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "太子参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "病后虚热不退": {
+      "id": "syn_病后虚热不退",
+      "name": "病后虚热不退",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石斛"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈疽咽痛蛇虫咬伤": {
+      "id": "syn_痈疽咽痛蛇虫咬伤",
+      "name": "痈疽咽痛蛇虫咬伤",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白薇"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈疽瘰疬肠燥便秘": {
+      "id": "syn_痈疽瘰疬肠燥便秘",
+      "name": "痈疽瘰疬肠燥便秘",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "何首乌"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈疽难溃久溃不敛": {
+      "id": "syn_痈疽难溃久溃不敛",
+      "name": "痈疽难溃久溃不敛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疔毒乳痈内痈": {
+      "id": "syn_痈肿疔毒乳痈内痈",
+      "name": "痈肿疔毒乳痈内痈",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蒲公英"
+      ],
+      "related_formulas": [
+        "formula_wuwei_xiaoduyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疔疮": {
+      "id": "syn_痈肿疔疮",
+      "name": "痈肿疔疮",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "金银花",
+        "黄连"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_wuwei_xiaoduyin",
+        "formula_yinqiaosan",
+        "formula_zuojinwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疮毒": {
+      "id": "syn_痈肿疮毒",
+      "name": "痈肿疮毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "败酱草",
+        "黄芩"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疮毒、丹毒、痄腮": {
+      "id": "syn_痈肿疮毒、丹毒、痄腮",
+      "name": "痈肿疮毒、丹毒、痄腮",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "牛蒡子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疮毒瘰疬痰核": {
+      "id": "syn_痈肿疮毒瘰疬痰核",
+      "name": "痈肿疮毒瘰疬痰核",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "连翘"
+      ],
+      "related_formulas": [
+        "formula_yinqiaosan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疮毒药食中毒": {
+      "id": "syn_痈肿疮毒药食中毒",
+      "name": "痈肿疮毒药食中毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "甘草"
+      ],
+      "related_formulas": [
+        "formula_shaoyao_gancao_tang",
+        "formula_sijunzi_tang",
+        "formula_zhigancao_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痈肿疮疡": {
+      "id": "syn_痈肿疮疡",
+      "name": "痈肿疮疡",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "水牛角",
+        "赤芍"
+      ],
+      "related_formulas": [
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痰湿壅肺": {
+      "id": "syn_痰湿壅肺",
+      "name": "痰湿壅肺",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "陈皮"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痰火郁结": {
+      "id": "syn_痰火郁结",
+      "name": "痰火郁结",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "夏枯草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痰盛咳喘": {
+      "id": "syn_痰盛咳喘",
+      "name": "痰盛咳喘",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "射干"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "痰饮蓄水": {
+      "id": "syn_痰饮蓄水",
+      "name": "痰饮蓄水",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桂枝"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_mahuangtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "瘰疬白喉痈肿疮毒": {
+      "id": "syn_瘰疬白喉痈肿疮毒",
+      "name": "瘰疬白喉痈肿疮毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "玄参"
+      ],
+      "related_formulas": [
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "癥瘕腹痛跌扑损伤": {
+      "id": "syn_癥瘕腹痛跌扑损伤",
+      "name": "癥瘕腹痛跌扑损伤",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "赤芍"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目昏不明": {
+      "id": "syn_目昏不明",
+      "name": "目昏不明",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "枸杞子"
+      ],
+      "related_formulas": [
+        "formula_qiju_dihuang_wan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目暗不明": {
+      "id": "syn_目暗不明",
+      "name": "目暗不明",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "女贞子"
+      ],
+      "related_formulas": [
+        "formula_erzhiwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目赤咽痛": {
+      "id": "syn_目赤咽痛",
+      "name": "目赤咽痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "玄参"
+      ],
+      "related_formulas": [
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目赤昏花": {
+      "id": "syn_目赤昏花",
+      "name": "目赤昏花",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桑叶",
+        "菊花"
+      ],
+      "related_formulas": [
+        "formula_sangjuyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目赤翳障": {
+      "id": "syn_目赤翳障",
+      "name": "目赤翳障",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蝉蜕"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目赤肿痛": {
+      "id": "syn_目赤肿痛",
+      "name": "目赤肿痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "赤芍"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "目赤肿痛、目昏多泪": {
+      "id": "syn_目赤肿痛、目昏多泪",
+      "name": "目赤肿痛、目昏多泪",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蔓荆子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "破伤风证": {
+      "id": "syn_破伤风证",
+      "name": "破伤风证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "防风"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "精血亏虚": {
+      "id": "syn_精血亏虚",
+      "name": "精血亏虚",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "何首乌",
+        "熟地黄"
+      ],
+      "related_formulas": [
+        "formula_liuwei_dihuang_wan",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝火头痛目赤": {
+      "id": "syn_肝火头痛目赤",
+      "name": "肝火头痛目赤",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "龙胆"
+      ],
+      "related_formulas": [
+        "formula_longdan_xiegan_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝火目赤": {
+      "id": "syn_肝火目赤",
+      "name": "肝火目赤",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "夏枯草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝肾不足": {
+      "id": "syn_肝肾不足",
+      "name": "肝肾不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "菟丝子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝肾不足目昏耳鸣": {
+      "id": "syn_肝肾不足目昏耳鸣",
+      "name": "肝肾不足目昏耳鸣",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "菟丝子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝肾不足腰膝酸痛": {
+      "id": "syn_肝肾不足腰膝酸痛",
+      "name": "肝肾不足腰膝酸痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "续断"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝肾阴虚": {
+      "id": "syn_肝肾阴虚",
+      "name": "肝肾阴虚",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "女贞子",
+        "熟地黄"
+      ],
+      "related_formulas": [
+        "formula_erzhiwan",
+        "formula_liuwei_dihuang_wan",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝肾阴虚精血不足": {
+      "id": "syn_肝肾阴虚精血不足",
+      "name": "肝肾阴虚精血不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "枸杞子"
+      ],
+      "related_formulas": [
+        "formula_qiju_dihuang_wan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝郁气滞": {
+      "id": "syn_肝郁气滞",
+      "name": "肝郁气滞",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "柴胡",
+        "薄荷"
+      ],
+      "related_formulas": [
+        "formula_buzhongyiqitang",
+        "formula_xiaochaihutang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝郁胁痛经闭痛经": {
+      "id": "syn_肝郁胁痛经闭痛经",
+      "name": "肝郁胁痛经闭痛经",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "赤芍"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝阳上亢": {
+      "id": "syn_肝阳上亢",
+      "name": "肝阳上亢",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桑叶",
+        "白芍"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_sangjuyin",
+        "formula_shaoyao_gancao_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肝阳眩晕": {
+      "id": "syn_肝阳眩晕",
+      "name": "肝阳眩晕",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "夏枯草",
+        "菊花"
+      ],
+      "related_formulas": [
+        "formula_sangjuyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肠燥便秘": {
+      "id": "syn_肠燥便秘",
+      "name": "肠燥便秘",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "知母",
+        "肉苁蓉",
+        "麦冬"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_shashenmaidongtang",
+        "formula_shengmai_san",
+        "formula_zengyetang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肠痈肺痈": {
+      "id": "syn_肠痈肺痈",
+      "name": "肠痈肺痈",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "败酱草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺寒咳嗽": {
+      "id": "syn_肺寒咳嗽",
+      "name": "肺寒咳嗽",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "生姜"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺气虚弱": {
+      "id": "syn_肺气虚弱",
+      "name": "肺气虚弱",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "人参"
+      ],
+      "related_formulas": [
+        "formula_shenfu_tang",
+        "formula_shengmai_san",
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺气虚证": {
+      "id": "syn_肺气虚证",
+      "name": "肺气虚证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺热咳嗽": {
+      "id": "syn_肺热咳嗽",
+      "name": "肺热咳嗽",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "地骨皮",
+        "芦根",
+        "黄芩"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_xiebaisan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺热咳嗽、燥热咳嗽": {
+      "id": "syn_肺热咳嗽、燥热咳嗽",
+      "name": "肺热咳嗽、燥热咳嗽",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桑叶"
+      ],
+      "related_formulas": [
+        "formula_sangjuyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺热喘咳": {
+      "id": "syn_肺热喘咳",
+      "name": "肺热喘咳",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石膏"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_maxingshigantang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺热燥咳": {
+      "id": "syn_肺热燥咳",
+      "name": "肺热燥咳",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "北沙参",
+        "天花粉",
+        "知母"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_shashenmaidongtang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺燥咳嗽": {
+      "id": "syn_肺燥咳嗽",
+      "name": "肺燥咳嗽",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "阿胶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺燥干咳": {
+      "id": "syn_肺燥干咳",
+      "name": "肺燥干咳",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "太子参",
+        "麦冬"
+      ],
+      "related_formulas": [
+        "formula_shashenmaidongtang",
+        "formula_shengmai_san",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺痈吐脓肺热咳嗽": {
+      "id": "syn_肺痈吐脓肺热咳嗽",
+      "name": "肺痈吐脓肺热咳嗽",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "鱼腥草"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肺虚喘咳": {
+      "id": "syn_肺虚喘咳",
+      "name": "肺虚喘咳",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "山药"
+      ],
+      "related_formulas": [
+        "formula_liuwei_dihuang_wan",
+        "formula_shenling_baizhu_san"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾虚胎动不安": {
+      "id": "syn_肾虚胎动不安",
+      "name": "肾虚胎动不安",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "菟丝子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾虚腰痛筋骨无力": {
+      "id": "syn_肾虚腰痛筋骨无力",
+      "name": "肾虚腰痛筋骨无力",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "杜仲"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾虚遗精尿频": {
+      "id": "syn_肾虚遗精尿频",
+      "name": "肾虚遗精尿频",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "山药"
+      ],
+      "related_formulas": [
+        "formula_liuwei_dihuang_wan",
+        "formula_shenling_baizhu_san"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾阳不足": {
+      "id": "syn_肾阳不足",
+      "name": "肾阳不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "巴戟天"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾阳不足精血亏虚": {
+      "id": "syn_肾阳不足精血亏虚",
+      "name": "肾阳不足精血亏虚",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "肉苁蓉",
+        "鹿茸"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾阳虚衰": {
+      "id": "syn_肾阳虚衰",
+      "name": "肾阳虚衰",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "淫羊藿"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "肾阴亏虚目暗不明筋骨痿软": {
+      "id": "syn_肾阴亏虚目暗不明筋骨痿软",
+      "name": "肾阴亏虚目暗不明筋骨痿软",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石斛"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胁痛口苦": {
+      "id": "syn_胁痛口苦",
+      "name": "胁痛口苦",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "龙胆"
+      ],
+      "related_formulas": [
+        "formula_longdan_xiegan_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胁痛腹痛四肢挛痛": {
+      "id": "syn_胁痛腹痛四肢挛痛",
+      "name": "胁痛腹痛四肢挛痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白芍"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_shaoyao_gancao_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃寒呕吐": {
+      "id": "syn_胃寒呕吐",
+      "name": "胃寒呕吐",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "生姜"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃气上逆": {
+      "id": "syn_胃气上逆",
+      "name": "胃气上逆",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "陈皮"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃火亢盛": {
+      "id": "syn_胃火亢盛",
+      "name": "胃火亢盛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石膏"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_maxingshigantang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃火牙痛消渴": {
+      "id": "syn_胃火牙痛消渴",
+      "name": "胃火牙痛消渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄连"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zuojinwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃热呕哕": {
+      "id": "syn_胃热呕哕",
+      "name": "胃热呕哕",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "芦根"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃阴不足": {
+      "id": "syn_胃阴不足",
+      "name": "胃阴不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "北沙参",
+        "石斛"
+      ],
+      "related_formulas": [
+        "formula_shashenmaidongtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胃阴不足津伤口渴": {
+      "id": "syn_胃阴不足津伤口渴",
+      "name": "胃阴不足津伤口渴",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "麦冬"
+      ],
+      "related_formulas": [
+        "formula_shashenmaidongtang",
+        "formula_shengmai_san",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胎动不安": {
+      "id": "syn_胎动不安",
+      "name": "胎动不安",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白术"
+      ],
+      "related_formulas": [
+        "formula_sijunzi_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胎动不安习惯性堕胎": {
+      "id": "syn_胎动不安习惯性堕胎",
+      "name": "胎动不安习惯性堕胎",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "杜仲"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "胎热胎动不安": {
+      "id": "syn_胎热胎动不安",
+      "name": "胎热胎动不安",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芩"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脘腹四肢挛急疼痛": {
+      "id": "syn_脘腹四肢挛急疼痛",
+      "name": "脘腹四肢挛急疼痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "甘草"
+      ],
+      "related_formulas": [
+        "formula_shaoyao_gancao_tang",
+        "formula_sijunzi_tang",
+        "formula_zhigancao_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脚气痿躄": {
+      "id": "syn_脚气痿躄",
+      "name": "脚气痿躄",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄柏"
+      ],
+      "related_formulas": [
+        "formula_ermiaosan",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾气不足": {
+      "id": "syn_脾气不足",
+      "name": "脾气不足",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "人参"
+      ],
+      "related_formulas": [
+        "formula_shenfu_tang",
+        "formula_shengmai_san",
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾气虚弱": {
+      "id": "syn_脾气虚弱",
+      "name": "脾气虚弱",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白术"
+      ],
+      "related_formulas": [
+        "formula_sijunzi_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾气虚证": {
+      "id": "syn_脾气虚证",
+      "name": "脾气虚证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄芪"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾肺气虚": {
+      "id": "syn_脾肺气虚",
+      "name": "脾肺气虚",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "党参"
+      ],
+      "related_formulas": [
+        "formula_sijunzi_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾肾虚泻": {
+      "id": "syn_脾肾虚泻",
+      "name": "脾肾虚泻",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "菟丝子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾胃气滞": {
+      "id": "syn_脾胃气滞",
+      "name": "脾胃气滞",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "紫苏叶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾胃气滞证": {
+      "id": "syn_脾胃气滞证",
+      "name": "脾胃气滞证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "陈皮"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾胃虚弱": {
+      "id": "syn_脾胃虚弱",
+      "name": "脾胃虚弱",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "甘草"
+      ],
+      "related_formulas": [
+        "formula_shaoyao_gancao_tang",
+        "formula_sijunzi_tang",
+        "formula_zhigancao_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾虚体倦食少": {
+      "id": "syn_脾虚体倦食少",
+      "name": "脾虚体倦食少",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "太子参"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾虚食少便溏": {
+      "id": "syn_脾虚食少便溏",
+      "name": "脾虚食少便溏",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "大枣",
+        "山药"
+      ],
+      "related_formulas": [
+        "formula_ganmai_dazao_tang",
+        "formula_guizhitang",
+        "formula_liuwei_dihuang_wan",
+        "formula_shenling_baizhu_san"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "脾虚饮停痰饮水肿": {
+      "id": "syn_脾虚饮停痰饮水肿",
+      "name": "脾虚饮停痰饮水肿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白术"
+      ],
+      "related_formulas": [
+        "formula_sijunzi_tang",
+        "formula_yupingfengsan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "自汗盗汗": {
+      "id": "syn_自汗盗汗",
+      "name": "自汗盗汗",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白芍"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_shaoyao_gancao_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "药性峻烈配伍缓和": {
+      "id": "syn_药性峻烈配伍缓和",
+      "name": "药性峻烈配伍缓和",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "大枣"
+      ],
+      "related_formulas": [
+        "formula_ganmai_dazao_tang",
+        "formula_guizhitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "虚寒腹痛风湿痹痛": {
+      "id": "syn_虚寒腹痛风湿痹痛",
+      "name": "虚寒腹痛风湿痹痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "当归"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "虚风内动": {
+      "id": "syn_虚风内动",
+      "name": "虚风内动",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "阿胶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血滞经闭痛经": {
+      "id": "syn_血滞经闭痛经",
+      "name": "血滞经闭痛经",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "牡丹皮"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血热出血": {
+      "id": "syn_血热出血",
+      "name": "血热出血",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "地骨皮",
+        "生地黄",
+        "阿胶",
+        "黄芩",
+        "黄连"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_qingyingtang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_xiebaisan",
+        "formula_zengyetang",
+        "formula_zuojinwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血热吐衄": {
+      "id": "syn_血热吐衄",
+      "name": "血热吐衄",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "栀子",
+        "牡丹皮",
+        "赤芍"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_qingyingtang",
+        "formula_yinchenhaotang",
+        "formula_zhizichitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血热斑疹吐衄": {
+      "id": "syn_血热斑疹吐衄",
+      "name": "血热斑疹吐衄",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "水牛角"
+      ],
+      "related_formulas": [
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血虚肠燥便秘": {
+      "id": "syn_血虚肠燥便秘",
+      "name": "血虚肠燥便秘",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "当归"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血虚萎黄": {
+      "id": "syn_血虚萎黄",
+      "name": "血虚萎黄",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "当归",
+        "枸杞子",
+        "熟地黄"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_liuwei_dihuang_wan",
+        "formula_qiju_dihuang_wan",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血虚萎黄月经不调": {
+      "id": "syn_血虚萎黄月经不调",
+      "name": "血虚萎黄月经不调",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白芍"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_shaoyao_gancao_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "血虚萎黄眩晕心悸": {
+      "id": "syn_血虚萎黄眩晕心悸",
+      "name": "血虚萎黄眩晕心悸",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "阿胶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "表证发热、少阳证": {
+      "id": "syn_表证发热、少阳证",
+      "name": "表证发热、少阳证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "柴胡"
+      ],
+      "related_formulas": [
+        "formula_buzhongyiqitang",
+        "formula_xiaochaihutang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "表证发热、项背强痛": {
+      "id": "syn_表证发热、项背强痛",
+      "name": "表证发热、项背强痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "葛根"
+      ],
+      "related_formulas": [
+        "formula_gegentang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "跌扑伤痛痈肿疮毒": {
+      "id": "syn_跌扑伤痛痈肿疮毒",
+      "name": "跌扑伤痛痈肿疮毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "牡丹皮"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang",
+        "formula_qingyingtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "跌扑损伤痈疽疮疡": {
+      "id": "syn_跌扑损伤痈疽疮疡",
+      "name": "跌扑损伤痈疽疮疡",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "当归"
+      ],
+      "related_formulas": [
+        "formula_danggui_buxue_tang",
+        "formula_siwu_tang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "跌扑损伤筋伤骨折": {
+      "id": "syn_跌扑损伤筋伤骨折",
+      "name": "跌扑损伤筋伤骨折",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "续断"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阳明头痛、牙痛、鼻渊": {
+      "id": "syn_阳明头痛、牙痛、鼻渊",
+      "name": "阳明头痛、牙痛、鼻渊",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白芷"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阳痿尿频": {
+      "id": "syn_阳痿尿频",
+      "name": "阳痿尿频",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "杜仲"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴暑证": {
+      "id": "syn_阴暑证",
+      "name": "阴暑证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "香薷"
+      ],
+      "related_formulas": [
+        "formula_xiangrusan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴痒带下": {
+      "id": "syn_阴痒带下",
+      "name": "阴痒带下",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白头翁"
+      ],
+      "related_formulas": [
+        "formula_baitouwengtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴虚劳嗽咯血": {
+      "id": "syn_阴虚劳嗽咯血",
+      "name": "阴虚劳嗽咯血",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "北沙参",
+        "麦冬"
+      ],
+      "related_formulas": [
+        "formula_shashenmaidongtang",
+        "formula_shengmai_san",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴虚发热": {
+      "id": "syn_阴虚发热",
+      "name": "阴虚发热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "女贞子",
+        "生地黄",
+        "银柴胡"
+      ],
+      "related_formulas": [
+        "formula_erzhiwan",
+        "formula_qingyingtang",
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴虚发热盗汗骨蒸": {
+      "id": "syn_阴虚发热盗汗骨蒸",
+      "name": "阴虚发热盗汗骨蒸",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "地骨皮"
+      ],
+      "related_formulas": [
+        "formula_xiebaisan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴虚发热骨蒸劳热": {
+      "id": "syn_阴虚发热骨蒸劳热",
+      "name": "阴虚发热骨蒸劳热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "白薇",
+        "青蒿"
+      ],
+      "related_formulas": [
+        "formula_qinghaobiejiatang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "阴虚火旺骨蒸劳热": {
+      "id": "syn_阴虚火旺骨蒸劳热",
+      "name": "阴虚火旺骨蒸劳热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "石斛"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风寒头痛": {
+      "id": "syn_风寒头痛",
+      "name": "风寒头痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "辛夷"
+      ],
+      "related_formulas": [
+        "formula_cangerzisan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风寒感冒": {
+      "id": "syn_风寒感冒",
+      "name": "风寒感冒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "生姜",
+        "白芷",
+        "紫苏叶",
+        "细辛",
+        "羌活"
+      ],
+      "related_formulas": [
+        "formula_xiaoqinglongtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风寒湿痹": {
+      "id": "syn_风寒湿痹",
+      "name": "风寒湿痹",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "淫羊藿",
+        "羌活"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风寒表实证": {
+      "id": "syn_风寒表实证",
+      "name": "风寒表实证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "麻黄"
+      ],
+      "related_formulas": [
+        "formula_mahuangtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风寒表证": {
+      "id": "syn_风寒表证",
+      "name": "风寒表证",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桂枝"
+      ],
+      "related_formulas": [
+        "formula_guizhitang",
+        "formula_mahuangtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风水水肿": {
+      "id": "syn_风水水肿",
+      "name": "风水水肿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "麻黄"
+      ],
+      "related_formulas": [
+        "formula_mahuangtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风湿痹痛": {
+      "id": "syn_风湿痹痛",
+      "name": "风湿痹痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "巴戟天",
+        "续断",
+        "防风"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风热头痛、目赤咽痛": {
+      "id": "syn_风热头痛、目赤咽痛",
+      "name": "风热头痛、目赤咽痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "薄荷"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风热头痛、麻疹不透": {
+      "id": "syn_风热头痛、麻疹不透",
+      "name": "风热头痛、麻疹不透",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "升麻"
+      ],
+      "related_formulas": [
+        "formula_buzhongyiqitang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风热感冒": {
+      "id": "syn_风热感冒",
+      "name": "风热感冒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "薄荷"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风热感冒、温病初起": {
+      "id": "syn_风热感冒、温病初起",
+      "name": "风热感冒、温病初起",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "桑叶",
+        "牛蒡子",
+        "菊花",
+        "蝉蜕"
+      ],
+      "related_formulas": [
+        "formula_sangjuyin"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风热感冒头痛": {
+      "id": "syn_风热感冒头痛",
+      "name": "风热感冒头痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蔓荆子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "风热感冒温病初起": {
+      "id": "syn_风热感冒温病初起",
+      "name": "风热感冒温病初起",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "连翘",
+        "金银花"
+      ],
+      "related_formulas": [
+        "formula_wuwei_xiaoduyin",
+        "formula_yinqiaosan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "骨蒸劳嗽": {
+      "id": "syn_骨蒸劳嗽",
+      "name": "骨蒸劳嗽",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "玄参"
+      ],
+      "related_formulas": [
+        "formula_zengyetang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "骨蒸劳热盗汗遗精": {
+      "id": "syn_骨蒸劳热盗汗遗精",
+      "name": "骨蒸劳热盗汗遗精",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄柏"
+      ],
+      "related_formulas": [
+        "formula_ermiaosan",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "骨蒸潮热": {
+      "id": "syn_骨蒸潮热",
+      "name": "骨蒸潮热",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "知母",
+        "胡黄连"
+      ],
+      "related_formulas": [
+        "formula_baihutang",
+        "formula_zhibaidihuangwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "高热神昏心烦": {
+      "id": "syn_高热神昏心烦",
+      "name": "高热神昏心烦",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "黄连"
+      ],
+      "related_formulas": [
+        "formula_gegen_qinlian_tang",
+        "formula_sanhuang_xiexin_tang",
+        "formula_zuojinwan"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "鱼蟹中毒": {
+      "id": "syn_鱼蟹中毒",
+      "name": "鱼蟹中毒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "生姜",
+        "紫苏叶"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "麻疹不透": {
+      "id": "syn_麻疹不透",
+      "name": "麻疹不透",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "葛根"
+      ],
+      "related_formulas": [
+        "formula_gegentang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "麻疹不透、风疹瘙痒": {
+      "id": "syn_麻疹不透、风疹瘙痒",
+      "name": "麻疹不透、风疹瘙痒",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "牛蒡子",
+        "荆芥",
+        "薄荷",
+        "蝉蜕"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "黄疸痔肿": {
+      "id": "syn_黄疸痔肿",
+      "name": "黄疸痔肿",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "胡黄连"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "鼻渊": {
+      "id": "syn_鼻渊",
+      "name": "鼻渊",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "细辛",
+        "辛夷"
+      ],
+      "related_formulas": [
+        "formula_cangerzisan",
+        "formula_xiaoqinglongtang"
+      ],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    },
+    "齿龈肿痛": {
+      "id": "syn_齿龈肿痛",
+      "name": "齿龈肿痛",
+      "description": "",
+      "symptoms": [],
+      "tongue": "",
+      "pulse": "",
+      "related_herbs": [
+        "蔓荆子"
+      ],
+      "related_formulas": [],
+      "derived_from": "indications.description",
+      "verified": false,
+      "sources": []
+    }
+  }
+}

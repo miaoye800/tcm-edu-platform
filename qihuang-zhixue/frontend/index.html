@@ -4,6 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>岐黄智学</title>
+    <script>
+      // Pre-hydration：在样式表加载前就把主题和首帧底色定下来，避免深色用户
+      // 先看到一帧白底再跳成黑色。键名与 src/composables/useTheme.ts 必须一致。
+      (function () {
+        try {
+          var saved = window.localStorage.getItem('qh-app-theme')
+          var theme = saved === 'dark' ? 'dark' : 'light'
+          var root = document.documentElement
+          root.dataset.qhTheme = theme
+          root.style.colorScheme = theme
+        } catch (error) {
+          document.documentElement.dataset.qhTheme = 'light'
+        }
+      })()
+    </script>
+    <style>
+      /* 主题底色先于主样式表生效。选择器特异性高于 reset.scss 的 html 规则，
+         但值一致，不会产生覆盖冲突。 */
+      html[data-qh-theme='light'] {
+        background: #f6f4ef;
+      }
+
+      html[data-qh-theme='dark'] {
+        background: #0a0a09;
+      }
+    </style>
     <link rel="preload" href="/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/noto-sans-sc-subset.woff2" as="font" type="font/woff2" crossorigin />
   </head>

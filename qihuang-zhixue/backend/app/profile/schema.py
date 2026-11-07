@@ -42,6 +42,37 @@ LearningStyleLabel = Literal["视觉型", "文字型", "记忆(口诀)型"]
 MotivationLabel = Literal["内驱", "外驱", "内外混合", "被动"]
 ResourceTypeLabel = Literal["知识图谱", "拟人化短剧", "汤头歌诀", "医案文选"]
 
+# 旧维度名 → 规范键。模型仍会把知识基础写成 ``base_level``（那是 legacy 字段名）、
+# 把学习目标写成 ``goal``，而下游只认七个规范键；一个别名就让整条扫描记录作废。
+# 这是唯一允许出现旧键名的地方（``test_no_legacy_stack`` 豁免本文件），
+# 其它模块一律用 ``canonical_dimension_name`` 转换后再用。
+LEGACY_DIMENSION_ALIASES: dict[str, str] = {
+    "base_level": "knowledge_base",
+    "knowledge": "knowledge_base",
+    "knowledge_mastery": "knowledge_base",
+    "goal": "learning_goal",
+    "learning_goals": "learning_goal",
+    "style": "learning_style",
+    "learning_habit": "learning_style",
+    "weak_point": "weak_points",
+    "weakness": "weak_points",
+    "rhythm": "pace",
+    "schedule": "pace",
+    "learning_pace": "pace",
+    "motive": "motivation",
+    "resource": "resource_preference",
+    "resources": "resource_preference",
+}
+
+
+def canonical_dimension_name(value: Any) -> Any:
+    """Map a legacy dimension name onto its canonical key, else pass it through."""
+
+    if not isinstance(value, str):
+        return value
+    key = value.strip()
+    return LEGACY_DIMENSION_ALIASES.get(key.lower(), key)
+
 
 class ProfileDimensionBase(BaseModel):
     """Shared fields required by every profile dimension."""
@@ -63,6 +94,8 @@ class ProfileDimensionBase(BaseModel):
     component_scores: dict[str, float] = Field(default_factory=dict)
     scoring_phase: Literal["collecting", "scored"] = "collecting"
     pending_components: list[str] = Field(default_factory=list)
+    # Honest error bar for the drawn value. ``None`` when nothing is scored.
+    score_interval: dict[str, float] | None = None
     score_summary: str = ""
 
 

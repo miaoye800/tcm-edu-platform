@@ -1,0 +1,19 @@
+{
+  "_note": "教材 PDF 文本层的拼音音节丢了字母，导致 slug 错、herb_xxx id 跟着错。这里按「拼音正确且与库里已有 id 一致」的原则硬校正。改这个文件等于改药材 id，改之前先查 kg_entity 有没有同名实体。",
+  "_reason": {
+    "茯苓": "原文 'Fúílng'，丢了 l —— 正确 Fúlíng",
+    "白及": "原文 'Báiíj'，丢了 j 的韵母 —— 正确 Báijí",
+    "桑寄生": "原文 'Sāngìjshēng' —— 正确 Sāngjìshēng",
+    "五灵脂": "原文 'Wǔílngzhī' —— 正确 Wǔlíngzhī",
+    "莪术": "原文只剩 'zhú'，丢了 é —— 正确 Ézhú",
+    "绿豆": "ǜ 被切成 u，但库里已有 herb_lvdou，按 v 约定统一"
+  },
+  "slugs": {
+    "茯苓": "fuling",
+    "白及": "baiji",
+    "桑寄生": "sangjisheng",
+    "五灵脂": "wulingzhi",
+    "莪术": "ezhu",
+    "绿豆": "lvdou"
+  }
+}

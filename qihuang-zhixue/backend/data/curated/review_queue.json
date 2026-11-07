@@ -1,0 +1,14 @@
+{
+ "version": "review_queue_v1",
+ "stats": {
+  "total": 442,
+  "clean": 442,
+  "adjudicated": 2,
+  "needs_review": 0,
+  "by_code": {
+   "S02": 2,
+   "S09": 6
+  }
+ },
+ "queue": []
+}

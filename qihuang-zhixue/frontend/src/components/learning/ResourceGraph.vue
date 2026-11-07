@@ -99,7 +99,7 @@ const renderGraph = () => {
       color: ['#8fd0ad', '#9fb6d6', '#e7c274'],
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(17,29,32,0.94)',
+        backgroundColor: 'rgba(26,26,23,0.96)',
         borderColor: 'rgba(143,208,173,0.24)',
         textStyle: { color: '#eef5ef' },
         formatter: (params: { dataType?: string; data?: unknown }) => {
@@ -243,9 +243,9 @@ strong {
 .graph-canvas {
   width: 100%;
   min-height: 320px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 18px;
-  background: rgba(238, 245, 239, 0.035);
+  background: var(--qh-line);
 }
 
 .is-full .graph-canvas {

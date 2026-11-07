@@ -1,0 +1,130 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+
+const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8')
+
+const view = read('../src/views/PptStudioView.vue')
+const surface = read('../src/components/ppt/SlideSurface.vue')
+const stage = read('../src/components/ppt/DeckStage.vue')
+const strip = read('../src/components/ppt/SlideFilmstrip.vue')
+const toolbar = read('../src/components/ppt/PptToolbar.vue')
+const panel = read('../src/components/ppt/PptTopicPanel.vue')
+const outlineConfirm = read('../src/components/ppt/OutlineConfirm.vue')
+const composable = read('../src/composables/usePptStudio.ts')
+const studioConfig = read('../src/config/pptStudio.ts')
+const themes = read('../src/config/pptThemes.ts')
+const exportUtil = read('../src/utils/pptxExport.ts')
+const router = read('../src/router/index.ts')
+const menu = read('../src/config/menu.ts')
+const resourceApi = read('../src/services/resourceApi.ts')
+const resourceTypes = read('../src/types/resource.ts')
+const pptTypes = read('../src/types/ppt.ts')
+const immersive = read('../src/config/immersive.ts')
+const resourcesView = read('../src/views/MyResourcesView.vue')
+const resourceCard = read('../src/components/resources/ResourceCard.vue')
+const detailView = read('../src/views/ResourceDetailView.vue')
+
+// —— 入口：路由 + 侧栏「创作」组，两者是独立配置，必须同时存在 ——
+assert.match(router, /path: 'ppt'/, '幻灯工坊路由已注册')
+assert.match(router, /name: 'ppt-studio'/, '路由名固定，供 push({ name }) 使用')
+assert.match(router, /title: '幻灯工坊'/, '顶栏标题来自 meta.title')
+assert.match(router, /group: '创作'/, '路由 meta.group 与侧栏分组一致')
+assert.match(menu, /label: '幻灯工坊'/, '侧栏有入口')
+assert.match(menu, /route: '\/ppt'/, '菜单指向 /ppt')
+// 分组顺序：图谱之后、互动之前，创作自成一类。
+assert.ok(menu.indexOf("group: '创作'") > menu.indexOf("group: '图谱'"), '「创作」排在图谱之后')
+assert.ok(menu.indexOf("group: '创作'") < menu.indexOf("group: '互动'"), '「创作」排在互动之前')
+
+// —— 视觉：纸面、舞台配比、无缩放 ——
+assert.match(view, /data-qh-theme="light"/, '页面固定米白纸主题')
+assert.match(view, /container-type: size/, '舞台位自己声明尺寸容器，纸才能按高反推宽')
+assert.match(view, /aspect-ratio: 16 \/ 9/, '纸是 16:9')
+assert.match(view, /@supports \(height: 1cqh\)/, '不支持 cqh 时退回按宽排')
+assert.match(view, /prefers-reduced-motion/, '动画有减弱替代')
+assert.match(view, /prefers-reduced-motion[\s\S]*?transition: none/, '减弱动效下不播过渡')
+// 排版用 cqw 等比，不用 transform: scale：缩放会让文字发虚、输入框点不准。
+assert.match(surface, /font-size: 6\.2cqw/, '封面标题按容器宽等比')
+assert.doesNotMatch(surface, /transform:\s*scale\(/, '不用缩放冒充自适应')
+assert.doesNotMatch(surface, /\.surface\s*\{[^}]*container-type/, '容器不能声明在纸自己身上，否则 cqw 参照错层')
+assert.match(stage, /container-type: inline-size/, '舞台是纸的容器')
+assert.match(strip, /container-type: inline-size/, '缩略图也是独立容器，字按 148px 等比缩')
+
+// —— 主题：DOM 与导出同源 ——
+assert.match(themes, /--ppt-bg/, '主题导出成 --ppt-* 变量')
+assert.match(themes, /hex: \{/, '同时带一份无 # 的 hex 供 pptxgenjs')
+assert.doesNotMatch(themes, /hex: \{[^}]*'#/, 'hex 不能带 #（pptxgenjs 只认 6 位）')
+for (const id of ['paper', 'ink', 'celadon', 'cinnabar']) assert.match(themes, new RegExp(`id: '${id}'`), `缺失皮肤 ${id}`)
+assert.match(surface, /var\(--ppt-fg\)/, '纸内文字只读层内变量')
+assert.match(surface, /color-mix\(in srgb, var\(--ppt-accent\)/, '层次用 color-mix 调，不写死颜色')
+
+// —— 生成：参数贯通 + 逐页生长 + 大纲暂停 ——
+assert.match(composable, /createResourceTask\(selectedNode\.value\?\.id \?\? FREE_TOPIC_NODE_ID, 'ppt', params\)/, '自由讲题落到 general 节点')
+assert.match(composable, /params\.topic = free\.slice\(0, 60\)/, '自由讲题截断到 60 字')
+assert.match(composable, /mode: mode\.value/, '节奏参数贯通')
+assert.match(composable, /page_count: pageCount\.value/, '页数参数贯通')
+assert.match(resourceApi, /event\.event === 'pause'/, 'pause 是终止事件')
+assert.match(composable, /case 'pause'/, '消费暂停事件')
+assert.match(composable, /phase\.value = 'awaiting-outline'/, '暂停后进入待确认态')
+assert.match(composable, /case 'slide'/, '消费逐页事件')
+assert.match(composable, /enqueue\(/, '逐页事件进队列')
+assert.match(composable, /SLIDE_INTERVAL_MS/, '放页有节拍，一次全出看不出「一页页翻开」')
+assert.match(studioConfig, /SLIDE_INTERVAL_MS = 260/, '节拍常量集中定义')
+assert.match(composable, /growthDone/, 'done 早于队空时先挂起，放完才收卷')
+assert.match(composable, /apiConfirmOutline/, '确认大纲走独立接口')
+assert.match(composable, /stepIndex\.value = 2/, '确认后从敷演步续跑')
+assert.match(outlineConfirm, /确认这 \$\{outline\.length\} 页/, '确认按钮说清页数')
+
+// —— 保存：防抖 + 版本冲突双出口 ——
+assert.match(composable, /saveDeck\(/, '整份保存走独立接口')
+assert.match(composable, /SAVE_DEBOUNCE_MS/, '自动保存有防抖')
+assert.match(composable, /phase\.value !== 'editing'/, '生成中不抢后端正在写的行')
+assert.match(composable, /status === 409/, '409 单独识别')
+assert.match(composable, /reloadFromServer/, '冲突可重新载入')
+assert.match(composable, /keepMine/, '冲突可保留本地版本')
+assert.match(composable, /version\.value = result\.version/, '保存成功后版本号前移')
+assert.match(composable, /sanitizeSlide/, '保存前清洗')
+assert.match(composable, /filter\(Boolean\)/, '空要点必须过滤：后端 validator 拒绝空串')
+assert.match(view, /saveStatus === 'conflict'/, '冲突提示条渲染在舞台上方')
+
+// —— 导出：真 .pptx，且与舞台同尺寸同配色 ——
+assert.match(exportUtil, /LAYOUT_16x9/, '16:9 版面与舞台一致')
+assert.match(exportUtil, /pptThemeById/, '颜色取自主题，不另写一份')
+assert.match(exportUtil, /1cqw = 0\.1in/, '注释钉住换算关系，避免日后各改一边')
+assert.match(exportUtil, /writeFile\(\{ fileName \}\)/, '导出即下载')
+assert.match(exportUtil, /addNotes/, '讲者备注写进 notes')
+assert.match(exportUtil, /fit: 'shrink'/, '超长文字缩排而不是溢出')
+assert.doesNotMatch(exportUtil, /#[0-9a-fA-F]{3,8}\b/, '导出层不出现颜色字面量')
+assert.match(toolbar, /PPTX/, '工具条上有导出入口')
+assert.match(view, /exportDeckToPptx/, '页面接上导出')
+
+// —— 空/加载/错误三态必须走标准组件 ——
+assert.match(view, /StateEmpty/, '空态用标准组件')
+assert.match(view, /StateLoading/, '加载态用标准组件')
+assert.match(view, /StateError/, '错误态用标准组件')
+assert.match(view, /这一炉没炼成/, '失败文案与炼药口径一致')
+assert.match(view, /案上还是白纸/, '空态有下一步指引')
+assert.match(panel, /maxlength="60"/, '讲题输入限长')
+assert.match(panel, /按名字筛选/, '节点可本地筛选（后端无搜索接口）')
+
+// —— 类型层：新资源类型与事件必须同步 ——
+assert.match(resourceTypes, /'ppt'/, 'ResourceType 含 ppt')
+assert.match(resourceTypes, /'pause'/, '任务事件含 pause')
+assert.match(resourceTypes, /'slide'/, '任务事件含 slide')
+assert.match(pptTypes, /SLIDE_LIMITS/, '限制常量集中定义')
+assert.match(immersive, /ppt: '讲稿幻灯'/, '资源库标签补齐 ppt，缺键会 KeyError')
+assert.match(resourcesView, /value: 'ppt'/, '资源库可按幻灯筛选')
+assert.match(resourceCard, /resource\.type === 'ppt'/, '卡片有专属图标')
+assert.match(detailView, /name: 'ppt-studio'/, '从资源库点开直接进工坊')
+
+// —— 屏幕与导出必须同一条规矩，否则「所见」和「所得」会不一样 ——
+const ordinal = read('../src/utils/slideOrdinal.ts')
+assert.match(ordinal, /padStart\(2, '0'\)/, '章号是两位数字：单个「一」放大成一横像版式坏了')
+assert.match(surface, /sectionOrdinal/, '屏幕用同一份章号换算')
+assert.match(exportUtil, /sectionOrdinal/, '导出用同一份章号换算')
+assert.match(surface, /kicker\.is-blank/, '眉标留空但占位，换页时标题不跳')
+assert.match(surface, /\.items\.sparse/, '一两条要点的页放大一档')
+assert.match(exportUtil, /bullets\.length <= 2 \? 2\.6 : 2\.05/, '导出同样按要点数放大')
+assert.match(exportUtil, /includes\(label\) \? '' : label/, '导出也压掉与标题重复的眉标')
+assert.match(composable, /resource\.meta\?\.topic/, '载入旧稿时把讲题填回左栏')
+
+console.log('ppt studio component contract checks passed')

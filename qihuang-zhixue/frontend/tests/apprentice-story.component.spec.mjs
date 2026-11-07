@@ -128,6 +128,27 @@ test('reaction time is measured per question instead of hardcoded', () => {
   assert(!view.includes('response_time_ms: responseTime })) }'), 'the quiz must not fall back to the 1000ms constant')
 })
 
+test('every scene reports a real reaction time instead of a constant', () => {
+  // `const responseTime = 1000` made every single act look like a 1s answer,
+  // which the backend then bucketed as "fast" across the board.
+  assert(!view.includes('const responseTime = 1000'), 'the hardcoded 1000ms must be gone')
+  assert(view.includes('let stepShownAt: number | null = null'), 'the step clock is a real timestamp')
+  assert(view.includes('stepShownAt = Date.now()'), 'the clock starts when the question becomes answerable')
+  assert(view.includes('const elapsed = stepElapsedMs()'), 'the payload reads the measured elapsed time')
+  assert(view.includes('elapsed === null ? {} : { response_time_ms: elapsed }'), 'an unmeasured answer must omit the field rather than send 0')
+})
+
+test('extra story questions are collected and sent back with the step', () => {
+  assert(view.includes(':questions="storyQuestions"'), 'the追问 panel is driven by the step payload')
+  assert(view.includes('step.value?.payload.story_questions'), 'questions come from the backend, never hardcoded')
+  assert(view.includes('const extras = Object.keys(storyAnswers).length ? { story_answers: { ...storyAnswers } } : {}'), 'answers travel as story_answers')
+  assert(view.includes('Object.keys(storyAnswers).forEach((key) => delete storyAnswers[key])'), 'answers are cleared with the rest of the step fields')
+  const extra = read('../src/components/story/StoryExtraQuestions.vue')
+  assert(!extra.includes('component'), 'the component tag must stay server-side')
+  assert(!extra.includes('dimension'), 'the dimension tag must stay server-side')
+  assert(extra.includes('可留白'), 'a disciple may skip a follow-up question')
+})
+
 test('loading and disabled submission guards remain', () => {
   assert(view.includes(':aria-busy="submitting"') || prescription.includes(':aria-busy="submitting"'), 'submitting state is exposed')
   assert(prescription.includes('disabled: !props.canSubmit') && rule.includes('disabled: !props.canSubmit'), 'the prescription and pact submit pills stay locked until the answer is complete')

@@ -118,11 +118,46 @@ def _as_float(value: Any) -> float | None:
         return None
 
 
+def resolve_band(
+    tier: str,
+    dimension: DimensionKey,
+    cards: Any,
+) -> tuple[ScoreInterval, list[str]]:
+    """Intersect the model-judged tier band with the objective anchor intervals.
+
+    The tier is judged from *all* the evidence, while an anchor only sees one
+    signal (say, minutes per day).  So when the two disagree the tier wins and
+    the conflict is recorded for audit instead of silently overriding either
+    side -- a student who studies 30 minutes on weekdays but binges at weekends
+    would otherwise be pinned to the low band forever.
+    """
+
+    from app.profile.component_model import TIER_BANDS
+
+    band = TIER_BANDS.get(str(tier), (5.0, 95.0))
+    warnings: list[str] = []
+    intervals: list[ScoreInterval] = []
+    for card in cards or ():
+        signal = getattr(card, "objective_signal", None) or {}
+        if not isinstance(signal, dict):
+            continue
+        intervals.extend(interval for interval, _ in signal_anchor_intervals(dimension, signal))
+    if not intervals:
+        return band, warnings
+    low = max([band[0], *(interval[0] for interval in intervals)])
+    high = min([band[1], *(interval[1] for interval in intervals)])
+    if low > high:
+        warnings.append("anchor_tier_conflict")
+        return band, warnings
+    return (round(low, 2), round(high, 2)), warnings
+
+
 __all__ = [
     "SCORE_ANCHOR_INTERVALS",
     "ScoreInterval",
     "base_level_midpoints",
     "interval_midpoint",
     "midpoint_from_signal",
+    "resolve_band",
     "signal_anchor_intervals",
 ]

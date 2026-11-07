@@ -44,8 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Moon, Sunny, SwitchButton } from '@element-plus/icons-vue'
 import qihuangLogo from '../../assets/brand/qihuang-logo.png'
 import xiaoqi from '../../assets/mascot/xiaoqi-avatar.png'
@@ -58,6 +58,7 @@ import { useProfileStore } from '../../stores/profile'
 import NavGroup from './NavGroup.vue'
 import NavItem from './NavItem.vue'
 import { useTheme } from '../../composables/useTheme'
+import { listMyMistakes } from '../../services/kgApi'
 
 defineProps<{
   collapsed: boolean
@@ -67,17 +68,41 @@ const assistant = useAssistantStore()
 const auth = useAuthStore()
 const profile = useProfileStore()
 const router = useRouter()
+const route = useRoute()
 const { theme, toggleTheme } = useTheme()
+
+/** 侧栏「错题本」角标。0 或取不到时不显示——宁可空着，也不显示一个假数字。 */
+const mistakeCount = ref(0)
+const refreshMistakeCount = async () => {
+  if (!auth.user?.user_id) {
+    mistakeCount.value = 0
+    return
+  }
+  try {
+    const result = await listMyMistakes(1)
+    mistakeCount.value = result.total ?? 0
+  } catch {
+    mistakeCount.value = 0
+  }
+}
+onMounted(() => void refreshMistakeCount())
+// 答完题回到列表、或从错题本返回时都要重新取，否则角标停在登录那一刻的数字。
+watch(() => route.fullPath, () => void refreshMistakeCount())
 
 const displayMenuGroups = computed(() =>
   menuGroups.map((group) => ({
     ...group,
     items: group.items.map((item) => {
-      if (item.dynamicLabel !== 'profileOnboarding') return item
+      // 角标：用真实错题数。取不到就**不显示**，不拿一个猜的数字顶上。
+      const withBadge =
+        item.dynamicBadge === 'mistakeCount'
+          ? { ...item, badge: mistakeCount.value || undefined }
+          : item
+      if (withBadge.dynamicLabel !== 'profileOnboarding') return withBadge
       const userId = auth.user?.user_id ?? ''
       const state = readOnboardingState(userId)
       return {
-        ...item,
+        ...withBadge,
         label: profile.hasBuiltProfile || state?.status === 'completed' ? '重塑画像' : '焕醒画像',
       }
     }),
@@ -104,10 +129,8 @@ const handleUserCommand = (command: string) => {
   width: var(--qh-sidebar-width);
   height: 100vh;
   padding: 18px 14px;
-  border-right: 1px solid var(--qh-border);
+  border-right: 1px solid var(--qh-line);
   background: var(--qh-sidebar-fill);
-  box-shadow: var(--qh-shadow-soft), var(--qh-inner-highlight);
-  backdrop-filter: blur(18px);
   transition:
     width 220ms ease,
     flex-basis 220ms ease;
@@ -129,10 +152,9 @@ const handleUserCommand = (command: string) => {
 
 .user-card img {
   display: none;
-  border: 1px solid rgba(143, 208, 173, 0.22);
-  border-radius: 16px;
+  border: 1px solid var(--qh-line);
+  border-radius: 14px;
   object-fit: cover;
-  box-shadow: var(--qh-inner-highlight);
   transform-origin: 50% 80%;
   animation:
     bob 5.8s ease-in-out infinite,
@@ -143,12 +165,9 @@ const handleUserCommand = (command: string) => {
   width: 48px;
   height: 48px;
   padding: 5px;
-  border: 1px solid rgba(231, 194, 116, 0.22);
-  border-radius: 16px;
-  background:
-    linear-gradient(150deg, rgba(238, 245, 239, 0.12), rgba(143, 208, 173, 0.05)),
-    rgba(16, 30, 29, 0.42);
-  box-shadow: var(--qh-inner-highlight), 0 10px 24px rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--qh-line);
+  border-radius: 14px;
+  background: var(--qh-surface-raised);
   object-fit: contain;
 }
 
@@ -180,14 +199,12 @@ const handleUserCommand = (command: string) => {
   min-height: 58px;
   margin: 18px 0;
   padding: 9px;
-  border: 1px solid var(--qh-user-border);
-  border-radius: 18px;
-  background: var(--qh-user-surface);
+  border: 1px solid var(--qh-line);
+  border-radius: 14px;
+  background: var(--qh-surface-raised);
   color: var(--qh-text);
   cursor: pointer;
   text-align: left;
-  box-shadow: var(--qh-inner-highlight);
-  backdrop-filter: blur(16px);
 }
 
 .user-card:focus-visible {

@@ -1,0 +1,12 @@
+{
+  "version": "pinyin_fix_v1",
+  "note": "教材 PDF 文本层的拼音音节错位修正。这几条不是切分算法的问题，是 PDF 里音节顺序就乱了（小蓟抽出来是「Xiǎoìj」，牡蛎是「Mǔìl」——声调符号和字母换了位置）。按药名的标准读音校正，每条附教材页码，可回查。只影响 pinyin 显示字段，不影响 herb_xxx id（id 用旧串的字母拼接，保持不变以免实体重复）。",
+  "fixes": {
+    "小蓟": { "pinyin": "xiao ji", "page": 373, "raw": "Xiǎoìj" },
+    "大蓟": { "pinyin": "da ji", "page": 372, "raw": "Dàìj" },
+    "竹沥": { "pinyin": "zhu li", "page": 578, "raw": "Zhúìl" },
+    "牡蛎": { "pinyin": "mu li", "page": 599, "raw": "Mǔìl" },
+    "刺蒺藜": { "pinyin": "ci ji li", "page": 611, "raw": "Cìjíìl" },
+    "沙棘": { "pinyin": "sha ji", "page": 651, "raw": "Shāíj" }
+  }
+}

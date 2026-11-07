@@ -51,7 +51,7 @@
       v-if="noKeyFallbackDimensions.length"
       class="profile-alert"
       type="warning"
-      title="当前未配置模型密钥，以下维度使用可追溯规则评分"
+      title="当前未配置模型，以下维度暂不评分"
       :description="`受影响维度：${noKeyFallbackDimensions.join('、')}`"
       show-icon
       :closable="false"
@@ -222,6 +222,7 @@ import {
   confidenceFor,
   dimensionLabels,
   formatDateTime,
+  isNoKeyProvenance,
   lowConfidenceThreshold,
   profileEvidenceCards,
   weakPointItems,
@@ -249,7 +250,7 @@ const readyDimensionCount = computed(
     ).length,
 )
 const noKeyFallbackDimensions = computed(() =>
-  dimensionKeys.filter((key) => profileStore.profile.provenance?.[key] === 'no_key_rule_fallback'),
+  dimensionKeys.filter((key) => isNoKeyProvenance(profileStore.profile.provenance?.[key])),
 )
 const lowConfidenceNames = computed(() =>
   dimensionKeys
@@ -272,7 +273,7 @@ const narrativePendingText = '\u5c0f\u5c90\u6b63\u5728\u6574\u7406\u8bc1\u636e\u
 const narrativeLoadingText = '\u751f\u6210\u4e2d'
 const narrativeTemplateSourceText = computed(() =>
   noKeyFallbackDimensions.value.length
-    ? '当前展示的是规则模板叙述（未配置模型密钥）。'
+    ? '当前展示的是规则模板叙述（未配置模型，暂不评分）。'
     : '当前展示的是规则模板叙述。',
 )
 const narrativeStrengthLabel = '\u6240\u957f'
@@ -462,7 +463,7 @@ watch(
 .change-icon { color: var(--qh-color-gold); font-size: 18px; }.change-log__list small { margin-left: 10px; color: var(--qh-text-muted); }.change-log__list p { margin: 6px 0; color: var(--qh-text); }.change-log__list em { color: var(--qh-text-muted); font-size: 12px; font-style: normal; }.change-log__pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; color: var(--qh-text-muted); font-size: 12px; }
 
 .hero-copy {
-  @include glass-panel(26px);
+  @include glass-panel;
   min-height: 180px;
   padding: 26px;
 }
@@ -499,7 +500,7 @@ h3 {
 }
 
 .hero-bubble {
-  @include glass-panel(24px);
+  @include glass-panel;
   display: grid;
   grid-template-columns: 82px minmax(0, 1fr);
   align-items: center;
@@ -541,7 +542,7 @@ h3 {
 }
 
 .radar-change-banner {
-  border-color: rgba(231, 194, 116, 0.42);
+  border-color: var(--qh-line-strong);
 }
 
 .hint-action {
@@ -588,8 +589,8 @@ h3 {
 }
 
 .dim-change-wrap.is-highlighted :deep(.dim-row) {
-  border-color: rgba(231, 194, 116, 0.72);
-  box-shadow: 0 0 0 1px rgba(231, 194, 116, 0.32), 0 16px 42px rgba(231, 194, 116, 0.12);
+  border-color: var(--qh-color-gold);
+  box-shadow: 0 0 0 1px var(--qh-line-strong), 0 16px 42px var(--qh-line);
   animation: radar-axis-glow 900ms ease both;
 }
 
@@ -598,7 +599,7 @@ h3 {
   padding: 3px 8px;
   border-radius: 999px;
   color: var(--qh-color-gold);
-  background: rgba(231, 194, 116, 0.12);
+  background: var(--qh-line);
   font-size: 12px;
   font-weight: 900;
 }
@@ -706,9 +707,9 @@ h3 {
 
 .evidence-list article,
 .weak-list div {
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 14px;
-  background: rgba(238, 245, 239, 0.055);
+  background: var(--qh-line);
 }
 
 .evidence-list article {

@@ -28,16 +28,6 @@ withDefaults(
   overflow: hidden;
 }
 
-.glass-card::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 38%),
-    radial-gradient(circle at 12% 16%, rgba(143, 208, 173, 0.1), transparent 32%);
-  content: "";
-}
-
 .glass-card > :deep(*) {
   position: relative;
 }

@@ -87,3 +87,28 @@ def test_bkt_single_wrong_update_moves_down_from_initial() -> None:
 
     assert updated < DEFAULT_BKT_PARAMS.p_known_initial
 
+
+
+def test_knowledge_node_ddl_has_exactly_one_owner(tmp_path: Path) -> None:
+    """knowledge_node 的建表语句只能有一份，且必须带约束。
+
+    踩过：``app/resources/storage.py`` 曾复制过一份更宽松的 DDL，靠
+    ``CREATE TABLE IF NOT EXISTS``「先到先得」。资源库先初始化时（比如用户第一次存
+    资源），path 那份权威 DDL 变成空操作，``level`` 与 ``exam_frequency`` 的 CHECK
+    被静默丢掉——同一份代码，schema 取决于谁先跑。
+    """
+
+    import sqlite3
+    from contextlib import closing
+
+    from app.resources import storage as resource_storage
+
+    db_path = tmp_path / "ddl-owner.db"
+    resource_storage.init_db(db_path)  # 只跑资源库，模拟「它先建表」
+    with closing(sqlite3.connect(db_path)) as conn:
+        ddl = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='knowledge_node'"
+        ).fetchone()[0]
+
+    assert "CHECK(level IN" in ddl, "level 的 CHECK 丢了：说明有第二份 DDL 抢先生效"
+    assert "exam_frequency <= 1" in ddl, "exam_frequency 的 CHECK 丢了"

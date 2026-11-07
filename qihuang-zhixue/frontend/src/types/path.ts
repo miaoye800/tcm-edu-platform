@@ -1,7 +1,7 @@
 export type BackendPathState = 'locked' | 'available' | 'current' | 'completed' | 'paused' | 'custom'
 export type MeridianStatus = 'recommended' | 'current' | 'mastered' | 'free' | 'deferred' | 'exam_hot' | 'custom'
 
-export interface KnowledgeNode { id: string; name: string; level: 'domain' | 'subtype' | 'point'; parent_id?: string | null; description?: string; exam_frequency?: number; sort_hint?: number }
+export interface KnowledgeNode { id: string; name: string; level: 'domain' | 'subtype' | 'point'; parent_id?: string | null; description?: string; exam_frequency?: number; sort_hint?: number; extra?: Record<string, unknown>; children?: KnowledgeNode[] }
 export interface KnowledgeTreeResponse { domains: KnowledgeNode[] }
 export interface PathState { node_id: string; status: BackendPathState; updated_at: string; meta: Record<string, unknown> }
 export interface StagePlan { domain_id: string; order: number; order_locked: boolean; reason: string }

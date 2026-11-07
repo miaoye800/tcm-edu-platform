@@ -57,7 +57,8 @@ def test_incremental_update_calls_jury_only_after_weight_threshold(tmp_path: Pat
 
     assert result.jury_called_dimensions == ["knowledge_base"]
     assert len(calls) == 1
-    assert result.profile.knowledge_base.score == 66
+    # 三师 62/72/66 取平均是 66.67，不再是中位数 66。
+    assert result.profile.knowledge_base.score == 66.67
     assert len(list_evidence("student-threshold", db_path=db_path)) == 3
 
 
@@ -89,7 +90,7 @@ def test_user_view_profile_triggers_jury_rescore_and_resets_pending_weight(tmp_p
     )
 
     assert len(calls) == 1
-    assert profile.knowledge_base.score == 66
+    assert profile.knowledge_base.score == 66.67
 
     asyncio.run(
         update_profile_from_event(
@@ -136,7 +137,7 @@ def test_get_latest_profile_throttle(tmp_path: Path) -> None:
     first_score = first.knowledge_base.score
     first_confidence = first.knowledge_base.confidence
     assert len(calls) == 1
-    assert first_score == 66
+    assert first_score == 66.67
     assert first_confidence > 0
 
     second = asyncio.run(
@@ -222,8 +223,13 @@ def test_get_profile_endpoint_returns_latest_profile_and_confidence(tmp_path: Pa
     assert response.status_code == 200
     payload = response.json()
     assert payload["user_id"] == "student-api"
-    assert payload["knowledge_base"]["score"] == 100
-    assert payload["confidence"]["knowledge_base"] > 0
+    # 测试环境没有模型密钥：读接口重算时走 no_key 契约，维度不出分，
+    # 而不是保留一个旧分再配上 0 置信度。
+    assert payload["knowledge_base"]["score"] is None
+    # 但置信度不跟着清零：它衡量的是"证据收了多少"，与有没有模型无关。
+    # 只有一张答对的选择题卡，所以是个低于叙述门槛（0.5）的小正数。
+    assert 0.0 < payload["confidence"]["knowledge_base"] < 0.5
+    assert payload["provenance"]["knowledge_base"] == "no_key"
 
 
 def test_three_evidence_updates_score_confidence_and_decays_old_evidence(tmp_path: Path) -> None:

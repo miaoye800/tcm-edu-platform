@@ -10,6 +10,11 @@ import { dimensionKeys } from '../types/profile'
 
 export const lowConfidenceThreshold = 0.5
 
+// 未配置模型密钥时两条链路都不出分，后端写的 provenance 是 `no_key`；
+// 早期落库的数据里是 `no_key_rule_fallback`。两者含义相同：没有模型，无法评分。
+export const isNoKeyProvenance = (provenance?: string | null): boolean =>
+  provenance === 'no_key' || provenance === 'no_key_rule_fallback'
+
 export const dimensionLabels: Record<DimensionKey, string> = {
   knowledge_base: '知识基础',
   learning_goal: '学习目标',

@@ -34,22 +34,17 @@ strong {
   font-size: clamp(24px, 3.4vw, 34px);
   font-weight: 900;
   line-height: 1.05;
-  animation: vp 3.6s ease-in-out infinite;
 }
 
-.is-jade strong {
-  color: var(--qh-color-jade);
-}
-
-.is-blue strong {
-  color: var(--qh-color-blue);
-}
-
+// 数字统一用前景色：四个 KPI 各给一种颜色会让版面变杂，层次应该靠字号和
+// 明度，不靠色相。只有「今日到期」这种需要注意的指标才保留朱砂。
+.is-jade strong,
+.is-blue strong,
 .is-gold strong {
-  color: var(--qh-color-gold);
+  color: var(--qh-fg);
 }
 
 .is-coral strong {
-  color: var(--qh-color-coral);
+  color: var(--qh-accent);
 }
 </style>

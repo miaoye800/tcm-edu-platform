@@ -58,7 +58,7 @@ def test_agent_assessment_keeps_observed_card_ratio_separate_from_confirmation()
     assert result.confidence_breakdown["independent_units"] == 1.0
 
 
-def test_no_key_skips_jury_and_uses_rule_fusion() -> None:
+def test_no_key_returns_no_score_at_all() -> None:
     result = asyncio.run(
         score_dimension(
             "knowledge_base",
@@ -69,8 +69,14 @@ def test_no_key_skips_jury_and_uses_rule_fusion() -> None:
 
     assert result.method == "fusion"
     assert result.jury == {}
-    assert result.aggregated_score == 100
-    assert result.provenance == "no_key_rule_fallback"
+    # 无 key 时两条链路都不出分：规则猜测冒充模型判断会让下游无法区分。
+    assert result.aggregated_score is None
+    assert result.radar_score is None
+    # 置信度不跟着清零：它只回答"证据收了多少"，和有没有模型无关。
+    # 一张答对的选择题卡给出一个低于叙述门槛的小正数。
+    assert 0.0 < result.confidence < 0.5
+    assert result.provenance == "no_key"
+    assert "未配置评分模型" in result.narrative
 
 
 def test_no_key_provenance_persists_from_update_to_profile_response(tmp_path: Path) -> None:
@@ -85,9 +91,9 @@ def test_no_key_provenance_persists_from_update_to_profile_response(tmp_path: Pa
     )
     payload = profile_to_response(result.profile)
 
-    assert result.profile.knowledge_base.evidence[0].objective_signal["scoring_provenance"] == "no_key_rule_fallback"
-    assert payload["provenance"]["knowledge_base"] == "no_key_rule_fallback"
-    assert payload["radar"]["axes"][0]["provenance"] == "no_key_rule_fallback"
+    assert result.profile.knowledge_base.evidence[0].objective_signal["scoring_provenance"] == "no_key"
+    assert payload["provenance"]["knowledge_base"] == "no_key"
+    assert payload["radar"]["axes"][0]["provenance"] == "no_key"
 
 
 def test_blank_key_skips_jury_and_uses_rule_fusion() -> None:
@@ -141,9 +147,9 @@ def test_invalid_injected_jury_json_also_falls_back_to_rules() -> None:
     assert result.provenance == "rule_fallback"
 
 
-def test_jury_single_call_outputs_three_views_and_median_score() -> None:
+def test_jury_single_call_outputs_three_views_and_mean_score() -> None:
     async def llm_call(messages: Sequence[ChatMessage]) -> str:
-        assert "严师、宽师、中立三视角" in str(messages[0]["content"])
+        assert "每个组件都要严师、宽师、中立三个视角" in str(messages[0]["content"])
         return json.dumps(
             {
                 "dimension": "知识基础",
@@ -168,10 +174,12 @@ def test_jury_single_call_outputs_three_views_and_median_score() -> None:
     )
 
     assert result.method == "jury"
-    assert result.aggregated_score == 66
-    assert result.variance == 16.89
-    assert result.confidence < 0.5
+    # 三视角取平均，不再取中位数：中位数会丢掉"严师只看引文能证明什么"和
+    # "宽师看意图能支撑什么"之间的差距，而这正是设置三个角色的意义。
+    assert result.jury_mean == 66.67
+    assert result.aggregated_score == 66.67
     assert result.jury["严师"].reasoning_chain == ["剂量证据扣分"]
+    assert 0.0 < result.confidence <= 1.0
 
 
 def test_jury_router_call_uses_flash_model_without_thinking() -> None:
@@ -191,30 +199,36 @@ def test_jury_router_call_uses_flash_model_without_thinking() -> None:
         {
             "task_type": "profile_jury",
             "thinking": {"type": "disabled"},
-            "max_tokens": 1200,
+            # 1200 装不下「五个组件各带三师落点」，实测四个维度都在
+            # 2700–4500 字符处被截成半截 JSON，整份结果作废。改成逐组件三师
+            # 后输出量更大，上限同步提到 4000。
+            "max_tokens": 4000,
             "temperature": 0,
         }
     ]
 
 
-def test_jury_self_check_samples_once_only_when_variance_crosses_threshold() -> None:
-    calls: list[str] = []
+def test_jury_never_resamples_even_when_the_three_views_disagree() -> None:
+    """分歧不再触发第二次采样。
+
+    旧实现按方差决定是否"自洽补采"，但补采只会在同一份证据上再问一遍，
+    得到的第二个答案并不会让证据变多。分歧现在通过"三师共享同一个档位"
+    和区间宽度表达，一次调用就是最终结果。
+    """
+
+    calls: list[list[ChatMessage]] = []
 
     async def llm_call(messages: Sequence[ChatMessage]) -> str:
-        calls.append(str(messages[1]["content"]))
-        if len(calls) == 1:
-            scores = (10, 90, 50)
-        else:
-            scores = (60, 70, 65)
+        calls.append(list(messages))
         return json.dumps(
             {
                 "dimension": "知识基础",
                 "jury": {
-                    "严师": {"score": scores[0], "reasoning_chain": ["严"], "comment": "严"},
-                    "宽师": {"score": scores[1], "reasoning_chain": ["宽"], "comment": "宽"},
-                    "中立": {"score": scores[2], "reasoning_chain": ["中"], "comment": "中"},
+                    "严师": {"score": 10, "reasoning_chain": ["严"], "comment": "严"},
+                    "宽师": {"score": 90, "reasoning_chain": ["宽"], "comment": "宽"},
+                    "中立": {"score": 50, "reasoning_chain": ["中"], "comment": "中"},
                 },
-                "narrative": "自洽采样测试",
+                "narrative": "分歧三师",
             },
             ensure_ascii=False,
         )
@@ -225,15 +239,12 @@ def test_jury_self_check_samples_once_only_when_variance_crosses_threshold() -> 
             [_card("knowledge_base", {"value": 65}, 1.0)],
             settings=_key_settings(),
             llm_call=llm_call,
-            variance_threshold=100,
         )
     )
 
-    assert len(calls) == 2
-    assert "自洽补采" in calls[1]
-    assert result.self_check_sampled is True
-    assert result.aggregated_score == 65
-    assert result.variance == 16.67
+    assert len(calls) == 1
+    assert result.jury_mean == 50.0
+    assert result.aggregated_score == 50.0
 
 
 def test_guardrail_clamps_objectively_impossible_knowledge_score() -> None:
@@ -289,7 +300,14 @@ def test_full_correct_knowledge_is_at_least_60() -> None:
     assert result.warnings
 
 
-def test_large_jury_disagreement_substantially_lowers_confidence() -> None:
+def test_jury_disagreement_moves_the_score_but_not_the_confidence() -> None:
+    """分歧不再二次惩罚置信度。
+
+    置信度只由证据本身决定（质量因子 × 组合类型）。三师分歧是"这份证据该
+    落在档内哪个点"的分歧，不是"证据有多可靠"的分歧——用同一批证据问两次，
+    置信度必须一模一样。
+    """
+
     async def stable_call(messages: Sequence[ChatMessage]) -> str:
         return _jury_json((64, 66, 65), "稳定三师")
 
@@ -299,22 +317,18 @@ def test_large_jury_disagreement_substantially_lowers_confidence() -> None:
     cards = [_card("knowledge_base", {"value": 65}, 1.0)]
 
     stable = asyncio.run(score_dimension("knowledge_base", cards, settings=_key_settings(), llm_call=stable_call))
-    divided = asyncio.run(
-        score_dimension(
-            "knowledge_base",
-            cards,
-            settings=_key_settings(),
-            llm_call=divided_call,
-            variance_threshold=9999,
-        )
-    )
+    divided = asyncio.run(score_dimension("knowledge_base", cards, settings=_key_settings(), llm_call=divided_call))
 
-    assert divided.variance > stable.variance
-    assert divided.confidence < stable.confidence * 0.2
+    assert stable.jury_mean == 65.0
+    assert divided.jury_mean == 50.0
+    assert divided.confidence == stable.confidence
 
 
-def test_high_score_without_evidence_is_clamped() -> None:
+def test_no_evidence_never_calls_the_jury_and_yields_no_score() -> None:
+    calls: list[list[ChatMessage]] = []
+
     async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        calls.append(list(messages))
         return _jury_json((96, 99, 98), "没有证据也不应给高分")
 
     result = asyncio.run(
@@ -326,9 +340,12 @@ def test_high_score_without_evidence_is_clamped() -> None:
         )
     )
 
-    assert result.aggregated_score <= 50
-    assert result.warnings
-    assert "缺少可追溯证据卡" in result.warnings[0].reason
+    # 没有证据卡就直接不出分：问一个空证据集只会诱导模型编造，护栏再把它压
+    # 到 50 也只是把一个假数字改成另一个假数字。
+    assert calls == []
+    assert result.aggregated_score is None
+    assert result.radar_score is None
+    assert result.provenance == "no_evidence"
 
 
 def test_guardrail_blocks_new_category_labels() -> None:
@@ -598,7 +615,8 @@ def test_first_evaluation_with_key_bypasses_24_hour_throttle(tmp_path: Path) -> 
     )
 
     assert len(calls) == 1
-    assert profile.knowledge_base.score == 66
+    # 三师 62/72/66 取平均是 66.67，不再是中位数 66。
+    assert profile.knowledge_base.score == 66.67
 
 
 def _card(

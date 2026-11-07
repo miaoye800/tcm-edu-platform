@@ -1,4 +1,6 @@
 import asyncio
+import json
+from collections.abc import Sequence
 from pathlib import Path
 from uuid import uuid4
 
@@ -6,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.config import Settings
+from app.llm.clients import ChatMessage
 from app.profile.agent import cold_start_profile, export_mermaid, run_cold_start
 from app.profile.jury import score_profile
 from app.profile.nodes import DialogueExtraction, _dialogue_cards, _fallback_dialogue_extraction, _profile_from_scoring_results
@@ -36,7 +39,7 @@ def test_cold_start_builds_complete_7_dimension_profile(tmp_path: Path) -> None:
     assert len(to_radar(profile)["values"]) == 7
 
 
-def test_unknown_dialogue_only_scores_knowledge_and_leaves_other_axes_dark() -> None:
+def test_unknown_dialogue_without_model_key_leaves_every_axis_dark() -> None:
     extraction = _fallback_dialogue_extraction("我完全不知道，没接触过中药")
     cards = _dialogue_cards(extraction)
     scoring = asyncio.run(score_profile(cards, settings=Settings(DEEPSEEK_API_KEY=None, ZHIPU_API_KEY=None)))
@@ -55,15 +58,57 @@ def test_unknown_dialogue_only_scores_knowledge_and_leaves_other_axes_dark() -> 
     assert extraction.major.value is None
     assert extraction.resource_preference.value is None
     assert extraction.base_level.evidence == ["没接触"]
-    assert profile.knowledge_base.score == 11.5
+    # 无 key 时两条链路都不出分：知识基础有证据也不给分，七轴全 dark。
+    assert profile.knowledge_base.score is None
+    assert "no_key" in profile.knowledge_base.unknown_reasons
+    for key in DIMENSION_LABELS:
+        assert axes[key]["lit"] is False
+        assert axes[key]["status"] == "dark"
+
+
+def test_unknown_dialogue_with_jury_only_lights_the_knowledge_axis() -> None:
+    extraction = _fallback_dialogue_extraction("我完全不知道，没接触过中药")
+    cards = _dialogue_cards(extraction)
+
+    async def llm_call(messages: Sequence[ChatMessage]) -> str:
+        first_line = str(messages[1]["content"]).split("\n", 1)[0]
+        label = first_line.split("：", 1)[1].strip()
+        scores = (8, 20, 12) if label == "知识基础" else (40, 40, 40)
+        return json.dumps(
+            {
+                "dimension": label,
+                "dimension_tier": "low",
+                "jury": {
+                    name: {"score": score, "reasoning_chain": ["逐条比对三档"], "comment": "测试"}
+                    for name, score in zip(("严师", "宽师", "中立"), scores)
+                },
+                "label": None,
+                "distribution": {},
+                "weak_points": [],
+                "evidence_refs": [],
+                "narrative": "测试叙述",
+                "component_scores": [],
+            },
+            ensure_ascii=False,
+        )
+
+    scoring = asyncio.run(
+        score_profile(
+            cards,
+            settings=Settings(DEEPSEEK_API_KEY="sk-test", ZHIPU_API_KEY=None),
+            llm_call=llm_call,
+            force_llm=True,
+        )
+    )
+    profile = _profile_from_scoring_results(
+        user_id="test-unknown-dialogue-jury",
+        scoring=scoring,
+        evidence_cards=cards,
+    )
+    axes = {axis["key"]: axis for axis in to_radar(profile)["axes"]}
+
+    assert profile.knowledge_base.score is not None
     assert profile.knowledge_base.score != 50
-    assert profile.learning_goal.label is None
-    assert profile.learning_style.label is None
-    assert profile.motivation.score is None
-    assert profile.motivation.label is None
-    assert profile.weak_points.items == []
-    assert profile.pace.score is None
-    assert profile.resource_preference.label is None
     assert axes["knowledge_base"]["status"] != "dark"
     for key in ("learning_goal", "learning_style", "weak_points", "pace", "motivation", "resource_preference"):
         assert axes[key]["lit"] is False

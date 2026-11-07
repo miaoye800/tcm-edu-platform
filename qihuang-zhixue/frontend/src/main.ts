@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import './styles/palette.scss'
 import './styles/tokens.scss'
 import './styles/reset.scss'
 import './styles/story.scss'
@@ -23,17 +24,18 @@ if (new URLSearchParams(window.location.search).get('e2eForceMock') === '1') {
 const showBootLoading = () => {
   const root = document.getElementById('app')
   if (!root) return
+  // 用 token 而不是写死颜色，否则深色用户会先看到一帧浅色加载页。
   root.innerHTML = `
     <style>
       @keyframes qh-boot-spin { to { transform: rotate(360deg); } }
     </style>
     <div
-      style="min-height: 100vh; display: grid; place-items: center; background: #f7f3ea; color: #243b34; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;"
+      style="min-height: 100vh; display: grid; place-items: center; background: var(--qh-bg); color: var(--qh-fg); font-family: var(--qh-font-body);"
       aria-busy="true"
     >
-      <div style="display: grid; gap: 12px; place-items: center;">
-        <div style="width: 28px; height: 28px; border: 3px solid rgba(36, 59, 52, 0.18); border-top-color: #2f7d69; border-radius: 999px; animation: qh-boot-spin 0.8s linear infinite;"></div>
-        <div style="font-size: 14px; font-weight: 800;">正在校验登录状态...</div>
+      <div style="display: grid; gap: 14px; place-items: center;">
+        <div style="width: 24px; height: 24px; border: 2px solid var(--qh-line-strong); border-top-color: var(--qh-accent); border-radius: 999px; animation: qh-boot-spin 0.8s linear infinite;"></div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--qh-fg-muted);">正在校验登录状态...</div>
       </div>
     </div>
   `

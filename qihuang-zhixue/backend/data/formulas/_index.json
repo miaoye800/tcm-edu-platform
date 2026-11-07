@@ -1,0 +1,1326 @@
+{
+  "_note": "由 data/herbs/*.json 的 combinations.formula_ref 反推。composition 是确定信息；effects / 君臣佐使 / 剂量配比尚未补齐，incomplete=true。",
+  "_generated_by": "scripts/derive_master_data.py",
+  "formulas": {
+    "formula_sanhuang_xiexin_tang": {
+      "id": "formula_sanhuang_xiexin_tang",
+      "name": "三黄泻心汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_huangbai",
+          "herb_name": "黄柏",
+          "purposes": [
+            "清热燥湿、泻火解毒，用于湿热热毒壅盛"
+          ]
+        },
+        {
+          "herb_id": "herb_huanglian",
+          "herb_name": "黄连",
+          "purposes": [
+            "三黄相合，清热燥湿、泻火解毒，用于三焦热毒或湿热壅盛"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "湿热带下热淋",
+        "湿热泻痢",
+        "湿热泻痢黄疸",
+        "湿热痞满呕吐",
+        "疮疡肿毒湿疹湿疮",
+        "痈肿疔疮",
+        "胃火牙痛消渴",
+        "脚气痿躄",
+        "血热出血",
+        "骨蒸劳热盗汗遗精",
+        "高热神昏心烦"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_ermiaosan": {
+      "id": "formula_ermiaosan",
+      "name": "二妙散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_huangbai",
+          "herb_name": "黄柏",
+          "purposes": [
+            "清热燥湿、强筋除痹，用于湿热下注之痿证脚气"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "湿热带下热淋",
+        "湿热泻痢黄疸",
+        "疮疡肿毒湿疹湿疮",
+        "脚气痿躄",
+        "骨蒸劳热盗汗遗精"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_erzhiwan": {
+      "id": "formula_erzhiwan",
+      "name": "二至丸",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_nvzhenzi",
+          "herb_name": "女贞子",
+          "purposes": [
+            "滋补肝肾、凉血止血，用于肝肾阴虚、须发早白"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "目暗不明",
+        "肝肾阴虚",
+        "阴虚发热"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_wuwei_xiaoduyin": {
+      "id": "formula_wuwei_xiaoduyin",
+      "name": "五味消毒饮",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_jinyinhua",
+          "herb_name": "金银花",
+          "purposes": [
+            "清热解毒、消痈散结，用于疔疮肿毒、乳痈"
+          ]
+        },
+        {
+          "herb_id": "herb_pugongying",
+          "herb_name": "蒲公英",
+          "purposes": [
+            "清热解毒、消痈散结，用于痈肿疔毒、乳痈",
+            "清热解毒、消散疔疮，用于疔疮肿毒"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "咽痛目赤",
+        "喉痹丹毒",
+        "湿热黄疸",
+        "热毒血痢",
+        "热淋涩痛",
+        "痈肿疔毒乳痈内痈",
+        "痈肿疔疮",
+        "风热感冒温病初起"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_liuwei_dihuang_wan": {
+      "id": "formula_liuwei_dihuang_wan",
+      "name": "六味地黄丸",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_shanyao",
+          "herb_name": "山药",
+          "purposes": [
+            "补肾固精，用于肾虚遗精尿频"
+          ]
+        },
+        {
+          "herb_id": "herb_shudihuang",
+          "herb_name": "熟地黄",
+          "purposes": [
+            "滋补肝肾，用于肝肾阴虚"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "带下",
+        "精血亏虚",
+        "肝肾阴虚",
+        "肺虚喘咳",
+        "肾虚遗精尿频",
+        "脾虚食少便溏",
+        "血虚萎黄"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_shenling_baizhu_san": {
+      "id": "formula_shenling_baizhu_san",
+      "name": "参苓白术散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_shanyao",
+          "herb_name": "山药",
+          "purposes": [
+            "补脾益气止泻，用于脾虚泄泻"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "带下",
+        "肺虚喘咳",
+        "肾虚遗精尿频",
+        "脾虚食少便溏"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_shenfu_tang": {
+      "id": "formula_shenfu_tang",
+      "name": "参附汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_renshen",
+          "herb_name": "人参",
+          "purposes": [
+            "回阳益气固脱，用于亡阳气脱"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "心神不安",
+        "气虚欲脱",
+        "津伤口渴内热消渴",
+        "肺气虚弱",
+        "脾气不足"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_sijunzi_tang": {
+      "id": "formula_sijunzi_tang",
+      "name": "四君子汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_baizhu",
+          "herb_name": "白术",
+          "purposes": [
+            "补气健脾，用于脾胃气虚"
+          ]
+        },
+        {
+          "herb_id": "herb_dangshen",
+          "herb_name": "党参",
+          "purposes": [
+            "补脾益气，用于脾胃气虚"
+          ]
+        },
+        {
+          "herb_id": "herb_gancao",
+          "herb_name": "甘草",
+          "purposes": [
+            "补气健脾，用于脾胃气虚"
+          ]
+        },
+        {
+          "herb_id": "herb_renshen",
+          "herb_name": "人参",
+          "purposes": [
+            "益气健脾，用于脾胃气虚"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "咳嗽痰多",
+        "心气不足",
+        "心神不安",
+        "气津两伤",
+        "气虚欲脱",
+        "气虚自汗",
+        "气血不足",
+        "津伤口渴内热消渴",
+        "痈肿疮毒药食中毒",
+        "肺气虚弱",
+        "胎动不安",
+        "脘腹四肢挛急疼痛",
+        "脾气不足",
+        "脾气虚弱",
+        "脾肺气虚",
+        "脾胃虚弱",
+        "脾虚饮停痰饮水肿"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_siwu_tang": {
+      "id": "formula_siwu_tang",
+      "name": "四物汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_baishao",
+          "herb_name": "白芍",
+          "purposes": [
+            "补血调经，用于血虚月经不调"
+          ]
+        },
+        {
+          "herb_id": "herb_danggui",
+          "herb_name": "当归",
+          "purposes": [
+            "补血调经，用于血虚血滞月经不调"
+          ]
+        },
+        {
+          "herb_id": "herb_shudihuang",
+          "herb_name": "熟地黄",
+          "purposes": [
+            "补血调经，用于血虚月经不调"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "月经不调经闭痛经",
+        "精血亏虚",
+        "肝肾阴虚",
+        "肝阳上亢",
+        "胁痛腹痛四肢挛痛",
+        "自汗盗汗",
+        "虚寒腹痛风湿痹痛",
+        "血虚肠燥便秘",
+        "血虚萎黄",
+        "血虚萎黄月经不调",
+        "跌扑损伤痈疽疮疡"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_zengyetang": {
+      "id": "formula_zengyetang",
+      "name": "增液汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_maidong",
+          "herb_name": "麦冬",
+          "purposes": [
+            "增液润燥通便，用于津伤便秘"
+          ]
+        },
+        {
+          "herb_id": "herb_shengdihuang",
+          "herb_name": "生地黄",
+          "purposes": [
+            "清热凉血、养阴生津，用于热入营血、津伤便秘"
+          ]
+        },
+        {
+          "herb_id": "herb_xuanshen",
+          "herb_name": "玄参",
+          "purposes": [
+            "增液润燥、滋阴通便，用于热病伤阴津亏便秘"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "心烦失眠",
+        "津伤便秘",
+        "温毒发斑",
+        "热入营血",
+        "热病伤阴",
+        "瘰疬白喉痈肿疮毒",
+        "目赤咽痛",
+        "肠燥便秘",
+        "肺燥干咳",
+        "胃阴不足津伤口渴",
+        "血热出血",
+        "阴虚劳嗽咯血",
+        "阴虚发热",
+        "骨蒸劳嗽"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_xiaochaihutang": {
+      "id": "formula_xiaochaihutang",
+      "name": "小柴胡汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_chaihu",
+          "herb_name": "柴胡",
+          "purposes": [
+            "和解少阳"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "气虚下陷",
+        "肝郁气滞",
+        "表证发热、少阳证"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_xiaoqinglongtang": {
+      "id": "formula_xiaoqinglongtang",
+      "name": "小青龙汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_xixin",
+          "herb_name": "细辛",
+          "purposes": [
+            "温肺化饮止咳"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "头痛、牙痛、痹痛",
+        "寒饮伏肺",
+        "风寒感冒",
+        "鼻渊"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_zuojinwan": {
+      "id": "formula_zuojinwan",
+      "name": "左金丸",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_huanglian",
+          "herb_name": "黄连",
+          "purposes": [
+            "清肝胃郁火、降逆止呕，用于肝火犯胃之呕吐吞酸"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "湿热泻痢",
+        "湿热痞满呕吐",
+        "痈肿疔疮",
+        "胃火牙痛消渴",
+        "血热出血",
+        "高热神昏心烦"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_danggui_buxue_tang": {
+      "id": "formula_danggui_buxue_tang",
+      "name": "当归补血汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_danggui",
+          "herb_name": "当归",
+          "purposes": [
+            "补气生血，用于血虚发热、气血亏虚"
+          ]
+        },
+        {
+          "herb_id": "herb_huangqi",
+          "herb_name": "黄芪",
+          "purposes": [
+            "补气生血，用于血虚发热或气血亏虚"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "半身不遂痹痛麻木",
+        "月经不调经闭痛经",
+        "气虚水肿",
+        "气虚自汗",
+        "气血亏虚",
+        "痈疽难溃久溃不敛",
+        "肺气虚证",
+        "脾气虚证",
+        "虚寒腹痛风湿痹痛",
+        "血虚肠燥便秘",
+        "血虚萎黄",
+        "跌扑损伤痈疽疮疡"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_qiju_dihuang_wan": {
+      "id": "formula_qiju_dihuang_wan",
+      "name": "杞菊地黄丸",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_gouqizi",
+          "herb_name": "枸杞子",
+          "purposes": [
+            "滋补肝肾、清肝明目，用于目昏不明"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "目昏不明",
+        "肝肾阴虚精血不足",
+        "血虚萎黄"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_zhizichitang": {
+      "id": "formula_zhizichitang",
+      "name": "栀子豉汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_zhizi",
+          "herb_name": "栀子",
+          "purposes": [
+            "清宣郁热、除烦，用于热郁胸膈烦闷不眠"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "湿热黄疸",
+        "火毒疮疡",
+        "热淋涩痛",
+        "热病心烦",
+        "血热吐衄"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_guizhitang": {
+      "id": "formula_guizhitang",
+      "name": "桂枝汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_baishao",
+          "herb_name": "白芍",
+          "purposes": [
+            "调和营卫，用于营卫不和自汗"
+          ]
+        },
+        {
+          "herb_id": "herb_dazao",
+          "herb_name": "大枣",
+          "purposes": [
+            "调和营卫、和胃护中，用于解表方中调和脾胃"
+          ]
+        },
+        {
+          "herb_id": "herb_guizhi",
+          "herb_name": "桂枝",
+          "purposes": [
+            "调和营卫"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "妇人脏躁",
+        "寒凝血滞诸痛证",
+        "痰饮蓄水",
+        "肝阳上亢",
+        "胁痛腹痛四肢挛痛",
+        "脾虚食少便溏",
+        "自汗盗汗",
+        "药性峻烈配伍缓和",
+        "血虚萎黄月经不调",
+        "风寒表证"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_sangjuyin": {
+      "id": "formula_sangjuyin",
+      "name": "桑菊饮",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_juhua",
+          "herb_name": "菊花",
+          "purposes": [
+            "疏散风热、清肝明目"
+          ]
+        },
+        {
+          "herb_id": "herb_sangye",
+          "herb_name": "桑叶",
+          "purposes": [
+            "疏散风热、平肝明目"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "疮痈肿毒",
+        "目赤昏花",
+        "肝阳上亢",
+        "肝阳眩晕",
+        "肺热咳嗽、燥热咳嗽",
+        "风热感冒、温病初起"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_shashenmaidongtang": {
+      "id": "formula_shashenmaidongtang",
+      "name": "沙参麦冬汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_beishashen",
+          "herb_name": "北沙参",
+          "purposes": [
+            "清肺润燥，用于燥热伤肺干咳少痰"
+          ]
+        },
+        {
+          "herb_id": "herb_maidong",
+          "herb_name": "麦冬",
+          "purposes": [
+            "养阴润肺、益胃生津，用于肺胃阴伤"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "心烦失眠",
+        "津伤口渴",
+        "肠燥便秘",
+        "肺热燥咳",
+        "肺燥干咳",
+        "胃阴不足",
+        "胃阴不足津伤口渴",
+        "阴虚劳嗽咯血"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_xiebaisan": {
+      "id": "formula_xiebaisan",
+      "name": "泻白散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_digupi",
+          "herb_name": "地骨皮",
+          "purposes": [
+            "清肺降火、止咳平喘，用于肺热咳喘"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "肺热咳嗽",
+        "血热出血",
+        "阴虚发热盗汗骨蒸"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_qingyingtang": {
+      "id": "formula_qingyingtang",
+      "name": "清营汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_mudanpi",
+          "herb_name": "牡丹皮",
+          "purposes": [
+            "清热凉血、养阴活血，用于热入营血、血热发斑"
+          ]
+        },
+        {
+          "herb_id": "herb_shengdihuang",
+          "herb_name": "生地黄",
+          "purposes": [
+            "清热凉血、活血散瘀，用于温毒发斑、血热瘀滞",
+            "清营凉血、解毒止血，用于热入营血、高热神昏、斑疹吐衄"
+          ]
+        },
+        {
+          "herb_id": "herb_shuiniujiao",
+          "herb_name": "水牛角",
+          "purposes": [
+            "清营凉血、养阴解毒，用于热入营血、高热神昏、斑疹吐衄"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "惊风癫狂",
+        "温毒发斑",
+        "温病伤阴阴虚发热",
+        "温病高热神昏",
+        "热入营血",
+        "热病伤阴",
+        "痈肿疮疡",
+        "血滞经闭痛经",
+        "血热出血",
+        "血热吐衄",
+        "血热斑疹吐衄",
+        "跌扑伤痛痈肿疮毒",
+        "阴虚发热"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_zhigancao_tang": {
+      "id": "formula_zhigancao_tang",
+      "name": "炙甘草汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_gancao",
+          "herb_name": "甘草",
+          "purposes": [
+            "温通心阳、补益心气，用于心悸脉结代"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "咳嗽痰多",
+        "心气不足",
+        "痈肿疮毒药食中毒",
+        "脘腹四肢挛急疼痛",
+        "脾胃虚弱"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_yupingfengsan": {
+      "id": "formula_yupingfengsan",
+      "name": "玉屏风散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_baizhu",
+          "herb_name": "白术",
+          "purposes": [
+            "益气固表止汗，用于表虚自汗"
+          ]
+        },
+        {
+          "herb_id": "herb_huangqi",
+          "herb_name": "黄芪",
+          "purposes": [
+            "益气固表止汗，用于表虚自汗"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "半身不遂痹痛麻木",
+        "气虚水肿",
+        "气虚自汗",
+        "气血亏虚",
+        "痈疽难溃久溃不敛",
+        "肺气虚证",
+        "胎动不安",
+        "脾气虚弱",
+        "脾气虚证",
+        "脾虚饮停痰饮水肿"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_ganmai_dazao_tang": {
+      "id": "formula_ganmai_dazao_tang",
+      "name": "甘麦大枣汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_dazao",
+          "herb_name": "大枣",
+          "purposes": [
+            "养心安神、和中缓急，用于妇人脏躁"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "妇人脏躁",
+        "脾虚食少便溏",
+        "药性峻烈配伍缓和"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_shengmai_san": {
+      "id": "formula_shengmai_san",
+      "name": "生脉散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_maidong",
+          "herb_name": "麦冬",
+          "purposes": [
+            "益气养阴、生津敛汗，用于气阴两伤"
+          ]
+        },
+        {
+          "herb_id": "herb_renshen",
+          "herb_name": "人参",
+          "purposes": [
+            "益气生津、敛阴止汗，用于气阴两伤"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "心烦失眠",
+        "心神不安",
+        "气虚欲脱",
+        "津伤口渴内热消渴",
+        "肠燥便秘",
+        "肺气虚弱",
+        "肺燥干咳",
+        "胃阴不足津伤口渴",
+        "脾气不足",
+        "阴虚劳嗽咯血"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_baitouwengtang": {
+      "id": "formula_baitouwengtang",
+      "name": "白头翁汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_baitouweng",
+          "herb_name": "白头翁",
+          "purposes": [
+            "清热解毒、凉血止痢，用于热毒血痢",
+            "清热燥湿、凉血止痢，用于热毒血痢、下痢脓血"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "热毒血痢",
+        "阴痒带下"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_baihutang": {
+      "id": "formula_baihutang",
+      "name": "白虎汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_shigao",
+          "herb_name": "石膏",
+          "purposes": [
+            "清热泻火、除烦止渴，用于气分实热高热烦渴"
+          ]
+        },
+        {
+          "herb_id": "herb_zhimu",
+          "herb_name": "知母",
+          "purposes": [
+            "清气分实热、除烦止渴，用于热病壮热烦渴"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "外感热病",
+        "热病烦渴",
+        "疮疡湿疹",
+        "肠燥便秘",
+        "肺热喘咳",
+        "肺热燥咳",
+        "胃火亢盛",
+        "骨蒸潮热"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_zhibaidihuangwan": {
+      "id": "formula_zhibaidihuangwan",
+      "name": "知柏地黄丸",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_huangbai",
+          "herb_name": "黄柏",
+          "purposes": [
+            "滋阴降火、退虚热，用于阴虚火旺之骨蒸潮热、盗汗"
+          ]
+        },
+        {
+          "herb_id": "herb_zhimu",
+          "herb_name": "知母",
+          "purposes": [
+            "滋阴降火，用于阴虚火旺、骨蒸潮热"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "内热消渴",
+        "湿热带下热淋",
+        "湿热泻痢黄疸",
+        "热病烦渴",
+        "疮疡肿毒湿疹湿疮",
+        "肠燥便秘",
+        "肺热燥咳",
+        "脚气痿躄",
+        "骨蒸劳热盗汗遗精",
+        "骨蒸潮热"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_shaoyao_gancao_tang": {
+      "id": "formula_shaoyao_gancao_tang",
+      "name": "芍药甘草汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_baishao",
+          "herb_name": "白芍",
+          "purposes": [
+            "缓急止痛，用于脘腹四肢挛急疼痛"
+          ]
+        },
+        {
+          "herb_id": "herb_gancao",
+          "herb_name": "甘草",
+          "purposes": [
+            "缓急止痛，用于脘腹或四肢挛急疼痛"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "咳嗽痰多",
+        "心气不足",
+        "痈肿疮毒药食中毒",
+        "肝阳上亢",
+        "胁痛腹痛四肢挛痛",
+        "脘腹四肢挛急疼痛",
+        "脾胃虚弱",
+        "自汗盗汗",
+        "血虚萎黄月经不调"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_cangerzisan": {
+      "id": "formula_cangerzisan",
+      "name": "苍耳子散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_xinyi",
+          "herb_name": "辛夷",
+          "purposes": [
+            "与白芷、苍耳子相须，宣通鼻窍治鼻渊"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "风寒头痛",
+        "鼻渊"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_yinchenhaotang": {
+      "id": "formula_yinchenhaotang",
+      "name": "茵陈蒿汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_zhizi",
+          "herb_name": "栀子",
+          "purposes": [
+            "清利湿热、退黄，用于湿热黄疸"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "湿热黄疸",
+        "火毒疮疡",
+        "热淋涩痛",
+        "热病心烦",
+        "血热吐衄"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_gegentang": {
+      "id": "formula_gegentang",
+      "name": "葛根汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_gegen",
+          "herb_name": "葛根",
+          "purposes": [
+            "解肌发表、舒缓项背强痛"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "热泻热痢、脾虚泄泻",
+        "热病口渴、阴虚消渴",
+        "表证发热、项背强痛",
+        "麻疹不透"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_gegen_qinlian_tang": {
+      "id": "formula_gegen_qinlian_tang",
+      "name": "葛根芩连汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_huanglian",
+          "herb_name": "黄连",
+          "purposes": [
+            "增强清热燥湿、解毒止痢之力，用于湿热泻痢"
+          ]
+        },
+        {
+          "herb_id": "herb_huangqin",
+          "herb_name": "黄芩",
+          "purposes": [
+            "清热燥湿、解毒止痢，用于湿热泻痢"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "湿温暑湿",
+        "湿热泻痢",
+        "湿热泻痢黄疸",
+        "湿热痞满呕吐",
+        "热病烦渴",
+        "痈肿疔疮",
+        "痈肿疮毒",
+        "肺热咳嗽",
+        "胃火牙痛消渴",
+        "胎热胎动不安",
+        "血热出血",
+        "高热神昏心烦"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_buzhongyiqitang": {
+      "id": "formula_buzhongyiqitang",
+      "name": "补中益气汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_chaihu",
+          "herb_name": "柴胡",
+          "purposes": [
+            "升阳举陷"
+          ]
+        },
+        {
+          "herb_id": "herb_shengma",
+          "herb_name": "升麻",
+          "purposes": [
+            "升阳举陷"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "气虚下陷",
+        "热毒证",
+        "肝郁气滞",
+        "表证发热、少阳证",
+        "风热头痛、麻疹不透"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_yinqiaosan": {
+      "id": "formula_yinqiaosan",
+      "name": "银翘散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_jinyinhua",
+          "herb_name": "金银花",
+          "purposes": [
+            "清热解毒、疏散风热，用于温病初起及痈肿疮毒"
+          ]
+        },
+        {
+          "herb_id": "herb_lianqiao",
+          "herb_name": "连翘",
+          "purposes": [
+            "清热解毒、疏散风热，用于温病初起、风热感冒及疮痈肿毒",
+            "疏散风热、利咽散肿，用于风热咽痛、温病初起"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "喉痹丹毒",
+        "热毒血痢",
+        "热淋涩痛",
+        "痈肿疔疮",
+        "痈肿疮毒瘰疬痰核",
+        "风热感冒温病初起"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_qinghaobiejiatang": {
+      "id": "formula_qinghaobiejiatang",
+      "name": "青蒿鳖甲汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_mudanpi",
+          "herb_name": "牡丹皮",
+          "purposes": [
+            "清退虚热，用于温病后期阴虚发热、夜热早凉"
+          ]
+        },
+        {
+          "herb_id": "herb_qinghao",
+          "herb_name": "青蒿",
+          "purposes": [
+            "清退虚热，用于温病后期夜热早凉、热退无汗",
+            "养阴透热、除骨蒸，用于阴虚发热骨蒸劳热"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "暑热外感",
+        "温毒发斑",
+        "温病伤阴阴虚发热",
+        "温邪伤阴",
+        "湿热黄疸",
+        "热入营血",
+        "疟疾寒热",
+        "血滞经闭痛经",
+        "血热吐衄",
+        "跌扑伤痛痈肿疮毒",
+        "阴虚发热骨蒸劳热"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_xiangrusan": {
+      "id": "formula_xiangrusan",
+      "name": "香薷散",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_xiangru",
+          "herb_name": "香薷",
+          "purposes": [
+            "解表化湿和中，用于阴暑证"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "水肿脚气",
+        "阴暑证"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_maxingshigantang": {
+      "id": "formula_maxingshigantang",
+      "name": "麻杏石甘汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_shigao",
+          "herb_name": "石膏",
+          "purposes": [
+            "清泄肺热、宣肺平喘，用于肺热喘咳"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "外感热病",
+        "疮疡湿疹",
+        "肺热喘咳",
+        "胃火亢盛"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_mahuangtang": {
+      "id": "formula_mahuangtang",
+      "name": "麻黄汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_guizhi",
+          "herb_name": "桂枝",
+          "purposes": [
+            "增强发汗解表之力"
+          ]
+        },
+        {
+          "herb_id": "herb_mahuang",
+          "herb_name": "麻黄",
+          "purposes": [
+            "麻桂相须，增强发汗解表之力"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "咳嗽气喘",
+        "寒凝血滞诸痛证",
+        "痰饮蓄水",
+        "风寒表实证",
+        "风寒表证",
+        "风水水肿"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    },
+    "formula_longdan_xiegan_tang": {
+      "id": "formula_longdan_xiegan_tang",
+      "name": "龙胆泻肝汤",
+      "pinyin": "",
+      "category": "",
+      "composition": [
+        {
+          "herb_id": "herb_longdan",
+          "herb_name": "龙胆",
+          "purposes": [
+            "清泻肝胆实火、清利肝胆湿热，用于胁痛口苦、目赤耳聋、湿热下注",
+            "疏清肝胆郁热，用于肝胆火郁之胁痛口苦"
+          ]
+        }
+      ],
+      "effects": [],
+      "indications": [
+        "惊风抽搐",
+        "湿热黄疸阴肿阴痒",
+        "湿疹瘙痒",
+        "肝火头痛目赤",
+        "胁痛口苦"
+      ],
+      "incomplete": true,
+      "verified": false,
+      "sources": []
+    }
+  }
+}

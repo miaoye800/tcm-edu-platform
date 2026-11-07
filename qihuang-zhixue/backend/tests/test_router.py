@@ -24,6 +24,11 @@ def _mock_settings() -> Settings:
     return Settings(
         DEEPSEEK_API_KEY=None,
         ZHIPU_API_KEY=None,
+        # 必须显式钉住模式。不写就会从本地 `.env` 读到 `LLM_MODE=auto`，
+        # 于是 `chat_stream` 先去查录制回放，命中缓存后**绕过注入的假客户端**，
+        # 测试看到的是缓存里被切块的旧文本，而不是假客户端 yield 的内容。
+        # 实测过：`TypedStreamClient` 明明 yield 了 thinking，断言里却没有。
+        LLM_MODE="mock",
         LLM_TASK_MODEL_MAP={
             "classify": "deepseek_model_flash",
             "route": "deepseek_model_flash",

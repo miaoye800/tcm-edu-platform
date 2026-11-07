@@ -129,7 +129,7 @@ onMounted(() => {
 }
 
 .dashboard-hero {
-  @include glass-panel(26px);
+  @include glass-panel;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -139,7 +139,7 @@ onMounted(() => {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--qh-color-jade);
+  color: var(--qh-fg-muted);
   font-size: 13px;
   font-weight: 900;
 }
@@ -210,9 +210,9 @@ h3 {
   justify-content: space-between;
   gap: 12px;
   padding: 14px;
-  border: 1px solid rgba(143, 208, 173, 0.12);
+  border: 1px solid var(--qh-line);
   border-radius: 16px;
-  background: rgba(238, 245, 239, 0.045);
+  background: var(--qh-line);
 }
 
 .recommend-list article {

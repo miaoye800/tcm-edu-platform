@@ -1,0 +1,1308 @@
+{
+  "schema_version": 1,
+  "count": 12,
+  "capabilities": [
+    {
+      "name": "kb.search",
+      "version": "0.1",
+      "kind": "query",
+      "title": "检索本地中药学知识库（未接）",
+      "one_line": "查教材条目、图谱边与证候；本期只占位，调用返回 501",
+      "use_when": [
+        "需要确认某个词在不在本地语料里"
+      ],
+      "avoid_when": [
+        "要成图：用 mindmap.generate；要关系：用 kg_* 六能力"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "要查什么",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "limit": {
+            "default": 8,
+            "description": "最多返回几条",
+            "maximum": 40,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "KbSearchInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "coverage": "str，in_corpus / out_of_corpus",
+        "items": "list"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.not_implemented",
+          "http_status": 501,
+          "message": "这条契约还没接"
+        }
+      ],
+      "side_effects": [],
+      "requires": [],
+      "cost": "纯本地检索，无模型调用",
+      "latency": "毫秒级",
+      "examples": [],
+      "deprecation": "等检索层收敛成一个服务后接上。"
+    },
+    {
+      "name": "kg.ask",
+      "version": "1.0",
+      "kind": "query",
+      "title": "沿图谱查关系",
+      "one_line": "查两个实体之间的教材明文关系，或单味药的主治与组成",
+      "use_when": [
+        "问「为什么」：如「麻黄和桂枝为什么常一起用」",
+        "问「能不能一起用」：如「人参和藜芦能一起用吗」",
+        "问某味药治哪些证、某个方由哪些药组成：如「麻黄能治哪些证」"
+      ],
+      "avoid_when": [
+        "只问单味药的性味、功效、用量：如「麻黄的功效是什么」——普通检索更全",
+        "问两味药的区别：如「麻黄和桂枝有什么区别」——用 compare",
+        "问教材没收录的药：如「紫河车有什么功效」——先确认实体存在"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "question": {
+            "description": "string",
+            "title": "Question",
+            "type": "string"
+          },
+          "seed_ids": {
+            "description": "string[]?",
+            "items": {
+              "type": "string"
+            },
+            "title": "Seed Ids",
+            "type": "array"
+          },
+          "db_path": {
+            "default": null,
+            "title": "Db Path"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "KgAskInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool，认出实体即 true",
+        "question": "str，原问题",
+        "seeds": "list，识别到的起点",
+        "relations": "list，每条带 edge_ids/tier/text_span/page/ref",
+        "answer": "str，确定性摘要",
+        "truncated": "bool"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数不合法"
+        }
+      ],
+      "side_effects": [
+        "只读"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识图谱"
+      ],
+      "cost": "不调模型",
+      "latency": "10~200 毫秒",
+      "examples": [],
+      "artifact": {
+        "kind": "facts",
+        "open_url_template": "/graph",
+        "resolve_on": "accepted",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "kg.attribute",
+      "version": "1.0",
+      "kind": "query",
+      "title": "错题归因",
+      "one_line": "一道错题为什么错、该补哪块",
+      "use_when": [
+        "问某道错题为什么错：如「我这题为什么错了」",
+        "问错了该补什么：如「这道题错了要补哪块」"
+      ],
+      "avoid_when": [
+        "一般知识问答：如「麻黄有什么功效」——用 ask 或普通检索"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "mistake_id": {
+            "description": "string",
+            "title": "Mistake Id",
+            "type": "string"
+          },
+          "db_path": {
+            "default": null,
+            "title": "Db Path"
+          }
+        },
+        "required": [
+          "mistake_id"
+        ],
+        "title": "KgAttributeInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "mistake_id": "错题 id",
+        "causes": "list，每条带 cause_type/edge_id/text_span/page"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数不合法"
+        }
+      ],
+      "side_effects": [],
+      "requires": [
+        "登录用户",
+        "本地中药学知识图谱"
+      ],
+      "cost": "不调模型",
+      "latency": "10~200 毫秒",
+      "examples": [],
+      "artifact": {
+        "kind": "facts",
+        "open_url_template": "/graph",
+        "resolve_on": "accepted",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "kg.compare",
+      "version": "1.0",
+      "kind": "query",
+      "title": "两味药逐项对比",
+      "one_line": "两味药在性味、归经、功效、主治、用量、毒性上的逐项差异",
+      "use_when": [
+        "问两味药的区别：如「麻黄和桂枝有什么区别」",
+        "问哪个更适合某种情况：如「气虚用黄芪还是党参」"
+      ],
+      "avoid_when": [
+        "问「能不能一起用」：如「人参和藜芦能一起用吗」——用 ask，禁忌是硬约束不能被对比表淡化",
+        "只问一味药：如「麻黄有什么功效」——用普通检索"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "left": {
+            "description": "string",
+            "title": "Left",
+            "type": "string"
+          },
+          "right": {
+            "description": "string",
+            "title": "Right",
+            "type": "string"
+          },
+          "db_path": {
+            "default": null,
+            "title": "Db Path"
+          }
+        },
+        "required": [
+          "left",
+          "right"
+        ],
+        "title": "KgCompareInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "left": "左实体简述",
+        "right": "右实体简述",
+        "differences": "list，逐项差异",
+        "textbook_differentiation": "教材原文鉴别（可空）",
+        "constraints": "T1 硬约束列表",
+        "shared_relations": "两侧共有的关系类型",
+        "summary": "str"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数不合法"
+        }
+      ],
+      "side_effects": [
+        "只读"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识图谱"
+      ],
+      "cost": "不调模型",
+      "latency": "10~200 毫秒",
+      "examples": [],
+      "artifact": {
+        "kind": "facts",
+        "open_url_template": "/graph",
+        "resolve_on": "accepted",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "kg.lookup",
+      "version": "1.0",
+      "kind": "query",
+      "title": "实体定位与反查",
+      "one_line": "把名字对到实体，或从症状倒推证、方、药",
+      "use_when": [
+        "问某症状该用什么：如「咽喉肿痛用什么药」",
+        "确认某个名字收没收录、有没有别的叫法：如「淮山是不是山药」",
+        "问某味药和哪些药相似：如「麻黄和哪几味药功效相近」"
+      ],
+      "avoid_when": [
+        "已经知道两个实体名、要问它们的关系：如「麻黄和桂枝能一起用吗」——用 ask",
+        "问某个方剂的完整组成：如「麻黄汤由哪些药组成」——用 ask（图谱有组成边）"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "description": "string",
+            "title": "Query",
+            "type": "string"
+          },
+          "mode": {
+            "default": "",
+            "description": "string?",
+            "title": "Mode",
+            "type": "string"
+          },
+          "db_path": {
+            "default": null,
+            "title": "Db Path"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "KgLookupInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "mode": "resolve | reverse | similar",
+        "query": "str，原查询",
+        "entities": "list，resolve 模式命中",
+        "syndromes": "list，reverse 模式：证→方→药",
+        "similar": "list，similar 模式（linkable 恒 false）"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数不合法"
+        }
+      ],
+      "side_effects": [
+        "只读"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识图谱"
+      ],
+      "cost": "不调模型",
+      "latency": "10~200 毫秒",
+      "examples": [],
+      "artifact": {
+        "kind": "facts",
+        "open_url_template": "/graph",
+        "resolve_on": "accepted",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "kg.path",
+      "version": "1.0",
+      "kind": "query",
+      "title": "两实体间关系链",
+      "one_line": "两个实体之间最短的关系链，回答「这两者是怎么扯上关系的」",
+      "use_when": [
+        "问两个看似无关的东西怎么连起来：如「麻黄和杏仁是怎么扯上关系的」",
+        "问从症状到方剂中间经过什么：如「从恶寒发热到麻黄汤中间经过什么」"
+      ],
+      "avoid_when": [
+        "直接问两味药的配伍关系：如「麻黄和桂枝能一起用吗」——用 ask，一跳就够",
+        "问两个实体有没有关系（只要一个 yes/no）：如「麻黄和桂枝有关系吗」——用 ask"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "from_key": {
+            "description": "string",
+            "title": "From Key",
+            "type": "string"
+          },
+          "to_key": {
+            "description": "string",
+            "title": "To Key",
+            "type": "string"
+          },
+          "max_hops": {
+            "default": 0,
+            "description": "number?",
+            "title": "Max Hops",
+            "type": "integer"
+          },
+          "db_path": {
+            "default": null,
+            "title": "Db Path"
+          }
+        },
+        "required": [
+          "from_key",
+          "to_key"
+        ],
+        "title": "KgPathInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "found": "bool",
+        "hops": "int",
+        "from": "起点名",
+        "to": "终点名",
+        "path": "list，每步带 edge_id/tier",
+        "sentence": "str"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数不合法"
+        }
+      ],
+      "side_effects": [
+        "只读"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识图谱"
+      ],
+      "cost": "不调模型",
+      "latency": "10~200 毫秒",
+      "examples": [],
+      "artifact": {
+        "kind": "facts",
+        "open_url_template": "/graph",
+        "resolve_on": "accepted",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "kg.review",
+      "version": "1.0",
+      "kind": "query",
+      "title": "处方审查",
+      "one_line": "审查一张处方：禁忌、剂量、毒性、证候匹配",
+      "use_when": [
+        "给一张处方问有没有问题：如「人参9g，藜芦3g，这方子有问题吗」",
+        "问某味药的剂量是否超量：如「附子用30g会不会超量」"
+      ],
+      "avoid_when": [
+        "只是问两味药能不能一起用、没有整张方：如「人参和藜芦能一起用吗」——用 ask",
+        "问某味药的常规用量是多少：如「附子常规用多少克」——用普通检索"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "prescription": {
+            "description": "string",
+            "title": "Prescription",
+            "type": "string"
+          },
+          "case": {
+            "default": "",
+            "description": "string?",
+            "title": "Case",
+            "type": "string"
+          },
+          "db_path": {
+            "default": null,
+            "title": "Db Path"
+          }
+        },
+        "required": [
+          "prescription"
+        ],
+        "title": "KgReviewInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "verdict": "pass | warn | block",
+        "checks": "compatible/dosage/toxicity/symptom 四项三态",
+        "findings": "list，每条带 text_span/severity/rule",
+        "herbs": "逐味药解析",
+        "submitted_text": "用户提交的处方原文",
+        "knowledge_base_refs": "list"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数不合法"
+        }
+      ],
+      "side_effects": [
+        "只读"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识图谱"
+      ],
+      "cost": "不调模型",
+      "latency": "10~200 毫秒",
+      "examples": [],
+      "artifact": {
+        "kind": "facts",
+        "open_url_template": "/graph",
+        "resolve_on": "accepted",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "mindmap.expand",
+      "version": "1.0",
+      "kind": "command",
+      "title": "给一个分支补叶子",
+      "one_line": "某个分支还空着，按教材条目给它长出细目",
+      "use_when": [
+        "某个分支只有标题没有内容：如「把「配伍应用」展开」"
+      ],
+      "avoid_when": [
+        "整张图都没生成好：先 generate，再挑分支补"
+      ],
+      "audiences": [
+        "agent"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "resource_id": {
+            "default": "",
+            "description": "导图资源 id",
+            "maxLength": 64,
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "node_path": {
+            "description": "从根到目标分支的 id 路径",
+            "items": {
+              "type": "string"
+            },
+            "title": "Node Path",
+            "type": "array"
+          }
+        },
+        "title": "MindmapExpandInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "node_path": "list[str]",
+        "added": "list，新增节点",
+        "idempotent": "bool，已有子节点时 true"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "mindmap.resource_not_found",
+          "http_status": 404,
+          "message": "这份导图不存在"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "分支路径不对"
+        }
+      ],
+      "side_effects": [
+        "直",
+        "接",
+        "改",
+        "写",
+        "导",
+        "图",
+        "内",
+        "容",
+        "（",
+        "不",
+        "推",
+        "进",
+        "版",
+        "本",
+        "号",
+        "，",
+        "与",
+        "既",
+        "有",
+        "扩",
+        "写",
+        "接",
+        "口",
+        "一",
+        "致",
+        "）"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识库"
+      ],
+      "cost": "",
+      "latency": "1~3 秒",
+      "examples": [],
+      "artifact": {
+        "kind": "mindmap",
+        "open_url_template": "/mindmap?resource={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "mindmap.generate",
+      "version": "2.0",
+      "kind": "job",
+      "title": "生成思维导图",
+      "one_line": "把一句中药学主题或问题，长成一张可编辑、标了依据来源的导图",
+      "use_when": [
+        "要一张图看全某个主题：如「画一张麻黄的知识导图」",
+        "要看清一类药的构成：如「解表药的分类」",
+        "要摆开两味药的差异：如「麻黄和桂枝有什么区别」",
+        "要从功效倒查药：如「哪些药能安神」",
+        "要梳理硬性配伍禁忌：如「十八反有哪些」"
+      ],
+      "avoid_when": [
+        "只问一句话的答案：如「麻黄性味是什么」——直接答比出图快",
+        "问教材里没有的方药：如「紫河车有什么功效」——会整棵树退化成推断，不如直说查不到",
+        "要改已有导图的结构或配色：用 mindmap.present，不要重新生成"
+      ],
+      "audiences": [
+        "agent",
+        "frontend",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "要画什么。可以是单味药、分类、对比、关系或一句自然语言提问",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "挂到哪个知识节点下；留空则落到自由主题节点",
+            "maxLength": 64,
+            "title": "Node Id",
+            "type": "string"
+          },
+          "depth": {
+            "default": 3,
+            "description": "层数，2~5（句子里写了「四层」会覆盖此值）",
+            "maximum": 5,
+            "minimum": 2,
+            "title": "Depth",
+            "type": "integer"
+          },
+          "branches": {
+            "default": 6,
+            "description": "一级分支上限，3~8",
+            "maximum": 8,
+            "minimum": 3,
+            "title": "Branches",
+            "type": "integer"
+          },
+          "style": {
+            "default": "understand",
+            "description": "写法取向：应试 / 理解 / 对比",
+            "enum": [
+              "exam",
+              "understand",
+              "compare"
+            ],
+            "title": "Style",
+            "type": "string"
+          },
+          "focus": {
+            "default": "",
+            "description": "想重点看的部分，可留空",
+            "maxLength": 60,
+            "title": "Focus",
+            "type": "string"
+          },
+          "structure": {
+            "default": "auto",
+            "description": "logic-right / mind-both / org-down / fishbone；auto = 按问法建议",
+            "title": "Structure",
+            "type": "string"
+          },
+          "theme": {
+            "default": "",
+            "description": "indigo / verdant / violet / inkCream；留空用默认",
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "title": "MindmapGenerateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 mindmap.generate",
+        "capability_version": "str，如 2.0",
+        "invocation_id": "str，受理号；重放时不变",
+        "status": "accepted",
+        "replayed": "bool，true 表示这次是重放，task_id 与上次相同",
+        "task_id": "str，配合 stream_url 订阅进度",
+        "stream_url": "str，GET 后得到 SSE：step_start / node / mindmap_verify / done",
+        "artifact": "见 artifact 段；resource_id 与 open_url 在 done 之后才有值"
+      },
+      "pipeline": [
+        {
+          "id": "resolve",
+          "label": "辨明主题"
+        },
+        {
+          "id": "gather",
+          "label": "采撷素材"
+        },
+        {
+          "id": "plan",
+          "label": "谋篇立骨"
+        },
+        {
+          "id": "compose",
+          "label": "敷演枝叶"
+        },
+        {
+          "id": "normalize",
+          "label": "收束形制"
+        },
+        {
+          "id": "check",
+          "label": "校验枝据"
+        },
+        {
+          "id": "render",
+          "label": "落墨成像"
+        },
+        {
+          "id": "persist",
+          "label": "封存入库"
+        },
+        {
+          "id": "handoff",
+          "label": "开卷可改"
+        }
+      ],
+      "events": [
+        "step_start",
+        "step_done",
+        "node",
+        "mindmap_verify",
+        "done",
+        "error"
+      ],
+      "idempotency": true,
+      "errors": [
+        {
+          "code": "mindmap.topic_empty",
+          "http_status": 422,
+          "message": "没有说要画什么"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数越界"
+        },
+        {
+          "code": "capability.not_found",
+          "http_status": 404,
+          "message": "知识节点不存在"
+        },
+        {
+          "code": "mindmap.structure_unknown",
+          "http_status": 422,
+          "message": "不认识这种结构"
+        },
+        {
+          "code": "mindmap.theme_unknown",
+          "http_status": 422,
+          "message": "不认识这套配色"
+        },
+        {
+          "code": "capability.idempotency_mismatch",
+          "http_status": 409,
+          "message": "同一请求号配了不同参数"
+        }
+      ],
+      "side_effects": [
+        "新建一条炼制任务",
+        "完成后在用户资源库落一张导图"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识库"
+      ],
+      "cost": "无模型 key 时零调用；有 key 时一次结构化生成",
+      "latency": "通常 6~20 秒；无 key 时 2 秒内",
+      "examples": [
+        "解表药的分类",
+        "麻黄与桂枝的区别",
+        "十八反有哪些",
+        "风寒表证用什么药"
+      ],
+      "artifact": {
+        "kind": "mindmap",
+        "open_url_template": "/mindmap?resource={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "mindmap.get",
+      "version": "1.0",
+      "kind": "query",
+      "title": "读一张导图",
+      "one_line": "给出这张图的规模、三档依据占比与当初的问法判定",
+      "use_when": [
+        "要回答「这张图靠不靠得住」",
+        "要接着改这张图之前，先看清它现在什么样"
+      ],
+      "avoid_when": [
+        "要整棵树的内容：那是前端的事，读 content 会白烧上下文"
+      ],
+      "audiences": [
+        "agent",
+        "frontend"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "resource_id": {
+            "default": "",
+            "description": "导图资源 id",
+            "maxLength": 64,
+            "title": "Resource Id",
+            "type": "string"
+          }
+        },
+        "title": "MindmapGetInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "resource_id": "str",
+        "title": "str",
+        "nodes": "int，节点总数",
+        "depth": "int",
+        "evidence": "textbook / graph / model 三档节点数，和为节点总数",
+        "intent": "问法判定结果：kind / label / note / degraded",
+        "structure": "当前结构 id",
+        "theme_id": "当前配色 id",
+        "open_url": "str"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "mindmap.resource_not_found",
+          "http_status": 404,
+          "message": "这份导图不存在"
+        }
+      ],
+      "side_effects": [],
+      "requires": [
+        "登录用户"
+      ],
+      "cost": "",
+      "latency": "毫秒级",
+      "examples": [],
+      "artifact": {
+        "kind": "mindmap",
+        "open_url_template": "/mindmap?resource={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "mindmap.present",
+      "version": "1.0",
+      "kind": "command",
+      "title": "换结构或配色",
+      "one_line": "只改这张图的样子，不动它的内容",
+      "use_when": [
+        "要换一种排布：如「换成鱼骨图」",
+        "要换一套配色：如「用青绿那套」"
+      ],
+      "avoid_when": [
+        "要改内容或补节点：那不是 present 的事，重新生成或手动改"
+      ],
+      "audiences": [
+        "agent",
+        "frontend"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "resource_id": {
+            "default": "",
+            "description": "导图资源 id",
+            "maxLength": 64,
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "structure": {
+            "default": "",
+            "description": "要换成哪种结构；留空不改",
+            "title": "Structure",
+            "type": "string"
+          },
+          "theme_id": {
+            "default": "",
+            "description": "要换成哪套配色；留空不改",
+            "title": "Theme Id",
+            "type": "string"
+          }
+        },
+        "title": "MindmapPresentInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "resource_id": "str",
+        "structure": "str",
+        "theme_id": "str",
+        "changed": "list[str]"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "mindmap.resource_not_found",
+          "http_status": 404,
+          "message": "这份导图不存在"
+        },
+        {
+          "code": "mindmap.structure_unknown",
+          "http_status": 422,
+          "message": "不认识这种结构"
+        },
+        {
+          "code": "mindmap.theme_unknown",
+          "http_status": 422,
+          "message": "不认识这套配色"
+        }
+      ],
+      "side_effects": [
+        "改",
+        "写",
+        "导",
+        "图",
+        "的",
+        " ",
+        "m",
+        "e",
+        "t",
+        "a",
+        "（",
+        "结",
+        "构",
+        "/",
+        "配",
+        "色",
+        "）",
+        "，",
+        "不",
+        "改",
+        "树",
+        "、",
+        "不",
+        "动",
+        "版",
+        "本",
+        "号"
+      ],
+      "requires": [
+        "登录用户"
+      ],
+      "cost": "",
+      "latency": "毫秒级",
+      "examples": [],
+      "artifact": {
+        "kind": "mindmap",
+        "open_url_template": "/mindmap?resource={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      }
+    },
+    {
+      "name": "resource.generate",
+      "version": "0.1",
+      "kind": "job",
+      "title": "生成其它学习资源（未接）",
+      "one_line": "文档、试卷、故事、幻灯的统一入口；本期只占位，调用返回 501",
+      "use_when": [
+        "需要文档/试卷/故事/幻灯，且调用方愿意等它接完"
+      ],
+      "avoid_when": [
+        "要导图：用 mindmap.generate，那条已经通了",
+        "现在就要产物：直接调既有的 /api/resource/tasks 端点"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "resource_type": {
+            "description": "要生成哪类资源",
+            "enum": [
+              "doc",
+              "quiz",
+              "story",
+              "ppt"
+            ],
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "topic": {
+            "default": "",
+            "description": "主题",
+            "maxLength": 200,
+            "title": "Topic",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "挂到哪个知识节点下",
+            "maxLength": 64,
+            "title": "Node Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type"
+        ],
+        "title": "ResourceGenerateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "message": "str"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": true,
+      "errors": [
+        {
+          "code": "capability.not_implemented",
+          "http_status": 501,
+          "message": "这条契约还没接"
+        }
+      ],
+      "side_effects": [],
+      "requires": [],
+      "cost": "",
+      "latency": "",
+      "examples": [],
+      "artifact": {
+        "kind": "resource",
+        "open_url_template": "/resources/{resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ]
+      },
+      "deprecation": "等 doc/quiz/story/ppt 升到带依据的管线后接上，届时去掉 501。"
+    }
+  ]
+}

@@ -90,6 +90,8 @@ class BaseLLMClient(ABC):
     def __init__(self, model_name: str, provider: str) -> None:
         self.model_name = model_name
         self.provider = provider
+        # 最近一次调用返回的 usage 快照，供 ModelRouter 落库计量。
+        self.last_usage: dict[str, Any] | None = None
 
     @abstractmethod
     async def chat(self, messages: Sequence[ChatMessage], **kw: Any) -> str:
@@ -123,7 +125,17 @@ class MockClient(BaseLLMClient):
 
 
 class DeepSeekClient(BaseLLMClient):
-    """DeepSeek OpenAI-compatible chat client."""
+    """OpenAI-compatible chat client; 千问复用同一实现，只换 base_url 与参数映射。"""
+
+    # 允许平铺进请求体的参数。子类可覆盖（千问把 thinking 收进 extra_body）。
+    PARAM_WHITELIST: tuple[str, ...] = (
+        "temperature",
+        "max_tokens",
+        "top_p",
+        "thinking",
+        "reasoning_effort",
+        "response_format",
+    )
 
     def __init__(
         self,
@@ -131,12 +143,23 @@ class DeepSeekClient(BaseLLMClient):
         api_key: str | None = None,
         base_url: str | None = None,
         timeout_seconds: float | None = None,
+        *,
+        provider: str = "deepseek",
     ) -> None:
         settings = get_settings()
-        super().__init__(model_name=model_name, provider="deepseek")
+        super().__init__(model_name=model_name, provider=provider)
         self.api_key = (api_key if api_key is not None else settings.deepseek_api_key) or None
         self.base_url = (base_url or settings.deepseek_base_url).rstrip("/")
         self.timeout_seconds = timeout_seconds if timeout_seconds is not None else settings.llm_timeout_seconds
+
+    def _apply_params(self, payload: dict[str, Any], kw: Mapping[str, Any]) -> None:
+        for key in self.PARAM_WHITELIST:
+            if key in kw and kw[key] is not None:
+                payload[key] = kw[key]
+
+    def _capture_usage(self, data: Mapping[str, Any]) -> None:
+        usage = data.get("usage")
+        self.last_usage = dict(usage) if isinstance(usage, Mapping) else None
 
     async def chat(self, messages: Sequence[ChatMessage], **kw: Any) -> str:
         if not self.api_key:
@@ -147,9 +170,7 @@ class DeepSeekClient(BaseLLMClient):
             "messages": [dict(message) for message in messages],
             "stream": False,
         }
-        for key in ("temperature", "max_tokens", "top_p", "thinking", "reasoning_effort", "response_format"):
-            if key in kw and kw[key] is not None:
-                payload[key] = kw[key]
+        self._apply_params(payload, kw)
         _log_deepseek_chat_request(payload, timeout_seconds=timeout_seconds)
 
         try:
@@ -177,6 +198,7 @@ class DeepSeekClient(BaseLLMClient):
             message = data["choices"][0]["message"]
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMResponseShapeError(f"DeepSeek response missing choices[0].message: {data}") from exc
+        self._capture_usage(data)
         text = _deepseek_message_text(
             message,
             prefer_reasoning_content=bool(kw.get("prefer_reasoning_content")),
@@ -199,9 +221,7 @@ class DeepSeekClient(BaseLLMClient):
             "messages": [dict(message) for message in messages],
             "stream": True,
         }
-        for key in ("temperature", "max_tokens", "top_p", "thinking", "reasoning_effort", "response_format"):
-            if key in kw and kw[key] is not None:
-                payload[key] = kw[key]
+        self._apply_params(payload, kw)
         _log_deepseek_chat_request(payload, timeout_seconds=timeout_seconds)
 
         try:
@@ -249,6 +269,52 @@ class DeepSeekClient(BaseLLMClient):
                                     yield token
         except httpx.HTTPError as exc:
             raise _wrap_httpx_error("stream request", exc) from exc
+
+
+class QwenClient(DeepSeekClient):
+    """千问（DashScope OpenAI 兼容模式）客户端。
+
+    与 DeepSeek 共用请求与解析逻辑，差异只有两点：
+
+    1. base_url 与 api_key 来源不同；
+    2. 思考模式参数不同 —— Qwen3 没有 ``reasoning_effort`` 概念，用
+       ``enable_thinking`` + ``thinking_budget`` 表达。OpenAI SDK 的
+       ``extra_body`` 最终是 merge 到请求体顶层，所以这里直接平铺，
+       不再透传 ``thinking`` / ``reasoning_effort``（千问不认，会 400）。
+    """
+
+    PARAM_WHITELIST: tuple[str, ...] = ("temperature", "max_tokens", "top_p", "response_format")
+
+    THINKING_BUDGET = {"low": 1024, "medium": 4096, "high": 8192}
+
+    def __init__(
+        self,
+        model_name: str,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout_seconds: float | None = None,
+    ) -> None:
+        settings = get_settings()
+        super().__init__(
+            model_name=model_name,
+            api_key=api_key if api_key is not None else settings.qwen_api_key,
+            base_url=base_url or settings.qwen_base_url,
+            timeout_seconds=timeout_seconds,
+            provider="qwen",
+        )
+
+    def _apply_params(self, payload: dict[str, Any], kw: Mapping[str, Any]) -> None:
+        super()._apply_params(payload, kw)
+        thinking = kw.get("thinking")
+        if not isinstance(thinking, Mapping):
+            return
+        enabled = thinking.get("type") == "enabled"
+        payload["enable_thinking"] = enabled
+        if not enabled:
+            return
+        budget = self.THINKING_BUDGET.get(str(kw.get("reasoning_effort") or "").lower())
+        if budget:
+            payload["thinking_budget"] = budget
 
 
 class ZhipuClient(BaseLLMClient):

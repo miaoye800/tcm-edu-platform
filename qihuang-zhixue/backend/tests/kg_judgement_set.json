@@ -1,0 +1,1246 @@
+{
+  "version": 1,
+  "note": "80 条该调 + 20 条不该调；holdout 20 条写规则时不看",
+  "items": [
+    {
+      "id": "ask-rel-01",
+      "question": "麻黄和桂枝为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "herb_guizhi"
+      ],
+      "evidence": "边 22160（相须·桂枝 p149）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-02",
+      "question": "麻黄和桂枝配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "herb_guizhi"
+      ],
+      "evidence": "边 22160（相须·桂枝 p149）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-03",
+      "question": "麻黄和桂枝为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "herb_guizhi"
+      ],
+      "evidence": "边 22160（相须·桂枝 p149）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-04",
+      "question": "黄芪和当归为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_huangqi",
+        "herb_danggui"
+      ],
+      "evidence": "边 26885（配伍）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-05",
+      "question": "黄芪和当归配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_huangqi",
+        "herb_danggui"
+      ],
+      "evidence": "边 26885（配伍）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-06",
+      "question": "黄芪和当归为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_huangqi",
+        "herb_danggui"
+      ],
+      "evidence": "边 26885（配伍）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-07",
+      "question": "半夏和陈皮为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_banxia",
+        "herb_chenpi"
+      ],
+      "evidence": "边 22162（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-08",
+      "question": "半夏和陈皮配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_banxia",
+        "herb_chenpi"
+      ],
+      "evidence": "边 22162（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-09",
+      "question": "半夏和陈皮为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_banxia",
+        "herb_chenpi"
+      ],
+      "evidence": "边 22162（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-10",
+      "question": "白芷和辛夷为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_baizhi",
+        "herb_xinyi"
+      ],
+      "evidence": "边 22293（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-11",
+      "question": "白芷和辛夷配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_baizhi",
+        "herb_xinyi"
+      ],
+      "evidence": "边 22293（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-12",
+      "question": "白芷和辛夷为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_baizhi",
+        "herb_xinyi"
+      ],
+      "evidence": "边 22293（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-13",
+      "question": "苍耳子和辛夷为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_cangerzi",
+        "herb_xinyi"
+      ],
+      "evidence": "边 22294（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-14",
+      "question": "苍耳子和辛夷配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_cangerzi",
+        "herb_xinyi"
+      ],
+      "evidence": "边 22294（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-15",
+      "question": "苍耳子和辛夷为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_cangerzi",
+        "herb_xinyi"
+      ],
+      "evidence": "边 22294（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-16",
+      "question": "防风和荆芥为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_fangfeng",
+        "herb_jingjie"
+      ],
+      "evidence": "边 22286（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-17",
+      "question": "防风和荆芥配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_fangfeng",
+        "herb_jingjie"
+      ],
+      "evidence": "边 22286（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-18",
+      "question": "防风和荆芥为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_fangfeng",
+        "herb_jingjie"
+      ],
+      "evidence": "边 22286（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-19",
+      "question": "附子和干姜为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_fuzi",
+        "herb_ganjiang"
+      ],
+      "evidence": "边 22161（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-20",
+      "question": "附子和干姜配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_fuzi",
+        "herb_ganjiang"
+      ],
+      "evidence": "边 22161（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-21",
+      "question": "附子和干姜为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_fuzi",
+        "herb_ganjiang"
+      ],
+      "evidence": "边 22161（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-22",
+      "question": "大蓟和小蓟为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_daij",
+        "herb_xiaoij"
+      ],
+      "evidence": "边 26092（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-23",
+      "question": "大蓟和小蓟配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_daij",
+        "herb_xiaoij"
+      ],
+      "evidence": "边 26092（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-24",
+      "question": "大蓟和小蓟为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_daij",
+        "herb_xiaoij"
+      ],
+      "evidence": "边 26092（相须）",
+      "holdout": false
+    },
+    {
+      "id": "ask-rel-25",
+      "question": "稻芽和麦芽为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_daoya",
+        "herb_maiya"
+      ],
+      "evidence": "边 26022（相须）",
+      "holdout": true
+    },
+    {
+      "id": "ask-rel-26",
+      "question": "稻芽和麦芽配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_daoya",
+        "herb_maiya"
+      ],
+      "evidence": "边 26022（相须）",
+      "holdout": true
+    },
+    {
+      "id": "ask-rel-27",
+      "question": "稻芽和麦芽为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_daoya",
+        "herb_maiya"
+      ],
+      "evidence": "边 26022（相须）",
+      "holdout": true
+    },
+    {
+      "id": "ask-rel-28",
+      "question": "莪术和三棱为什么常一起用",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_ezhu",
+        "herb_sanleng"
+      ],
+      "evidence": "边 26226（相须）",
+      "holdout": true
+    },
+    {
+      "id": "ask-rel-29",
+      "question": "莪术和三棱配伍有什么依据",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_ezhu",
+        "herb_sanleng"
+      ],
+      "evidence": "边 26226（相须）",
+      "holdout": true
+    },
+    {
+      "id": "ask-rel-30",
+      "question": "莪术和三棱为什么要配在一起",
+      "question_type": "relation",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_ezhu",
+        "herb_sanleng"
+      ],
+      "evidence": "边 26226（相须）",
+      "holdout": true
+    },
+    {
+      "id": "ask-contra-01",
+      "question": "半夏和乌头能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_banxia",
+        "herb_wutou"
+      ],
+      "evidence": "边 22074（十八反 p128，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-02",
+      "question": "半夏和乌头同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_banxia",
+        "herb_wutou"
+      ],
+      "evidence": "边 22074（十八反 p128，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-03",
+      "question": "人参和藜芦能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_renshen",
+        "herb_lilu"
+      ],
+      "evidence": "边 22132（十八反 p128，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-04",
+      "question": "人参和藜芦同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_renshen",
+        "herb_lilu"
+      ],
+      "evidence": "边 22132（十八反 p128，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-05",
+      "question": "甘草和甘遂能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_gancao",
+        "herb_gansui"
+      ],
+      "evidence": "边 22126（十八反 p128，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-06",
+      "question": "甘草和甘遂同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_gancao",
+        "herb_gansui"
+      ],
+      "evidence": "边 22126（十八反 p128，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-07",
+      "question": "人参和五灵脂能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_renshen",
+        "herb_wulingzhi"
+      ],
+      "evidence": "边 22159（十九畏，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-08",
+      "question": "人参和五灵脂同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_renshen",
+        "herb_wulingzhi"
+      ],
+      "evidence": "边 22159（十九畏，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-09",
+      "question": "丁香和郁金能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_dingxiang",
+        "herb_yujin"
+      ],
+      "evidence": "边 22150（十九畏，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-10",
+      "question": "丁香和郁金同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_dingxiang",
+        "herb_yujin"
+      ],
+      "evidence": "边 22150（十九畏，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-11",
+      "question": "乌头和浙贝母能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_wutou",
+        "herb_zhebeimu"
+      ],
+      "evidence": "边 22075（十八反，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-12",
+      "question": "乌头和浙贝母同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_wutou",
+        "herb_zhebeimu"
+      ],
+      "evidence": "边 22075（十八反，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-13",
+      "question": "瓜蒌和乌头能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_gualou",
+        "herb_wutou"
+      ],
+      "evidence": "边 22081（十八反，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-14",
+      "question": "瓜蒌和乌头同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_gualou",
+        "herb_wutou"
+      ],
+      "evidence": "边 22081（十八反，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-15",
+      "question": "白及和乌头能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_baiji",
+        "herb_wutou"
+      ],
+      "evidence": "边 22085（十八反，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-16",
+      "question": "白及和乌头同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_baiji",
+        "herb_wutou"
+      ],
+      "evidence": "边 22085（十八反，tier=1）",
+      "holdout": false
+    },
+    {
+      "id": "ask-contra-17",
+      "question": "天花粉和乌头能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_tianhuafen",
+        "herb_wutou"
+      ],
+      "evidence": "边 22084（十八反，tier=1）",
+      "holdout": true
+    },
+    {
+      "id": "ask-contra-18",
+      "question": "天花粉和乌头同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_tianhuafen",
+        "herb_wutou"
+      ],
+      "evidence": "边 22084（十八反，tier=1）",
+      "holdout": true
+    },
+    {
+      "id": "ask-contra-19",
+      "question": "白蔹和乌头能一起用吗",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_bailian",
+        "herb_wutou"
+      ],
+      "evidence": "边 22086（十八反，tier=1）",
+      "holdout": true
+    },
+    {
+      "id": "ask-contra-20",
+      "question": "白蔹和乌头同方会有什么问题",
+      "question_type": "contra",
+      "should_call": true,
+      "expected_capability": "ask",
+      "expected_entity_ids": [
+        "herb_bailian",
+        "herb_wutou"
+      ],
+      "evidence": "边 22086（十八反，tier=1）",
+      "holdout": true
+    },
+    {
+      "id": "cmp-diff-01",
+      "question": "麻黄和桂枝有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "herb_guizhi"
+      ],
+      "evidence": "边 24158（同类鉴别·桂枝）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-02",
+      "question": "麻黄和桂枝怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "herb_guizhi"
+      ],
+      "evidence": "边 24158（同类鉴别·桂枝）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-03",
+      "question": "白芍和赤芍有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "herb_chishao"
+      ],
+      "evidence": "边 24217（同类鉴别·白芍）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-04",
+      "question": "白芍和赤芍怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "herb_chishao"
+      ],
+      "evidence": "边 24217（同类鉴别·白芍）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-05",
+      "question": "白术和苍术有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baizhu",
+        "herb_cangzhu"
+      ],
+      "evidence": "边 24097（同类鉴别·苍术）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-06",
+      "question": "白术和苍术怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baizhu",
+        "herb_cangzhu"
+      ],
+      "evidence": "边 24097（同类鉴别·苍术）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-07",
+      "question": "生地黄和熟地黄有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_shengdihuang",
+        "herb_shudihuang"
+      ],
+      "evidence": "边 24110（同类鉴别·生地黄）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-08",
+      "question": "生地黄和熟地黄怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_shengdihuang",
+        "herb_shudihuang"
+      ],
+      "evidence": "边 24110（同类鉴别·生地黄）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-09",
+      "question": "白芍和当归有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "herb_danggui"
+      ],
+      "evidence": "边 24114（同类鉴别·当归）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-10",
+      "question": "白芍和当归怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "herb_danggui"
+      ],
+      "evidence": "边 24114（同类鉴别·当归）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-11",
+      "question": "白芍和甘草有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "herb_gancao"
+      ],
+      "evidence": "边 24115（同类鉴别·甘草）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-12",
+      "question": "白芍和甘草怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "herb_gancao"
+      ],
+      "evidence": "边 24115（同类鉴别·甘草）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-13",
+      "question": "白头翁和黄连有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baitouweng",
+        "herb_huanglian"
+      ],
+      "evidence": "边 24200（同类鉴别·黄连）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-14",
+      "question": "白头翁和黄连怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baitouweng",
+        "herb_huanglian"
+      ],
+      "evidence": "边 24200（同类鉴别·黄连）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-15",
+      "question": "白薇和地骨皮有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baiwei",
+        "herb_digupi"
+      ],
+      "evidence": "边 24254（同类鉴别·地骨皮）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-16",
+      "question": "白薇和地骨皮怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baiwei",
+        "herb_digupi"
+      ],
+      "evidence": "边 24254（同类鉴别·地骨皮）",
+      "holdout": false
+    },
+    {
+      "id": "cmp-diff-17",
+      "question": "白鲜皮和苦参有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baixianpi",
+        "herb_kushen"
+      ],
+      "evidence": "边 24247（同类鉴别·白鲜皮）",
+      "holdout": true
+    },
+    {
+      "id": "cmp-diff-18",
+      "question": "白鲜皮和苦参怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baixianpi",
+        "herb_kushen"
+      ],
+      "evidence": "边 24247（同类鉴别·白鲜皮）",
+      "holdout": true
+    },
+    {
+      "id": "cmp-diff-19",
+      "question": "白芷和羌活有什么区别",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baizhi",
+        "herb_qianghuo"
+      ],
+      "evidence": "边 24165（同类鉴别·白芷）",
+      "holdout": true
+    },
+    {
+      "id": "cmp-diff-20",
+      "question": "白芷和羌活怎么区分",
+      "question_type": "diff",
+      "should_call": true,
+      "expected_capability": "compare",
+      "expected_entity_ids": [
+        "herb_baizhi",
+        "herb_qianghuo"
+      ],
+      "evidence": "边 24165（同类鉴别·白芷）",
+      "holdout": true
+    },
+    {
+      "id": "path-01",
+      "question": "麻黄到麻黄汤中间经过什么",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "formula_mahuangtang"
+      ],
+      "evidence": "边 22428（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-02",
+      "question": "麻黄和麻黄汤是怎么扯上关系的",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_mahuang",
+        "formula_mahuangtang"
+      ],
+      "evidence": "边 22428（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-03",
+      "question": "白术到四君子汤中间经过什么",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_baizhu",
+        "formula_sijunzi_tang"
+      ],
+      "evidence": "边 22406（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-04",
+      "question": "白术和四君子汤是怎么扯上关系的",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_baizhu",
+        "formula_sijunzi_tang"
+      ],
+      "evidence": "边 22406（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-05",
+      "question": "柴胡到补中益气汤中间经过什么",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_chaihu",
+        "formula_buzhongyiqitang"
+      ],
+      "evidence": "边 22437（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-06",
+      "question": "柴胡和补中益气汤是怎么扯上关系的",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_chaihu",
+        "formula_buzhongyiqitang"
+      ],
+      "evidence": "边 22437（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-07",
+      "question": "白芍到四物汤中间经过什么",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "formula_siwu_tang"
+      ],
+      "evidence": "边 22419（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-08",
+      "question": "白芍和四物汤是怎么扯上关系的",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_baishao",
+        "formula_siwu_tang"
+      ],
+      "evidence": "边 22419（组成）",
+      "holdout": false
+    },
+    {
+      "id": "path-09",
+      "question": "白头翁到白头翁汤中间经过什么",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_baitouweng",
+        "formula_baitouwengtang"
+      ],
+      "evidence": "边 22446（组成）",
+      "holdout": true
+    },
+    {
+      "id": "path-10",
+      "question": "白头翁和白头翁汤是怎么扯上关系的",
+      "question_type": "path",
+      "should_call": true,
+      "expected_capability": "path",
+      "expected_entity_ids": [
+        "herb_baitouweng",
+        "formula_baitouwengtang"
+      ],
+      "evidence": "边 22446（组成）",
+      "holdout": true
+    },
+    {
+      "id": "none-01",
+      "question": "麻黄的功效是什么",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-02",
+      "question": "桂枝的用量是多少",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-03",
+      "question": "黄芪归什么经",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-04",
+      "question": "当归有什么功效",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-05",
+      "question": "人参的性味是什么",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-06",
+      "question": "白术的性味归经是什么",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-07",
+      "question": "茯苓的用量",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-08",
+      "question": "陈皮的功效",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": false
+    },
+    {
+      "id": "none-09",
+      "question": "柴胡归什么经",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": true
+    },
+    {
+      "id": "none-10",
+      "question": "薄荷的功效是什么",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": true
+    },
+    {
+      "id": "none-11",
+      "question": "桑叶的性味",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": true
+    },
+    {
+      "id": "none-12",
+      "question": "菊花的用量",
+      "question_type": "plain_lookup",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "单味药属性问题，普通检索更全",
+      "holdout": true
+    },
+    {
+      "id": "none-13",
+      "question": "抗生素怎么用",
+      "question_type": "no_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "问题是西药/通用问法，图谱里没有对应实体",
+      "holdout": false
+    },
+    {
+      "id": "none-14",
+      "question": "阿莫西林和中药能一起吃吗",
+      "question_type": "no_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "问题是西药/通用问法，图谱里没有对应实体",
+      "holdout": false
+    },
+    {
+      "id": "none-15",
+      "question": "头孢和中药冲突吗",
+      "question_type": "no_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "问题是西药/通用问法，图谱里没有对应实体",
+      "holdout": false
+    },
+    {
+      "id": "none-16",
+      "question": "布洛芬饭前吃还是饭后吃",
+      "question_type": "no_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "问题是西药/通用问法，图谱里没有对应实体",
+      "holdout": false
+    },
+    {
+      "id": "none-17",
+      "question": "麻黄和银杏叶有什么区别",
+      "question_type": "missing_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "其中一个实体不在图谱里，对比/配伍无从判定",
+      "holdout": false
+    },
+    {
+      "id": "none-18",
+      "question": "桂枝和螺旋藻怎么区分",
+      "question_type": "missing_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "其中一个实体不在图谱里，对比/配伍无从判定",
+      "holdout": false
+    },
+    {
+      "id": "none-19",
+      "question": "人参和藏红花能一起用吗",
+      "question_type": "missing_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "其中一个实体不在图谱里，对比/配伍无从判定",
+      "holdout": false
+    },
+    {
+      "id": "none-20",
+      "question": "黄芪和银杏叶配伍行不行",
+      "question_type": "missing_entity",
+      "should_call": false,
+      "expected_capability": null,
+      "expected_entity_ids": [],
+      "evidence": "其中一个实体不在图谱里，对比/配伍无从判定",
+      "holdout": false
+    }
+  ]
+}

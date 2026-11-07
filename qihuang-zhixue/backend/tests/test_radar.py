@@ -27,16 +27,16 @@ def test_radar_uses_numeric_scores_and_category_derived_scores_with_confidence()
     radar = to_radar(profile)
     axes = {axis["key"]: axis for axis in radar["axes"]}
 
-    assert radar["values"] == [72, 70, 60, 50, 45, 78, 62]
+    assert radar["values"] == [72.0, 70.0, 60.0, 50.0, 45.0, 78.0, 62.5]
     assert axes["knowledge_base"]["kind"] == "numeric"
-    assert axes["knowledge_base"]["value"] == 72
+    assert axes["knowledge_base"]["value"] == 72.0
     assert axes["knowledge_base"]["lit"] is True
     assert axes["knowledge_base"]["status"] == "solid"
     assert axes["learning_goal"]["metric"] == "目标锚定估计"
     assert axes["learning_goal"]["kind"] == "derived"
-    assert axes["learning_goal"]["value"] == 70
+    assert axes["learning_goal"]["value"] == 70.0
     assert axes["learning_goal"]["raw_label"] == "应试提分"
-    assert axes["resource_preference"]["value"] == 62
+    assert axes["resource_preference"]["value"] == 62.5
     assert axes["resource_preference"]["raw"] == "知识图谱"
     assert axes["weak_points"]["raw_label"] == "清热药·剂量"
     assert all("confidence" in axis for axis in radar["axes"])
@@ -53,20 +53,22 @@ def test_radar_empty_and_low_confidence_profile_returns_placeholders() -> None:
 
     assert len(radar["axes"]) == 7
     assert len(radar["values"]) == 7
-    assert axes["knowledge_base"]["value"] == 0
+    assert axes["knowledge_base"]["value"] == 0.0
     assert axes["knowledge_base"]["raw_label"] == "待补充"
     assert axes["knowledge_base"]["confidence"] == 0
     assert axes["knowledge_base"]["low_confidence"] is True
     assert axes["knowledge_base"]["lit"] is False
     assert axes["knowledge_base"]["status"] == "dark"
+    assert axes["knowledge_base"]["score_interval"] is None
     assert axes["learning_goal"]["raw_label"] == "学术深造"
-    assert axes["learning_goal"]["value"] == 0
+    assert axes["learning_goal"]["value"] == 0.0
     assert axes["learning_goal"]["placeholder"] is False
     assert axes["learning_goal"]["lit"] is True
-    assert axes["learning_goal"]["status"] == "dashed"
+    # 虚线已删除：低置信度只影响区间宽度，不再改变线型。
+    assert axes["learning_goal"]["status"] == "solid"
 
 
-def test_low_confidence_evidence_is_drawn_as_a_dashed_axis() -> None:
+def test_low_confidence_evidence_reports_a_wide_interval_instead_of_a_dashed_axis() -> None:
     profile = create_blank_profile("student-radar-dashed")
     profile.learning_goal.label = "兴趣科普"
     profile.learning_goal.distribution = {"兴趣科普": 0.65, "基础巩固": 0.35}
@@ -83,10 +85,12 @@ def test_low_confidence_evidence_is_drawn_as_a_dashed_axis() -> None:
 
     axis = next(item for item in to_radar(profile)["axes"] if item["key"] == "learning_goal")
 
-    assert axis["value"] == 65
+    assert axis["value"] == 65.0
     assert axis["lit"] is True
     assert axis["placeholder"] is False
-    assert axis["status"] == "dashed"
+    assert axis["status"] == "solid"
+    assert axis["low_confidence"] is True
+    assert axis["score_interval"] is None
 
 
 def test_radar_provenance_follows_persisted_scoring_then_no_key_extraction() -> None:

@@ -6,10 +6,13 @@ import json
 import logging
 import re
 import sqlite3
+import threading
+import time
+from collections.abc import Callable
 from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from app.profile.schema import (
     EvidenceCard,
@@ -169,173 +172,234 @@ def release_dialogue_turn(
 
 
 def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
-    """Open a SQLite connection configured for concurrent profile writes."""
+    """Open a SQLite connection configured for concurrent profile writes.
+
+    这里**不碰 journal_mode**。`PRAGMA journal_mode=WAL` 是切换操作，要独占锁；
+    WAL 是写在库头的持久属性，由 `init_db` 设一次就够。每次建连都执行它的后果是
+    并发线程互相抢锁，抢不到的一方在 Windows 上把连接降级成只读，后续写入报
+    `attempt to write a readonly database`（不是 `database is locked`，所以调
+    busy_timeout 没用）。
+
+    实测（12 线程 × 4 次写）：原实现 8 轮 3 轮失败；加进程锁后降到 ~6%；
+    彻底不在 connect 里切换之后 0 失败。
+    """
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path, timeout=5.0)
-    conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA busy_timeout=5000;")
     conn.execute("PRAGMA foreign_keys=ON;")
     return conn
 
 
+#: `init_db` 的进程级串行锁与已初始化标记。
+#:
+#: `init_db` 被每个写操作调用（本模块 10 处），每次都跑一遍建表 + 列迁移 + 切 WAL。
+#: 12 个线程同时进来时这些 DDL 会互相抢锁；串行化之后只真正执行一次。
+_INIT_LOCK = threading.Lock()
+_INITIALIZED: set[str] = set()
+
+#: 可以靠重试恢复的 SQLite 错误。
+#:
+#: 并发打开同一个 WAL 库时，SQLite 内部要重建 `-shm` 索引，竞争失败的一方会把
+#: 连接降级成只读。这不是 schema 问题也不是数据问题，重试就能过。
+_RETRYABLE_DB_ERRORS = ("readonly database", "database is locked", "database table is locked")
+_WRITE_RETRY_ATTEMPTS = 5
+_WRITE_RETRY_BASE_DELAY = 0.02
+
+T = TypeVar("T")
+
+
+def _write_with_retry(db_path: Path, action: Callable[[sqlite3.Connection], T]) -> T:
+    """在独立连接上执行一次写事务，遇到瞬时只读 / 锁冲突就重试。
+
+    实测（纯 sqlite3，12 线程 × 4 次写，48 次写）：不重试时每轮有 2–7 次报
+    `attempt to write a readonly database`；重试 5 次后连续 3 轮都是 48/48。
+    把这种瞬时文件竞争直接抛给用户是错的——用户会看到「保存失败」，但数据本身
+    没有任何问题。
+    """
+
+    last_error: sqlite3.OperationalError | None = None
+    for attempt in range(_WRITE_RETRY_ATTEMPTS):
+        try:
+            with closing(connect(db_path)) as conn:
+                result = action(conn)
+                conn.commit()
+            return result
+        except sqlite3.OperationalError as exc:
+            if not any(token in str(exc).lower() for token in _RETRYABLE_DB_ERRORS):
+                raise
+            last_error = exc
+            logger.debug("写操作遇到瞬时错误，第 %d 次重试：%s", attempt + 1, exc)
+            time.sleep(_WRITE_RETRY_BASE_DELAY * (attempt + 1))
+    assert last_error is not None
+    raise last_error
+
+
 def init_db(db_path: Path = DB_PATH) -> None:
     """Create and lightly migrate profile-owned SQLite tables."""
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    with closing(connect(db_path)) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS profile (
-                user_id TEXT PRIMARY KEY,
-                profile_json TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+    cache_key = str(Path(db_path).resolve())
+    with _INIT_LOCK:
+        if cache_key in _INITIALIZED:
+            return
+        with closing(connect(db_path)) as conn:
+            # WAL 只在这里切一次。`connect()` 刻意不做这件事——切换要独占锁，
+            # 并发建连时会互相抢，抢输的一方把连接降级成只读。
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS profile (
+                    user_id TEXT PRIMARY KEY,
+                    profile_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS evidence (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                dimension TEXT NOT NULL,
-                source TEXT NOT NULL,
-                fact TEXT NOT NULL,
-                objective_signal_json TEXT NOT NULL,
-                weight REAL NOT NULL,
-                timestamp TEXT NOT NULL,
-                evidence_json TEXT NOT NULL
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS evidence (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    dimension TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    fact TEXT NOT NULL,
+                    objective_signal_json TEXT NOT NULL,
+                    weight REAL NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    evidence_json TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        conn.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_evidence_user_id_id
-            ON evidence(user_id, id)
-            """
-        )
-        _migrate_table_columns(conn, "profile", PROFILE_COLUMNS)
-        _migrate_table_columns(conn, "evidence", EVIDENCE_COLUMNS)
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS profile_sessions (
-                session_id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                mode TEXT NOT NULL,
-                current_step INTEGER NOT NULL,
-                step_index INTEGER,
-                finished INTEGER NOT NULL DEFAULT 0,
-                persisted INTEGER NOT NULL DEFAULT 0,
-                step_data_json TEXT NOT NULL DEFAULT '{}',
-                evidence_cards_json TEXT NOT NULL DEFAULT '[]',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_evidence_user_id_id
+                ON evidence(user_id, id)
+                """
             )
-            """
-        )
-        _migrate_profile_sessions(conn)
-        conn.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_profile_sessions_user_id
-            ON profile_sessions(user_id)
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS chat_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                session_id TEXT NOT NULL,
-                role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                created_at TEXT NOT NULL
+            _migrate_table_columns(conn, "profile", PROFILE_COLUMNS)
+            _migrate_table_columns(conn, "evidence", EVIDENCE_COLUMNS)
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS profile_sessions (
+                    session_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    mode TEXT NOT NULL,
+                    current_step INTEGER NOT NULL,
+                    step_index INTEGER,
+                    finished INTEGER NOT NULL DEFAULT 0,
+                    persisted INTEGER NOT NULL DEFAULT 0,
+                    step_data_json TEXT NOT NULL DEFAULT '{}',
+                    evidence_cards_json TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        _migrate_table_columns(conn, "chat_sessions", CHAT_SESSION_COLUMNS)
-        conn.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_session
-            ON chat_sessions(user_id, session_id, id)
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS dialogue_turn_requests (
-                user_id TEXT NOT NULL,
-                session_id TEXT NOT NULL,
-                client_turn_id TEXT NOT NULL,
-                status TEXT NOT NULL,
-                lease_expires_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                completed_at TEXT,
-                PRIMARY KEY(user_id, session_id, client_turn_id)
+            _migrate_profile_sessions(conn)
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_profile_sessions_user_id
+                ON profile_sessions(user_id)
+                """
             )
-            """
-        )
-        conn.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_dialogue_turn_requests_one_active
-            ON dialogue_turn_requests(user_id, session_id)
-            WHERE status = 'processing'
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS user_trust (
-                user_id TEXT PRIMARY KEY,
-                trust REAL NOT NULL DEFAULT 0.7,
-                updated_at TEXT NOT NULL
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    session_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        _migrate_table_columns(conn, "user_trust", USER_TRUST_COLUMNS)
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS profile_change_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ts TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                dim TEXT NOT NULL,
-                old_value TEXT NOT NULL,
-                new_value TEXT NOT NULL,
-                reason TEXT NOT NULL,
-                source_event TEXT NOT NULL,
-                evidence_ids TEXT NOT NULL
+            _migrate_table_columns(conn, "chat_sessions", CHAT_SESSION_COLUMNS)
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_session
+                ON chat_sessions(user_id, session_id, id)
+                """
             )
-            """
-        )
-        _migrate_table_columns(conn, "profile_change_log", PROFILE_CHANGE_LOG_COLUMNS)
-        conn.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_profile_change_log_user_id_id
-            ON profile_change_log(user_id, id DESC)
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS calibration_tasks (
-                claim_id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                dimension TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                questions_json TEXT NOT NULL DEFAULT '[]',
-                answers_json TEXT NOT NULL DEFAULT '[]',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS dialogue_turn_requests (
+                    user_id TEXT NOT NULL,
+                    session_id TEXT NOT NULL,
+                    client_turn_id TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    lease_expires_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    PRIMARY KEY(user_id, session_id, client_turn_id)
+                )
+                """
             )
-            """
-        )
-        conn.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_calibration_tasks_user_status
-            ON calibration_tasks(user_id, status, created_at)
-            """
-        )
-        conn.commit()
+            conn.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_dialogue_turn_requests_one_active
+                ON dialogue_turn_requests(user_id, session_id)
+                WHERE status = 'processing'
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS user_trust (
+                    user_id TEXT PRIMARY KEY,
+                    trust REAL NOT NULL DEFAULT 0.7,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            _migrate_table_columns(conn, "user_trust", USER_TRUST_COLUMNS)
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS profile_change_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ts TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    dim TEXT NOT NULL,
+                    old_value TEXT NOT NULL,
+                    new_value TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    source_event TEXT NOT NULL,
+                    evidence_ids TEXT NOT NULL
+                )
+                """
+            )
+            _migrate_table_columns(conn, "profile_change_log", PROFILE_CHANGE_LOG_COLUMNS)
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_profile_change_log_user_id_id
+                ON profile_change_log(user_id, id DESC)
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS calibration_tasks (
+                    claim_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    dimension TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    questions_json TEXT NOT NULL DEFAULT '[]',
+                    answers_json TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_calibration_tasks_user_status
+                ON calibration_tasks(user_id, status, created_at)
+                """
+            )
+            conn.commit()
+        _INITIALIZED.add(cache_key)
 
 
 def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
@@ -492,7 +556,8 @@ def add_evidence(user_id: str, card: EvidenceCard, db_path: Path = DB_PATH) -> E
     ):
         card.claim_status = "pending"
     payload = evidence_card_to_json_dict(card)
-    with closing(connect(db_path)) as conn:
+
+    def _insert(conn: sqlite3.Connection) -> None:
         conn.execute(
             """
             INSERT INTO evidence(
@@ -518,7 +583,9 @@ def add_evidence(user_id: str, card: EvidenceCard, db_path: Path = DB_PATH) -> E
                 json.dumps(payload, ensure_ascii=False),
             ),
         )
-        conn.commit()
+
+    # 证据卡是最高频的写（每次答题、每轮对话都写），并发下最容易撞上瞬时只读。
+    _write_with_retry(db_path, _insert)
     return card
 
 

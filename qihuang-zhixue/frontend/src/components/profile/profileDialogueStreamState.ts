@@ -6,7 +6,7 @@ export type ProfileDialogueMessageState = {
   activeAssistantId: number | null
 }
 
-export type ProfileDialogueApplyResult = 'none' | 'created' | 'appended' | 'finished'
+export type ProfileDialogueApplyResult = 'none' | 'created' | 'appended' | 'replaced' | 'finished'
 
 export type ProfileDialogueIdentityCardState = {
   sessionId: string | null
@@ -93,6 +93,18 @@ export const appendProfileDialogueAssistantDelta = (
   return 'appended'
 }
 
+export const replaceProfileDialogueAssistantText = (
+  state: ProfileDialogueMessageState,
+  text: string,
+): ProfileDialogueApplyResult => {
+  const next = text ?? ''
+  if (!next) return 'none'
+  const idx = ensureProfileDialogueStreamingAssistant(state)
+  state.messages[idx].reasoningStreaming = false
+  state.messages[idx].text = next
+  return 'replaced'
+}
+
 export const appendProfileDialogueAssistantReasoning = (
   state: ProfileDialogueMessageState,
   delta: string,
@@ -150,6 +162,9 @@ export const applyProfileDialogueStreamEvent = (
   }
   if (event.type === 'message') {
     return appendProfileDialogueAssistantDelta(state, event.delta ?? '')
+  }
+  if (event.type === 'replace') {
+    return replaceProfileDialogueAssistantText(state, event.delta ?? '')
   }
   if (event.type === 'message_done') return markProfileDialogueVisibleMessageComplete(state)
   if (event.type === 'done') {

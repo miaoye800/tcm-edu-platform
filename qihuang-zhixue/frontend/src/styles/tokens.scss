@@ -1,33 +1,348 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Tier 2 · Semantic — 主题切换只动这一层
+//
+// 深色 = 近黑中性阶（底 #0a0a09 / 面 #1a1a17 / 1px 白 9% 描边），
+// 浅色 = 米白纸（底 #f6f4ef / 面 #fbfaf7 / 1px 墨 10% 描边）。
+// 两套共用同一组色相：中性阶 + 朱砂强调 + 青瓷状态 + 赭石点缀。
+//
+// 关键：Tier 3 的 198 个历史变量全部从这里派生，所以浅色不需要逐条打补丁
+// ——以前浅色只覆盖 49 个变量，剩下 149 个还留着暗色值，这就是「没适配」的根因。
+// ─────────────────────────────────────────────────────────────────────────────
 :root {
-  --qh-color-jade: #8fd0ad;
-  --qh-color-jade-d: #5aa886;
-  --qh-color-blue: #9fb6d6;
-  --qh-color-gold: #e7c274;
-  --qh-color-gold-readable: #e7c274;
-  --qh-color-coral: #e9a79c;
-  --qh-color-cream: #f2ead6;
-  --qh-color-night: #0d1718;
-  --qh-color-night-soft: #142523;
-  --qh-color-ink: #07100f;
-  --qh-color-mist: #bec8c2;
-  --qh-text: #eef5ef;
-  --qh-text-muted: rgba(223, 236, 228, 0.6);
-  --qh-border: rgba(143, 208, 173, 0.16);
-  --qh-page-bg:
-    radial-gradient(circle at 12% 8%, rgba(143, 208, 173, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 6%, rgba(159, 182, 214, 0.16), transparent 30%),
-    radial-gradient(circle at 88% 88%, rgba(231, 194, 116, 0.14), transparent 32%),
-    linear-gradient(160deg, #172721, #16262a 40%, #111d20 100%);
-  --qh-card-fill: linear-gradient(158deg, rgba(33, 50, 45, 0.72), rgba(23, 36, 38, 0.5));
-  --qh-sidebar-fill: linear-gradient(180deg, rgba(25, 40, 36, 0.86), rgba(18, 29, 32, 0.82));
-  --qh-shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.34);
-  --qh-shadow-deep: 0 18px 44px rgba(0, 0, 0, 0.4);
-  --qh-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --qh-radius-card: 24px;
-  --qh-radius-card-sm: 20px;
-  --qh-radius-sm: 12px;
-  --qh-radius-pill: 20px;
-  --qh-radius-stage: 8px;
+  color-scheme: dark;
+
+  // 表面：底 → 面 → 浮起 → 下沉，四级
+  --qh-bg: var(--qh-ink-950);
+  --qh-surface: var(--qh-ink-850);
+  --qh-surface-raised: var(--qh-ink-800);
+  --qh-surface-sunken: var(--qh-ink-900);
+  --qh-surface-hover: var(--qh-ink-700);
+
+  // 文字：四级。faint 在暗底上约 2.6:1，只用于序号、占位这类非信息文字
+  --qh-fg: #f4f3ee;
+  --qh-fg-soft: rgba(244, 243, 238, 0.84);
+  --qh-fg-muted: rgba(244, 243, 238, 0.58);
+  --qh-fg-faint: rgba(244, 243, 238, 0.36);
+
+  // 描边：两级。深色下 1px 白 9% 是唯一的分层手段，不用阴影
+  --qh-line: rgba(255, 255, 255, 0.09);
+  --qh-line-strong: rgba(255, 255, 255, 0.17);
+
+  // 强调：朱砂。只给当前项 / 错误 / 主行动
+  --qh-accent: var(--qh-cinnabar-400);
+  --qh-accent-strong: var(--qh-cinnabar-500);
+  --qh-accent-soft: rgba(205, 100, 85, 0.16);
+  --qh-accent-line: rgba(205, 100, 85, 0.42);
+  --qh-accent-ink: #ffffff;
+
+  // 状态：青瓷。面积必须小，只做点与线
+  --qh-positive: var(--qh-celadon-400);
+  --qh-positive-soft: rgba(111, 179, 161, 0.14);
+
+  // 主色：中性。深色下主按钮是近白（shadcn 的做法），不是彩色
+  --qh-primary: var(--qh-ink-100);
+  --qh-primary-strong: #ffffff;
+  --qh-primary-ink: var(--qh-ink-950);
+
+  // 阴影：黑底上阴影几乎无效，压到最低，分层交给描边
+  --qh-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --qh-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.34);
+  --qh-shadow-3: 0 16px 48px rgba(0, 0, 0, 0.46);
+  --qh-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+
+  // ── 图谱：深色版 ────────────────────────────────────────────────────────
+  // 画布比页面底再偏冷两档，形成「独立的观察台」而不是嵌在页面里的一块白。
+  --qh-graph-bg: radial-gradient(ellipse at 50% 52%, rgba(126, 156, 192, 0.1), transparent 46%),
+    linear-gradient(145deg, #101519, #0b0e11);
+  --qh-graph-stage: #0d1117;
+  --qh-graph-stage-deep: #0b0f14;
+  --qh-graph-stage-glow: #131a22;
+  --qh-graph-panel: rgba(255, 255, 255, 0.045);
+  --qh-graph-border: rgba(126, 156, 192, 0.22);
+  --qh-graph-ink: #c3d2e4;
+  --qh-graph-muted: #7d8fa6;
+  --qh-graph-label: var(--qh-fg);
+  --qh-graph-label-muted: var(--qh-fg-muted);
+  --qh-graph-label-bg: var(--qh-ink-950);
+  --qh-graph-label-fill: rgba(255, 255, 255, 0.06);
+  --qh-graph-white: #ffffff;
+  --qh-graph-herb: var(--qh-slate-300);
+  --qh-graph-syndrome: var(--qh-slate-400);
+  --qh-graph-formula: var(--qh-ochre-300);
+  --qh-graph-category: var(--qh-ink-200);
+  --qh-graph-node-herb: var(--qh-slate-300);
+  --qh-graph-node-syndrome: var(--qh-slate-400);
+  --qh-graph-node-formula: var(--qh-ochre-300);
+  --qh-graph-node-category: var(--qh-ink-300);
+  // 四档层级：同一蓝系的明度阶梯，只用明度表达层级
+  --qh-graph-l0: #9dbde8;
+  --qh-graph-l1: #7498cc;
+  --qh-graph-l2: #5377a9;
+  --qh-graph-l3: #3a5a83;
+  --qh-graph-edge-line: rgba(126, 156, 192, 0.24);
+  --qh-graph-edge-line-dim: rgba(126, 156, 192, 0.13);
+  --qh-graph-edge-compatible: #6d90bd;
+  --qh-graph-edge-restraint: #8782ab;
+  /* 配伍禁忌（十八反/十九畏）必须一眼认出，不能和「鉴别对照」的灰玫瑰混在一起。
+     原来是 #b87d8b，与 --qh-graph-edge-contrast(#a47184) 几乎同色，等于八种关系色里
+     有两种是同一个颜色。改成砖红，仍是 1px 细线、不破坏「边只做暗示」的调性。 */
+  --qh-graph-edge-forbidden: #c05a52;
+  --qh-graph-edge-benefit: #5f8dad;
+  --qh-graph-edge-evidence: #558b9c;
+  --qh-graph-edge-composition: #5f8c9f;
+  --qh-graph-edge-contrast: #a47184;
+  --qh-graph-edge-cluster: #6f869d;
+  --qh-graph-node-halo: rgba(126, 156, 192, 0.14);
+  --qh-graph-node-symbol: rgba(126, 156, 192, 0.1);
+  --qh-graph-shadow: rgba(0, 0, 0, 0.34);
+  --qh-graph-shadow-soft: rgba(0, 0, 0, 0.22);
+  --qh-graph-shadow-controls: rgba(0, 0, 0, 0.26);
+  --qh-graph-shadow-panel: rgba(0, 0, 0, 0.4);
+  --qh-graph-cloud: rgba(126, 156, 192, 0.06);
+  --qh-graph-cloud-soft: rgba(126, 156, 192, 0.03);
+  --qh-graph-surface-clear: rgba(255, 255, 255, 0.07);
+  --qh-graph-surface-soft: rgba(255, 255, 255, 0.055);
+  --qh-graph-surface-glass: rgba(255, 255, 255, 0.04);
+  --qh-graph-surface-wash: rgba(255, 255, 255, 0.025);
+  --qh-graph-surface-panel: rgba(19, 19, 17, 0.94);
+  --qh-graph-surface-selection: rgba(255, 255, 255, 0.06);
+  --qh-graph-surface-footer: rgba(255, 255, 255, 0.02);
+  --qh-graph-line-soft: rgba(126, 156, 192, 0.13);
+  --qh-graph-line-faint: rgba(126, 156, 192, 0.09);
+  --qh-graph-line-clear: rgba(126, 156, 192, 0.16);
+  --qh-graph-line-selected: rgba(126, 156, 192, 0.2);
+  --qh-graph-line-interaction: rgba(126, 156, 192, 0.22);
+  --qh-graph-border-mid: rgba(126, 156, 192, 0.24);
+  --qh-graph-border-light: rgba(126, 156, 192, 0.14);
+  --qh-graph-border-panel: rgba(126, 156, 192, 0.26);
+  --qh-graph-border-active: rgba(126, 156, 192, 0.2);
+  --qh-graph-border-hover: rgba(126, 156, 192, 0.2);
+  --qh-graph-ink-wash: rgba(126, 156, 192, 0.08);
+  --qh-graph-ink-mid: rgba(126, 156, 192, 0.07);
+  --qh-graph-ink-hover: rgba(126, 156, 192, 0.13);
+  --qh-graph-ink-halo: rgba(126, 156, 192, 0.09);
+  --qh-graph-canvas-label: rgba(255, 255, 255, 0.06);
+  --qh-graph-canvas-halo: rgba(126, 156, 192, 0.34);
+  --qh-graph-canvas-halo-mid: rgba(126, 156, 192, 0.15);
+  --qh-graph-canvas-halo-clear: rgba(126, 156, 192, 0);
+  --qh-graph-star-opacity: rgba(126, 156, 192, 0);
+}
+
+[data-qh-theme='light'] {
+  color-scheme: light;
+
+  --qh-bg: var(--qh-ink-050);
+  --qh-surface: var(--qh-ink-000);
+  --qh-surface-raised: #ffffff;
+  --qh-surface-sunken: #efece4;
+  --qh-surface-hover: var(--qh-ink-100);
+
+  --qh-fg: #14110f;
+  --qh-fg-soft: rgba(20, 17, 15, 0.82);
+  --qh-fg-muted: rgba(20, 17, 15, 0.56);
+  --qh-fg-faint: rgba(20, 17, 15, 0.36);
+
+  --qh-line: rgba(20, 17, 15, 0.1);
+  --qh-line-strong: rgba(20, 17, 15, 0.2);
+
+  --qh-accent: var(--qh-cinnabar-500);
+  --qh-accent-strong: var(--qh-cinnabar-600);
+  --qh-accent-soft: rgba(181, 68, 58, 0.08);
+  --qh-accent-line: rgba(181, 68, 58, 0.32);
+  --qh-accent-ink: #ffffff;
+
+  --qh-positive: var(--qh-celadon-600);
+  --qh-positive-soft: rgba(59, 122, 105, 0.1);
+
+  --qh-primary: var(--qh-ink-950);
+  --qh-primary-strong: #000000;
+  --qh-primary-ink: var(--qh-ink-050);
+
+  --qh-shadow-1: 0 1px 2px rgba(20, 17, 15, 0.06);
+  --qh-shadow-2: 0 8px 24px rgba(20, 17, 15, 0.07);
+  --qh-shadow-3: 0 16px 48px rgba(20, 17, 15, 0.1);
+  --qh-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  // ── 图谱：浅色版 ────────────────────────────────────────────────────────
+  // 保留原来实测自参考图的蓝色阶（已验证好看），只把「底」对齐米白。
+  --qh-graph-bg: radial-gradient(ellipse at 50% 52%, rgba(143, 168, 205, 0.16), transparent 46%),
+    linear-gradient(145deg, #f8f7f3, #f1efe8);
+  --qh-graph-stage: #eef2f8;
+  --qh-graph-stage-deep: #e4ebf5;
+  --qh-graph-stage-glow: #dce7f5;
+  --qh-graph-panel: rgba(255, 255, 255, 0.78);
+  --qh-graph-border: rgba(92, 133, 184, 0.2);
+  --qh-graph-ink: #365d93;
+  --qh-graph-muted: #8198b4;
+  --qh-graph-label: #173b30;
+  --qh-graph-label-muted: #6c8178;
+  --qh-graph-label-bg: #ffffff;
+  --qh-graph-label-fill: rgba(255, 255, 255, 0.72);
+  --qh-graph-white: #ffffff;
+  --qh-graph-herb: #287e62;
+  --qh-graph-syndrome: #416d9e;
+  --qh-graph-formula: #a76b08;
+  --qh-graph-category: #765b2d;
+  --qh-graph-node-herb: #3f70bd;
+  --qh-graph-node-syndrome: #837fbe;
+  --qh-graph-node-formula: #559db9;
+  --qh-graph-node-category: #91aac8;
+  --qh-graph-l0: #22459c;
+  --qh-graph-l1: #4462a2;
+  --qh-graph-l2: #6885b9;
+  --qh-graph-l3: #8fa8c4;
+  --qh-graph-edge-line: #adc2d8;
+  --qh-graph-edge-line-dim: #cbd8e6;
+  --qh-graph-edge-compatible: #789bd1;
+  --qh-graph-edge-restraint: #928db8;
+  --qh-graph-edge-forbidden: #d98d86;
+  --qh-graph-edge-benefit: #699bbd;
+  --qh-graph-edge-evidence: #5f9bad;
+  --qh-graph-edge-composition: #6b9cb0;
+  --qh-graph-edge-contrast: #b17d91;
+  --qh-graph-edge-cluster: #9bb4cb;
+  --qh-graph-node-halo: rgba(79, 127, 193, 0.14);
+  --qh-graph-node-symbol: rgba(83, 125, 182, 0.1);
+  --qh-graph-shadow: rgba(66, 103, 151, 0.14);
+  --qh-graph-shadow-soft: rgba(90, 125, 166, 0.09);
+  --qh-graph-shadow-controls: rgba(81, 117, 160, 0.1);
+  --qh-graph-shadow-panel: rgba(62, 98, 144, 0.17);
+  --qh-graph-cloud: rgba(255, 255, 255, 0.26);
+  --qh-graph-cloud-soft: rgba(255, 255, 255, 0.14);
+  --qh-graph-surface-clear: rgba(255, 255, 255, 0.9);
+  --qh-graph-surface-soft: rgba(255, 255, 255, 0.78);
+  --qh-graph-surface-glass: rgba(255, 255, 255, 0.64);
+  --qh-graph-surface-wash: rgba(255, 255, 255, 0.46);
+  --qh-graph-surface-panel: rgba(250, 253, 255, 0.92);
+  --qh-graph-surface-selection: rgba(255, 255, 255, 0.72);
+  --qh-graph-surface-footer: rgba(255, 255, 255, 0.34);
+  --qh-graph-line-soft: rgba(123, 158, 197, 0.15);
+  --qh-graph-line-faint: rgba(123, 158, 197, 0.11);
+  --qh-graph-line-clear: rgba(123, 158, 197, 0.17);
+  --qh-graph-line-selected: rgba(116, 152, 194, 0.19);
+  --qh-graph-line-interaction: rgba(124, 157, 197, 0.2);
+  --qh-graph-border-mid: rgba(124, 157, 197, 0.22);
+  --qh-graph-border-light: rgba(128, 162, 201, 0.15);
+  --qh-graph-border-panel: rgba(128, 162, 201, 0.24);
+  --qh-graph-border-active: rgba(116, 152, 194, 0.19);
+  --qh-graph-border-hover: rgba(116, 152, 194, 0.19);
+  --qh-graph-ink-wash: rgba(75, 121, 185, 0.1);
+  --qh-graph-ink-mid: rgba(81, 127, 187, 0.09);
+  --qh-graph-ink-hover: rgba(81, 127, 187, 0.15);
+  --qh-graph-ink-halo: rgba(76, 125, 190, 0.1);
+  --qh-graph-canvas-label: rgba(255, 255, 255, 0.72);
+  --qh-graph-canvas-halo: rgba(86, 133, 202, 0.38);
+  --qh-graph-canvas-halo-mid: rgba(105, 153, 214, 0.17);
+  --qh-graph-canvas-halo-clear: rgba(105, 153, 214, 0);
+  --qh-graph-star-opacity: rgba(105, 153, 214, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tier 3 · Legacy aliases — 198 个历史变量名，全部指向 Tier 2
+//
+// 为什么保留旧名：`--qh-color-jade` 在 .vue 里被引用 148 次、`--qh-color-gold`
+// 129 次。改名要动近 300 处，收益只是名字好看；改值能让全站一次换色，且浅色
+// 自动完整。名字在语义上已经不准（jade 现在指中性主色），所以下面逐条标注真实
+// 语义，后续新增代码请直接用 Tier 2。
+// ─────────────────────────────────────────────────────────────────────────────
+:root {
+  // 主色（历史名 jade，实为中性主色）
+  --qh-color-jade: var(--qh-primary);
+  --qh-color-jade-d: var(--qh-primary-strong);
+  --qh-color-jade-wash: var(--qh-accent-soft);
+  --qh-color-jade-line: var(--qh-accent-line);
+  // 辅助色
+  --qh-color-blue: var(--qh-slate-400);
+  // 暖点缀：不是「亮金」，是低饱和暖铜。--qh-color-gold 被引用 129 次，
+  // 大面积出现时亮金在近黑上会发脏，降两档饱和后才是「温润」而不是「土豪」。
+  --qh-color-gold: #b09a6e;
+  --qh-color-gold-readable: var(--qh-ochre-300);
+  --qh-color-coral: var(--qh-accent);
+  --qh-color-coral-deep: var(--qh-cinnabar-500);
+  --qh-color-cream: var(--qh-ink-050);
+  --qh-color-cream-line: var(--qh-line-strong);
+  --qh-color-mist: var(--qh-ink-400);
+  // 明暗表面（历史名 night，实为页面底）
+  --qh-color-night: var(--qh-bg);
+  --qh-color-night-soft: var(--qh-surface);
+  --qh-color-night-raised: var(--qh-surface-raised);
+  --qh-color-night-glass: var(--qh-surface);
+  --qh-color-night-overlay: var(--qh-surface-raised);
+  --qh-color-ink: var(--qh-primary-ink);
+  // 纸墨
+  --qh-color-paper: var(--qh-ink-050);
+  --qh-color-paper-ink: var(--qh-ink-950);
+  --qh-color-paper-line: var(--qh-line);
+  --qh-color-text-faint: var(--qh-fg-faint);
+  --qh-color-text-soft: var(--qh-fg-soft);
+  // 文字 / 描边
+  --qh-text: var(--qh-fg);
+  --qh-text-muted: var(--qh-fg-muted);
+  --qh-border: var(--qh-line);
+  // 表面填充：渐变全部退役，改纯色。这是「深色太丑」的主因——
+  // 4 层径向渐变 + blur(16px) + 双阴影叠在暗底上必然发糊。
+  --qh-page-bg: var(--qh-bg);
+  --qh-card-fill: var(--qh-surface);
+  --qh-sidebar-fill: var(--qh-surface-sunken);
+  --qh-topbar-fill: var(--qh-bg);
+  --qh-vault-fill: var(--qh-surface);
+  --qh-input-fill: var(--qh-surface-sunken);
+  --qh-collapse-fill: var(--qh-surface-raised);
+  --qh-card-caption-fill: var(--qh-surface-raised);
+  --qh-card-metric: #b09a6e;
+  --qh-card-metric-bg: var(--qh-surface-raised);
+  // 阴影 / 高光
+  --qh-shadow-soft: var(--qh-shadow-1), var(--qh-shadow-2);
+  --qh-shadow-deep: var(--qh-shadow-3);
+  --qh-shadow-panel: var(--qh-shadow-1);
+  --qh-shadow-scroll: var(--qh-shadow-1);
+  --qh-inner-highlight: var(--qh-highlight);
+  --qh-color-shadow: rgba(0, 0, 0, 0.32);
+  // 网格 / 导航 / 雷达
+  --qh-grid-line: rgba(255, 255, 255, 0.022);
+  --qh-nav-text: var(--qh-fg-soft);
+  --qh-nav-title: var(--qh-fg-faint);
+  --qh-radar-label: var(--qh-fg);
+  --qh-radar-label-muted: var(--qh-fg-muted);
+  --qh-radar-label-faint: var(--qh-fg-faint);
+  // 滚动条
+  --qh-scroll-track: transparent;
+  --qh-scroll-thumb: var(--qh-line-strong);
+  --qh-scroll-thumb-hover: var(--qh-fg-faint);
+  // 叙述 / 用户卡
+  --qh-narrative-text: var(--qh-fg-soft);
+  --qh-narrative-surface: var(--qh-surface-raised);
+  --qh-narrative-border: var(--qh-line);
+  --qh-narrative-skeleton: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.09),
+    rgba(255, 255, 255, 0.04)
+  );
+  --qh-user-surface: var(--qh-surface-raised);
+  --qh-user-border: var(--qh-line);
+  --qh-user-name: var(--qh-fg-soft);
+  // 按钮：中性主色 + 朱砂强调，去掉了原先的玉→金双色渐变
+  --qh-button-primary-fill: var(--qh-primary);
+  --qh-button-primary-hover: var(--qh-primary-strong);
+  --qh-button-primary-border: var(--qh-line-strong);
+  --qh-button-secondary-fill: var(--qh-surface-raised);
+  --qh-button-secondary-hover: var(--qh-surface-hover);
+  --qh-button-option-fill: var(--qh-surface-raised);
+  --qh-button-option-active: var(--qh-accent-soft);
+  --qh-button-highlight: transparent;
+  --qh-button-gold-line: var(--qh-line);
+  // 尺寸
+  --qh-radius-card: 14px;
+  --qh-radius-card-sm: 12px;
+  --qh-radius-sm: 8px;
+  --qh-radius-pill: 999px;
+  --qh-radius-stage: 6px;
+  --qh-radius-seal: 3px;
+  --qh-radius-media: 8px;
+  --qh-radius-panel: 10px;
+  --qh-radius-bubble: 14px;
+  --qh-radius-dialog: 16px;
   --qh-space-1: 4px;
   --qh-space-2: 8px;
   --qh-space-3: 12px;
@@ -36,13 +351,17 @@
   --qh-space-6: 24px;
   --qh-space-8: 32px;
   --qh-space-10: 40px;
-  --qh-duration-fast: 160ms;
-  --qh-duration-md: 320ms;
+  --qh-duration-fast: 140ms;
+  --qh-duration-md: 280ms;
+  --qh-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --qh-sidebar-width: 236px;
   --qh-sidebar-collapsed: 78px;
   --qh-topbar-height: 84px;
-  --qh-font-body: "QH Sans SC", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-  --qh-font-display: "Nunito", "QH Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --qh-control-height: 44px;
+  --qh-control-height-compact: 36px;
+  // 字体
+  --qh-font-body: "QH Sans SC", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --qh-font-display: "QH Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --qh-font-reading: "QH Serif SC", "Noto Serif SC", "Songti SC", STSong, serif;
   // Six-step type scale. Every story surface must pick from this list; the
   // check-tokens script rejects any other font-size inside the story module.
@@ -52,26 +371,10 @@
   --qh-text-ui: 15px;
   --qh-text-option: 14px;
   --qh-text-footnote: 12px;
-  --qh-radius-seal: 4px;
-  --qh-radius-media: 10px;
-  --qh-radius-panel: 16px;
-  --qh-radius-bubble: 20px;
-  --qh-radius-dialog: 26px;
-  --qh-radius-pill: 999px;
-  --qh-shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.18);
-  --qh-ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --qh-color-night-raised: rgba(20, 37, 35, 0.9);
-  --qh-color-night-glass: rgba(13, 23, 24, 0.8);
-  --qh-color-night-overlay: rgba(8, 20, 24, 0.86);
-  --qh-color-paper: #f2ead6;
-  --qh-color-paper-ink: #25342f;
-  --qh-color-paper-line: rgba(116, 94, 60, 0.27);
-  --qh-color-coral-deep: #c46a5d;
-  --qh-color-jade-wash: rgba(143, 208, 173, 0.1);
-  --qh-color-jade-line: rgba(143, 208, 173, 0.32);
-  --qh-color-cream-line: rgba(242, 234, 214, 0.2);
-  --qh-color-text-faint: rgba(238, 245, 239, 0.16);
-  --qh-color-text-soft: rgba(238, 245, 239, 0.76);
+
+  // ── 沉浸式 story 模块 ───────────────────────────────────────────────────
+  // 羊皮纸体系是独立设计（自有纸感与朱批），不跟随主题；只有面板底改成中性
+  // 近黑，避免原来的墨绿面板在近黑页面里显得脏。
   --qh-story-paper: #f3e2c1;
   --qh-story-paper-strong: #fffaf0;
   --qh-story-paper-deep: #e6d4ae;
@@ -82,234 +385,133 @@
   --qh-story-gold: #b98237;
   --qh-story-gold-deep: #926634;
   --qh-story-gold-line: #a97c3d;
-  --qh-story-panel: linear-gradient(155deg, rgba(31, 42, 38, 0.96), rgba(21, 29, 27, 0.97));
-  --qh-story-panel-line: rgba(201, 164, 103, 0.9);
-  --qh-story-panel-muted: rgba(217, 209, 195, 0.86);
-  --qh-story-input: rgba(7, 13, 12, 0.35);
-  --qh-story-shadow: 0 18px 60px rgba(5, 10, 9, 0.46);
-  --qh-color-shadow: rgba(0, 0, 0, 0.28);
-  --qh-shadow-scroll: inset 0 10px 14px rgba(49, 39, 21, 0.18), inset 0 -10px 14px rgba(49, 39, 21, 0.18), 0 10px 22px rgba(0, 0, 0, 0.2);
-  --qh-control-height: 44px;
-  --qh-control-height-compact: 36px;
-  --qh-button-primary-fill: color-mix(in srgb, var(--qh-color-jade-d) 88%, var(--qh-color-night));
-  --qh-button-primary-hover: color-mix(in srgb, var(--qh-color-jade) 70%, var(--qh-color-jade-d));
-  --qh-button-primary-border: color-mix(in srgb, var(--qh-color-jade) 68%, var(--qh-color-gold));
-  --qh-button-secondary-fill: color-mix(in srgb, var(--qh-color-night-soft) 82%, var(--qh-color-jade));
-  --qh-button-secondary-hover: color-mix(in srgb, var(--qh-color-night-soft) 64%, var(--qh-color-jade));
-  --qh-button-option-fill: color-mix(in srgb, var(--qh-color-night-soft) 88%, var(--qh-color-blue));
-  --qh-button-option-active: color-mix(in srgb, var(--qh-color-jade-d) 58%, var(--qh-color-night-soft));
-  --qh-button-highlight: color-mix(in srgb, var(--qh-color-cream) 22%, transparent);
-  --qh-button-gold-line: color-mix(in srgb, var(--qh-color-gold) 48%, transparent);
-  --qh-vault-fill: rgba(13, 23, 24, 0.96);
-  --qh-topbar-fill: rgba(17, 29, 32, 0.88);
-  --qh-input-fill: rgba(10, 20, 20, 0.32);
-  --qh-grid-line: rgba(143, 208, 173, 0.035);
-  --qh-nav-text: rgba(238, 245, 239, 0.82);
-  --qh-nav-title: rgba(223, 236, 228, 0.6);
-  --qh-radar-label: rgba(238, 245, 239, 0.9);
-  --qh-radar-label-muted: rgba(223, 236, 228, 0.54);
-  --qh-radar-label-faint: rgba(223, 236, 228, 0.42);
-  --qh-collapse-fill: rgba(18, 31, 30, 0.92);
-  --qh-scroll-track: rgba(238, 245, 239, 0.035);
-  --qh-scroll-thumb: rgba(143, 208, 173, 0.38);
-  --qh-scroll-thumb-hover: rgba(231, 194, 116, 0.62);
-  --qh-card-caption-fill: rgba(242, 234, 214, 0.9);
-  --qh-card-metric: #8d5c12;
-  --qh-card-metric-bg: rgba(255, 250, 236, 0.78);
-  --qh-narrative-text: rgba(238, 245, 239, 0.86);
-  --qh-narrative-surface: rgba(238, 245, 239, 0.05);
-  --qh-narrative-border: rgba(143, 208, 173, 0.12);
-  --qh-narrative-skeleton: linear-gradient(90deg, rgba(238, 245, 239, 0.08), rgba(238, 245, 239, 0.2), rgba(238, 245, 239, 0.08));
-  --qh-user-surface: rgba(238, 245, 239, 0.06);
-  --qh-user-border: rgba(143, 208, 173, 0.14);
-  --qh-user-name: rgba(238, 245, 239, 0.78);
-  --qh-graph-bg: radial-gradient(ellipse at 50% 52%, var(--qh-color-jade-wash), transparent 45%), linear-gradient(145deg, var(--qh-color-night-soft), var(--qh-color-night));
-  --qh-graph-label: var(--qh-text);
-  --qh-graph-label-muted: var(--qh-color-text-faint);
-  --qh-graph-label-bg: var(--qh-color-night-overlay);
-  --qh-graph-herb: var(--qh-color-jade);
-  --qh-graph-syndrome: var(--qh-color-blue);
-  --qh-graph-formula: var(--qh-color-gold);
-  --qh-graph-category: var(--qh-color-cream);
-  --qh-graph-stage: #e9f4ff;
-  --qh-graph-stage-glow: #f8fbff;
-  --qh-graph-panel: rgba(255, 255, 255, 0.76);
-  --qh-graph-border: rgba(92, 133, 184, 0.2);
-  --qh-graph-ink: #365d93;
-  --qh-graph-muted: #8198b4;
-  --qh-graph-node-herb: #3f70bd;
-  --qh-graph-node-syndrome: #837fbe;
-  --qh-graph-node-formula: #559db9;
-  --qh-graph-node-category: #91aac8;
-  --qh-graph-edge-compatible: #789bd1;
-  --qh-graph-edge-restraint: #928db8;
-  --qh-graph-edge-forbidden: #c58b9b;
-  --qh-graph-edge-benefit: #699bbd;
-  --qh-graph-edge-evidence: #5f9bad;
-  --qh-graph-edge-composition: #6b9cb0;
-  --qh-graph-edge-contrast: #b17d91;
-  --qh-graph-edge-cluster: #9bb4cb;
-  --qh-graph-node-halo: rgba(79, 127, 193, 0.14);
-  --qh-graph-shadow: rgba(66, 103, 151, 0.14);
-  --qh-graph-stage-deep: #e5f1fc;
-  --qh-graph-surface-clear: rgba(255, 255, 255, 0.9);
-  --qh-graph-surface-soft: rgba(255, 255, 255, 0.78);
-  --qh-graph-surface-glass: rgba(255, 255, 255, 0.64);
-  --qh-graph-surface-wash: rgba(255, 255, 255, 0.46);
-  --qh-graph-surface-panel: rgba(250, 253, 255, 0.92);
-  --qh-graph-surface-selection: rgba(255, 255, 255, 0.72);
-  --qh-graph-white: #ffffff;
-  --qh-graph-line-soft: rgba(123, 158, 197, 0.15);
-  --qh-graph-line-faint: rgba(123, 158, 197, 0.11);
-  --qh-graph-line-clear: rgba(123, 158, 197, 0.17);
-  --qh-graph-line-selected: rgba(116, 152, 194, 0.19);
-  --qh-graph-line-interaction: rgba(124, 157, 197, 0.2);
-  --qh-graph-star-opacity: rgba(105, 153, 214, 0);
-  --qh-graph-label-fill: rgba(255, 255, 255, 0.72);
-  --qh-graph-border-mid: rgba(124, 157, 197, 0.22);
-  --qh-graph-border-light: rgba(128, 162, 201, 0.15);
-  --qh-graph-border-panel: rgba(128, 162, 201, 0.24);
-  --qh-graph-border-active: rgba(116, 152, 194, 0.19);
-  --qh-graph-shadow-soft: rgba(90, 125, 166, 0.09);
-  --qh-graph-shadow-controls: rgba(81, 117, 160, 0.1);
-  --qh-graph-shadow-panel: rgba(62, 98, 144, 0.17);
-  --qh-graph-ink-wash: rgba(75, 121, 185, 0.1);
-  --qh-graph-ink-mid: rgba(81, 127, 187, 0.09);
-  --qh-graph-ink-hover: rgba(81, 127, 187, 0.15);
-  --qh-graph-ink-halo: rgba(76, 125, 190, 0.1);
-  --qh-graph-node-symbol: rgba(83, 125, 182, 0.1);
-  --qh-graph-canvas-label: rgba(255, 255, 255, 0.72);
-  --qh-graph-canvas-halo: rgba(86, 133, 202, 0.38);
-  --qh-graph-canvas-halo-mid: rgba(105, 153, 214, 0.17);
-  --qh-graph-canvas-halo-clear: rgba(105, 153, 214, 0);
-  --qh-graph-surface-footer: rgba(255, 255, 255, 0.34);
-  --qh-graph-border-hover: rgba(116, 152, 194, 0.19);
+  --qh-story-panel: linear-gradient(155deg, rgba(26, 26, 23, 0.97), rgba(13, 13, 12, 0.98));
+  --qh-story-panel-line: rgba(201, 164, 103, 0.72);
+  --qh-story-panel-muted: rgba(217, 209, 195, 0.82);
+  --qh-story-input: rgba(0, 0, 0, 0.34);
+  --qh-story-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+}
 
-  --el-color-primary: var(--qh-color-jade-d);
-  --el-color-primary-light-3: var(--qh-color-jade);
-  --el-color-primary-light-5: rgba(143, 208, 173, 0.5);
-  --el-color-primary-light-7: rgba(143, 208, 173, 0.24);
-  --el-color-primary-light-9: rgba(143, 208, 173, 0.1);
-  --el-color-primary-dark-2: #43866d;
-  --el-border-radius-base: 12px;
-  --el-border-color: var(--qh-border);
-  --el-fill-color-blank: rgba(20, 34, 33, 0.72);
-  --el-text-color-primary: var(--qh-text);
-  --el-text-color-regular: rgba(238, 245, 239, 0.82);
-  --el-text-color-secondary: var(--qh-text-muted);
+// ─────────────────────────────────────────────────────────────────────────────
+// Element Plus 桥接
+//
+// 必须用 html[data-qh-theme] 而不是 :root：Vite 下 element-plus 的样式表在本地
+// 样式之后注入，同特异性的 :root 会被它的默认蓝反超（实测 --el-color-primary
+// 仍是 #409eff）。带上 html 前缀把特异性提到 0,1,1 才能稳定赢。
+// ─────────────────────────────────────────────────────────────────────────────
+html[data-qh-theme] {
+  --el-color-primary: var(--qh-accent);
+  --el-color-primary-light-3: var(--qh-cinnabar-300);
+  --el-color-primary-light-5: rgba(205, 100, 85, 0.5);
+  --el-color-primary-light-7: rgba(205, 100, 85, 0.24);
+  --el-color-primary-light-9: rgba(205, 100, 85, 0.1);
+  --el-color-primary-dark-2: var(--qh-cinnabar-600);
+  --el-border-radius-base: var(--qh-radius-sm);
+  --el-border-color: var(--qh-line);
+  --el-border-color-light: var(--qh-line);
+  --el-border-color-lighter: var(--qh-line);
+  --el-border-color-extra-light: var(--qh-line);
+  --el-bg-color: var(--qh-surface);
+  --el-bg-color-page: var(--qh-bg);
+  --el-bg-color-overlay: var(--qh-surface-raised);
+  --el-fill-color: var(--qh-surface-raised);
+  --el-fill-color-blank: var(--qh-surface);
+  --el-fill-color-light: var(--qh-surface-raised);
+  --el-fill-color-lighter: var(--qh-surface);
+  --el-input-bg-color: var(--qh-surface-sunken);
+  --el-input-border-color: var(--qh-line);
+  --el-input-text-color: var(--qh-fg);
+  --el-input-placeholder-color: var(--qh-fg-faint);
+  --el-text-color-primary: var(--qh-fg);
+  --el-text-color-regular: var(--qh-fg-soft);
+  --el-text-color-secondary: var(--qh-fg-muted);
+  --el-text-color-placeholder: var(--qh-fg-faint);
+  --el-text-color-disabled: var(--qh-fg-faint);
+  --el-disabled-bg-color: var(--qh-surface-sunken);
+  --el-mask-color: rgba(0, 0, 0, 0.6);
+}
+
+html[data-qh-theme='light'] {
+  --el-color-primary-light-3: var(--qh-cinnabar-400);
+  --el-color-primary-light-5: rgba(181, 68, 58, 0.44);
+  --el-color-primary-light-7: rgba(181, 68, 58, 0.2);
+  --el-color-primary-light-9: rgba(181, 68, 58, 0.08);
+  --el-color-primary-dark-2: var(--qh-cinnabar-700);
+  --el-fill-color-light: var(--qh-surface-sunken);
+  --el-mask-color: rgba(20, 17, 15, 0.32);
 }
 
 [data-qh-theme='light'] {
-  --qh-color-gold-readable: #a76b08;
-  --qh-color-night: #ffffff;
-  --qh-color-night-soft: #f5f7f6;
-  --qh-color-ink: #13251f;
-  --qh-text: #18362d;
-  --qh-text-muted: rgba(35, 61, 52, 0.66);
-  --qh-color-text-soft: rgba(24, 54, 45, 0.82);
-  --qh-border: rgba(39, 91, 72, 0.18);
-  --qh-page-bg: #ffffff;
-  --qh-card-fill: #ffffff;
-  --qh-sidebar-fill: #ffffff;
-  --qh-shadow-soft: 0 14px 34px rgba(31, 63, 52, 0.1);
-  --qh-shadow-deep: 0 22px 54px rgba(31, 63, 52, 0.18);
-  --qh-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.84);
-  --qh-button-secondary-fill: rgba(238, 244, 240, 0.94);
-  --qh-button-secondary-hover: rgba(222, 236, 228, 0.98);
-  --qh-button-option-fill: rgba(239, 244, 241, 0.96);
-  --qh-vault-fill: rgba(252, 253, 251, 0.98);
-  --qh-topbar-fill: rgba(255, 255, 255, 0.96);
-  --qh-input-fill: #ffffff;
-  --qh-grid-line: rgba(39, 91, 72, 0.025);
-  --qh-nav-text: #24463b;
-  --qh-nav-title: #527166;
-  --qh-radar-label: #1b4034;
-  --qh-radar-label-muted: #55776b;
-  --qh-radar-label-faint: #708d83;
-  --qh-collapse-fill: #ffffff;
-  --qh-narrative-text: #29483d;
-  --qh-narrative-surface: #f3f8f5;
-  --qh-narrative-border: rgba(39, 91, 72, 0.22);
-  --qh-narrative-skeleton: linear-gradient(90deg, rgba(39, 91, 72, 0.08), rgba(39, 91, 72, 0.18), rgba(39, 91, 72, 0.08));
-  --qh-user-surface: #f1f7f3;
-  --qh-user-border: rgba(39, 91, 72, 0.2);
-  --qh-user-name: #18362d;
-  --qh-graph-bg: radial-gradient(ellipse at 50% 52%, rgba(143, 208, 173, 0.12), transparent 45%), linear-gradient(145deg, #f6faf8, #edf4f1);
-  --qh-graph-label: #173b30;
-  --qh-graph-label-muted: #6c8178;
-  --qh-graph-label-bg: #ffffff;
-  --qh-graph-herb: #287e62;
-  --qh-graph-syndrome: #416d9e;
-  --qh-graph-formula: #a76b08;
-  --qh-graph-category: #765b2d;
-  --qh-scroll-track: rgba(39, 91, 72, 0.045);
-  --qh-scroll-thumb: rgba(61, 130, 105, 0.42);
-  --qh-scroll-thumb-hover: rgba(42, 105, 82, 0.68);
-  --el-fill-color-blank: rgba(255, 255, 255, 0.96);
-  --el-text-color-primary: var(--qh-text);
-  --el-text-color-regular: rgba(24, 54, 45, 0.82);
-  --el-text-color-secondary: var(--qh-text-muted);
+  // 浅色下少数几个和深色语义方向相反的值（阴影要浅、骨架屏要淡）。
+  --qh-color-shadow: rgba(20, 17, 15, 0.14);
+  --qh-grid-line: rgba(20, 17, 15, 0.026);
+  // 浅色底上暖铜要压深，否则和米白纸糊在一起
+  --qh-color-gold: #8a6f3a;
+  --qh-card-metric: #8a6f3a;
+  --qh-narrative-skeleton: linear-gradient(
+    90deg,
+    rgba(20, 17, 15, 0.05),
+    rgba(20, 17, 15, 0.1),
+    rgba(20, 17, 15, 0.05)
+  );
 }
 
+// 卡片：纯色 + 1px 描边。删掉 blur(16px) 与双阴影 —— 那是「发糊」的来源，
+// 也是 impeccable 点名的「近黑 + 发光边缘」俗套。
 @mixin glass-panel($radius: var(--qh-radius-card)) {
-  border: 1px solid var(--qh-border);
+  border: 1px solid var(--qh-line);
   border-radius: $radius;
-  background: var(--qh-card-fill);
-  box-shadow: var(--qh-shadow-soft), var(--qh-inner-highlight);
-  backdrop-filter: blur(16px);
+  background: var(--qh-surface);
+  box-shadow: var(--qh-shadow-1);
 }
 
 @mixin focus-ring {
-  outline: 2px solid rgba(143, 208, 173, 0.72);
-  outline-offset: 3px;
+  outline: 2px solid var(--qh-accent-line);
+  outline-offset: 2px;
 }
 
+// 退役：原来的四色流光渐变文字属于 AI 俗套，现降级为纯色。
+// 保留 mixin 是为了让 8 个 view 的既有调用点不炸；新代码不要再 include。
 @mixin text-sheen {
-  background: linear-gradient(92deg, var(--qh-text), var(--qh-color-gold), var(--qh-color-blue), var(--qh-text));
-  background-size: 240% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: sheen 6s linear infinite;
+  color: var(--qh-fg);
 }
 
-// Shared action vocabulary: jade is reserved for progression, while quiet
-// controls stay in the night-paper field. Components opt in by class.
+// Shared action vocabulary: 中性主色承担主行动，朱砂只做选中与状态。
+// Components opt in by class.
 .qh-button,
 .qh-icon-button,
 .qh-option-button {
-  border: 1px solid var(--qh-border);
+  border: 1px solid var(--qh-line);
   border-radius: var(--qh-radius-stage);
-  box-shadow: var(--qh-inner-highlight);
+  box-shadow: none;
   font: inherit;
-  font-weight: 800;
+  font-weight: 600;
   transition:
     border-color var(--qh-duration-fast) ease,
     background-color var(--qh-duration-fast) ease,
-    color var(--qh-duration-fast) ease,
-    box-shadow var(--qh-duration-fast) ease;
+    color var(--qh-duration-fast) ease;
 }
 
 .el-button.qh-button,
 .qh-button {
   min-height: var(--qh-control-height);
   padding-inline: var(--qh-space-4);
-  color: var(--qh-text);
+  color: var(--qh-fg);
   background: var(--qh-button-secondary-fill);
 }
 
 .el-button.qh-button--primary,
 .qh-button--primary {
-  border-color: var(--qh-button-primary-border);
-  color: var(--qh-color-ink);
+  border-color: transparent;
+  color: var(--qh-primary-ink);
   background: var(--qh-button-primary-fill);
-  box-shadow: var(--qh-inner-highlight), inset 0 -1px 0 var(--qh-button-gold-line), var(--qh-shadow-soft);
+  box-shadow: none;
 }
 
 .el-button.qh-button--secondary,
 .qh-button--secondary {
-  border-color: var(--qh-color-jade-line);
-  color: var(--qh-text-soft);
+  border-color: var(--qh-line);
+  color: var(--qh-fg-soft);
   background: var(--qh-button-secondary-fill);
 }
 
@@ -326,7 +528,7 @@
   height: var(--qh-control-height);
   padding: 0;
   place-items: center;
-  color: var(--qh-text);
+  color: var(--qh-fg);
   background: var(--qh-button-secondary-fill);
   cursor: pointer;
 }
@@ -334,7 +536,7 @@
 .qh-option-button {
   min-height: var(--qh-control-height);
   padding: var(--qh-space-2) var(--qh-space-3);
-  color: var(--qh-text-soft);
+  color: var(--qh-fg-soft);
   background: var(--qh-button-option-fill);
   cursor: pointer;
   text-align: left;
@@ -343,30 +545,27 @@
 .qh-button:hover:not(:disabled),
 .qh-icon-button:hover:not(:disabled),
 .qh-option-button:hover:not(:disabled) {
-  border-color: var(--qh-button-gold-line);
-  color: var(--qh-text);
-  background: var(--qh-button-secondary-hover);
-  box-shadow: var(--qh-inner-highlight), 0 0 0 1px var(--qh-color-jade-wash);
+  border-color: var(--qh-line-strong);
+  color: var(--qh-fg);
+  background: var(--qh-surface-hover);
 }
 
 .qh-button--primary:hover:not(:disabled) {
-  color: var(--qh-color-ink);
+  color: var(--qh-primary-ink);
   background: var(--qh-button-primary-hover);
-  box-shadow: var(--qh-inner-highlight), inset 0 -1px 0 var(--qh-button-gold-line), var(--qh-shadow-deep);
 }
 
 .qh-option-button.is-selected,
 .qh-option-button[aria-pressed='true'] {
-  border-color: var(--qh-button-primary-border);
-  color: var(--qh-text);
-  background: var(--qh-button-option-active);
-  box-shadow: var(--qh-inner-highlight), inset 0 -1px 0 var(--qh-button-gold-line);
+  border-color: var(--qh-accent-line);
+  color: var(--qh-fg);
+  background: var(--qh-accent-soft);
 }
 
 .qh-button:active:not(:disabled),
 .qh-icon-button:active:not(:disabled),
 .qh-option-button:active:not(:disabled) {
-  box-shadow: inset 0 2px 8px var(--qh-color-shadow);
+  background: var(--qh-surface-sunken);
 }
 
 .qh-button:focus-visible,
@@ -380,18 +579,18 @@
 .qh-option-button:disabled,
 .qh-button[aria-busy='true'] {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .qh-option-group .el-radio-button__inner {
   min-height: var(--qh-control-height);
   padding: var(--qh-space-2) var(--qh-space-3);
-  border: 1px solid var(--qh-border) !important;
+  border: 1px solid var(--qh-line) !important;
   border-radius: var(--qh-radius-stage) !important;
-  color: var(--qh-text-soft);
+  color: var(--qh-fg-soft);
   background: var(--qh-button-option-fill);
-  box-shadow: var(--qh-inner-highlight) !important;
-  font-weight: 800;
+  box-shadow: none !important;
+  font-weight: 600;
 }
 
 .qh-option-group .el-radio-button__original-radio:focus-visible + .el-radio-button__inner {
@@ -399,31 +598,27 @@
 }
 
 .qh-option-group .el-radio-button__original-radio:checked + .el-radio-button__inner {
-  border-color: var(--qh-button-primary-border) !important;
-  color: var(--qh-text) !important;
-  background: var(--qh-button-option-active) !important;
-  box-shadow: var(--qh-inner-highlight), inset 0 -1px 0 var(--qh-button-gold-line) !important;
+  border-color: var(--qh-accent-line) !important;
+  color: var(--qh-fg) !important;
+  background: var(--qh-accent-soft) !important;
 }
 
+// 动效：只留「状态在呼吸」这一种，且全部低振幅。发光类（glow / vp）退役，
+// 保留 keyframe 名称以兼容既有调用点，但改成极弱的透明度呼吸。
 @keyframes sheen {
-  0% {
-    background-position: 0% 50%;
-  }
-
+  0%,
   100% {
-    background-position: 240% 50%;
+    opacity: 1;
   }
 }
 
 @keyframes live {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(143, 208, 173, 0.3);
-    opacity: 0.82;
+    opacity: 0.7;
   }
 
   50% {
-    box-shadow: 0 0 0 8px rgba(143, 208, 173, 0);
     opacity: 1;
   }
 }
@@ -475,22 +670,22 @@
 @keyframes glow {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(143, 208, 173, 0);
+    opacity: 0.88;
   }
 
   50% {
-    box-shadow: 0 0 26px rgba(143, 208, 173, 0.34);
+    opacity: 1;
   }
 }
 
 @keyframes vp {
   0%,
   100% {
-    text-shadow: 0 0 0 rgba(231, 194, 116, 0);
+    opacity: 0.92;
   }
 
   50% {
-    text-shadow: 0 0 16px rgba(231, 194, 116, 0.62);
+    opacity: 1;
   }
 }
 

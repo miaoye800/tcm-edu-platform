@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.profile.component_model import score_interval
 from app.profile.schema import DIMENSION_LABELS, Profile
 
 LOW_CONFIDENCE_THRESHOLD = 0.5
@@ -46,10 +47,12 @@ def to_radar(profile: Profile) -> dict[str, Any]:
 def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, Any]:
     dimension = getattr(profile, key)
     confidence = _confidence(dimension)
+    coverage = _coverage(dimension)
     value, kind = _axis_value(key, dimension)
     raw_label = _raw_label(key, dimension)
     lit = _is_lit(dimension)
-    status = _status(lit, confidence)
+    status = _status(lit)
+    interval = _score_interval(dimension, coverage, confidence)
     pending_verification = any(
         getattr(card, "claim_status", None) == "pending"
         for card in (getattr(dimension, "evidence", None) or [])
@@ -65,6 +68,8 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
         "raw_label": raw_label,
         "raw": raw_label,
         "confidence": confidence,
+        "coverage": coverage,
+        "score_interval": interval,
         "lit": lit,
         "status": status,
         "pending_verification": pending_verification,
@@ -81,6 +86,26 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
         "component_total": _component_count(dimension)[1],
         "pending_components": list(getattr(dimension, "pending_components", []) or []),
     }
+
+
+def _coverage(dimension: Any) -> float:
+    try:
+        return round(max(0.0, min(1.0, float(getattr(dimension, "coverage", 0.0) or 0.0))), 4)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _score_interval(dimension: Any, coverage: float, confidence: float) -> dict[str, float] | None:
+    """The honest error bar: wide when components are missing or evidence is weak."""
+
+    score = getattr(dimension, "score", None)
+    if score is None:
+        return None
+    try:
+        low, high = score_interval(float(score), coverage, confidence)
+    except (TypeError, ValueError):
+        return None
+    return {"low": low, "high": high}
 
 
 def _dimension_provenance(dimension: Any) -> str:
@@ -129,7 +154,7 @@ def _raw_label(key: str, dimension: Any) -> str:
         return str(label)
     score = getattr(dimension, "score", None)
     if score is not None:
-        return f"{_clamp_score(score, evidence_bearing=True)} 分"
+        return f"{_clamp_score(score, evidence_bearing=True):g} 分"
     return "待补充"
 
 
@@ -175,15 +200,15 @@ def _confidence(dimension: Any) -> float:
         return 0.0
 
 
-def _clamp_score(value: Any, *, evidence_bearing: bool = False) -> int:
+def _clamp_score(value: Any, *, evidence_bearing: bool = False) -> float:
     try:
         numeric = float(value)
     except (TypeError, ValueError):
-        return 0
+        return 0.0
     if not evidence_bearing:
-        return int(max(0, min(100, round(numeric))))
+        return round(max(0.0, min(100.0, numeric)), 1)
     # Profiles are useful estimates, never a literal human ceiling/floor.
-    return int(max(5, min(95, round(numeric))))
+    return round(max(5.0, min(95.0, numeric)), 1)
 
 
 def _is_placeholder(value: int, confidence: float, dimension: Any) -> bool:
@@ -201,12 +226,21 @@ def _is_placeholder(value: int, confidence: float, dimension: Any) -> bool:
 
 
 def _is_lit(dimension: Any) -> bool:
+    """An axis is lit when there is a *result*, not merely raw evidence.
+
+    "Evidence collected but no score yet" is exactly the state the coverage
+    gate and the no-key contract produce.  Drawing it as a value would show a
+    number nobody computed, so it stays dark and the collection progress is
+    reported through ``coverage``/``scoring_phase`` instead.
+    """
+
     if getattr(dimension, "scoring_phase", "scored") == "collecting" and getattr(dimension, "component_matrix", None):
         return False
     return bool(
-        getattr(dimension, "evidence", None)
+        getattr(dimension, "radar_score", None) is not None
         or getattr(dimension, "score", None) is not None
         or getattr(dimension, "label", None)
+        or getattr(dimension, "items", None)
     )
 
 
@@ -218,12 +252,16 @@ def _component_count(dimension: Any) -> tuple[int, int]:
     return collected, len(matrix)
 
 
-def _status(lit: bool, confidence: float) -> str:
-    if not lit:
-        return "dark"
-    if confidence < LOW_CONFIDENCE_THRESHOLD:
-        return "dashed"
-    return "solid"
+def _status(lit: bool) -> str:
+    """Only two states exist now.
+
+    The dashed style used to encode "lit but low confidence".  Confidence is
+    already visible as the ``score_interval`` width, and a half-drawn axis read
+    as "probably no score" to users, so the style is binary: there is a result
+    or there is not.
+    """
+
+    return "solid" if lit else "dark"
 
 
 __all__ = ["LOW_CONFIDENCE_THRESHOLD", "to_radar"]

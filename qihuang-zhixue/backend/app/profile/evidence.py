@@ -77,6 +77,10 @@ class EvidenceCard(BaseModel):
     semantic_relation: Literal["new", "reinforcement", "semantic_duplicate", "conflict"] | None = None
     related_evidence_ids: list[str] = Field(default_factory=list)
     quality_factors: dict[str, Any] = Field(default_factory=dict)
+    quality_reason: str = ""
+    # 质量分的判定过程（看到什么原话 → 命中哪档 → 档内为何落这里）。
+    # 这是模型自己写下的判定说明，不是私有思维链，审计里直接展示。
+    quality_thinking: str = ""
     confirmed_aspects: list[str] = Field(default_factory=list)
     pending_aspects: list[str] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

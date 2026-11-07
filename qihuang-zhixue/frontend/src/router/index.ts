@@ -1,8 +1,12 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import AtlasView from '../views/AtlasView.vue'
+import CompareView from '../views/CompareView.vue'
+import MindmapStudioView from '../views/MindmapStudioView.vue'
+import KgAskView from '../views/KgAskView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import DashboardView from '../views/DashboardView.vue'
+import DocStudioView from '../views/DocStudioView.vue'
 // LearnView is retained for compatibility; /learn redirects to the meridian entry.
 import LoginView from '../views/LoginView.vue'
 import MyResourcesView from '../views/MyResourcesView.vue'
@@ -10,12 +14,13 @@ import ResourceDetailView from '../views/ResourceDetailView.vue'
 import MistakesView from '../views/MistakesView.vue'
 import MeridianDemo from '../views/MeridianDemo.vue'
 import AlchemyDemo from '../views/AlchemyDemo.vue'
-import MindmapThemesDemo from '../views/MindmapThemesDemo.vue'
 import MeridianMapView from '../views/MeridianMapView.vue'
 import OnboardingView from '../views/OnboardingView.vue'
 import PathView from '../views/PathView.vue'
+import PrescriptionView from '../views/PrescriptionView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import QuizView from '../views/QuizView.vue'
+import PptStudioView from '../views/PptStudioView.vue'
 import AssessmentView from '../views/AssessmentView.vue'
 import ApprenticeStoryView from '../views/ApprenticeStoryView.vue'
 import ReviewView from '../views/ReviewView.vue'
@@ -42,12 +47,24 @@ const routes: RouteRecordRaw[] = [
     component: AlchemyDemo,
     meta: { title: '炼药演出样张', public: true },
   },
-  {
-    path: '/mindmap-themes',
-    name: 'mindmap-themes',
-    component: MindmapThemesDemo,
-    meta: { title: '思维导图模板库', public: true },
-  },
+  // 仅开发环境：四结构 × 四主题的版式验证页，不进生产包。
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '/_lab/mindmap',
+          name: 'mindmap-lab',
+          component: () => import('../views/MindmapStyleLab.vue'),
+          meta: { title: '导图版式验证', public: true },
+        } as RouteRecordRaw,
+        {
+          // 挂真实 StudioCanvas 的联调页：验证适配层，而不是验证库。
+          path: '/_lab/canvas',
+          name: 'mindmap-canvas-lab',
+          component: () => import('../views/MindmapCanvasHarness.vue'),
+          meta: { title: '导图画布联调', public: true },
+        } as RouteRecordRaw,
+      ]
+    : []),
   {
     path: '/meridian-demo',
     name: 'meridian-demo',
@@ -148,6 +165,42 @@ const routes: RouteRecordRaw[] = [
         name: 'atlas',
         component: AtlasView,
         meta: { title: '中药图谱', group: '图谱', mode: 'embedded' },
+      },
+      {
+        path: 'mindmap',
+        name: 'mindmap-studio',
+        component: MindmapStudioView,
+        meta: { title: '导图工坊', group: '图谱', mode: 'embedded' },
+      },
+      {
+        path: 'compare',
+        name: 'compare',
+        component: CompareView,
+        meta: { title: '两药对比', group: '图谱', mode: 'embedded' },
+      },
+      {
+        path: 'prescription',
+        name: 'prescription',
+        component: PrescriptionView,
+        meta: { title: '处方审查', group: '图谱', mode: 'embedded' },
+      },
+      {
+        path: 'kg-ask',
+        name: 'kg-ask',
+        component: KgAskView,
+        meta: { title: '图谱问答', group: '图谱', mode: 'embedded' },
+      },
+      {
+        path: 'ppt',
+        name: 'ppt-studio',
+        component: PptStudioView,
+        meta: { title: '幻灯工坊', group: '创作', mode: 'embedded' },
+      },
+      {
+        path: 'doc-studio',
+        name: 'doc-studio',
+        component: DocStudioView,
+        meta: { title: '文档工坊', group: '创作', mode: 'embedded' },
       },
       {
         path: 'theater',
