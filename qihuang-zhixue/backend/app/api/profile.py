@@ -35,8 +35,17 @@ from app.profile.narrative import synthesize_profile_narrative
 from app.profile.schema import Profile
 from app.profile.goal_agent import GoalAgentResult, run_goal_agent
 from app.profile.schema import Goal
-from app.profile.store import DB_PATH, add_evidence, get_profile, get_trust, list_profile_changes, record_profile_change, upsert_profile
-from app.profile.update import get_latest_profile, profile_to_response
+from app.profile.store import (
+    DB_PATH,
+    add_evidence,
+    get_profile,
+    get_trust,
+    list_profile_changes,
+    list_profile_sessions,
+    record_profile_change,
+    upsert_profile,
+)
+from app.profile.update import attach_evidence_to_dimension, read_profile_snapshot, profile_to_response
 from app.profile.evidence import EvidenceCard, EvidenceTier
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
@@ -125,7 +134,7 @@ async def read_profile(
 ) -> dict[str, Any]:
     """Return the latest learning profile with per-dimension confidence."""
 
-    profile = await get_latest_profile(current_user.user_id, db_path=db_path)
+    profile = read_profile_snapshot(current_user.user_id, db_path=db_path)
     return _profile_response_with_changes(profile, db_path=db_path, limit=limit, offset=offset)
 
 
@@ -258,7 +267,7 @@ async def confirm_goal(
         evidence_ids=[card.evidence_id],
         db_path=db_path,
     )
-    fused_profile = await get_latest_profile(current_user.user_id, db_path=db_path)
+    fused_profile = attach_evidence_to_dimension(current_user.user_id, "learning_goal", db_path=db_path)
     return {
         "planning_params": fused_profile.planning_params.model_dump(mode="json"),
         "goal": fused_profile.goal.model_dump(mode="json"),
@@ -410,6 +419,28 @@ async def dialogue_chat(
     )
 
 
+@router.get("/sessions")
+async def read_profile_sessions(
+    current_user: AuthUser = Depends(get_current_user),
+    db_path: Path = Depends(get_profile_db_path),
+    mode: ProfileMode | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> dict[str, Any]:
+    """List the current user's past profile sessions, newest first.
+
+    会话 id 以前只活在前端的 sessionStorage 里：关掉浏览器、换台机器，就再也
+    回不到那次对话。列表放在后端，用户才能"点某次历史对话回到那一次"。
+    """
+
+    rows = list_profile_sessions(
+        current_user.user_id,
+        mode=mode.value if mode else None,
+        limit=limit,
+        db_path=db_path,
+    )
+    return {"items": rows, "total": len(rows)}
+
+
 @router.get("/{user_id}")
 async def read_profile_by_user_id(
     user_id: str,
@@ -422,7 +453,7 @@ async def read_profile_by_user_id(
 
     if user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="cannot read another user's profile")
-    profile = await get_latest_profile(user_id, db_path=db_path)
+    profile = read_profile_snapshot(user_id, db_path=db_path)
     return _profile_response_with_changes(profile, db_path=db_path, limit=limit, offset=offset)
 
 
@@ -479,6 +510,6 @@ def _format_sse(event: str, data: dict[str, Any]) -> str:
 
 
 async def _profile_narrative_payload(user_id: str, *, db_path: Path, settings: Settings) -> dict[str, Any]:
-    profile = await get_latest_profile(user_id, db_path=db_path, settings=settings)
+    profile = read_profile_snapshot(user_id, db_path=db_path)
     narrative = await synthesize_profile_narrative(profile, settings=settings)
     return narrative.model_dump(mode="json")

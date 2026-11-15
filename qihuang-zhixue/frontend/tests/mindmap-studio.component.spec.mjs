@@ -95,7 +95,7 @@ assert.match(resourceTypes, /intent_note/, '事件载荷带后端写好的那句
 assert.match(studio, /intentNote/, '问法说明进状态')
 assert.match(studio, /degraded/, '域外标记进状态')
 assert.match(card, /note/, '完成卡渲染这句说明')
-assert.match(view, /主题不在教材语料内/, '底栏对域外主题明确降级')
+assert.match(view, /主题不在本地教材内/, '底栏对域外主题明确降级')
 assert.match(studio, /structureTouched/, '用户亲手选过结构才锁定结构')
 assert.match(capabilityTypes, /client_invocation_id/, '契约类型里有幂等键')
 
@@ -129,5 +129,20 @@ assert.match(view, /StateError/, '错误态用标准组件')
 
 // —— 收卷：完成卡上的数字要跟着实时统计走 ——
 assert.match(chat, /watch\(\(\) => studio\.stats\.value, patchResult/, '完成卡跟随实时统计，不是快照')
+
+// —— 方案协商：先出方案、确认之后才铺枝 ——
+assert.match(view, /phase === 'awaiting-plan' && plan/, '只在拿到方案时开面板')
+assert.match(view, /@revise="revisePlan"/, '面板可带反馈修订')
+assert.match(view, /@confirm="confirmPlan"/, '面板可确认')
+assert.match(view, /@cancel="cancelPlan"/, '面板可退出（暂不生成）')
+assert.match(studio, /case 'plan':/, '消费方案事件')
+assert.match(studio, /await_plan/, '识别「等确认方案」的暂停')
+assert.match(studio, /confirmResourcePlan/, '确认走方案接口')
+assert.match(view, /route\.query\.task/, '刷新回来先认任务，不重开一张')
+
+// —— 方案分支落地率：确认过的结构不能悄悄少一支 ——
+assert.match(studio, /planCoverage/, '记住方案分支覆盖率')
+assert.match(studio, /payload\.plan_coverage/, '读后端给的覆盖率')
+assert.match(view, /planCoverage\.missing/, '没落地的分支要说出来')
 
 console.log('mindmap studio component contract checks passed')

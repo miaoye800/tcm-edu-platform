@@ -169,9 +169,12 @@ def test_profile_narrative_endpoint_returns_description_and_structured_fields(tm
     assert len(user_payload["dimensions"]) == 7
     assert payload["method"] == "template"
     # 无 key 时不再造 0 分：知识基础没有分，就不再被当成"低分薄弱项"引用。
-    # 薄弱点维度本身置信度 0.4 未过 0.5 门槛，因此整份叙述按"待补充"呈现，
-    # 但原话里的标签仍然进得了建议引子。
-    assert payload["weak_points"] == []
+    # 薄弱点维度是另一回事：两道难题都答错，置信度 0.8 是证据算出来的，
+    # 这条结论必须留在结构化字段里（描述里也照原话点了"清热药·剂量"）。
+    # 过去读接口会重跑一次无 key 评审把它压到 0.4 以下，等于让一次"看一眼"
+    # 抹掉了用户刚做出来的错题证据；读现在是纯读，不再有这种副作用。
+    assert [item["dimension_key"] for item in payload["weak_points"]] == ["weak_points"]
+    assert payload["weak_points"][0]["confidence"] >= 0.5
     assert "待补充" in payload["description"]
     assert "清热药·剂量" in payload["description"]
     assert payload["dimensions"][0]["evidence_refs"]
@@ -269,3 +272,39 @@ def _test_db_path(tmp_path: Path) -> Path:
     root = tmp_path / ".data"
     root.mkdir(parents=True, exist_ok=True)
     return root / f"profile_narrative_test_{uuid4().hex}.db"
+
+
+def test_only_one_dimension_evidenced_never_gets_other_conclusions() -> None:
+    """只有目标锚定度有证据时，档案卷不许替别的维度下结论。
+
+    对话式画像可能只跑了一两轮就退出，七维里只有 learning_goal 有证据。
+    此时其余六维必须标「待补充」，既不能借 0 分冒充"基础薄弱"，也不能出现在
+    优势 / 薄弱点列表里。
+    """
+
+    from app.profile.schema import create_blank_profile
+
+    profile = create_blank_profile("student-goal-only")
+    profile.learning_goal.label = "应试提分"
+    profile.learning_goal.confidence = 0.62
+    # 有标签还不够：叙述里的"ready"与雷达同口径，必须有算出来的分。
+    # 现场的学习目标维度是 3/5 组件、53 分；只写 label 是旧夹具的构造。
+    profile.learning_goal.radar_score = 58.0
+    profile.learning_goal.narrative = "目标是应试提分，指向明确。"
+
+    narrative = asyncio.run(synthesize_profile_narrative(profile, settings=_no_key_settings()))
+
+    ready = {item.key for item in narrative.dimensions if item.status == "ready"}
+    pending = {item.key for item in narrative.dimensions if item.status == "待补充"}
+    assert ready == {"learning_goal"}, f"只有目标维度算取证，实际 {ready}"
+    assert pending == {
+        "knowledge_base", "learning_style", "weak_points", "pace", "motivation", "resource_preference",
+    }
+
+    # 结论列表只能引用已取证的维度。
+    for item in [*narrative.advantages, *narrative.weak_points]:
+        assert item.dimension_key == "learning_goal", f"{item.dimension_key} 没有证据却进了结论"
+    # 文字里不能出现"薄弱/偏低"这类对其他维度的判断。
+    for forbidden in ("知识基础为", "动机强度", "学习节奏", "资源偏好"):
+        assert forbidden not in narrative.description, f"没有证据却写了「{forbidden}」"
+    assert "待补充" in narrative.description

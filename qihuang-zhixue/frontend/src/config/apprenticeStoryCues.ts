@@ -66,11 +66,14 @@ export const apprenticeStoryCues: Record<string, StoryCue[]> = {
     { at: 6, text: '你且定下每日功课与目标', speaker: '老中医' },
   ],
 
-  // section-six：第 2 秒礼成，第 4 秒交代画像（字幕卡 2「拜师礼成」/ 4「此乃你此刻之画像」/ 7「随你修行」/ 8「自会不断生长」）。
+  // section-six：第 2 秒礼成，第 4 秒交代画像，第 7 秒交代它会生长
+  // （字幕卡 2「拜师礼成」/ 4「此乃你此刻之画像」/ 7「随你修行，自会不断生长」）。
+  // 三句必须各占一拍：前两句挤在一行时，第 4 秒才抬头看的人会以为礼还没成。
   'apprentice-complete': [
     { at: 0, text: '（灯影摇了一下，他搁下手中的笔。）', speaker: '旁白' },
     { at: 2, text: '拜师礼成', speaker: '老中医' },
-    { at: 4, text: '此乃你此刻之画像，随你修行，自会不断生长', speaker: '老中医' },
+    { at: 4, text: '此乃你此刻之画像', speaker: '老中医' },
+    { at: 7, text: '随你修行，自会不断生长', speaker: '老中医' },
   ],
 }
 

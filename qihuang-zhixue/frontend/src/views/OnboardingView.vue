@@ -3,20 +3,24 @@
     <div class="onboarding-hero">
       <div>
         <p class="eyebrow">画像入口</p>
-        <h2>{{ resultReady ? '画像已点亮' : session ? activeStep?.title : '焕醒你的弟子画像' }}</h2>
+        <h2>{{ resultReady ? '画像已点亮' : reviewingSessionId ? '回看这次对话' : session ? activeStep?.title : '焕醒你的弟子画像' }}</h2>
         <p>
           {{
             resultReady
               ? '已根据本轮证据更新七维画像。低置信维度仍会以虚线显示，后续边学边补。'
-              : session
-                ? activeStep?.prompt
-                : '选一种舒服的方式开始。也可以先随便逛逛，系统只在你使用时做被动取证。'
+              : reviewingSessionId
+                ? (session?.finished
+                    ? '这一次对话已经收档，往下翻可以看到当时的问答与身份卡。'
+                    : '这一次对话还没收档，可以接着说，也可以回到入口挑一局新的。')
+                : session
+                  ? activeStep?.prompt
+                  : '选一种舒服的方式开始。不想现在画也没关系，直接去别的页面即可，画像会等你回来。'
           }}
         </p>
       </div>
 
       <div class="hero-actions">
-        <el-button v-if="!resultReady" class="qh-button qh-button--secondary" :icon="View" @click="skipOnboarding">先随便逛逛 / 跳过</el-button>
+        <el-button v-if="!resultReady" class="qh-button qh-button--secondary" :icon="View" @click="deferOnboarding">稍后再画，先去看看</el-button>
         <el-button v-if="session && !resultReady" class="qh-button qh-button--secondary" :icon="Refresh" @click="resetFlow">换一种方式</el-button>
       </div>
     </div>
@@ -42,28 +46,57 @@
       </GlassCard>
     </section>
 
-    <ProfileDialogue
-      v-else-if="session && !resultReady && activeMode === 'dialogue'"
-      :prompt="dialoguePrompt"
-      :card-scores="dialogueCardScores"
-      :inferred-card="dialogueInferredCard"
-      :radar="dialogueRadarAxes"
-      :profile-progress="dialogueProfileProgress"
-      :evidence-panel="dialogueEvidencePanel"
-      :identity-cards-view="dialogueIdentityCards"
-      :session-id="session.session_id"
-      :active-target="dialogueActiveTarget"
-      :active-target-label="dialogueActiveTargetLabel"
-      :converged="dialogueConverged"
-      :quick-replies="dialogueQuickReplies"
-      :stream-events="dialogueStreamEvents"
-      :developer-audit="session.developer_audit"
-      :chat-history="session.chat_history ?? []"
-      :pending="dialoguePending"
-      :disabled="!activeStep"
-      @answer="answerDialogue"
-      @confirm="confirmDialogue"
-    />
+    <template v-else-if="session && !resultReady && activeMode === 'dialogue'">
+      <!-- 历史对话就在对话式画像里，不必先退回入口页去找。 -->
+      <section v-if="historyItems.length" class="dialogue-history" aria-label="之前的对话">
+        <span class="dialogue-history__label">之前的对话</span>
+        <div class="dialogue-history__list">
+          <button
+            v-for="item in historyItems"
+            :key="item.session_id"
+            type="button"
+            :class="['dialogue-history__item', { 'is-active': item.session_id === session.session_id }]"
+            :disabled="busy || item.session_id === session.session_id"
+            @click="openHistorySession(item.session_id)"
+          >
+            <span>{{ formatHistoryTime(item.updated_at) }}</span>
+            <span class="dialogue-history__quote">{{ item.last_user_message || '（这一局还没有说过话）' }}</span>
+          </button>
+        </div>
+        <el-button class="qh-button qh-button--secondary qh-button--compact" size="small" :icon="Back" @click="closeReview">
+          回到入口
+        </el-button>
+      </section>
+      <div v-if="reviewingSessionId" class="review-banner">
+        <span>
+          {{ session.finished ? '这一次对话已经收档，下面是当时的完整问答。' : '这一次对话还没收档，可以接着说。' }}
+        </span>
+        <div class="review-banner__actions">
+          <el-button class="qh-button qh-button--secondary qh-button--compact" size="small" @click="closeReview">回到入口</el-button>
+          <el-button v-if="session.finished" class="qh-button qh-button--primary qh-button--compact" size="small" type="primary" @click="goProfile">查看弟子档案</el-button>
+        </div>
+      </div>
+      <ProfileDialogue
+        :prompt="dialoguePrompt"
+        :card-scores="dialogueCardScores"
+        :inferred-card="dialogueInferredCard"
+        :radar="dialogueRadarAxes"
+        :profile-progress="dialogueProfileProgress"
+        :evidence-panel="dialogueEvidencePanel"
+        :identity-cards-view="dialogueIdentityCards"
+        :session-id="session.session_id"
+        :active-target="dialogueActiveTarget"
+        :active-target-label="dialogueActiveTargetLabel"
+        :converged="dialogueConverged"
+        :quick-replies="dialogueQuickReplies"
+        :stream-events="dialogueStreamEvents"
+        :chat-history="session.chat_history ?? []"
+        :pending="dialoguePending"
+        :disabled="!activeStep"
+        @answer="answerDialogue"
+        @confirm="confirmDialogue"
+      />
+    </template>
 
     <GlassCard v-else-if="session && !resultReady" class="session-card" padding="lg">
       <div class="session-head">
@@ -129,7 +162,7 @@
       </section>
 
       <footer class="session-actions">
-        <el-button class="qh-button qh-button--secondary" @click="skipOnboarding">先随便逛逛 / 跳过</el-button>
+        <el-button class="qh-button qh-button--secondary" @click="deferOnboarding">稍后再画，先去看看</el-button>
         <el-button class="qh-button qh-button--primary" type="primary" :icon="Check" :loading="busy" :disabled="!canSubmitStep" @click="submitStep">
           {{ session.finished ? '生成画像' : '下一步' }}
         </el-button>
@@ -203,16 +236,17 @@
 import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowRight, Check, Compass, FirstAidKit, MagicStick, Refresh, Tickets, View } from '@element-plus/icons-vue'
+import { ArrowRight, Back, Check, Compass, FirstAidKit, MagicStick, Refresh, Tickets, View } from '@element-plus/icons-vue'
 import ProfileDialogue from '../components/profile/ProfileDialogue.vue'
 import RadarChart from '../components/profile/RadarChart.vue'
 import type { AnswerPayload, CardScores, ConfirmPayload } from '../components/profile/profileDialogueModel'
 import Badge from '../components/ui/Badge.vue'
 import GlassCard from '../components/ui/GlassCard.vue'
-import { answerProfileSession, finishProfileSession, readProfileSession, startProfileSession, streamProfileDialogueChat } from '../services/profileApi'
+import { answerProfileSession, finishProfileSession, listProfileSessions, readProfileSession, startProfileSession, streamProfileDialogueChat } from '../services/profileApi'
 import {
   clearActiveProfileSession,
   clearPendingDialogueTurn,
+  markOnboardingInvited,
   readActiveProfileSession,
   readPendingDialogueTurn,
   resolvePendingDialogueTurn,
@@ -224,6 +258,7 @@ import {
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
 import type { ProfileBuildMode, ProfileDialogueStreamUiEvent, ProfileSessionQuestion, ProfileSessionResponse } from '../types/profile'
+import type { ProfileSessionHistoryItem } from '../services/profileApi'
 import { buildRadarAxes, isNoKeyProvenance } from '../utils/profileMath'
 
 type ModeCard = {
@@ -299,6 +334,8 @@ const error = ref('')
 const session = ref<ProfileSessionResponse | null>(null)
 const activeMode = ref<ProfileBuildMode | null>(null)
 const resultReady = ref(false)
+const reviewingSessionId = ref('')
+const historyItems = ref<ProfileSessionHistoryItem[]>([])
 const stepStartedAt = ref(Date.now())
 let dialogueStreamEventId = 0
 let dialogueStreamInFlight: Promise<void> | null = null
@@ -449,6 +486,7 @@ const startMode = async (mode: ProfileBuildMode) => {
   error.value = ''
   try {
     activeMode.value = mode
+    reviewingSessionId.value = ''
     profileStore.clearDialogueRadarChanges()
     dialogueStreamEvents.value = []
     session.value = await startProfileSession(mode)
@@ -575,11 +613,6 @@ const answerDialogue = async (payload: AnswerPayload) => {
       }
       return
     }
-    if (event === 'audit' && session.value) {
-      const record = data as import('../types/profile').ProfileDeveloperAuditRecord
-      session.value = { ...session.value, developer_audit: [...(session.value.developer_audit ?? []), record].slice(-24) }
-      return
-    }
     if (event === 'identity_cards' && session.value) {
       const items = Array.isArray(data.items) ? data.items : []
       session.value = { ...session.value, identity_cards: items as NonNullable<ProfileSessionResponse['identity_cards']> }
@@ -668,6 +701,18 @@ const finishCurrentSession = async () => {
   ElMessage.success('画像已更新')
 }
 
+/**
+ * 暂不绘制画像：只离开，不写 skipped、不建被动会话。
+ *
+ * 「跳过」过去要等一个 passive 会话跑完才放行，而且会留下一条"已跳过"记录，
+ * 让侧栏再也不敢提画像。现在离开就是离开，画像仍是空的，入口随时可回来。
+ */
+const deferOnboarding = async () => {
+  if (auth.user) markOnboardingInvited(auth.user.user_id)
+  ElMessage.success('先去看看，随时可从侧栏「焕醒画像」继续')
+  await router.replace(redirectTarget())
+}
+
 const skipOnboarding = async () => {
   if (!auth.user) return
   busy.value = true
@@ -696,22 +741,98 @@ const resetFlow = () => {
   session.value = null
   activeMode.value = null
   resultReady.value = false
+  reviewingSessionId.value = ''
   dialoguePending.value = false
   dialogueStreamEvents.value = []
   error.value = ''
   resetStepForm()
+  void loadHistory()
+}
+
+const modeLabel = (mode: ProfileBuildMode): string =>
+  ({ dialogue: '对话问诊', apprentice: '收徒剧情', practice: '开药实战', passive: '旁观', quickcard: '快问快答' })[mode] ?? mode
+
+const formatHistoryTime = (value: string): string => {
+  if (!value) return '时间未知'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  const pad = (input: number) => String(input).padStart(2, '0')
+  return `${parsed.getMonth() + 1}月${parsed.getDate()}日 ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
+}
+
+/**
+ * 历史会话列表。
+ *
+ * 以前只有一个 `sessionStorage` 里的 sessionId：换浏览器、清站点数据就再也回
+ * 不到那次对话。列表由后端给出，这里只负责展示与跳转。
+ */
+const loadHistory = async () => {
+  if (!auth.user) return
+  try {
+    const page = await listProfileSessions(undefined, 8)
+    // 只列"真的说过话"的会话：继承种子证据但一条消息都没有的空会话点进去
+    // 就是一片空白，用户会以为历史丢了、画像没存。
+    historyItems.value = page.items.filter((item) => item.message_count > 0)
+  } catch {
+    historyItems.value = []
+  }
+}
+
+const openHistorySession = async (sessionId: string) => {
+  if (busy.value) return
+  busy.value = true
+  error.value = ''
+  try {
+    const restored = await readProfileSession(sessionId)
+    session.value = restored
+    activeMode.value = restored.mode
+    resultReady.value = false
+    reviewingSessionId.value = sessionId
+    dialogueStreamEvents.value = []
+    resetStepForm()
+    // 未收档的一局继续算"正在进行"，刷新或换页都能接着聊。
+    if (!restored.finished && auth.user) {
+      saveActiveProfileSession(auth.user.user_id, { sessionId: restored.session_id, mode: restored.mode })
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '这一次对话读不出来了，请稍后重试'
+  } finally {
+    busy.value = false
+  }
+}
+
+const closeReview = () => {
+  resetFlow()
+}
+
+const goProfile = async () => {
+  resetFlow()
+  await router.replace('/profile')
 }
 
 onMounted(async () => {
+  // 历史列表与"是否接着上一局"互相独立：恢复进行中的会话时，用户同样要在
+  // 对话页里能切回之前的几次。
+  void loadHistory()
   const saved = readActiveProfileSession(auth.user?.user_id)
-  if (!saved) return
+  if (!saved) {
+    return
+  }
   busy.value = true
   error.value = ''
   try {
     const restored = await readProfileSession(saved.sessionId)
     if (restored.finished) {
       clearActiveProfileSession(auth.user?.user_id)
-      await router.replace('/profile')
+      // 不回跳档案页：用户是从入口点进来的，这里给出这次对话的入口更合理。
+      await loadHistory()
+      return
+    }
+    if (!(restored.chat_history ?? []).length) {
+      // 只有"开过一局但一句没说"的会话才会走到这里。恢复它等于把用户丢进
+      // 一个空对话里——侧栏点「重塑画像」看到的就是一片空白。回到入口重新选。
+      clearActiveProfileSession(auth.user?.user_id)
+      await loadHistory()
       return
     }
     session.value = restored
@@ -723,6 +844,7 @@ onMounted(async () => {
   } catch (err) {
     clearActiveProfileSession(auth.user?.user_id)
     error.value = err instanceof Error ? err.message : '画像会话已过期，请重新开始'
+    void loadHistory()
   } finally {
     busy.value = false
   }
@@ -818,6 +940,82 @@ h3 {
   min-height: 270px;
   align-content: space-between;
   gap: 18px;
+}
+
+.review-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--qh-line);
+  border-radius: 16px;
+  background: var(--qh-line);
+  font-size: 13px;
+}
+
+.dialogue-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--qh-line);
+  border-radius: 16px;
+  background: var(--qh-card-fill);
+}
+
+.dialogue-history__label {
+  color: var(--qh-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.dialogue-history__list {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.dialogue-history__item {
+  display: grid;
+  gap: 2px;
+  min-width: 160px;
+  max-width: 240px;
+  padding: 6px 10px;
+  border: 1px solid var(--qh-line);
+  border-radius: 10px;
+  color: var(--qh-text);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dialogue-history__item.is-active {
+  border-color: var(--qh-color-jade);
+  background: color-mix(in srgb, var(--qh-color-jade) 10%, transparent);
+  cursor: default;
+}
+
+.dialogue-history__item:disabled {
+  opacity: 0.72;
+}
+
+.dialogue-history__quote {
+  overflow: hidden;
+  color: var(--qh-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-banner__actions {
+  display: flex;
+  gap: 8px;
 }
 
 .mode-icon {

@@ -20,7 +20,7 @@ onMounted(async () => {
   try {
     const resource = await getResource(String(route.params.id))
     // 幻灯与导图都没有「只读查看」这一态：它们天生要改、要导、要换结构配色，
-    // 所以直接送进各自的工坊打开那一稿。只读视图已退役到 views/_legacy。
+    // 所以直接送进各自的工坊打开那一稿。只读视图（MindmapResourceView 等）已删除。
     if (resource.type === 'ppt') {
       await router.replace({ name: 'ppt-studio', query: { resource: resource.id } })
       return

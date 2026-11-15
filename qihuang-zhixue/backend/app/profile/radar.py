@@ -48,9 +48,12 @@ def _axis_payload(profile: Profile, key: str, source_label: str) -> dict[str, An
     dimension = getattr(profile, key)
     confidence = _confidence(dimension)
     coverage = _coverage(dimension)
-    value, kind = _axis_value(key, dimension)
-    raw_label = _raw_label(key, dimension)
     lit = _is_lit(dimension)
+    # 未点亮的轴不能带值：`derived_score` 会把"只有一个标签"算成 95 分，
+    # 而同一维度在对话里因为覆盖度不足显示"待取证"。一个说 95 一个说没评分，
+    # 用户看到的就是"档案和刚聊完的画像不是同一份"。
+    value, kind = _axis_value(key, dimension) if lit else (0, "derived")
+    raw_label = _raw_label(key, dimension)
     status = _status(lit)
     interval = _score_interval(dimension, coverage, confidence)
     pending_verification = any(
@@ -226,22 +229,22 @@ def _is_placeholder(value: int, confidence: float, dimension: Any) -> bool:
 
 
 def _is_lit(dimension: Any) -> bool:
-    """An axis is lit when there is a *result*, not merely raw evidence.
+    """An axis is lit when there is a *number*, not merely material.
 
-    "Evidence collected but no score yet" is exactly the state the coverage
-    gate and the no-key contract produce.  Drawing it as a value would show a
-    number nobody computed, so it stays dark and the collection progress is
-    reported through ``coverage``/``scoring_phase`` instead.
+    Only a computed score counts as a conclusion. `scoring_phase` is
+    deliberately not consulted: it answers "did we collect every component",
+    while the score answers "did we compute one". A 3-of-5 dimension can
+    already have a score — treating it as dark was what made the archive show
+    "派生值·待补充" right after the dialogue had revealed a 53-point card for
+    the same dimension. A label without a score is likewise not a conclusion:
+    `derived_score` would turn a single tag into 95 points.
     """
 
-    if getattr(dimension, "scoring_phase", "scored") == "collecting" and getattr(dimension, "component_matrix", None):
-        return False
-    return bool(
-        getattr(dimension, "radar_score", None) is not None
-        or getattr(dimension, "score", None) is not None
-        or getattr(dimension, "label", None)
-        or getattr(dimension, "items", None)
-    )
+    if getattr(dimension, "radar_score", None) is not None:
+        return True
+    if getattr(dimension, "score", None) is not None:
+        return True
+    return bool(getattr(dimension, "items", None))
 
 
 def _component_count(dimension: Any) -> tuple[int, int]:

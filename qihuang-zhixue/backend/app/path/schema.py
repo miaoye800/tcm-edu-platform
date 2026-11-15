@@ -48,6 +48,13 @@ class PlanningContext(StrictModel):
     prerequisite_edges: list[PrerequisiteEdgeInput]
     mastery: dict[str, MasteryState] = Field(default_factory=dict)
     time_budget: TimeBudget | None = None
+    #: 用户**原话**（向导第一步那个输入框）。它不参与规则计算，但要原样交给模型：
+    #: 「已经掌握中药学」这句信息量最大的东西，过去只被一张关键词表翻译成
+    #: breadth/pace/depth 就被丢掉了，模型从头到尾没看见过它。
+    request_text: str = ""
+    #: 已有路线的进度：``node_id -> status``。模型要"结合已有路线的节点"决定
+    #: 哪些已经学过可以跳、哪些学到一半要续，就得先看见它。
+    route_state: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_graph_references(self) -> "PlanningContext":
@@ -63,6 +70,10 @@ class StagePlan(StrictModel):
     order: int = Field(ge=1)
     order_locked: bool
     reason: str = Field(min_length=1)
+    #: 章所属学科。**图谱事实，不是模型产物**：兜底路线也要填，否则用户会在
+    #: "模型没给成"的那一版里看到学科突然消失，还以为路线被换了一份。
+    subject_id: str = ""
+    subject_name: str = ""
 
 
 class NodePlan(StrictModel):
@@ -102,6 +113,10 @@ class L1PlanResult(StrictModel):
     fallback: bool = False
     verify_attempts: int = 0
     verification_issues: list[VerificationIssue] = Field(default_factory=list)
+    #: 模型取舍提案原文 + rejected[]/auto_added[]/overrides[]。落库用，不参与前端契约。
+    proposal: dict[str, Any] | None = None
+    #: {model, temperature, prompt_hash, input_hash}；复现与 A/B 的锚点。
+    model_meta: dict[str, Any] | None = None
 
 
 class L2PlanResult(StrictModel):
@@ -110,6 +125,9 @@ class L2PlanResult(StrictModel):
     fallback: bool = False
     verify_attempts: int = 0
     verification_issues: list[VerificationIssue] = Field(default_factory=list)
+    #: 模型判定"已有基础、不必再学"的点。它们**不进路线**，但要在确认时标成已掌握：
+    #: 否则用户会看到"中药学我明明会，地图上却一片漆黑"。
+    skipped: list[dict[str, str]] = Field(default_factory=list)
 
 
 class NodeUpdate(StrictModel):
@@ -130,6 +148,10 @@ class AdjustmentDiff(StrictModel):
 
 class PlanRequest(StrictModel):
     time_budget: TimeBudget | None = None
+    #: ``True`` = 用户主动"重新规划"：不复用同 input_hash 的旧计划，重新问模型。
+    replan: bool = False
+    #: 用户原话。进模型 prompt，也进 input_hash（换个诉求就该是另一份计划）。
+    request: str = Field(default="", max_length=500)
 
 
 class ExpandRequest(StrictModel):
@@ -150,6 +172,10 @@ class PlanResponse(StrictModel):
     nodes: list[NodePlan]
     verify_attempts: int = 0
     verification_issues: list[VerificationIssue] = Field(default_factory=list)
+    # 三样落库：没有它们，"凭什么给我砍了三章"只能靠嘴说。
+    proposal: dict[str, Any] | None = None
+    model_meta: dict[str, Any] | None = None
+    input_snapshot: dict[str, Any] | None = None
 
 
 class ExpandResponse(StrictModel):
@@ -160,6 +186,7 @@ class ExpandResponse(StrictModel):
     nodes: list[NodePlan]
     verify_attempts: int = 0
     verification_issues: list[VerificationIssue] = Field(default_factory=list)
+    skipped: list[dict[str, str]] = Field(default_factory=list)
 
 
 class AdjustResponse(StrictModel):

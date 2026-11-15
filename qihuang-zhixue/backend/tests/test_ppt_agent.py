@@ -1,12 +1,14 @@
 """幻灯智能体：草案归一化、版式判定、无 key 兜底与模型路径的契约测试。"""
 
 import asyncio
+import json
 
 from app.agents.resource_context import retrieve_resource_docs
 from app.ppt import agent as agent_module
 from app.ppt.agent import PptAgent
 from app.ppt.draft import DeckDraft, DraftColumn, DraftSlide, OutlineDraft, OutlineDraftSlide, normalize_deck
 from app.ppt.params import PptParams
+from app.ppt.schemas import OutlineSlide
 from tests.helpers import keyless_settings
 
 SOURCES = [
@@ -150,11 +152,27 @@ def test_keyless_agent_honours_page_count_without_dropping_safety_pages():
     assert sections == [] or sections[0].startswith("一、")
 
 
-def test_agent_uses_structured_deck_when_model_available(monkeypatch):
+def test_agent_composes_one_call_per_page(monkeypatch):
+    """敷演是**一页一次调用**：整份一次写出来时，九页会变成同一段话切九份。
+
+    这个契约同时守住两件事：每页只收到自己的 role / 写作契约，以及页数与大纲一致。
+    """
+
+    seen: list[dict] = []
+
     async def fake_create(**kwargs):
         if kwargs.get("response_model") is OutlineDraft:
-            return OutlineDraft(deck_title="麻黄讲稿", slides=[OutlineDraftSlide(title="功效"), OutlineDraftSlide(title="鉴别")])
-        return _draft()
+            return OutlineDraft(
+                deck_title="麻黄讲稿",
+                slides=[
+                    OutlineDraftSlide(title="功效"),
+                    OutlineDraftSlide(title="鉴别"),
+                    OutlineDraftSlide(title="使用注意"),
+                ],
+            )
+        payload = json.loads(kwargs["messages"][1]["content"])
+        seen.append(payload)
+        return DraftSlide(title=payload["page"]["title"], bullets=["发汗解表"])
 
     monkeypatch.setattr(agent_module, "structured_create", fake_create)
 
@@ -163,8 +181,14 @@ def test_agent_uses_structured_deck_when_model_available(monkeypatch):
         return await PptAgent(settings=keyless_settings()).generate("麻黄", docs)
 
     deck = asyncio.run(run())
-    assert [slide.title for slide in deck.slides] == ["麻黄讲稿", "功效", "鉴别"]
-    assert deck.slides[2].kind == "compare"
+    titles = [slide.title for slide in deck.slides]
+    assert "功效" in titles and "鉴别" in titles
+    # 每页一次：大纲几页就调用几次（第 0 次是谋篇，不在 seen 里）。
+    assert len(seen) == 3
+    assert all("role" in payload["page"] and "write" in payload["page"] for payload in seen)
+    # 封面标题来自讲稿标题；正文页数＝大纲页数（封面由归一化补在最前）。
+    assert titles[0].startswith("麻黄")
+    assert len(deck.slides) == len(seen) + 1
 
 
 def test_agent_falls_back_when_model_raises(monkeypatch):
@@ -228,6 +252,54 @@ def test_compose_keeps_renamed_cover_as_the_cover():
     assert deck.slides[0].bullets == []
     assert deck.slides[0].subtitle, "封面副标题仍取模板里的性味归经"
     assert len(deck.slides) == 12
+
+
+def test_compose_pads_confirmed_outline_and_ignores_page_count(monkeypatch):
+    """确认过的方案是契约：翻页不少、页序照旧、左栏的「几页」不再截断。
+
+    模型少写一页是老毛病（尤其最后一页「回顾」）。这不是文案瑕疵，是
+    「用户确认的东西没做到」，所以按方案补齐；同时左栏那个页数是生成前的
+    建议值，不该把方案最后一页砍掉。
+    """
+
+    async def short(**kwargs):
+        if kwargs.get("response_model") is OutlineDraft:
+            return OutlineDraft(deck_title="人参讲稿", slides=[OutlineDraftSlide(title="时代背景")])
+        return DeckDraft(
+            deck_title="人参讲稿",
+            slides=[
+                DraftSlide(kind="cover", title="人参的发展历史"),
+                DraftSlide(title="一、时代背景", bullets=["汉唐本草已有记载"]),
+                DraftSlide(title="大纲外的一页", bullets=["模型自己加的"]),
+            ],
+        )
+
+    monkeypatch.setattr(agent_module, "structured_create", short)
+
+    outline = [
+        OutlineSlide(id="u1", title="人参的发展历史"),
+        OutlineSlide(id="u2", title="时代背景", points=["汉唐本草已有记载"]),
+        OutlineSlide(id="u3", title="栽培技术与产地演变", points=["明清人工栽培"]),
+        OutlineSlide(id="u4", title="现代研究", points=["化学成分与药理"]),
+        OutlineSlide(id="u5", title="临床应用", points=["独参汤", "生脉散"]),
+        OutlineSlide(id="u6", title="回顾与要点", points=["性味归经", "配伍禁忌"]),
+    ]
+
+    async def run():
+        docs = await retrieve_resource_docs("人参")
+        return await PptAgent(settings=keyless_settings()).compose(
+            "人参",
+            docs,
+            PptParams(page_count=6),
+            outline=outline,
+            strict_outline=True,
+        )
+
+    deck = asyncio.run(run())
+    titles = [slide.title for slide in deck.slides]
+    assert titles == [item.title for item in outline], "页序与标题以确认方案为准"
+    assert "大纲外的一页" not in titles, "大纲外的页不是惊喜，是跑偏"
+    assert deck.slides[-1].bullets, "补齐的页要有要点，不能交付一张空页"
 
 
 def test_polish_only_counts():

@@ -193,3 +193,64 @@ def test_deepseek_client_maps_connect_timeout_to_retryable_error(monkeypatch: py
 
     assert exc_info.value.retryable is True
     assert exc_info.value.fallback_reason == "ConnectTimeout"
+
+
+# ── 工具调用 ────────────────────────────────────────────────────────────────
+
+
+def test_tool_calls_are_parsed_with_arguments() -> None:
+    from app.llm.clients import tool_turn_from_message
+
+    message = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "search_assets", "arguments": '{"query": "黄芪", "limit": 3}'},
+            }
+        ],
+    }
+    turn = tool_turn_from_message(message)
+    assert turn.wants_tools
+    assert turn.text == ""
+    assert turn.tool_calls[0].name == "search_assets"
+    assert turn.tool_calls[0].arguments == {"query": "黄芪", "limit": 3}
+
+
+def test_broken_arguments_keep_the_call_and_the_raw_text() -> None:
+    """参数写错一个逗号不能把这一轮丢掉——模型会以为自己调用成功了。"""
+
+    from app.llm.clients import tool_turn_from_message
+
+    turn = tool_turn_from_message(
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [{"id": "c1", "function": {"name": "assign_asset", "arguments": "{unit_id: p1}"}}],
+        }
+    )
+    assert len(turn.tool_calls) == 1
+    assert turn.tool_calls[0].arguments == {}
+    assert "unit_id" in turn.tool_calls[0].raw_arguments
+
+
+def test_message_without_content_or_calls_is_empty_turn() -> None:
+    from app.llm.clients import tool_turn_from_message
+
+    turn = tool_turn_from_message({"role": "assistant", "content": None})
+    assert not turn.wants_tools
+    assert turn.text == ""
+
+
+def test_tools_reach_the_request_payload() -> None:
+    """白名单里没有 `tools` 时它会被静默丢掉——那正是升级前的缺陷。"""
+
+    from app.llm.clients import DeepSeekClient
+
+    payload: dict = {}
+    client = DeepSeekClient("deepseek-flash", api_key="k", base_url="http://x")
+    client._apply_params(payload, {"tools": [{"type": "function"}], "tool_choice": "auto", "thinking": {"type": "disabled"}})
+    assert payload["tools"] == [{"type": "function"}]
+    assert payload["tool_choice"] == "auto"

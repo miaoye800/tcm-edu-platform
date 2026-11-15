@@ -9,12 +9,13 @@ import {
 } from '../services/mindmapStudioApi'
 import { generateMindmap, presentMindmap } from '../services/capabilityApi'
 import { getKnowledgeTree } from '../services/pathApi'
-import { getResource, streamResourceTask } from '../services/resourceApi'
+import { confirmResourcePlan, getResource, getResourceTask, reviseResourcePlan, streamResourceTask } from '../services/resourceApi'
+import type { ResourcePlan } from '../types/resource'
 import type { KnowledgeNode } from '../types/path'
 import type { ResourceItem, ResourceMindmapNode, ResourceTaskEvent } from '../types/resource'
 import { toSaveTree, type MindmapTreeNode } from '../utils/mindmapTree'
 
-export type StudioPhase = 'idle' | 'generating' | 'editing' | 'failed'
+export type StudioPhase = 'idle' | 'generating' | 'awaiting-plan' | 'editing' | 'failed'
 export type SaveStatus = 'clean' | 'saving' | 'saved' | 'conflict' | 'error'
 
 /** 画布对外的能力面。用 getter 取，避免 ref 声明顺序把 Composable 绑死在组件生命周期上。 */
@@ -56,6 +57,13 @@ export interface StudioStats {
 export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
   const phase = ref<StudioPhase>('idle')
   const errorMessage = ref('')
+  const plan = ref<ResourcePlan | null>(null)
+  const planBusy = ref(false)
+  /** 方案分支在树里落地了几支：回答「我说的那几支画出来了吗」。 */
+  const planCoverage = ref<{ planned: number; matched: number; missing: string[] } | null>(null)
+  /** 成品与方案的差距（层数不够、某支没落地）。有值就如实说，不装作一致。 */
+  const planFit = ref<{ depth?: number; expected_depth?: number; missing?: string[]; shallow?: string[]; note?: string } | null>(null)
+  const activeTaskId = ref('')
   const stepIndex = ref(-1)
   const stepLabels = ref<string[]>([])
   /** 后端报的总步数。前端不自己数——步数按题材变（导图 4 步、文稿 5 步）。 */
@@ -210,6 +218,12 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
 
   const handleEvent = (event: ResourceTaskEvent) => {
     switch (event.event) {
+      case 'plan':
+        plan.value = event.payload.plan ?? null
+        break
+      case 'pause':
+        if (event.payload.reason === 'await_plan') phase.value = 'awaiting-plan'
+        break
       case 'step_start':
         stepIndex.value = event.step_index
         if (event.total_steps) stepTotal.value = event.total_steps
@@ -249,6 +263,8 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
         if (payload.intent_label) intentLabel.value = payload.intent_label
         if (payload.intent_note) intentNote.value = payload.intent_note
         degraded.value = Boolean(payload.degraded)
+        if (payload.plan_coverage) planCoverage.value = payload.plan_coverage
+        if (payload.conformance) planFit.value = payload.conformance as typeof planFit.value
         break
       }
       case 'done':
@@ -338,12 +354,43 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
         // 幂等键：对话侧一定会重试，重复提交不该出两张图。
         ...(invocationId ? { client_invocation_id: invocationId } : {}),
       })
+      activeTaskId.value = accepted.task_id
       await streamResourceTask(accepted.task_id, handleEvent, { signal, retries: 2 })
     } catch (error) {
       if (signal.aborted) return
       phase.value = 'failed'
       errorMessage.value = readable(error)
     }
+  }
+
+  /** 修订方案。带上面板里手改过的那一版，避免服务端从最初那版重算把手改抹掉。 */
+  const revisePlan = async (feedback: string, goal = '', draft?: ResourcePlan) => {
+    if (!activeTaskId.value || (!feedback.trim() && !goal.trim())) return
+    planBusy.value = true
+    try { plan.value = (await reviseResourcePlan(activeTaskId.value, feedback, { plan: draft ?? plan.value ?? undefined, goal })).plan }
+    catch (error) { errorMessage.value = readable(error) }
+    finally { planBusy.value = false }
+  }
+
+  /** 主动退出协商：不生成。任务留在服务端待确认，随时可再进来接着改。 */
+  const cancelPlan = () => {
+    controller?.abort()
+    controller = null
+    planBusy.value = false
+    phase.value = 'idle'
+  }
+
+  const confirmPlan = async (value: ResourcePlan) => {
+    if (!activeTaskId.value) return
+    controller?.abort()
+    controller = new AbortController()
+    planBusy.value = true
+    phase.value = 'generating'
+    try {
+      await confirmResourcePlan(activeTaskId.value, value)
+      await streamResourceTask(activeTaskId.value, handleEvent, { signal: controller.signal, retries: 2 })
+    } catch (error) { phase.value = 'awaiting-plan'; errorMessage.value = readable(error) }
+    finally { planBusy.value = false }
   }
 
   /**
@@ -366,6 +413,10 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
     controller = null
     canvas()?.reset()
     phase.value = 'idle'
+    plan.value = null
+    planCoverage.value = null
+    planFit.value = null
+    activeTaskId.value = ''
     resourceId.value = ''
     title.value = ''
     errorMessage.value = ''
@@ -467,6 +518,39 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
     }
   }
 
+  /**
+   * 回到同一个任务（刷新、从资源库点回来）。
+   *
+   * 待确认的方案原样摆回来，别重新提案——用户改过的那些分支不能白改。
+   */
+  const restoreTask = async (id: string) => {
+    if (!id) return
+    // clearCanvas 会 abort 并清空 controller，所以必须排在新建 controller 之前。
+    clearCanvas()
+    controller = new AbortController()
+    const signal = controller.signal
+    activeTaskId.value = id
+    try {
+      const snapshot = await getResourceTask(id)
+      plan.value = snapshot.plan ?? null
+      if (snapshot.awaiting_plan && snapshot.plan) {
+        phase.value = 'awaiting-plan'
+        return
+      }
+      if (snapshot.status === 'done' && snapshot.resource_id) {
+        await applyResource(snapshot.resource_id)
+        return
+      }
+      phase.value = 'generating'
+      stepIndex.value = Math.max(0, snapshot.current_step)
+      await streamResourceTask(id, handleEvent, { signal, retries: 2 })
+    } catch (error) {
+      if (signal.aborted) return
+      phase.value = 'failed'
+      errorMessage.value = readable(error)
+    }
+  }
+
   /** 冲突处置一：放弃本地，拉服务端最新覆盖画布。 */
   const reloadFromServer = async () => {
     if (!resourceId.value) return
@@ -509,6 +593,13 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
 
   return {
     phase,
+    plan,
+    planBusy,
+    planCoverage,
+    planFit,
+    revisePlan,
+    confirmPlan,
+    cancelPlan,
     errorMessage,
     stepIndex,
     stepStates,
@@ -555,6 +646,7 @@ export const useMindmapStudio = (canvas: () => StudioCanvasBridge | null) => {
     markDirty,
     save,
     openResource,
+    restoreTask,
     reloadFromServer,
     keepMine,
     abandon,

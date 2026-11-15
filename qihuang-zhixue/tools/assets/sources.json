@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "note": "人工维护的采集清单。每条：id / url（直链）/ source_url（原图页面）/ license / kind / slot_class / subjects / herb_ids / tags / recipe / aspect / attribution。只收 PD-old 或 CC0；CC-BY 必须写 attribution。首批目标 10–30 味常用药，规格见 docs/studios/assets.md §11。",
+  "items": []
+}

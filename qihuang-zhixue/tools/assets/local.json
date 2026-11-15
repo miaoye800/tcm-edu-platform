@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "note": "仓库内已有原图的入库清单。ingest.py 只处理 sources.json 里的 URL；这个清单处理已经在仓库里的原图（例如 story/herbs 那批 CC0 饮片实拍）。元数据一律人工写，脚本只做归一化、算 sha256、合并进登记表。",
+  "entries": [
+    {
+      "source": "frontend/public/story/herbs/huangqi.jpg",
+      "id": "photo-huangqi-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": ["黄芪"],
+      "tags": ["饮片", "根", "实拍"],
+      "recipe": "photo-toned",
+      "aspect": "landscape",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Dried_astragalus_slices.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "source": "frontend/public/story/herbs/dangshen.jpg",
+      "id": "photo-dangshen-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": ["党参"],
+      "tags": ["饮片", "根", "实拍"],
+      "recipe": "photo-toned",
+      "aspect": "landscape",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Dried_Codonopsis_pilosula_HC.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "source": "frontend/public/story/herbs/taizishen.jpg",
+      "id": "photo-taizishen-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": ["太子参"],
+      "tags": ["饮片", "根", "实拍"],
+      "recipe": "photo-toned",
+      "aspect": "landscape",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Dried_pseudostellaria_heterophylla.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "source": "frontend/public/story/herbs/chenpi.jpg",
+      "id": "photo-chenpi-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": ["陈皮"],
+      "tags": ["饮片", "果皮", "实拍"],
+      "recipe": "photo-toned",
+      "aspect": "landscape",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tangerine_peels.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "source": "frontend/public/story/herbs/jinyinhua.jpg",
+      "id": "photo-jinyinhua-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": ["金银花"],
+      "tags": ["原植物", "花", "实拍"],
+      "recipe": "photo-toned",
+      "aspect": "landscape",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Lonicera_japonica,_Montour_Trail,_2024-09-24.jpg",
+      "attribution": "Father Pitt",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    }
+  ]
+}

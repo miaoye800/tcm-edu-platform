@@ -105,8 +105,26 @@ async def read_invocation(
         "task": None if task is None else {"status": task.get("status"), "current_step": task.get("current_step")},
     }
     if resource_id:
-        payload["artifact"] = {"kind": "mindmap", "resource_id": resource_id, "open_url": f"/mindmap?resource={resource_id}"}
+        # 产物形状必须从**这次能力自己的声明**派生。写死 kind="mindmap" 时，
+        # 幻灯任务的轮询回包会把 open_url 指到导图页——调用方拿到的是一个
+        # 结构合法但语义错误的地址，比报错更难发现。
+        payload["artifact"] = _artifact_of(str(record["capability"]), resource_id)
     return payload
+
+
+def _artifact_of(capability: str, resource_id: str) -> dict[str, Any]:
+    """按能力声明拼 artifact。`open_url_template` 用 `{resource_id}` 占位。"""
+
+    entry = registry.get(capability)
+    spec = entry.spec if entry is not None else None
+    if spec is None or spec.artifact is None:
+        return {"kind": "unknown", "resource_id": resource_id, "open_url": None}
+    return {
+        "kind": spec.artifact.kind,
+        "resource_id": resource_id,
+        "open_url": spec.artifact.open_url_template.format(resource_id=resource_id),
+        "resolve_on": spec.artifact.resolve_on,
+    }
 
 
 @router.post("/capability-invocations/{invocation_id}/cancel")

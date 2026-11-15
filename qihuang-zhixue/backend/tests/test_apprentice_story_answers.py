@@ -1,4 +1,55 @@
-from app.profile.modes import _identity_cards, _quiz_cards, _resource_card, load_diagnostic_questions
+from app.profile.modes import (
+    _apprentice_step,
+    _identity_cards,
+    _quiz_cards,
+    _resource_card,
+    _vary_herb_questions,
+    load_diagnostic_questions,
+)
+
+
+ILLUSTRATED_HERBS = {
+    "herb_taizishen",
+    "herb_dangshen",
+    "herb_huangqi",
+    "herb_chenpi",
+    "herb_jinyinhua",
+}
+
+
+def test_story_quiz_is_exactly_five_illustrated_herbs_with_rotating_questions() -> None:
+    """识药一幕只考五味有图的药，题型在五味之间轮换。
+
+    旧实现是 5 道功效题再追加 3 道派生题：题量把这一幕变成刷题，派生题还会
+    抽到没有图鉴的药材（蛤蚧之类），照片上根本认不出。
+    """
+
+    step_data: dict = {}
+    step = _apprentice_step(1, step_data=step_data)
+    questions = step.private_payload["questions"]
+
+    assert len(questions) == 5, "识药固定五题"
+    assert {question["herb_id"] for question in questions} <= ILLUSTRATED_HERBS, "题目必须都是有图鉴的药材"
+    assert all(question.get("herb_id") for question in questions), "每题都要能配到照片"
+    kinds = {question.get("question_type") for question in questions if question.get("question_type")}
+    assert kinds >= {"nature_flavor", "caution", "similar_herb"}, "不能只问功效"
+
+    # 题面在剧情里不能出现药名：药是看照片认的。
+    for question in questions:
+        prompt = question.get("story_prompt")
+        if prompt:
+            assert question["herb_name"] not in prompt, f"剧情题面泄露了药名：{prompt}"
+
+
+def test_varied_questions_keep_answers_and_options_usable() -> None:
+    """换题型不能把题目换坏：仍要有 4 个互不相同的选项，且正确答案在选项里。"""
+
+    for question in _vary_herb_questions(load_diagnostic_questions(limit=5, photo_ready_only=True)):
+        options = question["options"]
+        assert len(options) == 4, f"{question.get('herb_name')} 的选项不是 4 个"
+        assert len(set(options)) == 4, f"{question.get('herb_name')} 的选项有重复"
+        assert question["answer"] in options
+        assert question.get("answer") and question.get("accepted_answers")
 
 
 def test_diagnostic_questions_carry_random_herb_identity_metadata() -> None:

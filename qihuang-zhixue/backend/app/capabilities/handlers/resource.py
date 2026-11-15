@@ -20,7 +20,7 @@ from . import CapabilityInput
 
 
 class ResourceGenerateInput(CapabilityInput):
-    resource_type: Literal["doc", "quiz", "story", "ppt"] = Field(..., description="要生成哪类资源")
+    resource_type: Literal["doc", "quiz", "story"] = Field(..., description="要生成哪类资源")
     topic: str = Field("", max_length=200, description="主题")
     node_id: str = Field("", max_length=64, description="挂到哪个知识节点下")
 
@@ -31,12 +31,14 @@ SPEC = CapabilitySpec(
     kind="job",
     title="生成其它学习资源（未接）",
     one_line="文档、试卷、故事、幻灯的统一入口；本期只占位，调用返回 501",
-    use_when=("需要文档/试卷/故事/幻灯，且调用方愿意等它接完",),
+    use_when=("需要文档/试卷/故事，且调用方愿意等它接完",),
     avoid_when=(
         "要导图：用 mindmap.generate，那条已经通了",
+        "要幻灯：用 ppt.generate，那条也已经通了",
+        "要文稿：用 doc.generate，那条也已经通了",
         "现在就要产物：直接调既有的 /api/resource/tasks 端点",
     ),
-    triggers=("生成文档", "出份试卷", "讲个故事", "做几页幻灯"),
+    triggers=("生成文档", "出份试卷", "讲个故事"),
     input_model=ResourceGenerateInput,
     output_shape={"ok": "bool", "message": "str"},
     audiences=("agent", "human"),
@@ -44,7 +46,7 @@ SPEC = CapabilitySpec(
     # 与 mindmap.generate 同一条规矩：job 类必须支持幂等，接上时照抄那套即可。
     idempotency=True,
     errors=(ErrorSpec(ErrorCode.NOT_IMPLEMENTED, 501, "这条契约还没接", "暂时用 /api/resource/tasks"),),
-    deprecation="等 doc/quiz/story/ppt 升到带依据的管线后接上，届时去掉 501。",
+    deprecation="等 quiz/story 升到带依据的管线后接上，届时去掉 501；ppt 与 doc 已由各自能力接管。",
 )
 
 

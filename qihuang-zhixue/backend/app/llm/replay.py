@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS llm_replay (
     model TEXT,
     request_json TEXT,
     response_text TEXT,
+    response_message TEXT,
     prompt_tokens INTEGER NOT NULL DEFAULT 0,
     completion_tokens INTEGER NOT NULL DEFAULT 0,
     recorded_at TEXT NOT NULL
@@ -49,6 +50,10 @@ FINGERPRINT_KEYS = (
     "reasoning_effort",
     "response_format",
     "prefer_reasoning_content",
+    # 工具清单必须进指纹：同一段对话给了不同工具，模型的调用会完全不同，
+    # 不进指纹就会把两轮不同的请求判成同一条回放。
+    "tools",
+    "tool_choice",
 )
 
 
@@ -67,6 +72,36 @@ def fingerprint(
     }
     blob = json.dumps(material, ensure_ascii=False, sort_keys=True, default=str)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def load_message(fingerprint_value: str, db_path: Path | None = None) -> dict[str, Any] | None:
+    """取回整条 assistant message（含 ``tool_calls``）。
+
+    工具循环的回放必须走这条：只有 ``response_text`` 时，回放出来的一轮没有工具调用，
+    循环会在第二轮直接结束，与真实运行完全不同。
+    """
+
+    try:
+        with _db(db_path) as conn:
+            row = conn.execute(
+                "SELECT response_message, response_text FROM llm_replay WHERE fingerprint = ?",
+                (fingerprint_value,),
+            ).fetchone()
+    except sqlite3.Error as exc:
+        logger.warning("llm_replay 读取失败：%s", exc)
+        return None
+    if not row:
+        return None
+    raw = row[0]
+    if raw:
+        try:
+            message = json.loads(raw)
+        except json.JSONDecodeError:
+            message = None
+        if isinstance(message, dict):
+            return message
+    text = str(row[1] or "")
+    return {"role": "assistant", "content": text} if text else None
 
 
 def load(fingerprint_value: str, db_path: Path | None = None) -> str | None:
@@ -92,9 +127,12 @@ def save(
     params: Mapping[str, Any],
     response_text: str,
     usage: Mapping[str, Any] | None = None,
+    response_message: Mapping[str, Any] | None = None,
     db_path: Path | None = None,
 ) -> None:
-    if not response_text:
+    # 一轮只有工具调用、没有正文是常态。以前这里 `if not response_text: return`
+    # 会把这类轮次整个丢掉，回放时循环根本跑不起来。
+    if not response_text and not response_message:
         return
     request_json = json.dumps(
         {"messages": [dict(message) for message in messages], "params": dict(params)},
@@ -106,8 +144,8 @@ def save(
             conn.execute(
                 "INSERT OR REPLACE INTO llm_replay "
                 "(fingerprint, task_type, provider, model, request_json, response_text, "
-                " prompt_tokens, completion_tokens, recorded_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " response_message, prompt_tokens, completion_tokens, recorded_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     fingerprint_value,
                     task_type,
@@ -115,6 +153,7 @@ def save(
                     model,
                     request_json,
                     response_text,
+                    json.dumps(dict(response_message), ensure_ascii=False, default=str) if response_message else None,
                     _as_int((usage or {}).get("prompt_tokens")),
                     _as_int((usage or {}).get("completion_tokens")),
                     datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -142,6 +181,12 @@ def _connect(db_path: Path | None = None) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=10)
     conn.executescript(_SCHEMA)
+    # 老库没有 `response_message` 列。CREATE TABLE IF NOT EXISTS 不会补列，
+    # 这里显式 ADD COLUMN 一次——不迁移就会在 INSERT 时报「no such column」。
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(llm_replay)").fetchall()}
+    if "response_message" not in columns:
+        conn.execute("ALTER TABLE llm_replay ADD COLUMN response_message TEXT")
+        conn.commit()
     return conn
 
 

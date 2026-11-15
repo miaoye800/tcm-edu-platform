@@ -21,6 +21,8 @@ class PptParams(BaseModel):
     page_count: int = Field(default=12, ge=6, le=16)
     audience: str = Field(default="中医药专业本科生", max_length=40)
     topic: str = Field(default="", max_length=60)
+    #: 用户带来的材料（一段可解析文本）。只进提示词，不参与结构判断。
+    materials: list[str] = Field(default_factory=list, max_length=5)
 
     @classmethod
     def parse(cls, raw: dict[str, Any] | None) -> "PptParams":
@@ -36,7 +38,11 @@ class PptParams(BaseModel):
         page_count = min(max(page_count, min(PAGE_CHOICES)), max(PAGE_CHOICES))
         audience = str(raw.get("audience") or "").strip() or "中医药专业本科生"
         topic = str(raw.get("topic") or "").strip()
-        return cls(mode=mode, theme=theme, page_count=page_count, audience=audience[:40], topic=topic[:60])
+        raw_materials = raw.get("materials")
+        if isinstance(raw_materials, str):
+            raw_materials = [raw_materials]
+        materials = [str(item)[:2000] for item in raw_materials if str(item).strip()][:5] if isinstance(raw_materials, list) else []
+        return cls(mode=mode, theme=theme, page_count=page_count, audience=audience[:40], topic=topic[:60], materials=materials)
 
     def as_dict(self) -> dict[str, Any]:
-        return {"mode": self.mode, "theme": self.theme, "page_count": self.page_count, "audience": self.audience, "topic": self.topic}
+        return {"mode": self.mode, "theme": self.theme, "page_count": self.page_count, "audience": self.audience, "topic": self.topic, "materials": list(self.materials)}

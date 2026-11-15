@@ -12,7 +12,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 MIN_DEPTH = 2
-MAX_DEPTH = 4
+MAX_DEPTH = 5
 MIN_BRANCHES = 3
 MAX_BRANCHES = 8
 MAX_TOPIC_INPUT = 60

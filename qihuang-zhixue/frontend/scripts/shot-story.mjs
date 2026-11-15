@@ -32,8 +32,12 @@ const VIEWPORTS = [
 const SCREENS = [
   { name: 'screen-1-identity', path: '/story-preview?screen=identity' },
   { name: 'screen-1-identity-note', path: '/story-preview?screen=identity&bubble=1' },
+  { name: 'screen-1-extra-text', path: '/story-preview?screen=identity&extra=text' },
+  { name: 'screen-1-extra-choice', path: '/story-preview?screen=identity&extra=choice&answer=配伍剂量' },
   { name: 'screen-2-quiz', path: '/story-preview?screen=quiz' },
   { name: 'screen-2-quiz-note', path: '/story-preview?screen=quiz&bubble=1' },
+  // 识药一幕也要挂追问栏：手机上一屏要塞下照片题 + 追问 + 对话框，最容易溢出。
+  { name: 'screen-2-quiz-extra', path: '/story-preview?screen=quiz&extra=text' },
   { name: 'screen-3-prescription', path: '/story-preview?screen=prescription' },
   { name: 'screen-3-prescription-field', path: '/story-preview?screen=prescription&field=case' },
   { name: 'screen-4-rule', path: '/story-preview?screen=rule' },
@@ -70,7 +74,40 @@ const measure = () => {
     const size = Number.parseFloat(style.fontSize)
     if (size < 12) tiny.push({ text: element.textContent.trim().slice(0, 24), size })
   }
-  return { overflowX, overflowY, tiny }
+
+  // 能点/能输入的东西必须整块留在视口里，并且不能被对话框盖住。
+  // 这两条以前靠人眼看图，现在写死了：手机上"选项被对话框压掉一半"是
+  // 最常见的回归，而它不会让页面溢出（元素还在文档流里），只能靠几何判。
+  const visible = (element) => {
+    const style = getComputedStyle(element)
+    return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0
+  }
+  const rectOf = (element) => {
+    const box = element.getBoundingClientRect()
+    return { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width, height: box.height }
+  }
+  const dialogue = document.querySelector('.story-dialogue-box')
+  const dialogueRect = dialogue && visible(dialogue) ? rectOf(dialogue) : null
+  const controls = Array.from(
+    document.querySelectorAll('.story-choice-pill, .story-choice-stack__options button, input:not([type="hidden"]), textarea'),
+  ).filter(visible)
+
+  const clipped = []
+  const overlaps = []
+  for (const element of controls) {
+    const box = rectOf(element)
+    if (box.height < 2 || box.width < 2) continue
+    const label = (element.textContent || element.getAttribute('placeholder') || element.tagName).trim().slice(0, 18)
+    if (box.top < -1 || box.bottom > window.innerHeight + 1 || box.left < -1 || box.right > window.innerWidth + 1) {
+      clipped.push(label)
+    }
+    if (dialogueRect) {
+      const overlapX = Math.min(box.right, dialogueRect.right) - Math.max(box.left, dialogueRect.left)
+      const overlapY = Math.min(box.bottom, dialogueRect.bottom) - Math.max(box.top, dialogueRect.top)
+      if (overlapX > 2 && overlapY > 2) overlaps.push(label)
+    }
+  }
+  return { overflowX, overflowY, tiny, clipped, overlaps }
 }
 
 const launchBrowser = async () => {
@@ -131,6 +168,15 @@ const main = async () => {
         }
         for (const item of result.tiny) {
           failures.push(`${name}: 字号 ${item.size}px < ${MIN_FONT_SIZE}px — 「${item.text}」`)
+        }
+        // 组件陈列页（story-kit）本来就是滚动浏览的，元素在第二屏不算裁切。
+        if (!screen.scrollable) {
+          for (const item of result.clipped ?? []) {
+            failures.push(`${name}: 可交互元素被裁出视口 — 「${item}」`)
+          }
+          for (const item of result.overlaps ?? []) {
+            failures.push(`${name}: 可交互元素被对话框盖住 — 「${item}」`)
+          }
         }
 
         await context.close()

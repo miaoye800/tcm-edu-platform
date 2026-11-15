@@ -103,7 +103,13 @@ export interface DocBlock {
   props?: DocBlockProps
   /** 仅 toggle / columns 使用 */
   children?: DocBlock[]
-  meta?: { sourceIndex?: number }
+  meta?: {
+    sourceIndex?: number
+    /** 计划快照：这个块对应哪个知识点。有它才显示「在地图上看」。 */
+    node_id?: string
+    acupoint?: string
+    domain_id?: string
+  }
 }
 
 /** 后端可能仍下发旧格式：{ type, text }，其中标题层级编码在 text 的 `#` 前缀里 */

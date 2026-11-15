@@ -36,6 +36,7 @@ import { getStructure } from '../../config/mindmapStructures'
 import { GROW_BATCH, GROW_MS, NODE_INTERVAL_MS, QUEUE_LIMIT } from '../../config/mindmapStudio'
 import type { ResourceMindmapNode } from '../../types/resource'
 import {
+  anchorsOf,
   countFolded,
   countNodes,
   depthOf,
@@ -59,6 +60,8 @@ const emit = defineEmits<{
   dirty: []
   stats: [value: { nodes: number; depth: number; textbook: number; graph: number; model: number; folded: number }]
   finish: []
+  /** 计划快照的叶子被点中：带 node_id 回地图。没有 node_id 的节点不触发。 */
+  nodeSelect: [nodeId: string]
 }>()
 
 const host = ref<HTMLElement | null>(null)
@@ -238,6 +241,15 @@ const attach = (data: any): boolean => {
     if (!props.editing) return
     emit('dirty')
   })
+  // 计划快照：叶子带 node_id，点一下应该能跳回地图。**不自动跳**——
+  // 用户可能只是想展开看一眼，把他拽走等于替他决定。
+  // 库的事件联合类型里没有 node_click，但它确实会派发（见 src/event 的 node_click）。
+  const onNodeClick = (node: any) => {
+    const data = node?.nodeData?.data ?? node?.getData?.()?.data ?? {}
+    const nodeId = String(data?.meta?.node_id ?? data?.node_id ?? '')
+    if (nodeId) emit('nodeSelect', nodeId)
+  }
+  mm.on('node_click', onNodeClick)
   mm.on('scale', syncScale)
   // 布局真正算完时会派发这个事件。定时器是猜，这个才是准信：
   // 组织结构与鱼骨的包围盒在 700ms 后仍可能变，靠猜就会裁掉右边一截（实测）。
@@ -491,11 +503,14 @@ const normalizeTree = (data: unknown): MindmapTreeNode | null => {
   if (!root) return null
   const walk = (node: any): MindmapTreeNode => {
     const evidence = node?.evidence ?? node?.meta?.evidence ?? node?.data?.meta?.evidence
+    const meta = node?.meta ?? node?.data?.meta
     return {
       id: String(node?.id ?? node?.data?.id ?? ''),
       topic: String(node?.topic ?? node?.data?.text ?? ''),
       ...(evidence ? { evidence } : {}),
-      meta: { source_indexes: [...(node?.meta?.source_indexes ?? node?.data?.meta?.source_indexes ?? [])] },
+      // 锚点（node_id / acupoint / branch_id）必须原样带过来：丢了它，
+      // 叶子就只是"写着知识点名的方块"，点了回不到地图。
+      meta: { source_indexes: [...(meta?.source_indexes ?? [])], ...anchorsOf(meta) },
       children: (node?.children ?? []).map(walk),
     }
   }

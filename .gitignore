@@ -166,3 +166,17 @@ qihuang-zhixue/frontend/scripts/probe*.mjs
 qihuang-zhixue/frontend/scripts/shot-*.mjs
 qihuang-zhixue/frontend/scripts/verify-*.mjs
 qihuang-zhixue/frontend/scripts/lib/
+
+# 截图脚本的临时产物
+.tmpverify/
+
+# 原始素材包与原型几何：体积大且可从源重新取得，不进仓库
+# （tools/assets/*.zip 是 vendor.py 的下载件；docs/proto/assets/*.bin 与
+#  backend/data/meridian 的未压缩 bin 同源，仓库只保留运行时加载的 .gz）
+qihuang-zhixue/tools/assets/*.zip
+qihuang-zhixue/docs/proto/assets/*.bin
+
+# 根目录试版工作区与后端临时 JSON（模型/样式试验的中间产物，可重跑）
+/.tmpsrc/
+/.tmpstyle/
+qihuang-zhixue/backend/.tmp_*.json

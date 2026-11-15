@@ -1,18 +1,187 @@
 {
   "schema_version": 1,
-  "count": 12,
+  "count": 20,
   "capabilities": [
     {
-      "name": "kb.search",
-      "version": "0.1",
-      "kind": "query",
-      "title": "检索本地中药学知识库（未接）",
-      "one_line": "查教材条目、图谱边与证候；本期只占位，调用返回 501",
+      "name": "doc.generate",
+      "version": "1.0",
+      "kind": "job",
+      "title": "生成文稿",
+      "one_line": "把一句写作诉求做成一份分节、标了引文、体裁先确认的文稿",
       "use_when": [
-        "需要确认某个词在不在本地语料里"
+        "要一篇文字成品：如「写一篇人参的用法与禁忌」",
+        "要讲义/学习计划/操作指南/对比分析：如「整理一份解表药复习提纲」",
+        "要长文而不是几句话：如「综述一下十八反的研究现状」"
       ],
       "avoid_when": [
-        "要成图：用 mindmap.generate；要关系：用 kg_* 六能力"
+        "只要一段口头解释：直接回答更省时间，不必落一份文稿",
+        "要一张关系图：用 mindmap.generate——文稿不做树",
+        "要讲给别人听、要分页：用 ppt.generate——文稿不做页",
+        "要改已有文稿的某一节：那是编辑器的事，不要重新生成整篇"
+      ],
+      "audiences": [
+        "agent",
+        "frontend",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "要写什么。完整一句比两个字更好：例如「写一篇人参的用法与禁忌讲义」",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "挂到哪个知识节点下；留空则落到自由主题节点",
+            "maxLength": 64,
+            "title": "Node Id",
+            "type": "string"
+          },
+          "materials": {
+            "description": "用户带来的材料（最多 5 段）。会按 user_material 档计入依据，不当作模型补充",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Materials",
+            "type": "array"
+          },
+          "mode": {
+            "default": "one_shot",
+            "description": "one_shot = 一路跑完；outline = 谋篇后停下等确认（v3 起确认点在 design 步）",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "DocGenerateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 doc.generate",
+        "capability_version": "str",
+        "invocation_id": "str，受理号；重放时不变",
+        "status": "accepted",
+        "replayed": "bool，true 表示这次是重放，task_id 与上次相同",
+        "task_id": "str，配合 stream_url 订阅进度",
+        "stream_url": "str，GET 后得到 SSE：step_start / plan / design / pause / block / verify / done",
+        "artifact": "见 artifact 段；resource_id 与 open_url 在 done 之后才有值"
+      },
+      "pipeline": [
+        {
+          "id": "plan",
+          "label": "拟定方案"
+        },
+        {
+          "id": "design",
+          "label": "定体例"
+        },
+        {
+          "id": "compose",
+          "label": "落笔成稿"
+        },
+        {
+          "id": "verify",
+          "label": "核对引文"
+        },
+        {
+          "id": "seal",
+          "label": "封存入库"
+        }
+      ],
+      "events": [
+        "step_start",
+        "step_done",
+        "plan",
+        "design",
+        "pause",
+        "block",
+        "verify",
+        "done",
+        "error"
+      ],
+      "idempotency": true,
+      "errors": [
+        {
+          "code": "mindmap.topic_empty",
+          "http_status": 422,
+          "message": "没有说要写什么"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数越界"
+        },
+        {
+          "code": "capability.not_found",
+          "http_status": 404,
+          "message": "知识节点不存在"
+        },
+        {
+          "code": "capability.idempotency_mismatch",
+          "http_status": 409,
+          "message": "同一请求号配了不同参数"
+        }
+      ],
+      "side_effects": [
+        "新建一条炼制任务",
+        "完成后在用户资源库落一份文稿"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识库（可缺，缺则全部标为模型补充）"
+      ],
+      "cost": "无模型 key 时零调用；有 key 时按节生成",
+      "latency": "通常 15~60 秒，取决于篇幅；无 key 时 3 秒内",
+      "examples": [
+        "写一篇人参的用法与禁忌",
+        "整理一份解表药复习提纲",
+        "对比麻黄与桂枝的临床应用"
+      ],
+      "artifact": {
+        "kind": "doc",
+        "open_url_template": "/resources/{resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ],
+        "variants": []
+      }
+    },
+    {
+      "name": "kb.search",
+      "version": "1.0",
+      "kind": "query",
+      "title": "检索本地中药学知识库",
+      "one_line": "查某个词在不在本地教材语料里，并给出可引用的原文条目",
+      "use_when": [
+        "要确认某个说法有没有教材依据：如「教材里有说桂枝反藜芦吗」",
+        "要一组可引用的原文：如「找几段麻黄性味的原文」",
+        "生成前先探底：看这次主题能不能落到教材上"
+      ],
+      "avoid_when": [
+        "要关系与配伍：用 kg.ask / kg.compare——检索只给文本段落",
+        "要成图或成文：用 mindmap.generate / doc.generate"
       ],
       "audiences": [
         "agent",
@@ -54,25 +223,30 @@
       },
       "output_shape": {
         "ok": "bool",
+        "capability": "str，固定 kb.search",
         "coverage": "str，in_corpus / out_of_corpus",
-        "items": "list"
+        "items": "list，每项含 name / category / quote / refs"
       },
       "pipeline": [],
       "events": [],
       "idempotency": false,
       "errors": [
         {
-          "code": "capability.not_implemented",
-          "http_status": 501,
-          "message": "这条契约还没接"
+          "code": "mindmap.topic_empty",
+          "http_status": 422,
+          "message": "没有说要查什么"
         }
       ],
       "side_effects": [],
-      "requires": [],
+      "requires": [
+        "本地中药学知识库"
+      ],
       "cost": "纯本地检索，无模型调用",
       "latency": "毫秒级",
-      "examples": [],
-      "deprecation": "等检索层收敛成一个服务后接上。"
+      "examples": [
+        "教材里有说桂枝反藜芦吗",
+        "找几段麻黄性味的原文"
+      ]
     },
     {
       "name": "kg.ask",
@@ -171,7 +345,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -255,7 +430,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -353,7 +529,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -450,7 +627,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -553,7 +731,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -650,7 +829,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -768,7 +948,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -886,6 +1067,14 @@
       },
       "pipeline": [
         {
+          "id": "plan",
+          "label": "拟定方案"
+        },
+        {
+          "id": "design",
+          "label": "定形制"
+        },
+        {
           "id": "resolve",
           "label": "辨明主题"
         },
@@ -894,7 +1083,7 @@
           "label": "采撷素材"
         },
         {
-          "id": "plan",
+          "id": "shape",
           "label": "谋篇立骨"
         },
         {
@@ -925,6 +1114,8 @@
       "events": [
         "step_start",
         "step_done",
+        "plan",
+        "pause",
         "node",
         "mindmap_verify",
         "done",
@@ -989,7 +1180,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -1074,7 +1266,8 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       }
     },
     {
@@ -1204,7 +1397,827 @@
           "textbook",
           "graph",
           "model"
+        ],
+        "variants": []
+      }
+    },
+    {
+      "name": "path.focus",
+      "version": "1.0",
+      "kind": "query",
+      "title": "在地图上定位",
+      "one_line": "把「我想学麻黄」「合谷在哪」定位到地图上的那一关，并给出可点的跳转",
+      "use_when": [
+        "用户问某个知识点在地图/经脉上的位置：如「合谷在哪」「麻黄在第几关」",
+        "用户说想学某个具体内容：如「我想学麻黄」「带我去看清热药」"
+      ],
+      "avoid_when": [
+        "要解释知识本身：用 kg.lookup / kg.ask，定位不等于讲解",
+        "要规划整条路线：用 plan.create",
+        "说法太泛（「我想学中医」）：先问清是哪一块，别硬定位"
+      ],
+      "audiences": [
+        "agent",
+        "frontend",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "用户原话里的知识点：麻黄、合谷、清热药，也可以直接给 node_id",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "已知的节点 id；比 query 优先",
+            "maxLength": 120,
+            "title": "Node Id",
+            "type": "string"
+          }
+        },
+        "title": "PathFocusInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool，false 表示没定位到，请看 candidates",
+        "node_id": "str",
+        "node_name": "str",
+        "layer_id": "str，学科图层",
+        "acupoint": "dict，穴名与代号",
+        "open_url": "str，/path?focus=…&layer=…",
+        "confidence": "float，0~1",
+        "candidates": "list，没定位到时给的候选（最多 5 条）",
+        "ui_actions": "list，前端渲染成可点按钮，不自动跳页"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "没说要找什么"
+        }
+      ],
+      "side_effects": [],
+      "requires": [
+        "登录用户",
+        "知识树"
+      ],
+      "cost": "无模型调用",
+      "latency": "通常 < 50 毫秒",
+      "examples": [
+        "合谷在哪",
+        "我想学麻黄",
+        "带我去看清热药"
+      ]
+    },
+    {
+      "name": "plan.create",
+      "version": "1.1",
+      "kind": "query",
+      "title": "排一份学习路线",
+      "one_line": "按知识依赖与可用时间排出先学什么、后学什么；不是查资料，是排顺序",
+      "use_when": [
+        "用户要一份学习计划：如「帮我做个计划，我想学习中药学，两年后考研」",
+        "问该从哪开始：如「我基础差，先把哪几块补上」",
+        "给了期限：如「三个月内过一遍方剂」"
+      ],
+      "avoid_when": [
+        "只问某个知识点：用 kg_* 直接答",
+        "要看自己现在什么水平：用 profile.view——那是画像，不是路线",
+        "要一份能拿走的材料：用 doc.generate / mindmap.generate"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "goal": {
+            "default": "",
+            "description": "用户原话，**必须带上他点名要学的科目**与期限，例如「先中药，15 天后期末考」。科目就是本次规划的范围，认不出来就会退回六门课全排；不要概括成「备考」两个字",
+            "maxLength": 200,
+            "title": "Goal",
+            "type": "string"
+          },
+          "total_days": {
+            "anyOf": [
+              {
+                "maximum": 3650,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "总共可用多少天。两年写 730；留空用画像里的默认预算",
+            "title": "Total Days"
+          },
+          "daily_minutes": {
+            "anyOf": [
+              {
+                "maximum": 600,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "每天能投入多少分钟；留空用画像里的默认预算",
+            "title": "Daily Minutes"
+          }
+        },
+        "title": "PlanCreateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 plan.create",
+        "scope": "dict，requested（用户点名的学科）/ covered（实际排到的学科）/ scoped（是否按学科裁过域）/ domain_count",
+        "has_nodes": "bool，false 表示第一个阶段的展开没成功，只有阶段路线",
+        "stages": "list，最多 6 项，含 name / order / why",
+        "start_stage": "str，第一个阶段的名称",
+        "start_nodes": "list，最多 10 项，第一阶段里具体先学哪几个点",
+        "total_stages": "int，阶段总数（可能多于 stages 里的条数）",
+        "fallback": "bool，true 表示路径算法退到了保守默认",
+        "summary": "str，一句可直接念给用户听的话"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "时间预算不合法"
+        },
+        {
+          "code": "capability.conflict",
+          "http_status": 409,
+          "message": "规划没能完成"
+        }
+      ],
+      "side_effects": [
+        "存一版 L1 路径计划",
+        "展开第一个阶段并存一版 L2 计划",
+        "为计划里的知识点初始化学习状态"
+      ],
+      "requires": [
+        "登录用户",
+        "知识树"
+      ],
+      "cost": "有模型 key 时一次模型调用；无 key 时按依赖与掌握度直接排",
+      "latency": "通常 5~20 秒",
+      "examples": [
+        "帮我做个计划，我想学习中药学，两年后考研",
+        "三个月内过一遍方剂，怎么安排"
+      ],
+      "artifact": {
+        "kind": "path",
+        "open_url_template": "/path?focus={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ],
+        "variants": []
+      }
+    },
+    {
+      "name": "plan.present",
+      "version": "1.0",
+      "kind": "query",
+      "title": "把路线导成导图或文稿",
+      "one_line": "把已经确认的学习路线整理成一张能点回地图的导图，或一份能打印的文稿",
+      "use_when": [
+        "用户说「把这条路线画成图」「导出一份计划」「给我一份能打印的」",
+        "刚确认完计划，想要一份能带走的材料"
+      ],
+      "avoid_when": [
+        "还没确认路线：先走 plan.create 或两段式向导",
+        "只讲某个知识点：用 doc.generate / mindmap.generate，那是内容创作",
+        "要看地图本身：打开 /path，不需要产物"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "version": {
+            "default": 0,
+            "description": "哪一版计划；0 = 最近一版草稿，没有草稿则用当前生效路线",
+            "minimum": 0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "present": {
+            "default": "auto",
+            "description": "体裁；auto = 按画像与规模确定性选择",
+            "enum": [
+              "auto",
+              "mindmap",
+              "doc"
+            ],
+            "title": "Present",
+            "type": "string"
+          },
+          "structure": {
+            "default": "",
+            "description": "导图结构：logic-right / mind-both / org-down / fishbone；留空用默认",
+            "maxLength": 20,
+            "title": "Structure",
+            "type": "string"
+          },
+          "theme": {
+            "default": "",
+            "description": "配色：indigo / verdant / violet / inkCream",
+            "maxLength": 20,
+            "title": "Theme",
+            "type": "string"
+          },
+          "doc_archetype": {
+            "default": "",
+            "description": "文稿体裁：route_guide（说明书）/ task_cards（任务卡）/ syllabus_map（考纲对照表）；留空按期限与规模选",
+            "maxLength": 20,
+            "title": "Doc Archetype",
+            "type": "string"
+          }
+        },
+        "title": "PlanPresentInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "kind": "str，mindmap | doc",
+        "resource_id": "str",
+        "open_url": "str，直接可打开",
+        "title": "str",
+        "reason": "str，为什么选这个体裁",
+        "node_count": "int"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.not_found",
+          "http_status": 404,
+          "message": "还没有可导出的路线"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "体裁参数不认识"
+        }
+      ],
+      "side_effects": [
+        "写",
+        "一",
+        "份",
+        "只",
+        "读",
+        "快",
+        "照",
+        "到",
+        "资",
+        "源",
+        "库",
+        "（",
+        "同",
+        "一",
+        "版",
+        "本",
+        "同",
+        "一",
+        "体",
+        "裁",
+        "只",
+        "产",
+        "一",
+        "份",
+        "）"
+      ],
+      "requires": [
+        "登录用户",
+        "一份已确认或草稿态的学习计划"
+      ],
+      "cost": "无模型调用",
+      "latency": "通常 < 300 毫秒",
+      "examples": [
+        "把这条路线画成图",
+        "导出一份能打印的学习计划"
+      ],
+      "artifact": {
+        "kind": "mindmap",
+        "open_url_template": "/mindmap?resource={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ],
+        "variants": [
+          {
+            "kind": "doc",
+            "open_url_template": "/resources/{resource_id}"
+          }
         ]
+      }
+    },
+    {
+      "name": "ppt.generate",
+      "version": "1.0",
+      "kind": "job",
+      "title": "生成幻灯片",
+      "one_line": "把一句讲授需求做成一份可编辑、标了依据、设计先确认的幻灯",
+      "use_when": [
+        "要做一份讲稿：如「做一份人参的讲稿，12 页」",
+        "要给课堂/规培/科普准备演示：如「给规培医师讲十八反」",
+        "已有资源要重做一版：先用 ppt.generate 重新起稿，再在编辑器里改"
+      ],
+      "avoid_when": [
+        "只要一段文字说明：用 doc.generate（或直接回答），出幻灯是杀鸡用牛刀",
+        "要一张关系图：用 mindmap.generate——导图不做页，幻灯不做树",
+        "要改已有幻灯的某一页：那是编辑器的事，不要重新生成整份"
+      ],
+      "audiences": [
+        "agent",
+        "frontend",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "要讲什么。完整一句比两个字更好：例如「给规培医师讲人参的用法与禁忌」",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "挂到哪个知识节点下；留空则落到自由主题节点",
+            "maxLength": 64,
+            "title": "Node Id",
+            "type": "string"
+          },
+          "audience": {
+            "default": "",
+            "description": "讲给谁听；留空按「中医药专业本科生」并在设计单里写明这个假设",
+            "maxLength": 40,
+            "title": "Audience",
+            "type": "string"
+          },
+          "page_count": {
+            "default": 12,
+            "description": "建议页数 6~16；实际页数以用户确认的方案为准",
+            "maximum": 16,
+            "minimum": 6,
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "enum": [
+                  "paper",
+                  "ink",
+                  "celadon",
+                  "cinnabar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "paper",
+            "description": "纸面主题：paper/ink/celadon/cinnabar",
+            "title": "Theme"
+          },
+          "mode": {
+            "default": "one_shot",
+            "description": "one_shot = 一路跑完；outline = 谋篇后停下等确认（v3 起确认点在设计步）",
+            "enum": [
+              "one_shot",
+              "outline"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "PptGenerateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 ppt.generate",
+        "capability_version": "str",
+        "invocation_id": "str，受理号；重放时不变",
+        "status": "accepted",
+        "replayed": "bool，true 表示这次是重放，task_id 与上次相同",
+        "task_id": "str，配合 stream_url 订阅进度",
+        "stream_url": "str，GET 后得到 SSE：step_start / plan / design / pause / slot_resolution / slide / deck_verify / done",
+        "artifact": "见 artifact 段；resource_id 与 open_url 在 done 之后才有值"
+      },
+      "pipeline": [
+        {
+          "id": "plan",
+          "label": "拟定方案"
+        },
+        {
+          "id": "design",
+          "label": "设计版式"
+        },
+        {
+          "id": "select",
+          "label": "选取素材"
+        },
+        {
+          "id": "compose",
+          "label": "逐页成稿"
+        },
+        {
+          "id": "verify",
+          "label": "校验依据"
+        },
+        {
+          "id": "seal",
+          "label": "封存入库"
+        }
+      ],
+      "events": [
+        "step_start",
+        "step_done",
+        "plan",
+        "design",
+        "pause",
+        "slot_resolution",
+        "slide",
+        "deck_verify",
+        "done",
+        "error"
+      ],
+      "idempotency": true,
+      "errors": [
+        {
+          "code": "mindmap.topic_empty",
+          "http_status": 422,
+          "message": "没有说要讲什么"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数越界"
+        },
+        {
+          "code": "capability.not_found",
+          "http_status": 404,
+          "message": "知识节点不存在"
+        },
+        {
+          "code": "capability.idempotency_mismatch",
+          "http_status": 409,
+          "message": "同一请求号配了不同参数"
+        }
+      ],
+      "side_effects": [
+        "新建一条炼制任务",
+        "完成后在用户资源库落一份幻灯"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识库（可缺，缺则全部标为模型补充）"
+      ],
+      "cost": "无模型 key 时零调用；有 key 时一次结构化生成",
+      "latency": "通常 8~25 秒；无 key 时 3 秒内",
+      "examples": [
+        "做一份人参的讲稿，12 页",
+        "给规培医师讲十八反",
+        "中医科普：阴阳"
+      ],
+      "artifact": {
+        "kind": "ppt",
+        "open_url_template": "/ppt?resource={resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ],
+        "variants": []
+      }
+    },
+    {
+      "name": "profile.view",
+      "version": "1.0",
+      "kind": "query",
+      "title": "查看学习画像",
+      "one_line": "读出七个维度的分数、置信度与最弱项，用于「我哪块最弱」这类问题",
+      "use_when": [
+        "问自己的学习状况：如「我的画像里哪块最弱」",
+        "问某个维度：如「我的知识基础怎么样」",
+        "要看依据：如「你凭什么说我记不牢」"
+      ],
+      "avoid_when": [
+        "要学习计划：那是路径规划的活，不是画像",
+        "问教材知识：用 kg_* 六能力"
+      ],
+      "audiences": [
+        "agent",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "dimension": {
+            "default": "",
+            "description": "只看某一维（如 knowledge_base / weak_points）；留空看全部",
+            "maxLength": 40,
+            "title": "Dimension",
+            "type": "string"
+          }
+        },
+        "title": "ProfileViewInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 profile.view",
+        "has_profile": "bool，false 表示还没有任何画像证据",
+        "dimensions": "list，每项含 key / label / score / confidence / provenance",
+        "weakest": "list，分数最低且置信度达标的 1~2 维",
+        "weak_points": "list，带出现频次的薄弱知识点标签",
+        "summary": "str，一句可直接念给用户听的话"
+      },
+      "pipeline": [],
+      "events": [],
+      "idempotency": false,
+      "errors": [
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "维度名不认识"
+        }
+      ],
+      "side_effects": [],
+      "requires": [
+        "登录用户"
+      ],
+      "cost": "纯本地读取，无模型调用",
+      "latency": "毫秒级",
+      "examples": [
+        "我的画像里哪块最弱",
+        "我的知识基础怎么样"
+      ]
+    },
+    {
+      "name": "quiz.generate",
+      "version": "1.0",
+      "kind": "job",
+      "title": "生成试卷",
+      "one_line": "按考点出一份可练的卷子：先给卷式与考点，确认后拟题设错",
+      "use_when": [
+        "要一份练习卷：如「出一份解表药的卷子，八道题」",
+        "要错题式辨析：如「考考我麻黄和桂枝的区别」",
+        "要配伍禁忌的判断练习：如「出几道十八反的配伍题」"
+      ],
+      "avoid_when": [
+        "只想问一个答案：直接回答，不必出卷",
+        "要知识结构：用 mindmap.generate",
+        "要讲解材料：用 doc.generate——卷子不给解释"
+      ],
+      "audiences": [
+        "agent",
+        "frontend",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "考什么。例如「解表药的性味与配伍禁忌」",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "挂到哪个知识节点下；留空则落到自由主题节点",
+            "maxLength": 64,
+            "title": "Node Id",
+            "type": "string"
+          },
+          "count": {
+            "default": 8,
+            "description": "出几道题。3~20；默认 8",
+            "maximum": 20,
+            "minimum": 3,
+            "title": "Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "default": "medium",
+            "description": "easy / medium / hard；只影响配比，不改变考点范围",
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "mode": {
+            "default": "one_shot",
+            "description": "one_shot = 确认方案后一路跑完",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "QuizGenerateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 quiz.generate",
+        "capability_version": "str",
+        "invocation_id": "str，受理号；重放时不变",
+        "status": "accepted",
+        "replayed": "bool",
+        "task_id": "str，配合 stream_url 订阅进度",
+        "stream_url": "str，GET 后得到 SSE：step_start / plan / design / pause / items_verify / done",
+        "artifact": "kind=quiz；resource_id 与 open_url 在 done 之后才有值"
+      },
+      "pipeline": [
+        {
+          "id": "plan",
+          "label": "拟定方案"
+        },
+        {
+          "id": "design",
+          "label": "定卷式"
+        },
+        {
+          "id": "compose",
+          "label": "拟题设错"
+        },
+        {
+          "id": "verify",
+          "label": "核对答案"
+        },
+        {
+          "id": "seal",
+          "label": "封存入库"
+        }
+      ],
+      "events": [
+        "step_start",
+        "step_done",
+        "plan",
+        "design",
+        "pause",
+        "items_verify",
+        "done",
+        "error"
+      ],
+      "idempotency": true,
+      "errors": [
+        {
+          "code": "mindmap.topic_empty",
+          "http_status": 422,
+          "message": "没有说考什么"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数越界"
+        },
+        {
+          "code": "capability.not_found",
+          "http_status": 404,
+          "message": "知识节点不存在"
+        },
+        {
+          "code": "capability.idempotency_mismatch",
+          "http_status": 409,
+          "message": "同一请求号配了不同参数"
+        }
+      ],
+      "side_effects": [
+        "新建一条炼制任务",
+        "完成后在用户资源库落一份试卷"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识库（可缺，缺则题目按通用知识出，并在 verify 里说明）"
+      ],
+      "cost": "无模型 key 时零调用；有 key 时按题量生成",
+      "latency": "通常 10~40 秒；无 key 时 3 秒内",
+      "examples": [
+        "出一份解表药的卷子，八道题",
+        "考考我麻黄和桂枝的区别",
+        "出五道十八反配伍题"
+      ],
+      "artifact": {
+        "kind": "quiz",
+        "open_url_template": "/resources/{resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ],
+        "variants": []
       }
     },
     {
@@ -1214,10 +2227,12 @@
       "title": "生成其它学习资源（未接）",
       "one_line": "文档、试卷、故事、幻灯的统一入口；本期只占位，调用返回 501",
       "use_when": [
-        "需要文档/试卷/故事/幻灯，且调用方愿意等它接完"
+        "需要文档/试卷/故事，且调用方愿意等它接完"
       ],
       "avoid_when": [
         "要导图：用 mindmap.generate，那条已经通了",
+        "要幻灯：用 ppt.generate，那条也已经通了",
+        "要文稿：用 doc.generate，那条也已经通了",
         "现在就要产物：直接调既有的 /api/resource/tasks 端点"
       ],
       "audiences": [
@@ -1244,8 +2259,7 @@
             "enum": [
               "doc",
               "quiz",
-              "story",
-              "ppt"
+              "story"
             ],
             "title": "Resource Type",
             "type": "string"
@@ -1300,9 +2314,172 @@
           "textbook",
           "graph",
           "model"
-        ]
+        ],
+        "variants": []
       },
-      "deprecation": "等 doc/quiz/story/ppt 升到带依据的管线后接上，届时去掉 501。"
+      "deprecation": "等 quiz/story 升到带依据的管线后接上，届时去掉 501；ppt 与 doc 已由各自能力接管。"
+    },
+    {
+      "name": "story.generate",
+      "version": "1.0",
+      "kind": "job",
+      "title": "生成漫剧分镜",
+      "one_line": "把一味药或一段医案编成一出短剧：先定场次与角色，确认后写台词",
+      "use_when": [
+        "要把知识点讲成故事：如「把麻黄汤证讲成一出短剧」",
+        "要有人物与冲突的素材：如「编一个学徒用错桂枝的故事」"
+      ],
+      "avoid_when": [
+        "要严格的知识结构：用 mindmap.generate——故事不为覆盖率负责",
+        "要引用逐条可核的讲义：用 doc.generate",
+        "要题目：用 quiz.generate"
+      ],
+      "audiences": [
+        "agent",
+        "frontend",
+        "human"
+      ],
+      "input_schema": {
+        "properties": {
+          "client_invocation_id": {
+            "default": "",
+            "description": "幂等键；重试时原样带回，同样的键只受理一次",
+            "maxLength": 120,
+            "title": "Client Invocation Id",
+            "type": "string"
+          },
+          "context": {
+            "additionalProperties": true,
+            "description": "调用上下文（会话号、轮次等），只用于排查",
+            "title": "Context",
+            "type": "object"
+          },
+          "query": {
+            "default": "",
+            "description": "讲哪一味药、哪个医案。例如「把麻黄汤证讲成一出短剧」",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          },
+          "node_id": {
+            "default": "",
+            "description": "挂到哪个知识节点下；留空则落到自由主题节点",
+            "maxLength": 64,
+            "title": "Node Id",
+            "type": "string"
+          },
+          "scenes": {
+            "default": 4,
+            "description": "几场。2~8；默认 4（起承转合）",
+            "maximum": 8,
+            "minimum": 2,
+            "title": "Scenes",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "one_shot",
+            "description": "one_shot = 确认方案后一路跑完",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "StoryGenerateInput",
+        "type": "object"
+      },
+      "output_shape": {
+        "ok": "bool",
+        "capability": "str，固定 story.generate",
+        "capability_version": "str",
+        "invocation_id": "str，受理号；重放时不变",
+        "status": "accepted",
+        "replayed": "bool",
+        "task_id": "str，配合 stream_url 订阅进度",
+        "stream_url": "str，GET 后得到 SSE：step_start / plan / design / pause / items_verify / done",
+        "artifact": "kind=story；resource_id 与 open_url 在 done 之后才有值"
+      },
+      "pipeline": [
+        {
+          "id": "plan",
+          "label": "拟定方案"
+        },
+        {
+          "id": "design",
+          "label": "定场次"
+        },
+        {
+          "id": "compose",
+          "label": "编排药语"
+        },
+        {
+          "id": "verify",
+          "label": "校验医据"
+        },
+        {
+          "id": "seal",
+          "label": "封存入库"
+        }
+      ],
+      "events": [
+        "step_start",
+        "step_done",
+        "plan",
+        "design",
+        "pause",
+        "items_verify",
+        "done",
+        "error"
+      ],
+      "idempotency": true,
+      "errors": [
+        {
+          "code": "mindmap.topic_empty",
+          "http_status": 422,
+          "message": "没有说讲什么"
+        },
+        {
+          "code": "capability.invalid_input",
+          "http_status": 422,
+          "message": "参数越界"
+        },
+        {
+          "code": "capability.not_found",
+          "http_status": 404,
+          "message": "知识节点不存在"
+        },
+        {
+          "code": "capability.idempotency_mismatch",
+          "http_status": 409,
+          "message": "同一请求号配了不同参数"
+        }
+      ],
+      "side_effects": [
+        "新建一条炼制任务",
+        "完成后在用户资源库落一份漫剧分镜"
+      ],
+      "requires": [
+        "登录用户",
+        "本地中药学知识库（可缺，缺则按通用知识编，并在 verify 里说明）"
+      ],
+      "cost": "无模型 key 时零调用；有 key 时按场次生成",
+      "latency": "通常 15~45 秒；无 key 时 3 秒内",
+      "examples": [
+        "把麻黄汤证讲成一出短剧",
+        "编一个学徒误用十八反的故事",
+        "四场讲清桂枝汤的配伍"
+      ],
+      "artifact": {
+        "kind": "story",
+        "open_url_template": "/resources/{resource_id}",
+        "resolve_on": "done",
+        "structure": "auto",
+        "theme": "",
+        "evidence_tiers": [
+          "textbook",
+          "graph",
+          "model"
+        ],
+        "variants": []
+      }
     }
   ]
 }

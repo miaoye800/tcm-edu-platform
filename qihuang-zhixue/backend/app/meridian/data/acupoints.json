@@ -1,0 +1,3378 @@
+{
+ "geometry_version": "",
+ "note": "名录来自 docs/proto/assets/teaching-points.json，不含 3D 坐标；坐标由 P2 写入。",
+ "channels": [
+  {
+   "id": "LU",
+   "abbr": "LU",
+   "title": "手太阴肺经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 0
+  },
+  {
+   "id": "LI",
+   "abbr": "LI",
+   "title": "手阳明大肠经",
+   "view_bias": "side",
+   "kind": "meridian",
+   "sort_hint": 1
+  },
+  {
+   "id": "ST",
+   "abbr": "ST",
+   "title": "足阳明胃经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 2
+  },
+  {
+   "id": "SP",
+   "abbr": "SP",
+   "title": "足太阴脾经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 3
+  },
+  {
+   "id": "HT",
+   "abbr": "HT",
+   "title": "手少阴心经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 4
+  },
+  {
+   "id": "SI",
+   "abbr": "SI",
+   "title": "手太阳小肠经",
+   "view_bias": "back",
+   "kind": "meridian",
+   "sort_hint": 5
+  },
+  {
+   "id": "BL",
+   "abbr": "BL",
+   "title": "足太阳膀胱经",
+   "view_bias": "back",
+   "kind": "meridian",
+   "sort_hint": 6
+  },
+  {
+   "id": "KI",
+   "abbr": "KI",
+   "title": "足少阴肾经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 7
+  },
+  {
+   "id": "PC",
+   "abbr": "PC",
+   "title": "手厥阴心包经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 8
+  },
+  {
+   "id": "TE",
+   "abbr": "TE",
+   "title": "手少阳三焦经",
+   "view_bias": "side",
+   "kind": "meridian",
+   "sort_hint": 9
+  },
+  {
+   "id": "GB",
+   "abbr": "GB",
+   "title": "足少阳胆经",
+   "view_bias": "side",
+   "kind": "meridian",
+   "sort_hint": 10
+  },
+  {
+   "id": "LR",
+   "abbr": "LR",
+   "title": "足厥阴肝经",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 11
+  },
+  {
+   "id": "GV",
+   "abbr": "GV",
+   "title": "督脉",
+   "view_bias": "back",
+   "kind": "meridian",
+   "sort_hint": 12
+  },
+  {
+   "id": "CV",
+   "abbr": "CV",
+   "title": "任脉",
+   "view_bias": "front",
+   "kind": "meridian",
+   "sort_hint": 13
+  }
+ ],
+ "acupoints": [
+  {
+   "id": "LU1",
+   "code": "LU 1",
+   "name": "中府",
+   "pinyin": "Zhongfu",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.083333
+  },
+  {
+   "id": "LU2",
+   "code": "LU 2",
+   "name": "云门",
+   "pinyin": "Yunmen",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.166667
+  },
+  {
+   "id": "LU3",
+   "code": "LU 3",
+   "name": "天府",
+   "pinyin": "Tianfu",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.25
+  },
+  {
+   "id": "LU4",
+   "code": "LU 4",
+   "name": "侠白",
+   "pinyin": "Xiabai",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.333333
+  },
+  {
+   "id": "LU5",
+   "code": "LU 5",
+   "name": "尺泽",
+   "pinyin": "Chize",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.416667
+  },
+  {
+   "id": "LU6",
+   "code": "LU 6",
+   "name": "孔最",
+   "pinyin": "Kongzui",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "LU7",
+   "code": "LU 7",
+   "name": "列缺",
+   "pinyin": "Lieque",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.583333
+  },
+  {
+   "id": "LU8",
+   "code": "LU 8",
+   "name": "经渠",
+   "pinyin": "Jingqu",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.666667
+  },
+  {
+   "id": "LU9",
+   "code": "LU 9",
+   "name": "太渊",
+   "pinyin": "Taiyuan",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.75
+  },
+  {
+   "id": "LU10",
+   "code": "LU 10",
+   "name": "鱼际",
+   "pinyin": "Yuji",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.833333
+  },
+  {
+   "id": "LU11",
+   "code": "LU 11",
+   "name": "少商",
+   "pinyin": "Shaoshang",
+   "channel_id": "LU",
+   "side": "L",
+   "t": 0.916667
+  },
+  {
+   "id": "LI1",
+   "code": "LI 1",
+   "name": "商阳",
+   "pinyin": "Shangyang",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.047619
+  },
+  {
+   "id": "LI2",
+   "code": "LI 2",
+   "name": "二间",
+   "pinyin": "Erjian",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.095238
+  },
+  {
+   "id": "LI3",
+   "code": "LI 3",
+   "name": "三间",
+   "pinyin": "Sanjian",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.142857
+  },
+  {
+   "id": "LI4",
+   "code": "LI 4",
+   "name": "合谷",
+   "pinyin": "Hegu",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.190476
+  },
+  {
+   "id": "LI5",
+   "code": "LI 5",
+   "name": "阳溪",
+   "pinyin": "Yangxi",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.238095
+  },
+  {
+   "id": "LI6",
+   "code": "LI 6",
+   "name": "偏历",
+   "pinyin": "Pianli",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.285714
+  },
+  {
+   "id": "LI7",
+   "code": "LI 7",
+   "name": "温溜",
+   "pinyin": "Wenliu",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.333333
+  },
+  {
+   "id": "LI8",
+   "code": "LI 8",
+   "name": "下廉",
+   "pinyin": "Xialian",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.380952
+  },
+  {
+   "id": "LI9",
+   "code": "LI 9",
+   "name": "上廉",
+   "pinyin": "Shanglian",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.428571
+  },
+  {
+   "id": "LI10",
+   "code": "LI 10",
+   "name": "手三里",
+   "pinyin": "Shousanli",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.47619
+  },
+  {
+   "id": "LI11",
+   "code": "LI 11",
+   "name": "曲池",
+   "pinyin": "Quchi",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.52381
+  },
+  {
+   "id": "LI12",
+   "code": "LI 12",
+   "name": "肘髎",
+   "pinyin": "Zhouliao",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.571429
+  },
+  {
+   "id": "LI13",
+   "code": "LI 13",
+   "name": "手五里",
+   "pinyin": "Shouwuli",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.619048
+  },
+  {
+   "id": "LI14",
+   "code": "LI 14",
+   "name": "臂臑",
+   "pinyin": "Binao",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.666667
+  },
+  {
+   "id": "LI15",
+   "code": "LI 15",
+   "name": "肩髃",
+   "pinyin": "Jianyu",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.714286
+  },
+  {
+   "id": "LI16",
+   "code": "LI 16",
+   "name": "巨骨",
+   "pinyin": "Jugu",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.761905
+  },
+  {
+   "id": "LI17",
+   "code": "LI 17",
+   "name": "天鼎",
+   "pinyin": "Tianding",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.809524
+  },
+  {
+   "id": "LI18",
+   "code": "LI 18",
+   "name": "扶突",
+   "pinyin": "Futu",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.857143
+  },
+  {
+   "id": "LI19",
+   "code": "LI 19",
+   "name": "口禾髎",
+   "pinyin": "Kouheliao",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.904762
+  },
+  {
+   "id": "LI20",
+   "code": "LI 20",
+   "name": "迎香",
+   "pinyin": "Yingxiang",
+   "channel_id": "LI",
+   "side": "L",
+   "t": 0.952381
+  },
+  {
+   "id": "ST1",
+   "code": "ST 1",
+   "name": "承泣",
+   "pinyin": "Chengqi",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.021739
+  },
+  {
+   "id": "ST2",
+   "code": "ST 2",
+   "name": "四白",
+   "pinyin": "Sibai",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.043478
+  },
+  {
+   "id": "ST3",
+   "code": "ST 3",
+   "name": "巨髎",
+   "pinyin": "Juliao",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.065217
+  },
+  {
+   "id": "ST4",
+   "code": "ST 4",
+   "name": "地仓",
+   "pinyin": "Dicang",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.086957
+  },
+  {
+   "id": "ST5",
+   "code": "ST 5",
+   "name": "大迎",
+   "pinyin": "Daying",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.108696
+  },
+  {
+   "id": "ST6",
+   "code": "ST 6",
+   "name": "颊车",
+   "pinyin": "Jiache",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.130435
+  },
+  {
+   "id": "ST7",
+   "code": "ST 7",
+   "name": "下关",
+   "pinyin": "Xiaguan",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.152174
+  },
+  {
+   "id": "ST8",
+   "code": "ST 8",
+   "name": "头维",
+   "pinyin": "Touwei",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.173913
+  },
+  {
+   "id": "ST9",
+   "code": "ST 9",
+   "name": "人迎",
+   "pinyin": "Renying",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.195652
+  },
+  {
+   "id": "ST10",
+   "code": "ST 10",
+   "name": "水突",
+   "pinyin": "Shuitu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.217391
+  },
+  {
+   "id": "ST11",
+   "code": "ST 11",
+   "name": "气舍",
+   "pinyin": "Qishe",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.23913
+  },
+  {
+   "id": "ST12",
+   "code": "ST 12",
+   "name": "缺盆",
+   "pinyin": "Quepen",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.26087
+  },
+  {
+   "id": "ST13",
+   "code": "ST 13",
+   "name": "气户",
+   "pinyin": "Qihu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.282609
+  },
+  {
+   "id": "ST14",
+   "code": "ST 14",
+   "name": "库房",
+   "pinyin": "Kufang",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.304348
+  },
+  {
+   "id": "ST15",
+   "code": "ST 15",
+   "name": "屋翳",
+   "pinyin": "Wuyi",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.326087
+  },
+  {
+   "id": "ST16",
+   "code": "ST 16",
+   "name": "膺窗",
+   "pinyin": "Yingchuang",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.347826
+  },
+  {
+   "id": "ST17",
+   "code": "ST 17",
+   "name": "乳中",
+   "pinyin": "Ruzhong",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.369565
+  },
+  {
+   "id": "ST18",
+   "code": "ST 18",
+   "name": "乳根",
+   "pinyin": "Rugen",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.391304
+  },
+  {
+   "id": "ST19",
+   "code": "ST 19",
+   "name": "不容",
+   "pinyin": "Burong",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.413043
+  },
+  {
+   "id": "ST20",
+   "code": "ST 20",
+   "name": "承满",
+   "pinyin": "Chengman",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.434783
+  },
+  {
+   "id": "ST21",
+   "code": "ST 21",
+   "name": "梁门",
+   "pinyin": "Liangmen",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.456522
+  },
+  {
+   "id": "ST22",
+   "code": "ST 22",
+   "name": "关门",
+   "pinyin": "Guanmen",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.478261
+  },
+  {
+   "id": "ST23",
+   "code": "ST 23",
+   "name": "太乙",
+   "pinyin": "Taiyi",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "ST24",
+   "code": "ST 24",
+   "name": "滑肉门",
+   "pinyin": "Huaroumen",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.521739
+  },
+  {
+   "id": "ST25",
+   "code": "ST 25",
+   "name": "天枢",
+   "pinyin": "Tianshu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.543478
+  },
+  {
+   "id": "ST26",
+   "code": "ST 26",
+   "name": "外陵",
+   "pinyin": "Wailing",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.565217
+  },
+  {
+   "id": "ST27",
+   "code": "ST 27",
+   "name": "大巨",
+   "pinyin": "Daju",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.586957
+  },
+  {
+   "id": "ST28",
+   "code": "ST 28",
+   "name": "水道",
+   "pinyin": "Shuidao",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.608696
+  },
+  {
+   "id": "ST29",
+   "code": "ST 29",
+   "name": "归来",
+   "pinyin": "Guilai",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.630435
+  },
+  {
+   "id": "ST30",
+   "code": "ST 30",
+   "name": "气冲",
+   "pinyin": "Qichong",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.652174
+  },
+  {
+   "id": "ST31",
+   "code": "ST 31",
+   "name": "髀关",
+   "pinyin": "Biguan",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.673913
+  },
+  {
+   "id": "ST32",
+   "code": "ST 32",
+   "name": "伏兔",
+   "pinyin": "Futu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.695652
+  },
+  {
+   "id": "ST33",
+   "code": "ST 33",
+   "name": "阴市",
+   "pinyin": "Yinshi",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.717391
+  },
+  {
+   "id": "ST34",
+   "code": "ST 34",
+   "name": "梁丘",
+   "pinyin": "Liangqiu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.73913
+  },
+  {
+   "id": "ST35",
+   "code": "ST 35",
+   "name": "犊鼻",
+   "pinyin": "Dubi",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.76087
+  },
+  {
+   "id": "ST36",
+   "code": "ST 36",
+   "name": "足三里",
+   "pinyin": "Zusanli",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.782609
+  },
+  {
+   "id": "ST37",
+   "code": "ST 37",
+   "name": "上巨虚",
+   "pinyin": "Shangjuxu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.804348
+  },
+  {
+   "id": "ST38",
+   "code": "ST 38",
+   "name": "条口",
+   "pinyin": "Tiaokou",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.826087
+  },
+  {
+   "id": "ST39",
+   "code": "ST 39",
+   "name": "下巨虚",
+   "pinyin": "Xiajuxu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.847826
+  },
+  {
+   "id": "ST40",
+   "code": "ST 40",
+   "name": "丰隆",
+   "pinyin": "Fenglong",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.869565
+  },
+  {
+   "id": "ST41",
+   "code": "ST 41",
+   "name": "解溪",
+   "pinyin": "Jiexi",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.891304
+  },
+  {
+   "id": "ST42",
+   "code": "ST 42",
+   "name": "冲阳",
+   "pinyin": "Chongyang",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.913043
+  },
+  {
+   "id": "ST43",
+   "code": "ST 43",
+   "name": "陷谷",
+   "pinyin": "Xiangu",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.934783
+  },
+  {
+   "id": "ST44",
+   "code": "ST 44",
+   "name": "内庭",
+   "pinyin": "Neiting",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.956522
+  },
+  {
+   "id": "ST45",
+   "code": "ST 45",
+   "name": "厉兑",
+   "pinyin": "Lidui",
+   "channel_id": "ST",
+   "side": "L",
+   "t": 0.978261
+  },
+  {
+   "id": "SP1",
+   "code": "SP 1",
+   "name": "隐白",
+   "pinyin": "Yinbai",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.045455
+  },
+  {
+   "id": "SP2",
+   "code": "SP 2",
+   "name": "大都",
+   "pinyin": "Dadu",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.090909
+  },
+  {
+   "id": "SP3",
+   "code": "SP 3",
+   "name": "太白",
+   "pinyin": "Taibai",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.136364
+  },
+  {
+   "id": "SP4",
+   "code": "SP 4",
+   "name": "公孙",
+   "pinyin": "Gongsun",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.181818
+  },
+  {
+   "id": "SP5",
+   "code": "SP 5",
+   "name": "商丘",
+   "pinyin": "Shangqiu",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.227273
+  },
+  {
+   "id": "SP6",
+   "code": "SP 6",
+   "name": "三阴交",
+   "pinyin": "Sanyinjiao",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.272727
+  },
+  {
+   "id": "SP7",
+   "code": "SP 7",
+   "name": "漏谷",
+   "pinyin": "Lougu",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.318182
+  },
+  {
+   "id": "SP8",
+   "code": "SP 8",
+   "name": "地机",
+   "pinyin": "Diji",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.363636
+  },
+  {
+   "id": "SP9",
+   "code": "SP 9",
+   "name": "阴陵泉",
+   "pinyin": "Yinlingquan",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.409091
+  },
+  {
+   "id": "SP10",
+   "code": "SP 10",
+   "name": "血海",
+   "pinyin": "Xuehai",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.454545
+  },
+  {
+   "id": "SP11",
+   "code": "SP 11",
+   "name": "箕门",
+   "pinyin": "Jimen",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "SP12",
+   "code": "SP 12",
+   "name": "冲门",
+   "pinyin": "Chongmen",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.545455
+  },
+  {
+   "id": "SP13",
+   "code": "SP 13",
+   "name": "府舍",
+   "pinyin": "Fushe",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.590909
+  },
+  {
+   "id": "SP14",
+   "code": "SP 14",
+   "name": "腹结",
+   "pinyin": "Fujie",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.636364
+  },
+  {
+   "id": "SP15",
+   "code": "SP 15",
+   "name": "大横",
+   "pinyin": "Daheng",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.681818
+  },
+  {
+   "id": "SP16",
+   "code": "SP 16",
+   "name": "腹哀",
+   "pinyin": "Fuai",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.727273
+  },
+  {
+   "id": "SP17",
+   "code": "SP 17",
+   "name": "食窦",
+   "pinyin": "Shidou",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.772727
+  },
+  {
+   "id": "SP18",
+   "code": "SP 18",
+   "name": "天溪",
+   "pinyin": "Tianxi",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.818182
+  },
+  {
+   "id": "SP19",
+   "code": "SP 19",
+   "name": "胸乡",
+   "pinyin": "Xiongxiang",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.863636
+  },
+  {
+   "id": "SP20",
+   "code": "SP 20",
+   "name": "周荣",
+   "pinyin": "Zhourong",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.909091
+  },
+  {
+   "id": "SP21",
+   "code": "SP 21",
+   "name": "大包",
+   "pinyin": "Dabao",
+   "channel_id": "SP",
+   "side": "L",
+   "t": 0.954545
+  },
+  {
+   "id": "HT1",
+   "code": "HT 1",
+   "name": "极泉",
+   "pinyin": "Jiquan",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.1
+  },
+  {
+   "id": "HT2",
+   "code": "HT 2",
+   "name": "青灵",
+   "pinyin": "Qingling",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.2
+  },
+  {
+   "id": "HT3",
+   "code": "HT 3",
+   "name": "少海",
+   "pinyin": "Shaohai",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.3
+  },
+  {
+   "id": "HT4",
+   "code": "HT 4",
+   "name": "灵道",
+   "pinyin": "Lingdao",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.4
+  },
+  {
+   "id": "HT5",
+   "code": "HT 5",
+   "name": "通里",
+   "pinyin": "Tongli",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "HT6",
+   "code": "HT 6",
+   "name": "阴郄",
+   "pinyin": "Yinxi",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.6
+  },
+  {
+   "id": "HT7",
+   "code": "HT 7",
+   "name": "神门",
+   "pinyin": "Shenmen",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.7
+  },
+  {
+   "id": "HT8",
+   "code": "HT 8",
+   "name": "少府",
+   "pinyin": "Shaofu",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.8
+  },
+  {
+   "id": "HT9",
+   "code": "HT 9",
+   "name": "少冲",
+   "pinyin": "Shaochong",
+   "channel_id": "HT",
+   "side": "L",
+   "t": 0.9
+  },
+  {
+   "id": "SI1",
+   "code": "SI 1",
+   "name": "少泽",
+   "pinyin": "Shaoze",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.05
+  },
+  {
+   "id": "SI2",
+   "code": "SI 2",
+   "name": "前谷",
+   "pinyin": "Qiangu",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.1
+  },
+  {
+   "id": "SI3",
+   "code": "SI 3",
+   "name": "后溪",
+   "pinyin": "Houxi",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.15
+  },
+  {
+   "id": "SI4",
+   "code": "SI 4",
+   "name": "腕骨",
+   "pinyin": "Wangu",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.2
+  },
+  {
+   "id": "SI5",
+   "code": "SI 5",
+   "name": "阳谷",
+   "pinyin": "Yanggu",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.25
+  },
+  {
+   "id": "SI6",
+   "code": "SI 6",
+   "name": "养老",
+   "pinyin": "Yanglao",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.3
+  },
+  {
+   "id": "SI7",
+   "code": "SI 7",
+   "name": "支正",
+   "pinyin": "Zhizheng",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.35
+  },
+  {
+   "id": "SI8",
+   "code": "SI 8",
+   "name": "小海",
+   "pinyin": "Xiaohai",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.4
+  },
+  {
+   "id": "SI9",
+   "code": "SI 9",
+   "name": "肩贞",
+   "pinyin": "Jianzhen",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.45
+  },
+  {
+   "id": "SI10",
+   "code": "SI 10",
+   "name": "臑俞",
+   "pinyin": "Naoshu",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "SI11",
+   "code": "SI 11",
+   "name": "天宗",
+   "pinyin": "Tianzong",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.55
+  },
+  {
+   "id": "SI12",
+   "code": "SI 12",
+   "name": "秉风",
+   "pinyin": "Bingfeng",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.6
+  },
+  {
+   "id": "SI13",
+   "code": "SI 13",
+   "name": "曲垣",
+   "pinyin": "Quyuan",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.65
+  },
+  {
+   "id": "SI14",
+   "code": "SI 14",
+   "name": "肩外俞",
+   "pinyin": "Jianwaishu",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.7
+  },
+  {
+   "id": "SI15",
+   "code": "SI 15",
+   "name": "肩中俞",
+   "pinyin": "Jianzhongshu",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.75
+  },
+  {
+   "id": "SI16",
+   "code": "SI 16",
+   "name": "天窗",
+   "pinyin": "Tianchuang",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.8
+  },
+  {
+   "id": "SI17",
+   "code": "SI 17",
+   "name": "天容",
+   "pinyin": "Tianrong",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.85
+  },
+  {
+   "id": "SI18",
+   "code": "SI 18",
+   "name": "颧髎",
+   "pinyin": "Quanliao",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.9
+  },
+  {
+   "id": "SI19",
+   "code": "SI 19",
+   "name": "听宫",
+   "pinyin": "Tinggong",
+   "channel_id": "SI",
+   "side": "L",
+   "t": 0.95
+  },
+  {
+   "id": "BL1",
+   "code": "BL 1",
+   "name": "睛明",
+   "pinyin": "Jingming",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.014706
+  },
+  {
+   "id": "BL2",
+   "code": "BL 2",
+   "name": "攒竹",
+   "pinyin": "Zanzhu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.029412
+  },
+  {
+   "id": "BL3",
+   "code": "BL 3",
+   "name": "眉冲",
+   "pinyin": "Meichong",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.044118
+  },
+  {
+   "id": "BL4",
+   "code": "BL 4",
+   "name": "曲差",
+   "pinyin": "Qucha",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.058824
+  },
+  {
+   "id": "BL5",
+   "code": "BL 5",
+   "name": "五处",
+   "pinyin": "Wuchu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.073529
+  },
+  {
+   "id": "BL6",
+   "code": "BL 6",
+   "name": "承光",
+   "pinyin": "Chengguang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.088235
+  },
+  {
+   "id": "BL7",
+   "code": "BL 7",
+   "name": "通天",
+   "pinyin": "Tongtian",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.102941
+  },
+  {
+   "id": "BL8",
+   "code": "BL 8",
+   "name": "络却",
+   "pinyin": "Luoque",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.117647
+  },
+  {
+   "id": "BL9",
+   "code": "BL 9",
+   "name": "玉枕",
+   "pinyin": "Yuzhen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.132353
+  },
+  {
+   "id": "BL10",
+   "code": "BL 10",
+   "name": "天柱",
+   "pinyin": "Tianzhu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.147059
+  },
+  {
+   "id": "BL11",
+   "code": "BL 11",
+   "name": "大杼",
+   "pinyin": "Dazhu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.161765
+  },
+  {
+   "id": "BL12",
+   "code": "BL 12",
+   "name": "风门",
+   "pinyin": "Fengmen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.176471
+  },
+  {
+   "id": "BL13",
+   "code": "BL 13",
+   "name": "肺俞",
+   "pinyin": "Feishu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.191176
+  },
+  {
+   "id": "BL14",
+   "code": "BL 14",
+   "name": "厥阴俞",
+   "pinyin": "Jueyinshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.205882
+  },
+  {
+   "id": "BL15",
+   "code": "BL 15",
+   "name": "心俞",
+   "pinyin": "Xinshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.220588
+  },
+  {
+   "id": "BL16",
+   "code": "BL 16",
+   "name": "督俞",
+   "pinyin": "Dushu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.235294
+  },
+  {
+   "id": "BL17",
+   "code": "BL 17",
+   "name": "膈俞",
+   "pinyin": "Geshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.25
+  },
+  {
+   "id": "BL18",
+   "code": "BL 18",
+   "name": "肝俞",
+   "pinyin": "Ganshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.264706
+  },
+  {
+   "id": "BL19",
+   "code": "BL 19",
+   "name": "胆俞",
+   "pinyin": "Danshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.279412
+  },
+  {
+   "id": "BL20",
+   "code": "BL 20",
+   "name": "脾俞",
+   "pinyin": "Pishu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.294118
+  },
+  {
+   "id": "BL21",
+   "code": "BL 21",
+   "name": "胃俞",
+   "pinyin": "Weishu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.308824
+  },
+  {
+   "id": "BL22",
+   "code": "BL 22",
+   "name": "三焦俞",
+   "pinyin": "Sanjiaoshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.323529
+  },
+  {
+   "id": "BL23",
+   "code": "BL 23",
+   "name": "肾俞",
+   "pinyin": "Shenshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.338235
+  },
+  {
+   "id": "BL24",
+   "code": "BL 24",
+   "name": "气海俞",
+   "pinyin": "Qihaishu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.352941
+  },
+  {
+   "id": "BL25",
+   "code": "BL 25",
+   "name": "大肠俞",
+   "pinyin": "Dachangshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.367647
+  },
+  {
+   "id": "BL26",
+   "code": "BL 26",
+   "name": "关元俞",
+   "pinyin": "Guanyuanshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.382353
+  },
+  {
+   "id": "BL27",
+   "code": "BL 27",
+   "name": "小肠俞",
+   "pinyin": "Xiaochangshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.397059
+  },
+  {
+   "id": "BL28",
+   "code": "BL 28",
+   "name": "膀胱俞",
+   "pinyin": "Pangguangshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.411765
+  },
+  {
+   "id": "BL29",
+   "code": "BL 29",
+   "name": "中膂俞",
+   "pinyin": "Zhonglvshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.426471
+  },
+  {
+   "id": "BL30",
+   "code": "BL 30",
+   "name": "白环俞",
+   "pinyin": "Baihuanshu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.441176
+  },
+  {
+   "id": "BL31",
+   "code": "BL 31",
+   "name": "上髎",
+   "pinyin": "Shangliao",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.455882
+  },
+  {
+   "id": "BL32",
+   "code": "BL 32",
+   "name": "次髎",
+   "pinyin": "Ciliao",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.470588
+  },
+  {
+   "id": "BL33",
+   "code": "BL 33",
+   "name": "中髎",
+   "pinyin": "Zhongliao",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.485294
+  },
+  {
+   "id": "BL34",
+   "code": "BL 34",
+   "name": "下髎",
+   "pinyin": "Xialiao",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "BL35",
+   "code": "BL 35",
+   "name": "会阳",
+   "pinyin": "Huiyang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.514706
+  },
+  {
+   "id": "BL36",
+   "code": "BL 36",
+   "name": "承扶",
+   "pinyin": "Chengfu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.529412
+  },
+  {
+   "id": "BL37",
+   "code": "BL 37",
+   "name": "殷门",
+   "pinyin": "Yinmen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.544118
+  },
+  {
+   "id": "BL38",
+   "code": "BL 38",
+   "name": "浮郄",
+   "pinyin": "Fuxi",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.558824
+  },
+  {
+   "id": "BL39",
+   "code": "BL 39",
+   "name": "委阳",
+   "pinyin": "Weiyang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.573529
+  },
+  {
+   "id": "BL40",
+   "code": "BL 40",
+   "name": "委中",
+   "pinyin": "Weizhong",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.588235
+  },
+  {
+   "id": "BL41",
+   "code": "BL 41",
+   "name": "附分",
+   "pinyin": "Fufen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.602941
+  },
+  {
+   "id": "BL42",
+   "code": "BL 42",
+   "name": "魄户",
+   "pinyin": "Pohu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.617647
+  },
+  {
+   "id": "BL43",
+   "code": "BL 43",
+   "name": "膏肓",
+   "pinyin": "Gaohuang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.632353
+  },
+  {
+   "id": "BL44",
+   "code": "BL 44",
+   "name": "神堂",
+   "pinyin": "Shentang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.647059
+  },
+  {
+   "id": "BL45",
+   "code": "BL 45",
+   "name": "譩譆",
+   "pinyin": "Yixi",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.661765
+  },
+  {
+   "id": "BL46",
+   "code": "BL 46",
+   "name": "膈关",
+   "pinyin": "Geguan",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.676471
+  },
+  {
+   "id": "BL47",
+   "code": "BL 47",
+   "name": "魂门",
+   "pinyin": "Hunmen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.691176
+  },
+  {
+   "id": "BL48",
+   "code": "BL 48",
+   "name": "阳纲",
+   "pinyin": "Yanggang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.705882
+  },
+  {
+   "id": "BL49",
+   "code": "BL 49",
+   "name": "意舍",
+   "pinyin": "Yishe",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.720588
+  },
+  {
+   "id": "BL50",
+   "code": "BL 50",
+   "name": "胃仓",
+   "pinyin": "Weicang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.735294
+  },
+  {
+   "id": "BL51",
+   "code": "BL 51",
+   "name": "肓门",
+   "pinyin": "Huangmen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.75
+  },
+  {
+   "id": "BL52",
+   "code": "BL 52",
+   "name": "志室",
+   "pinyin": "Zhishi",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.764706
+  },
+  {
+   "id": "BL53",
+   "code": "BL 53",
+   "name": "胞肓",
+   "pinyin": "Baohuang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.779412
+  },
+  {
+   "id": "BL54",
+   "code": "BL 54",
+   "name": "秩边",
+   "pinyin": "Zhibian",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.794118
+  },
+  {
+   "id": "BL55",
+   "code": "BL 55",
+   "name": "合阳",
+   "pinyin": "Heyang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.808824
+  },
+  {
+   "id": "BL56",
+   "code": "BL 56",
+   "name": "承筋",
+   "pinyin": "Chengjin",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.823529
+  },
+  {
+   "id": "BL57",
+   "code": "BL 57",
+   "name": "承山",
+   "pinyin": "Chengshan",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.838235
+  },
+  {
+   "id": "BL58",
+   "code": "BL 58",
+   "name": "飞扬",
+   "pinyin": "Feiyang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.852941
+  },
+  {
+   "id": "BL59",
+   "code": "BL 59",
+   "name": "跗阳",
+   "pinyin": "Fuyang",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.867647
+  },
+  {
+   "id": "BL60",
+   "code": "BL 60",
+   "name": "昆仑",
+   "pinyin": "Kunlun",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.882353
+  },
+  {
+   "id": "BL61",
+   "code": "BL 61",
+   "name": "仆参",
+   "pinyin": "Pucan",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.897059
+  },
+  {
+   "id": "BL62",
+   "code": "BL 62",
+   "name": "申脉",
+   "pinyin": "Shenmai",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.911765
+  },
+  {
+   "id": "BL63",
+   "code": "BL 63",
+   "name": "金门",
+   "pinyin": "Jinmen",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.926471
+  },
+  {
+   "id": "BL64",
+   "code": "BL 64",
+   "name": "京骨",
+   "pinyin": "Jinggu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.941176
+  },
+  {
+   "id": "BL65",
+   "code": "BL 65",
+   "name": "束骨",
+   "pinyin": "Shugu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.955882
+  },
+  {
+   "id": "BL66",
+   "code": "BL 66",
+   "name": "足通谷",
+   "pinyin": "Zutonggu",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.970588
+  },
+  {
+   "id": "BL67",
+   "code": "BL 67",
+   "name": "至阴",
+   "pinyin": "Zhiyin",
+   "channel_id": "BL",
+   "side": "L",
+   "t": 0.985294
+  },
+  {
+   "id": "KI1",
+   "code": "KI 1",
+   "name": "涌泉",
+   "pinyin": "Yongquan",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.035714
+  },
+  {
+   "id": "KI2",
+   "code": "KI 2",
+   "name": "然谷",
+   "pinyin": "Rangu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.071429
+  },
+  {
+   "id": "KI3",
+   "code": "KI 3",
+   "name": "太溪",
+   "pinyin": "Taixi",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.107143
+  },
+  {
+   "id": "KI4",
+   "code": "KI 4",
+   "name": "大钟",
+   "pinyin": "Dazhong",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.142857
+  },
+  {
+   "id": "KI5",
+   "code": "KI 5",
+   "name": "水泉",
+   "pinyin": "Shuiquan",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.178571
+  },
+  {
+   "id": "KI6",
+   "code": "KI 6",
+   "name": "照海",
+   "pinyin": "Zhaohai",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.214286
+  },
+  {
+   "id": "KI7",
+   "code": "KI 7",
+   "name": "复溜",
+   "pinyin": "Fuliu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.25
+  },
+  {
+   "id": "KI8",
+   "code": "KI 8",
+   "name": "交信",
+   "pinyin": "Jiaoxin",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.285714
+  },
+  {
+   "id": "KI9",
+   "code": "KI 9",
+   "name": "筑宾",
+   "pinyin": "Zhubin",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.321429
+  },
+  {
+   "id": "KI10",
+   "code": "KI 10",
+   "name": "阴谷",
+   "pinyin": "Yingu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.357143
+  },
+  {
+   "id": "KI11",
+   "code": "KI 11",
+   "name": "横骨",
+   "pinyin": "Henggu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.392857
+  },
+  {
+   "id": "KI12",
+   "code": "KI 12",
+   "name": "大赫",
+   "pinyin": "Dahe",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.428571
+  },
+  {
+   "id": "KI13",
+   "code": "KI 13",
+   "name": "气穴",
+   "pinyin": "Qixue",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.464286
+  },
+  {
+   "id": "KI14",
+   "code": "KI 14",
+   "name": "四满",
+   "pinyin": "Siman",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "KI15",
+   "code": "KI 15",
+   "name": "中注",
+   "pinyin": "Zhongzhu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.535714
+  },
+  {
+   "id": "KI16",
+   "code": "KI 16",
+   "name": "肓俞",
+   "pinyin": "Huangshu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.571429
+  },
+  {
+   "id": "KI17",
+   "code": "KI 17",
+   "name": "商曲",
+   "pinyin": "Shangqu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.607143
+  },
+  {
+   "id": "KI18",
+   "code": "KI 18",
+   "name": "石关",
+   "pinyin": "Shiguan",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.642857
+  },
+  {
+   "id": "KI19",
+   "code": "KI 19",
+   "name": "阴都",
+   "pinyin": "Yindu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.678571
+  },
+  {
+   "id": "KI20",
+   "code": "KI 20",
+   "name": "腹通谷",
+   "pinyin": "Futonggu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.714286
+  },
+  {
+   "id": "KI21",
+   "code": "KI 21",
+   "name": "幽门",
+   "pinyin": "Youmen",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.75
+  },
+  {
+   "id": "KI22",
+   "code": "KI 22",
+   "name": "步廊",
+   "pinyin": "Bulang",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.785714
+  },
+  {
+   "id": "KI23",
+   "code": "KI 23",
+   "name": "神封",
+   "pinyin": "Shenfeng",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.821429
+  },
+  {
+   "id": "KI24",
+   "code": "KI 24",
+   "name": "灵墟",
+   "pinyin": "Lingxu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.857143
+  },
+  {
+   "id": "KI25",
+   "code": "KI 25",
+   "name": "神藏",
+   "pinyin": "Shencang",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.892857
+  },
+  {
+   "id": "KI26",
+   "code": "KI 26",
+   "name": "彧中",
+   "pinyin": "Yuzhong",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.928571
+  },
+  {
+   "id": "KI27",
+   "code": "KI 27",
+   "name": "俞府",
+   "pinyin": "Shufu",
+   "channel_id": "KI",
+   "side": "L",
+   "t": 0.964286
+  },
+  {
+   "id": "PC1",
+   "code": "PC 1",
+   "name": "天池",
+   "pinyin": "Tianchi",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.1
+  },
+  {
+   "id": "PC2",
+   "code": "PC 2",
+   "name": "天泉",
+   "pinyin": "Tianquan",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.2
+  },
+  {
+   "id": "PC3",
+   "code": "PC 3",
+   "name": "曲泽",
+   "pinyin": "Quze",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.3
+  },
+  {
+   "id": "PC4",
+   "code": "PC 4",
+   "name": "郄门",
+   "pinyin": "Ximen",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.4
+  },
+  {
+   "id": "PC5",
+   "code": "PC 5",
+   "name": "间使",
+   "pinyin": "Jianshi",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "PC6",
+   "code": "PC 6",
+   "name": "内关",
+   "pinyin": "Neiguan",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.6
+  },
+  {
+   "id": "PC7",
+   "code": "PC 7",
+   "name": "大陵",
+   "pinyin": "Daling",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.7
+  },
+  {
+   "id": "PC8",
+   "code": "PC 8",
+   "name": "劳宫",
+   "pinyin": "Laogong",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.8
+  },
+  {
+   "id": "PC9",
+   "code": "PC 9",
+   "name": "中冲",
+   "pinyin": "Zhongchong",
+   "channel_id": "PC",
+   "side": "L",
+   "t": 0.9
+  },
+  {
+   "id": "TE1",
+   "code": "TE 1",
+   "name": "关冲",
+   "pinyin": "Guanchong",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.041667
+  },
+  {
+   "id": "TE2",
+   "code": "TE 2",
+   "name": "液门",
+   "pinyin": "Yemen",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.083333
+  },
+  {
+   "id": "TE3",
+   "code": "TE 3",
+   "name": "中渚",
+   "pinyin": "Zhongzhu",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.125
+  },
+  {
+   "id": "TE4",
+   "code": "TE 4",
+   "name": "阳池",
+   "pinyin": "Yangchi",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.166667
+  },
+  {
+   "id": "TE5",
+   "code": "TE 5",
+   "name": "外关",
+   "pinyin": "Waiguan",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.208333
+  },
+  {
+   "id": "TE6",
+   "code": "TE 6",
+   "name": "支沟",
+   "pinyin": "Zhigou",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.25
+  },
+  {
+   "id": "TE7",
+   "code": "TE 7",
+   "name": "会宗",
+   "pinyin": "Huizong",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.291667
+  },
+  {
+   "id": "TE8",
+   "code": "TE 8",
+   "name": "三阳络",
+   "pinyin": "Sanyangluo",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.333333
+  },
+  {
+   "id": "TE9",
+   "code": "TE 9",
+   "name": "四渎",
+   "pinyin": "Sidu",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.375
+  },
+  {
+   "id": "TE10",
+   "code": "TE 10",
+   "name": "天井",
+   "pinyin": "Tianjing",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.416667
+  },
+  {
+   "id": "TE11",
+   "code": "TE 11",
+   "name": "清冷渊",
+   "pinyin": "Qinglengyuan",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.458333
+  },
+  {
+   "id": "TE12",
+   "code": "TE 12",
+   "name": "消泺",
+   "pinyin": "Xiaoluo",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.5
+  },
+  {
+   "id": "TE13",
+   "code": "TE 13",
+   "name": "臑会",
+   "pinyin": "Naohui",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.541667
+  },
+  {
+   "id": "TE14",
+   "code": "TE 14",
+   "name": "肩髎",
+   "pinyin": "Jianliao",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.583333
+  },
+  {
+   "id": "TE15",
+   "code": "TE 15",
+   "name": "天髎",
+   "pinyin": "Tianliao",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.625
+  },
+  {
+   "id": "TE16",
+   "code": "TE 16",
+   "name": "天牖",
+   "pinyin": "Tianyou",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.666667
+  },
+  {
+   "id": "TE17",
+   "code": "TE 17",
+   "name": "翳风",
+   "pinyin": "Yifeng",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.708333
+  },
+  {
+   "id": "TE18",
+   "code": "TE 18",
+   "name": "瘛脉",
+   "pinyin": "Chimai",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.75
+  },
+  {
+   "id": "TE19",
+   "code": "TE 19",
+   "name": "颅息",
+   "pinyin": "Luxi",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.791667
+  },
+  {
+   "id": "TE20",
+   "code": "TE 20",
+   "name": "角孙",
+   "pinyin": "Jiaosun",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.833333
+  },
+  {
+   "id": "TE21",
+   "code": "TE 21",
+   "name": "耳门",
+   "pinyin": "Ermen",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.875
+  },
+  {
+   "id": "TE22",
+   "code": "TE 22",
+   "name": "耳和髎",
+   "pinyin": "Erheliao",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.916667
+  },
+  {
+   "id": "TE23",
+   "code": "TE 23",
+   "name": "丝竹空",
+   "pinyin": "Sizhukong",
+   "channel_id": "TE",
+   "side": "L",
+   "t": 0.958333
+  },
+  {
+   "id": "GB1",
+   "code": "GB 1",
+   "name": "瞳子髎",
+   "pinyin": "Tongziliao",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.022222
+  },
+  {
+   "id": "GB2",
+   "code": "GB 2",
+   "name": "听会",
+   "pinyin": "Tinghui",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.044444
+  },
+  {
+   "id": "GB3",
+   "code": "GB 3",
+   "name": "上关",
+   "pinyin": "Shangguan",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.066667
+  },
+  {
+   "id": "GB4",
+   "code": "GB 4",
+   "name": "颔厌",
+   "pinyin": "Hanyan",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.088889
+  },
+  {
+   "id": "GB5",
+   "code": "GB 5",
+   "name": "悬颅",
+   "pinyin": "Xuanlu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.111111
+  },
+  {
+   "id": "GB6",
+   "code": "GB 6",
+   "name": "悬厘",
+   "pinyin": "Xuanli",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.133333
+  },
+  {
+   "id": "GB7",
+   "code": "GB 7",
+   "name": "曲鬓",
+   "pinyin": "Qubin",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.155556
+  },
+  {
+   "id": "GB8",
+   "code": "GB 8",
+   "name": "率谷",
+   "pinyin": "Shuaigu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.177778
+  },
+  {
+   "id": "GB9",
+   "code": "GB 9",
+   "name": "天冲",
+   "pinyin": "Tianchong",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.2
+  },
+  {
+   "id": "GB10",
+   "code": "GB 10",
+   "name": "浮白",
+   "pinyin": "Fubai",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.222222
+  },
+  {
+   "id": "GB11",
+   "code": "GB 11",
+   "name": "头窍阴",
+   "pinyin": "Touqiaoyin",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.244444
+  },
+  {
+   "id": "GB12",
+   "code": "GB 12",
+   "name": "完骨",
+   "pinyin": "Wangu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.266667
+  },
+  {
+   "id": "GB13",
+   "code": "GB 13",
+   "name": "本神",
+   "pinyin": "Benshen",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.288889
+  },
+  {
+   "id": "GB14",
+   "code": "GB 14",
+   "name": "阳白",
+   "pinyin": "Yangbai",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.311111
+  },
+  {
+   "id": "GB15",
+   "code": "GB 15",
+   "name": "头临泣",
+   "pinyin": "Toulinqi",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.333333
+  },
+  {
+   "id": "GB16",
+   "code": "GB 16",
+   "name": "目窗",
+   "pinyin": "Muchuang",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.355556
+  },
+  {
+   "id": "GB17",
+   "code": "GB 17",
+   "name": "正营",
+   "pinyin": "Zhengying",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.377778
+  },
+  {
+   "id": "GB18",
+   "code": "GB 18",
+   "name": "承灵",
+   "pinyin": "Chengling",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.4
+  },
+  {
+   "id": "GB19",
+   "code": "GB 19",
+   "name": "脑空",
+   "pinyin": "Naokong",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.422222
+  },
+  {
+   "id": "GB20",
+   "code": "GB 20",
+   "name": "风池",
+   "pinyin": "Fengchi",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.444444
+  },
+  {
+   "id": "GB21",
+   "code": "GB 21",
+   "name": "肩井",
+   "pinyin": "Jianjing",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.466667
+  },
+  {
+   "id": "GB22",
+   "code": "GB 22",
+   "name": "渊腋",
+   "pinyin": "Yuanye",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.488889
+  },
+  {
+   "id": "GB23",
+   "code": "GB 23",
+   "name": "辄筋",
+   "pinyin": "Zhejin",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.511111
+  },
+  {
+   "id": "GB24",
+   "code": "GB 24",
+   "name": "日月",
+   "pinyin": "Riyue",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.533333
+  },
+  {
+   "id": "GB25",
+   "code": "GB 25",
+   "name": "京门",
+   "pinyin": "Jingmen",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.555556
+  },
+  {
+   "id": "GB26",
+   "code": "GB 26",
+   "name": "带脉",
+   "pinyin": "Daimai",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.577778
+  },
+  {
+   "id": "GB27",
+   "code": "GB 27",
+   "name": "五枢",
+   "pinyin": "Wushu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.6
+  },
+  {
+   "id": "GB28",
+   "code": "GB 28",
+   "name": "维道",
+   "pinyin": "Weidao",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.622222
+  },
+  {
+   "id": "GB29",
+   "code": "GB 29",
+   "name": "居髎",
+   "pinyin": "Juliao",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.644444
+  },
+  {
+   "id": "GB30",
+   "code": "GB 30",
+   "name": "环跳",
+   "pinyin": "Huantiao",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.666667
+  },
+  {
+   "id": "GB31",
+   "code": "GB 31",
+   "name": "风市",
+   "pinyin": "Fengshi",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.688889
+  },
+  {
+   "id": "GB32",
+   "code": "GB 32",
+   "name": "中渎",
+   "pinyin": "Zhongdu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.711111
+  },
+  {
+   "id": "GB33",
+   "code": "GB 33",
+   "name": "膝阳关",
+   "pinyin": "Xiyangguan",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.733333
+  },
+  {
+   "id": "GB34",
+   "code": "GB 34",
+   "name": "阳陵泉",
+   "pinyin": "Yanglingquan",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.755556
+  },
+  {
+   "id": "GB35",
+   "code": "GB 35",
+   "name": "阳交",
+   "pinyin": "Yangjiao",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.777778
+  },
+  {
+   "id": "GB36",
+   "code": "GB 36",
+   "name": "外丘",
+   "pinyin": "Waiqiu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.8
+  },
+  {
+   "id": "GB37",
+   "code": "GB 37",
+   "name": "光明",
+   "pinyin": "Guangming",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.822222
+  },
+  {
+   "id": "GB38",
+   "code": "GB 38",
+   "name": "阳辅",
+   "pinyin": "Yangfu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.844444
+  },
+  {
+   "id": "GB39",
+   "code": "GB 39",
+   "name": "悬钟",
+   "pinyin": "Xuanzhong",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.866667
+  },
+  {
+   "id": "GB40",
+   "code": "GB 40",
+   "name": "丘墟",
+   "pinyin": "Qiuxu",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.888889
+  },
+  {
+   "id": "GB41",
+   "code": "GB 41",
+   "name": "足临泣",
+   "pinyin": "Zulinqi",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.911111
+  },
+  {
+   "id": "GB42",
+   "code": "GB 42",
+   "name": "地五会",
+   "pinyin": "Diwuhui",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.933333
+  },
+  {
+   "id": "GB43",
+   "code": "GB 43",
+   "name": "侠溪",
+   "pinyin": "Xiaxi",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.955556
+  },
+  {
+   "id": "GB44",
+   "code": "GB 44",
+   "name": "足窍阴",
+   "pinyin": "Zuqiaoyin",
+   "channel_id": "GB",
+   "side": "L",
+   "t": 0.977778
+  },
+  {
+   "id": "LR1",
+   "code": "LR 1",
+   "name": "大敦",
+   "pinyin": "Dadun",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.066667
+  },
+  {
+   "id": "LR2",
+   "code": "LR 2",
+   "name": "行间",
+   "pinyin": "Xingjian",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.133333
+  },
+  {
+   "id": "LR3",
+   "code": "LR 3",
+   "name": "太冲",
+   "pinyin": "Taichong",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.2
+  },
+  {
+   "id": "LR4",
+   "code": "LR 4",
+   "name": "中封",
+   "pinyin": "Zhongfeng",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.266667
+  },
+  {
+   "id": "LR5",
+   "code": "LR 5",
+   "name": "蠡沟",
+   "pinyin": "Ligou",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.333333
+  },
+  {
+   "id": "LR6",
+   "code": "LR 6",
+   "name": "中都",
+   "pinyin": "Zhongdu",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.4
+  },
+  {
+   "id": "LR7",
+   "code": "LR 7",
+   "name": "膝关",
+   "pinyin": "Xiguan",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.466667
+  },
+  {
+   "id": "LR8",
+   "code": "LR 8",
+   "name": "曲泉",
+   "pinyin": "Ququan",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.533333
+  },
+  {
+   "id": "LR9",
+   "code": "LR 9",
+   "name": "阴包",
+   "pinyin": "Yinbao",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.6
+  },
+  {
+   "id": "LR10",
+   "code": "LR 10",
+   "name": "足五里",
+   "pinyin": "Zuwuli",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.666667
+  },
+  {
+   "id": "LR11",
+   "code": "LR 11",
+   "name": "阴廉",
+   "pinyin": "Yinlian",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.733333
+  },
+  {
+   "id": "LR12",
+   "code": "LR 12",
+   "name": "急脉",
+   "pinyin": "Jimai",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.8
+  },
+  {
+   "id": "LR13",
+   "code": "LR 13",
+   "name": "章门",
+   "pinyin": "Zhangmen",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.866667
+  },
+  {
+   "id": "LR14",
+   "code": "LR 14",
+   "name": "期门",
+   "pinyin": "Qimen",
+   "channel_id": "LR",
+   "side": "L",
+   "t": 0.933333
+  },
+  {
+   "id": "GV1",
+   "code": "GV 1",
+   "name": "长强",
+   "pinyin": "Changqiang",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.033333
+  },
+  {
+   "id": "GV2",
+   "code": "GV 2",
+   "name": "腰俞",
+   "pinyin": "Yaoshu",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.066667
+  },
+  {
+   "id": "GV3",
+   "code": "GV 3",
+   "name": "腰阳关",
+   "pinyin": "Yaoyangguan",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.1
+  },
+  {
+   "id": "GV4",
+   "code": "GV 4",
+   "name": "命门",
+   "pinyin": "Mingmen",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.133333
+  },
+  {
+   "id": "GV5",
+   "code": "GV 5",
+   "name": "悬枢",
+   "pinyin": "Xuanshu",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.166667
+  },
+  {
+   "id": "GV6",
+   "code": "GV 6",
+   "name": "脊中",
+   "pinyin": "Jizhong",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.2
+  },
+  {
+   "id": "GV7",
+   "code": "GV 7",
+   "name": "中枢",
+   "pinyin": "Zhongshu",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.233333
+  },
+  {
+   "id": "GV8",
+   "code": "GV 8",
+   "name": "筋缩",
+   "pinyin": "Jinsuo",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.266667
+  },
+  {
+   "id": "GV9",
+   "code": "GV 9",
+   "name": "至阳",
+   "pinyin": "Zhiyang",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.3
+  },
+  {
+   "id": "GV10",
+   "code": "GV 10",
+   "name": "灵台",
+   "pinyin": "Lingtai",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.333333
+  },
+  {
+   "id": "GV11",
+   "code": "GV 11",
+   "name": "神道",
+   "pinyin": "Shendao",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.366667
+  },
+  {
+   "id": "GV12",
+   "code": "GV 12",
+   "name": "身柱",
+   "pinyin": "Shenzhu",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.4
+  },
+  {
+   "id": "GV13",
+   "code": "GV 13",
+   "name": "陶道",
+   "pinyin": "Taodao",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.433333
+  },
+  {
+   "id": "GV14",
+   "code": "GV 14",
+   "name": "大椎",
+   "pinyin": "Dazhui",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.466667
+  },
+  {
+   "id": "GV15",
+   "code": "GV 15",
+   "name": "哑门",
+   "pinyin": "Yamen",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.5
+  },
+  {
+   "id": "GV16",
+   "code": "GV 16",
+   "name": "风府",
+   "pinyin": "Fengfu",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.533333
+  },
+  {
+   "id": "GV17",
+   "code": "GV 17",
+   "name": "脑户",
+   "pinyin": "Naohu",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.566667
+  },
+  {
+   "id": "GV18",
+   "code": "GV 18",
+   "name": "强间",
+   "pinyin": "Qiangjian",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.6
+  },
+  {
+   "id": "GV19",
+   "code": "GV 19",
+   "name": "后顶",
+   "pinyin": "Houding",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.633333
+  },
+  {
+   "id": "GV20",
+   "code": "GV 20",
+   "name": "百会",
+   "pinyin": "Baihui",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.666667
+  },
+  {
+   "id": "GV21",
+   "code": "GV 21",
+   "name": "前顶",
+   "pinyin": "Qianding",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.7
+  },
+  {
+   "id": "GV22",
+   "code": "GV 22",
+   "name": "囟会",
+   "pinyin": "Xinhui",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.733333
+  },
+  {
+   "id": "GV23",
+   "code": "GV 23",
+   "name": "上星",
+   "pinyin": "Shangxing",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.766667
+  },
+  {
+   "id": "GV24",
+   "code": "GV 24",
+   "name": "神庭",
+   "pinyin": "Shenting",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.8
+  },
+  {
+   "id": "GV24+",
+   "code": "GV 24+",
+   "name": "印堂",
+   "pinyin": "Yintang",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.833333
+  },
+  {
+   "id": "GV25",
+   "code": "GV 25",
+   "name": "素髎",
+   "pinyin": "Suliao",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.866667
+  },
+  {
+   "id": "GV26",
+   "code": "GV 26",
+   "name": "水沟",
+   "pinyin": "Shuigou",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.9
+  },
+  {
+   "id": "GV27",
+   "code": "GV 27",
+   "name": "兑端",
+   "pinyin": "Duiduan",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.933333
+  },
+  {
+   "id": "GV28",
+   "code": "GV 28",
+   "name": "龈交",
+   "pinyin": "Yinjiao",
+   "channel_id": "GV",
+   "side": "M",
+   "t": 0.966667
+  },
+  {
+   "id": "CV1",
+   "code": "CV 1",
+   "name": "会阴",
+   "pinyin": "Huiyin",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.04
+  },
+  {
+   "id": "CV2",
+   "code": "CV 2",
+   "name": "曲骨",
+   "pinyin": "Qugu",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.08
+  },
+  {
+   "id": "CV3",
+   "code": "CV 3",
+   "name": "中极",
+   "pinyin": "Zhongji",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.12
+  },
+  {
+   "id": "CV4",
+   "code": "CV 4",
+   "name": "关元",
+   "pinyin": "Guanyuan",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.16
+  },
+  {
+   "id": "CV5",
+   "code": "CV 5",
+   "name": "石门",
+   "pinyin": "Shimen",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.2
+  },
+  {
+   "id": "CV6",
+   "code": "CV 6",
+   "name": "气海",
+   "pinyin": "Qihai",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.24
+  },
+  {
+   "id": "CV7",
+   "code": "CV 7",
+   "name": "阴交",
+   "pinyin": "Yinjiao",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.28
+  },
+  {
+   "id": "CV8",
+   "code": "CV 8",
+   "name": "神阙",
+   "pinyin": "Shenque",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.32
+  },
+  {
+   "id": "CV9",
+   "code": "CV 9",
+   "name": "水分",
+   "pinyin": "Shuifen",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.36
+  },
+  {
+   "id": "CV10",
+   "code": "CV 10",
+   "name": "下脘",
+   "pinyin": "Xiawan",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.4
+  },
+  {
+   "id": "CV11",
+   "code": "CV 11",
+   "name": "建里",
+   "pinyin": "Jianli",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.44
+  },
+  {
+   "id": "CV12",
+   "code": "CV 12",
+   "name": "中脘",
+   "pinyin": "Zhongwan",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.48
+  },
+  {
+   "id": "CV13",
+   "code": "CV 13",
+   "name": "上脘",
+   "pinyin": "Shangwan",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.52
+  },
+  {
+   "id": "CV14",
+   "code": "CV 14",
+   "name": "巨阙",
+   "pinyin": "Juque",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.56
+  },
+  {
+   "id": "CV15",
+   "code": "CV 15",
+   "name": "鸠尾",
+   "pinyin": "Jiuwei",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.6
+  },
+  {
+   "id": "CV16",
+   "code": "CV 16",
+   "name": "中庭",
+   "pinyin": "Zhongting",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.64
+  },
+  {
+   "id": "CV17",
+   "code": "CV 17",
+   "name": "膻中",
+   "pinyin": "Danzhong",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.68
+  },
+  {
+   "id": "CV18",
+   "code": "CV 18",
+   "name": "玉堂",
+   "pinyin": "Yutang",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.72
+  },
+  {
+   "id": "CV19",
+   "code": "CV 19",
+   "name": "紫宫",
+   "pinyin": "Zigong",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.76
+  },
+  {
+   "id": "CV20",
+   "code": "CV 20",
+   "name": "华盖",
+   "pinyin": "Huagai",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.8
+  },
+  {
+   "id": "CV21",
+   "code": "CV 21",
+   "name": "璇玑",
+   "pinyin": "Xuanji",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.84
+  },
+  {
+   "id": "CV22",
+   "code": "CV 22",
+   "name": "天突",
+   "pinyin": "Tiantu",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.88
+  },
+  {
+   "id": "CV23",
+   "code": "CV 23",
+   "name": "廉泉",
+   "pinyin": "Lianquan",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.92
+  },
+  {
+   "id": "CV24",
+   "code": "CV 24",
+   "name": "承浆",
+   "pinyin": "Chengjiang",
+   "channel_id": "CV",
+   "side": "M",
+   "t": 0.96
+  }
+ ]
+}

@@ -39,6 +39,25 @@ const shot = (n) => page.screenshot({ path: `${OUT}/${n}.png` })
 const failures = []
 const expect = (ok, message) => { if (!ok) failures.push(message) }
 
+// 追问是一题一屏：主问题答完，stage 换成同一套排版的下一个题目（右侧选项 + 底部题干），
+// 全部答完才落卷。这里按屏幕状态自动答完，直到追问屏消失。
+const answerExtras = async (where, limit = 8) => {
+  for (let i = 0; i < limit; i++) {
+    if ((await page.locator('.scene-extra').count()) === 0) return true
+    await page.waitForTimeout(500)
+    const field = page.locator('.scene-extra .story-disciple-bubble__field')
+    const options = page.locator('.scene-extra .story-choice-stack__options .story-choice-pill')
+    if (await field.count()) {
+      await field.first().fill(`${where}：按我的实际情况说，平时晚上能练四十分钟。`)
+      await page.keyboard.press('Enter')
+    } else {
+      await options.first().click()
+    }
+    await page.waitForTimeout(900)
+  }
+  return (await page.locator('.scene-extra').count()) === 0
+}
+
 // Sample the dialogue box until the answer pills appear. Returns every distinct
 // line the box rendered, the highest playback second it saw (proof the film was
 // allowed to finish), and the second the stage came to rest on once it was over.
@@ -108,6 +127,12 @@ expect(Math.abs(prologue.clock - 27.77) < 0.3, `序章停在 ${prologue.clock}s�
 expectLines(prologue.seen, PROLOGUE_LINES, '序章')
 await shot('01-identity')
 await pill('临床学徒').click()
+// 请笔记完，屏幕上换的是同一套排版的下一个题目，不是另一套界面。
+await page.waitForTimeout(900)
+expect((await page.locator('.scene-identity').count()) === 0, '答完身份牌后不该再留着上一题的选项')
+expect((await page.locator('.scene-extra').count()) === 1, '答完主问题应接着问下一题（追问屏）')
+await shot('01b-extra-question')
+expect(await answerExtras('身份'), '身份幕的追问答不完，屏幕上一直停着追问')
 // 识药：section-two 第 6 秒他才开口问药，影片必须整段播完才出第一题。
 const herb = await sampleUntilChoices(60000, 'section-two-1.mp4')
 console.log('quiz ready at', herb.clock, 'peak', herb.peak)
@@ -122,6 +147,9 @@ for (let q = 1; q <= 5; q++) {
   await page.locator('.story-choice-stack__options .story-choice-pill').first().click()
   await page.waitForTimeout(1200)
 }
+// 五道药认完，识药这一幕还有一道追问（"换到病例里还认不认得出"），
+// 同样是一屏一题，答完才落卷。
+expect(await answerExtras('识药'), '识药幕的追问没答完，卡在同一屏')
 // 抓药：section-three 从 0 秒就在报病例，播完才给「记下病例」。
 const counter = await sampleUntilChoices(90000, 'section-three-1.mp4')
 const holdStart = counter.clock
@@ -174,6 +202,7 @@ await page.waitForSelector('.scene-resource .story-choice-pill', { timeout: 3000
 await page.waitForTimeout(700)
 await shot('07-keepsake')
 await page.locator('.scene-resource .story-choice-stack__options .story-choice-pill').first().click()
+expect(await answerExtras('药宝'), '药宝幕的四道追问没答完，卡在同一屏')
 
 // 5) 学规：两个数字，点开才展开
 const rule = await sampleUntilChoices(90000, 'section-five-1.mp4')
@@ -206,7 +235,11 @@ expect(ruleLabels.some((label) => label.includes('45')), '每日时长没写进�
 expect(ruleLabels.some((label) => label.includes('21')), '目标周期没写进药丸')
 expect(!(await submitPill.isDisabled()), '两样都填好了「立下此约」还是灰的')
 await submitPill.click()
-await page.waitForTimeout(2500)
+await page.waitForTimeout(1200)
+// 学规这一幕有四道追问（时间窗 / 断档恢复 / 冲突取舍 / 错题纠正），
+// 立约只是主问题，追问答完才真正落卷并进入礼成。
+expect(await answerExtras('学规', 10), '学规幕的追问没答完，卡在同一屏')
+await page.waitForTimeout(1500)
 await shot('11-after-rule')
 expect((await page.locator('.scene-rule').count()) === 0, '立约之后没有离开学规屏')
 // 收徒礼成：结业卷卡片已经整个删掉，这一拍只剩影片 + 老中医最后一句。

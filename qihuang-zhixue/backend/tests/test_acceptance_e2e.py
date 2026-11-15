@@ -53,13 +53,24 @@ def _collected(session, dimension: str) -> list[str]:
     )
 
 
-def _run_story(tmp_path: Path, *, all_correct: bool = True):
-    """五幕全流程，走的是真实会话状态机。"""
+def _run_story(tmp_path: Path, *, all_correct: bool = True, blank_extras: bool = False):
+    """五幕全流程，走的是真实会话状态机。
+
+    `blank_extras=True` 把每一道追问都留白：留白是合法答案，但它不能变成证据。
+    """
+
+    def _blank(payload: dict) -> dict:
+        if not blank_extras:
+            return payload
+        answers = payload.get("story_answers")
+        if isinstance(answers, dict):
+            payload["story_answers"] = {key: "" for key in answers}
+        return payload
 
     session = _start("apprentice", tmp_path)
     session = _drive(
         session,
-        {
+        _blank({
             "identity_card": "临床学徒",
             "utterance": "想跟门诊抄方，明年春天能上手",
             "story_answers": {
@@ -67,7 +78,7 @@ def _run_story(tmp_path: Path, *, all_correct: bool = True):
                 "extra_goal_priority": "配伍剂量",
             },
             "response_time_ms": 6000,
-        },
+        }),
     )
 
     # 题目必须来自服务端已存下的那一套：重载后重新抽题会让 correct 永远为 False。
@@ -77,30 +88,30 @@ def _run_story(tmp_path: Path, *, all_correct: bool = True):
         right = question.get("answer") or (question.get("options") or [""])[0]
         picked = right if all_correct else (question.get("options") or [""])[-1]
         item = {"question_id": question["id"], "selected": picked, "response_time_ms": 5000}
-        if index == 0:
+        if index == 0 and not blank_extras:
             item["free_text"] = "补气药都差不多，具体记不清"
         answers.append(item)
     session = _drive(
         session,
-        {
+        _blank({
             "answers": answers,
             "response_time_ms": 5000,
             "story_answers": {"extra_weak_cross_context": "换成病例里的说法我会犹豫，比如黄芪和党参分不清"},
-        },
+        }),
     )
 
     session = _drive(
         session,
-        {
+        _blank({
             "case": "热毒咽痛",
             "prescription": "金银花15g，连翘12g",
             "preference_note": "我更喜欢按证型推",
             "response_time_ms": 7000,
-        },
+        }),
     )
     session = _drive(
         session,
-        {
+        _blank({
             "resource_type": "医案文选",
             "story_answers": {
                 "extra_style_memory": "背口诀",
@@ -109,11 +120,11 @@ def _run_story(tmp_path: Path, *, all_correct: bool = True):
                 "extra_resource_constraint": "手机",
             },
             "response_time_ms": 4000,
-        },
+        }),
     )
     session = _drive(
         session,
-        {
+        _blank({
             "daily_minutes": 30,
             "target_days": 45,
             "accept_challenge": False,
@@ -124,7 +135,7 @@ def _run_story(tmp_path: Path, *, all_correct: bool = True):
                 "extra_weak_recover": "我会把记错的药抄一遍再找相似药对比",
             },
             "response_time_ms": 9000,
-        },
+        }),
     )
     return session
 
@@ -173,7 +184,10 @@ def test_the_quiz_paper_is_drawn_once_and_survives_a_reload(tmp_path: Path) -> N
     second = [question["id"] for question in reloaded.step_data["questions"]]
 
     assert first == second
-    assert len(first) == 8
+    # 识药限定五味有图的药，题型轮换；不再追加派生题（8 题会让人疲劳，
+    # 还会抽到没有图鉴的药材）。
+    assert len(first) == 5
+    assert len({question.split("_")[1] for question in first if question.startswith("kb_")}) <= 5
 
 
 def test_story_answers_are_judged_against_the_served_paper(tmp_path: Path) -> None:
@@ -257,3 +271,45 @@ def test_story_coverage_numbers_reproduce_the_plan_arithmetic(tmp_path: Path) ->
     assert outcome["coverage"] == pytest.approx(0.6)
     assert outcome["weighted_mean"] == pytest.approx(43.36, abs=0.01)
     assert outcome["score"] == pytest.approx(46.02, abs=0.01)
+
+
+def test_story_flow_with_every_extra_answer_blank_never_fabricates_evidence(tmp_path: Path) -> None:
+    """留白是合法答案：五幕全留白时，追问覆盖的组件一条证据都不能有。
+
+    这条守的是"没说话也能出分"的回归：只要有一处把空字符串当成回答写卡，
+    该维度就会凭空过门槛，弟子档案上就会冒出用户从没说过的话。
+    """
+
+    session = _run_story(tmp_path, blank_extras=True)
+
+    assert session.finished is True, "全留白也必须能走完五幕"
+
+    extra_components = {
+        definition["component"]
+        for definitions in modes_module.STORY_EXTRA_QUESTIONS.values()
+        for definition in definitions
+    }
+    assert extra_components  # 追问表空了这条测试就没有意义
+    # 留白不得写出空证据：quote / fact 至少有一个有字。
+    empty_cards = [card for card in session.evidence_cards if not (card.quote or card.fact or "").strip()]
+    assert empty_cards == [], f"留白生成了 {len(empty_cards)} 张空证据"
+
+    # 依赖追问的维度不能过门槛：没收集够就不出分，而不是给个默认分。
+    for dimension in ("learning_style", "resource_preference", "pace"):
+        collected = _collected(session, dimension)
+        coverage = len(collected) / 5
+        assert coverage < COVERAGE_THRESHOLD, f"{dimension} 留白后仍有 {collected}"
+        assert dimension_score(dimension, {component: 70.0 for component in collected})["gate_ok"] is False
+
+
+def test_a_blank_answer_is_skipped_instead_of_becoming_an_empty_evidence_card() -> None:
+    """空字符串/纯空格/None 都不能生成卡片——三种都来自前端的"跳过这一问"。"""
+
+    for blank in ("", "   ", None):
+        cards = modes_module._story_extra_cards(
+            "apprentice_act4_rule",
+            {"story_answers": {"extra_weak_recover": blank}},
+            source="四幕·立下学规",
+        )
+        assert cards == [], f"{blank!r} 生成了证据卡"
+

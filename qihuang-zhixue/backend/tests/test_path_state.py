@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.api import path as path_api
 from app.main import app
-from app.path.plan_store import list_plan_versions
+from app.path.plan_store import list_plan_versions, save_plan_version
 from app.path.state import list_states
 from app.profile.update import ProfileUpdateEvent
 from tests.helpers import auth_headers_for_user_id
@@ -47,6 +47,37 @@ def test_reorder_strict_order_is_rejected_with_edge(tmp_path: Path) -> None:
     assert response.status_code == 409
     assert response.json()["detail"]["edges"][0]["from_node_id"] == "general.p1"
     assert len(list_plan_versions("path-state-user", db_path)) == 2
+
+
+def test_reorder_by_chapter_is_rejected_once_a_chapter_has_several_steps(tmp_path: Path) -> None:
+    """一章拆成多节之后，按章调序会把多行压成一行——必须 409，而且一行都不许丢。
+
+    地图上原来那排"章级芯片 + ↑↓"正是按 `domain_id` 调序的。293 节的新计划里
+    `d01` 有 7 个单元，一次调序就会把它们并成一行——用户看到的是"计划少了十几节"，
+    没有任何报错。
+    """
+
+    client, headers, db_path = setup_client(tmp_path)
+    save_plan_version(
+        user_id="path-state-user",
+        plan_kind="l1",
+        payload={
+            "stages": [
+                {"stage_id": "d01.s1", "unit_id": "d01", "domain_id": "d01", "name": "辛温解表药", "unit_title": "辛温解表药", "order": 1, "order_locked": False, "point_ids": ["d01.s1.p1"], "point_count": 1},
+                {"stage_id": "d01.s2", "unit_id": "d01", "domain_id": "d01", "name": "辛凉解表药", "unit_title": "辛凉解表药", "order": 2, "order_locked": False, "point_ids": ["d01.s2.p1"], "point_count": 1},
+            ]
+        },
+        db_path=db_path,
+    )
+
+    rejected = client.post("/api/path/reorder", headers=headers, json={"node_ids": ["d01"]})
+    assert rejected.status_code == 409
+    assert "章" in rejected.json()["detail"]["reason"]
+
+    accepted = client.post("/api/path/reorder", headers=headers, json={"node_ids": ["d01.s2"]})
+    assert accepted.status_code == 200
+    stages = client.get("/api/path/current", headers=headers).json()["plan"]["stages"]
+    assert [row["unit_title"] for row in stages] == ["辛凉解表药", "辛温解表药"]
 
 
 def test_custom_node_attaches_to_graph(tmp_path: Path) -> None:

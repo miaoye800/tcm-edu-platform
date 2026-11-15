@@ -15,7 +15,7 @@ from app.profile.component_model import (
     quote_is_traceable,
 )
 from app.profile.nodes import DialogueExtraction, _dialogue_cards
-from app.profile.modes import _dialogue_audit_record, _dialogue_fusion
+from app.profile.modes import _dialogue_fusion
 from app.profile.evidence import EvidenceCard, EvidenceTier
 from app.profile.jury import _parse_jury_output
 
@@ -156,49 +156,6 @@ def test_atomic_contract_preserves_cross_dimension_source_and_acceptance_quote()
     assert all(card.quote in source for card in cards)
     assert {card.evidence_group_id for card in cards} == {"g1"}
     assert all(card.collection_status == "scorable" for card in cards)
-
-
-def test_audit_record_preserves_model_scan_and_component_collection_delta():
-    quote = "我想通过线上老师一对一教学学习我们的中医学内容"
-    extraction = DialogueExtraction(
-        turn_id=1,
-        dimension_scan=[{
-            "dimension": "resource_preference",
-            "status": "evidence_found",
-            "reason": "明确说出授课形式和师生关系，属于资源偏好线索。",
-            "components": ["preference_specificity"],
-            "excluded_candidates": [{"dimension": "learning_goal", "component": "goal_specificity", "reason": "没有陈述希望达成的目标或期限。"}],
-        }],
-        atomic_evidence=[_ev(evidence_id="ev-audit", component="preference_specificity", quote=quote)],
-    )
-    cards = _dialogue_cards(extraction)
-    before = _dialogue_fusion([])
-    after = _dialogue_fusion(cards)
-    record = _dialogue_audit_record(
-        turn_index=1,
-        target="learning_goal",
-        next_target="resource_preference",
-        utterance=quote,
-        cards=cards,
-        fusion_before=before,
-        fusion=after,
-        extraction_contract={
-            "combination_type": "single_clear_self_report",
-            "dimension_scan": [item.model_dump(mode="json") for item in extraction.dimension_scan],
-            "component_collection": [item.model_dump(mode="json") for item in extraction.component_collection],
-        },
-        prior_cards=[],
-        all_cards=cards,
-    )
-    scan = next(item for item in record["model_result"]["dimension_scan"] if item["dimension"] == "resource_preference")
-    resource = next(item for item in record["system_result"]["dimensions"] if item["key"] == "resource_preference")
-    goal_exclusion = record["model_result"]["excluded_candidates"][0]
-    assert scan["reason"].startswith("明确说出")
-    assert goal_exclusion["dimension"] == "learning_goal"
-    assert resource["matrix_before"]["preference_specificity"] is False
-    assert resource["matrix_after"]["preference_specificity"] is True
-    assert resource["scoring_phase"] == "collecting"
-    assert resource["scoring_deferred_reason"]
 
 
 def test_dialogue_legacy_dimension_signal_cannot_bypass_component_score_gate():

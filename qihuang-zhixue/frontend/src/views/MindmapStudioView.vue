@@ -14,6 +14,7 @@
       @structure="setStructure"
       @theme="themeId = $event"
     />
+    <PlanReview v-if="phase === 'awaiting-plan' && plan" :plan="plan" :busy="planBusy" :error="errorMessage" @revise="revisePlan" @confirm="confirmPlan" @cancel="cancelPlan" />
 
     <section class="sheet">
       <div class="mat">
@@ -25,8 +26,20 @@
           :live="phase === 'generating'"
           @dirty="markDirty"
           @stats="applyStats"
+          @node-select="openOnMap"
         />
       </div>
+
+      <!-- 方案分支落地了几支：确认过的结构不能悄悄少一支。 -->
+      <p v-if="planCoverage && planCoverage.planned" class="plan-cover">
+        <span class="plan-cover-tag">方案分支 {{ planCoverage.matched }}/{{ planCoverage.planned }}</span>
+        <span v-if="planCoverage.missing.length" class="plan-cover-miss">未落：{{ planCoverage.missing.join('、') }}</span>
+      </p>
+      <!-- 层数没做到也要说：用户选了 5 层，画出来 4 层不是「差不多」，是不一致。 -->
+      <p v-if="planFit?.note" class="plan-cover plan-depth">
+        <span class="plan-cover-miss">{{ planFit.note }}</span>
+        <span v-if="planFit.shallow?.length" class="plan-cover-miss">偏浅：{{ planFit.shallow.join('、') }}</span>
+      </p>
 
       <div class="toolbar-slot">
         <StudioToolbar
@@ -95,8 +108,10 @@
         <span class="status-item" :class="{ warn: evidence.warn }">推断 {{ evidence.model }}%</span>
       </template>
       <span class="status-grow" />
-      <!-- 三条提示的优先级：域外 > 结构折了 > 推断偏多。域外最该被看见。 -->
-      <span v-if="degraded" class="status-hint is-degraded">主题不在教材语料内，内容由模型整理</span>
+      <!-- 三条提示的优先级：域外 > 结构折了 > 推断偏多。域外最该被看见。
+           文案与后端 describe() 对齐：说「本地教材」而不是「中药学教材语料」——
+           知识库现在覆盖六门课，再写死中药学会让中基/中诊的用户以为系统认错了。 -->
+      <span v-if="degraded" class="status-hint is-degraded">主题不在本地教材内，内容由模型整理</span>
       <span v-else-if="overflowHint" class="status-hint">{{ overflowHint }}</span>
       <span v-else-if="evidence.warn" class="status-hint">推断较多，建议对照教材核对</span>
     </footer>
@@ -105,10 +120,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { StateEmpty, StateError, StateLoading } from '../components/state'
 import StudioCanvas from '../components/mindmap/StudioCanvas.vue'
 import StudioChatPanel from '../components/mindmap/StudioChatPanel.vue'
+import PlanReview from '../components/resources/PlanReview.vue'
 import StudioToolbar from '../components/mindmap/StudioToolbar.vue'
 import { useMindmapStudio, type StudioStats } from '../composables/useMindmapStudio'
 import { useMindmapChat } from '../composables/useMindmapChat'
@@ -132,11 +148,24 @@ interface CanvasApi {
 }
 
 const route = useRoute()
+const router = useRouter()
+
+/**
+ * 计划快照里的叶子点一下就回地图。
+ *
+ * **只对带 node_id 的节点生效**（也就是从计划导出来的那张图）。普通导图的
+ * 节点没有 node_id，点了什么也不该发生——把"点节点"变成"离开页面"是最烦人的
+ * 那种交互。
+ */
+const openOnMap = (nodeId: string) => {
+  if (!nodeId) return
+  void router.push(`/path?focus=${encodeURIComponent(nodeId)}`)
+}
 const canvasRef = ref<CanvasApi | null>(null)
 const studio = useMindmapStudio(() => canvasRef.value)
 const { messages, collapsed, chatPhase, ask, retry, reset: resetChat, toggleCollapsed } = useMindmapChat(studio)
 
-const { phase, themeId, structureId, setStructure, structure, saveStatus, saveMessage, stats, evidence, version, errorMessage, recent, resourceId, markDirty, reloadFromServer, keepMine, openResource, refreshRecent, intentLabel, degraded, steps, stepIndex, waitedSeconds } = studio
+const { phase, plan, planBusy, revisePlan, confirmPlan, cancelPlan, planCoverage, planFit, themeId, structureId, setStructure, structure, saveStatus, saveMessage, stats, evidence, version, errorMessage, recent, resourceId, markDirty, reloadFromServer, keepMine, openResource, restoreTask, refreshRecent, intentLabel, degraded, steps, stepIndex, waitedSeconds } = studio
 
 const hasTree = computed(() => stats.value.nodes > 0)
 const busy = computed(() => chatPhase.value === 'submitting' || chatPhase.value === 'streaming')
@@ -186,6 +215,13 @@ const exportPng = async () => {
 
 onMounted(async () => {
   void refreshRecent()
+  // 刷新回来先认任务：待确认的方案还在服务端，不该重开一份新的。
+  const pending = route.query.task
+  if (typeof pending === 'string' && pending) {
+    await restoreTask(pending)
+    collapsed.value = false
+    return
+  }
   // 兼容旧链接与「我的资源」里的跳转：/mindmap?resource=<id> 直接打开那一稿。
   const target = route.query.resource
   if (typeof target === 'string' && target) {
@@ -227,6 +263,34 @@ onMounted(async () => {
 .mat {
   position: absolute;
   inset: 8px;
+}
+
+/* 方案分支落地提示：贴在画布右下角，不参与 .sheet 里其它绝对定位层。 */
+.plan-cover {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--qh-line);
+  border-radius: var(--qh-radius-pill);
+  background: color-mix(in srgb, var(--qh-surface) 88%, transparent);
+  color: var(--qh-fg-muted);
+  font-size: var(--qh-text-footnote);
+  pointer-events: none;
+}
+
+.plan-cover-tag {
+  color: var(--qh-celadon-600);
+}
+
+.plan-cover-miss {
+  color: var(--qh-ochre-600);
 }
 
 .toolbar-slot {

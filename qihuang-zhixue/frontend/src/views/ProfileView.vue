@@ -32,7 +32,13 @@
       :title="profileStore.error"
       show-icon
       :closable="false"
-    />
+    >
+      <template #default>
+        <el-button class="hint-action" size="small" type="primary" :loading="profileStore.loading" @click="refreshProfileView">
+          重新读取档案
+        </el-button>
+      </template>
+    </el-alert>
 
     <el-alert
       v-if="showLowConfidenceHint"
@@ -77,14 +83,14 @@
             <p class="eyebrow">七维画像</p>
             <h3>修行罗盘</h3>
           </div>
-          <Badge tone="gold" :label="`${lowConfidenceNames.length} 维待取证`" />
+          <Badge tone="gold" :label="`${pendingAxes.length} 维待取证`" />
         </div>
 
         <div class="radar-layout">
           <RadarChart :axes="radarAxes" :highlighted-keys="highlightedRadarKeys" />
           <div class="dim-list">
             <div
-              v-for="axis in radarAxes"
+              v-for="axis in evidencedAxes"
               :key="axis.key"
               :class="['dim-change-wrap', { 'is-highlighted': highlightedRadarKeys.includes(axis.key) }]"
             >
@@ -93,6 +99,10 @@
                 {{ radarChangeText(radarChangeByKey.get(axis.key)) }}
               </span>
             </div>
+            <!-- 没取过证的维度不逐条编结论，只留一行提示；雷达上仍以虚线标注。 -->
+            <p v-if="pendingAxes.length" class="dim-pending-hint">
+              其余 {{ pendingAxes.length }} 维尚未取证：{{ pendingAxes.map((axis) => axis.sourceLabel).join('、') }}
+            </p>
           </div>
         </div>
       </GlassCard>
@@ -240,14 +250,18 @@ const changeLimit = 20
 const changeOffset = ref(0)
 
 const radarAxes = computed(() => buildRadarAxes(profileStore.profile, profileStore.narrative))
+// 档案卷逐条展开"有材料"的维度：既有已经出分的，也有"收了几项、分还没算
+// 出来"的。后者不是空维度——它该显示"已收集 2/5、评分暂缓"，而不是被并进
+// 一排"尚未取证"里，让用户以为这一维从来没被问到。
+const evidencedAxes = computed(() => radarAxes.value.filter((axis) => axis.lit || axis.confidence > 0))
+const pendingAxes = computed(() => radarAxes.value.filter((axis) => !axis.lit && axis.confidence <= 0))
 const evidenceCards = computed(() => profileEvidenceCards(profileStore.profile))
 const weakItems = computed(() => weakPointItems(profileStore.profile, profileStore.narrative))
 const updatedAtText = computed(() => formatDateTime(profileStore.profile.updated_at))
+// "高置信"必须同时是"有结论"。只看置信度会把动机这种收了 2/5 组件、
+// 分还没算出来的维度算成 2/7 高置信，而雷达上它根本没有尖角。
 const readyDimensionCount = computed(
-  () =>
-    dimensionKeys.filter(
-      (key) => confidenceFor(profileStore.profile, profileStore.narrative, key) >= lowConfidenceThreshold,
-    ).length,
+  () => radarAxes.value.filter((axis) => axis.lit && !axis.lowConfidence).length,
 )
 const noKeyFallbackDimensions = computed(() =>
   dimensionKeys.filter((key) => isNoKeyProvenance(profileStore.profile.provenance?.[key])),
@@ -581,6 +595,16 @@ h3 {
 .dim-list {
   display: grid;
   gap: 10px;
+}
+
+.dim-pending-hint {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--qh-line-strong);
+  border-radius: 12px;
+  color: var(--qh-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .dim-change-wrap {

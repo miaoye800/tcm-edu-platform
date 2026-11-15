@@ -655,7 +655,23 @@ def _parse_jury_output(
             carried_scores[component] = round(float(existing), 2)
     component_scores: dict[str, float] = {}
     component_jury: dict[str, dict[TeacherName, JurorAssessment]] = {}
+    # 提示词明确要求「无证据的组件 score 填 null」，但真实模型仍会给一个中性
+    # 50 分（实测 learning_goal 的 cross_turn_stability：三师 40/60/50，同时还
+    # 写了 missing "缺多轮独立一致表达"）。采信它会把覆盖度从 3/5 抬到 5/5，
+    # 维度分凭空多出一个没人能复核的估分。
+    no_evidence = {
+        component
+        for component in COMPONENTS.get(dimension, ())
+        if not any(
+            card.component == component and card.semantic_relation != "conflict"
+            for card in evidence_cards
+        )
+    }
+    ignored_no_evidence: list[str] = []
     for key, item in by_component.items():
+        if key in no_evidence and key not in carried_scores:
+            ignored_no_evidence.append(key)
+            continue
         tier = item.tier if item.tier in TIER_BANDS else dimension_tier
         teachers = _component_teachers(key, item, tier)
         if len(teachers) >= 2:
@@ -721,6 +737,11 @@ def _parse_jury_output(
     if carried_components:
         unknown_reasons.append(
             f"本轮重评 {len(rescored_components)} 个组件，其余 {len(carried_components)} 个沿用上一轮分数"
+        )
+    if ignored_no_evidence:
+        labels = "、".join(DIMENSION_COMPONENT_LABELS[dimension][key] for key in ignored_no_evidence)
+        unknown_reasons.append(
+            f"{labels}这 {len(ignored_no_evidence)} 项本轮没有证据，模型给的估分未采信，按未采集处理"
         )
     return ScoringResult(
         dimension=DIMENSION_LABELS[dimension],

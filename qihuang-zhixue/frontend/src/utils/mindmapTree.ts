@@ -14,7 +14,14 @@ export interface MindmapTreeNode {
   direction?: number
   evidence?: MindmapEvidence
   children?: MindmapTreeNode[]
-  meta?: { source_indexes?: number[]; evidence?: MindmapEvidence }
+  meta?: {
+    source_indexes?: number[]
+    evidence?: MindmapEvidence
+    /** 计划快照里的知识点 id。叶子有它就能「去地图」。 */
+    node_id?: string
+    acupoint?: string
+    branch_id?: string
+  }
 }
 
 export interface SaveTreeNode {
@@ -22,8 +29,28 @@ export interface SaveTreeNode {
   topic: string
   direction: number
   evidence?: MindmapEvidence
-  meta: { source_indexes: number[] }
+  meta: { source_indexes: number[]; [key: string]: unknown }
   children: SaveTreeNode[]
+}
+
+/**
+ * 计划快照的锚点。
+ *
+ * 叶子上带 `node_id`，点一下能跳回地图那一格；带着它存盘，下次打开还认得。
+ * 这三个键必须在**两个方向**的转换里都保留：往库里灌（`toSimpleTree`）丢一次、
+ * 从库里读（`simpleToTree` / `normalizeTree`）再丢一次，锚点就没了——
+ * 表现是"叶子上写着知识点名，点了没反应"，而且不会有任何报错。
+ */
+const ANCHOR_KEYS = ['node_id', 'acupoint', 'branch_id'] as const
+
+export const anchorsOf = (meta: unknown): Record<string, string> => {
+  const source = (meta ?? {}) as Record<string, unknown>
+  const out: Record<string, string> = {}
+  for (const key of ANCHOR_KEYS) {
+    const value = source[key]
+    if (typeof value === 'string' && value) out[key] = value
+  }
+  return out
 }
 
 export const countNodes = (node: MindmapTreeNode | null | undefined): number => {
@@ -67,7 +94,7 @@ export const toSaveTree = (node: MindmapTreeNode): SaveTreeNode => ({
   topic: node.topic,
   direction: node.direction === 1 ? 1 : 0,
   ...(node.evidence ? { evidence: node.evidence } : {}),
-  meta: { source_indexes: [...(node.meta?.source_indexes ?? [])] },
+  meta: { source_indexes: [...(node.meta?.source_indexes ?? [])], ...anchorsOf(node.meta) },
   children: (node.children ?? []).map(child => toSaveTree(child)),
 })
 
@@ -184,7 +211,10 @@ const simpleToTree = (node: any): MindmapTreeNode => {
     id: String(node?.data?.id ?? ''),
     topic: String(node?.data?.text ?? ''),
     ...(evidence ? { evidence } : {}),
-    meta: { source_indexes: Array.isArray(sourceIndexes) ? [...sourceIndexes] : [] },
+    meta: {
+      source_indexes: Array.isArray(sourceIndexes) ? [...sourceIndexes] : [],
+      ...anchorsOf(node?.data?.meta ?? node?.meta),
+    },
     children: (node?.children ?? []).map(simpleToTree),
   }
 }

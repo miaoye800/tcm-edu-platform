@@ -18,10 +18,24 @@
     </section>
 
     <div v-else class="apprentice-story__layer">
+      <!-- 每一题都占满这一屏，排版完全一样：舞台不换，答案竖排在右侧，
+           题干写在底部对话框里。追问只是"换了一道题"，不是换个界面。 -->
       <div class="apprentice-story__stage">
         <template v-if="interactionReady">
+          <ExtraQuestionScene
+            v-if="activeExtraQuestion"
+            :key="activeExtraQuestion.id"
+            :question="activeExtraQuestion"
+            :committing="extraCommit"
+            :disabled="submitting"
+            :bubble-open="extraBubbleOpen"
+            @choose="chooseExtraAnswer"
+            @toggle-bubble="extraBubbleOpen = !extraBubbleOpen"
+            @submit-note="submitExtraNote"
+          />
+
           <QuizScene
-            v-if="showQuizChoices && currentQuestion"
+            v-else-if="showQuizChoices && currentQuestion"
             :question="currentQuestion"
             :index="activeQuestionIndex"
             :total="questions.length"
@@ -29,7 +43,7 @@
             :prompt="currentQuizPrompt"
             :selected="questionAnswers[currentQuestion.id] ?? ''"
             :committing="committingOption"
-            :disabled="submitting"
+            :disabled="stageBlocked"
             :bubble-open="quizBubbleOpen"
             @choose="chooseQuizOption"
             @toggle-bubble="quizBubbleOpen = !quizBubbleOpen"
@@ -41,7 +55,7 @@
             :cards="identityCards"
             :selected="identityCard"
             :committing="committingOption"
-            :disabled="submitting || !canSubmit"
+            :disabled="stageBlocked || !canSubmit"
             :bubble-open="identityBubbleOpen"
             @choose="chooseIdentity"
             @toggle-bubble="identityBubbleOpen = !identityBubbleOpen"
@@ -53,7 +67,7 @@
             :types="resourceTypes"
             :selected="resourceType"
             :committing="committingOption"
-            :disabled="submitting || !canSubmit"
+            :disabled="stageBlocked || !canSubmit"
             :bubble-open="resourceBubbleOpen"
             @choose="chooseResource"
             @toggle-bubble="resourceBubbleOpen = !resourceBubbleOpen"
@@ -64,7 +78,7 @@
             v-else-if="scene.kind === 'prescription'"
             :case-text="caseText"
             :prescription="prescription"
-            :submitting="submitting"
+            :submitting="stageBlocked"
             :can-submit="canSubmit"
             :committing="committingOption"
             :open-field="prescriptionField"
@@ -72,14 +86,14 @@
             @update:prescription="prescription = $event"
             @open-field="togglePrescriptionField"
             @close-field="prescriptionField = ''"
-            @submit="submitCurrentStep"
+            @submit="onSceneSubmit"
           />
 
           <RuleScene
             v-else-if="scene.kind === 'rule'"
             :daily-minutes="dailyMinutes"
             :target-days="targetDays"
-            :submitting="submitting"
+            :submitting="stageBlocked"
             :can-submit="canSubmit"
             :committing="committingOption"
             :open-field="ruleField"
@@ -87,18 +101,10 @@
             @update:target-days="targetDays = $event"
             @open-field="toggleRuleField"
             @close-field="ruleField = ''"
-            @submit="submitCurrentStep"
+            @submit="onSceneSubmit"
           />
         </template>
       </div>
-
-      <StoryExtraQuestions
-        v-if="interactionReady"
-        :questions="storyQuestions"
-        :answers="storyAnswers"
-        :disabled="submitting"
-        @answer="onStoryAnswer"
-      />
 
       <StoryDialogueBox
         v-if="showDialogue"
@@ -120,9 +126,9 @@ import StoryStageFrame from '../components/story/StoryStageFrame.vue'
 import StoryChapterBar from '../components/story/StoryChapterBar.vue'
 import StoryDialogueBox from '../components/story/StoryDialogueBox.vue'
 import StoryToast from '../components/story/StoryToast.vue'
-import StoryExtraQuestions from '../components/story/StoryExtraQuestions.vue'
 import StateError from '../components/state/StateError.vue'
 import StateLoading from '../components/state/StateLoading.vue'
+import ExtraQuestionScene from './apprentice/ExtraQuestionScene.vue'
 import IdentityScene from './apprentice/IdentityScene.vue'
 import QuizScene from './apprentice/QuizScene.vue'
 import ResourceScene from './apprentice/ResourceScene.vue'
@@ -206,9 +212,93 @@ const questions = computed<ProfileSessionQuestion[]>(() => step.value?.payload.q
 const storyQuestions = computed(() => step.value?.payload.story_questions ?? [])
 const storyAnswers = reactive<Record<string, string>>({})
 
-const onStoryAnswer = (id: string, value: string) => {
-  if (value.trim()) storyAnswers[id] = value
-  else delete storyAnswers[id]
+// 追问和主问题是同一件事的两种排列：都是"一屏一题"。
+//
+// 顺序是「主问题 → 追问 → 落卷」：追问的措辞本身就依赖主问题（"刚认过的这几味
+// 药…"、"为什么挑这件药宝"），抢先问会问在没有发生过的事情上。
+const extraIndex = ref(0)
+const extraCommit = ref('')
+// 主问题答完才开始追问；第一步（没有追问的幕）直接落卷。
+const extraActive = ref(false)
+const extraBubbleOpen = ref(false)
+let extraTimer: ReturnType<typeof setTimeout> | undefined
+
+const activeExtraQuestion = computed(() => {
+  if (!extraActive.value || !interactionReady.value) return null
+  const list = storyQuestions.value
+  if (!list.length) return null
+  // 最后一问答完但还没换幕时，仍停在那一题上：选项保持金色选中，
+  // 屏幕上不会突然空一块，也不会闪回上一道题。
+  return list[Math.min(extraIndex.value, list.length - 1)] ?? null
+})
+const extraFinished = computed(() => extraIndex.value >= storyQuestions.value.length)
+// 「还有题在问」= 屏幕上停着一道题且不是最后一题答完那一刻。
+// 只看 activeExtraQuestion 会把"最后一题答完、正在落卷"也当成在问，
+// 结果 canSubmit 永远为 false，最后一问答完就卡在那一屏（真实页面验证抓到过）。
+const extraPending = computed(() => Boolean(activeExtraQuestion.value) && !extraFinished.value)
+// 追问进行中，主场景只看不点：这一轮已经在问下一件事了。
+const stageBlocked = computed(() => submitting.value || extraPending.value)
+
+/** 进入追问。返回 true 表示还有追问要走，false 表示可以落卷了。 */
+const beginExtras = () => {
+  if (!storyQuestions.value.length) return false
+  extraIndex.value = 0
+  extraCommit.value = ''
+  // 没有预设选项的题（"为什么挑这件药宝"）直接把输入框打开，别让人先点一下才能写。
+  extraBubbleOpen.value = !storyQuestions.value[0]?.options.length
+  extraActive.value = true
+  return true
+}
+
+/** 主问题答完的统一下一步：有追问就接着问，没有就落卷。 */
+const afterMainAnswer = () => {
+  if (beginExtras()) return
+  void submitCurrentStep()
+}
+
+const scheduleExtraAdvance = () => {
+  if (extraTimer) clearTimeout(extraTimer)
+  extraTimer = setTimeout(() => {
+    extraTimer = undefined
+    advanceExtra()
+  }, apprenticeVisual.replyCommitMs)
+}
+
+const chooseExtraAnswer = (option: string) => {
+  const question = activeExtraQuestion.value
+  if (!question || submitting.value || extraCommit.value) return
+  storyAnswers[question.id] = option
+  extraCommit.value = option
+  extraBubbleOpen.value = false
+  showToast(`记下了 · ${option}`)
+  scheduleExtraAdvance()
+}
+
+const submitExtraNote = (text: string) => {
+  const note = text.trim()
+  const question = activeExtraQuestion.value
+  if (!note || !question || submitting.value || extraCommit.value) return
+  storyAnswers[question.id] = note
+  extraCommit.value = note
+  extraBubbleOpen.value = false
+  showToast('记下了')
+  scheduleExtraAdvance()
+}
+
+const advanceExtra = () => {
+  const total = storyQuestions.value.length
+  const next = Math.min(total, extraIndex.value + 1)
+  extraIndex.value = next
+  extraBubbleOpen.value = false
+  if (next < total) {
+    // 换到下一题：上一题的金色选中要清掉，否则新题会带着旧答案。
+    extraCommit.value = ''
+    // 下一题若没有预设选项，同样直接把输入框打开。
+    extraBubbleOpen.value = !storyQuestions.value[next]?.options.length
+    return
+  }
+  // 最后一问答完：题目留在屏上（选中项仍是金色），带着这一轮的全部答案落卷。
+  void submitCurrentStep()
 }
 const resourceTypes = computed(() => step.value?.payload.resource_types ?? [])
 const currentQuestion = computed(() => questions.value[activeQuestionIndex.value] ?? null)
@@ -217,6 +307,8 @@ const isLastQuizQuestion = computed(() => activeQuestionIndex.value >= questions
 const currentQuizPrompt = computed(() => {
   const question = currentQuestion.value
   if (!question) return ''
+  // 派生题自带不点名的剧情题面（性味 / 使用注意 / 相似药），直接用。
+  if (question.story_prompt) return question.story_prompt
   // Never name the herb here: the whole point of this screen is that the
   // disciple recognises it from the photograph.
   if (question.skill === '功效识记') return apprenticeQuizPrompt
@@ -230,18 +322,31 @@ const interactionReady = computed(() => videoEnded.value && INTERACTIVE_KINDS.in
 // ends the box switches to a narrator that asks the question.
 const playbackLine = computed(() => dialogueAt(scene.value, playbackSeconds.value))
 
-const dialogueText = computed(() => {
-  // 落卷要走模型，五幕结束那次要等十几秒。这期间不给一句话，画面就是静止的，
-  // 看上去像卡死；先用旁白口吻顶住，结果回来自然被下一幕替换。
-  if (submitting.value) return '（师父正在看你的回答…）'
-  if (interactionReady.value) {
-    if (scene.value.kind === 'quiz' && currentQuestion.value) return currentQuizPrompt.value
-    return apprenticeStoryNarration[scene.value.sceneId] ?? scene.value.dialogue
+// 对话框的「一句话 + 谁在说」只在这一处决定。
+//
+// 旧实现把 text 和 speaker 分成两个 computed 各判一次，两边条件不一致时就会
+// 出现「旁白：拜师礼成」这种错配；而且落卷期间 text 被"师父正在看你的回答"
+// 固定住，礼成那段的字幕全被盖掉。
+const dialogueLine = computed<{ text: string; speaker: string }>(() => {
+  // 影片里已经有人说话时字幕优先：落卷要等模型（礼成那一段十几秒），
+  // 让字幕照常走，用户才知道礼已经成了。
+  if (submitting.value) {
+    const line = playbackLine.value
+    if (line.text) return line
+    return { text: '（师父正在看你的回答…）', speaker: '旁白' }
   }
-  return playbackLine.value.text
+  if (interactionReady.value) {
+    // 追问优先：这一轮他要问的就是这题，答案给在右侧。
+    const extra = activeExtraQuestion.value
+    if (extra) return { text: extra.prompt, speaker: '老中医' }
+    if (scene.value.kind === 'quiz' && currentQuestion.value) return { text: currentQuizPrompt.value, speaker: '旁白' }
+    return { text: apprenticeStoryNarration[scene.value.sceneId] ?? scene.value.dialogue, speaker: '旁白' }
+  }
+  return playbackLine.value
 })
 
-const speakerName = computed(() => (interactionReady.value ? '旁白' : playbackLine.value.speaker))
+const dialogueText = computed(() => dialogueLine.value.text)
+const speakerName = computed(() => dialogueLine.value.speaker)
 const speakerTone = computed<'master' | 'narration'>(() => (speakerName.value === '旁白' ? 'narration' : 'master'))
 
 const displayChapter = computed(() => scene.value.chapter)
@@ -251,7 +356,7 @@ const progressLabel = computed(() => {
   return `药圃图鉴 ${String(activeQuestionIndex.value + 1).padStart(2, '0')} / ${String(questions.value.length).padStart(2, '0')}`
 })
 
-const showQuizChoices = computed(() => scene.value.kind === 'quiz' && videoEnded.value)
+const showQuizChoices = computed(() => scene.value.kind === 'quiz' && videoEnded.value && !extraActive.value)
 // The closing screen keeps the dialogue box too: the master's last line stays in
 // the box under the certificate, instead of the certificate talking to itself.
 const showDialogue = computed(() => ['performance', 'identity', 'quiz', 'prescription', 'resource', 'rule', 'complete'].includes(scene.value.kind))
@@ -274,6 +379,10 @@ const herbPhotoFor = (question: ProfileSessionQuestion) => {
 
 const canSubmit = computed(() => {
   if (!canSubmitStep(state.value) || submitting.value) return false
+  if (extraPending.value) return false
+  // 追问还在进行时不能落卷；全部问完的那一瞬要放行——此时面板留着让用户
+  // 看见自己的最后一句，但答案控件已经收起。
+  if (extraActive.value && !extraFinished.value) return false
   if (scene.value.kind === 'prescription') return Boolean(caseText.value.trim() && prescription.value.trim())
   if (scene.value.kind === 'rule') return dailyMinutes.value !== null && targetDays.value !== null
   return true
@@ -311,6 +420,14 @@ const stopQuizClock = (questionId: string) => {
 
 const resetStepFields = () => {
   clearChoiceTimer()
+  if (extraTimer) {
+    clearTimeout(extraTimer)
+    extraTimer = undefined
+  }
+  extraIndex.value = 0
+  extraCommit.value = ''
+  extraActive.value = false
+  extraBubbleOpen.value = false
   committingOption.value = ''
   Object.keys(questionAnswers).forEach((key) => delete questionAnswers[key])
   Object.keys(questionNotes).forEach((key) => delete questionNotes[key])
@@ -343,7 +460,7 @@ const toggleRuleField = (field: string) => {
 }
 
 const advanceQuiz = () => {
-  if (isLastQuizQuestion.value) void submitCurrentStep()
+  if (isLastQuizQuestion.value) afterMainAnswer()
   else {
     activeQuestionIndex.value += 1
     quizBubbleOpen.value = false
@@ -388,7 +505,7 @@ const chooseIdentity = (card: string) => {
   utterance.value = ''
   committingOption.value = card
   showToast(`已记录 · ${card}`)
-  void submitCurrentStep()
+  afterMainAnswer()
 }
 
 const submitIdentityNote = (text: string) => {
@@ -398,7 +515,7 @@ const submitIdentityNote = (text: string) => {
   utterance.value = note
   committingOption.value = 'identity-note'
   showToast('已呈上补充')
-  void submitCurrentStep()
+  afterMainAnswer()
 }
 
 const chooseResource = (resource: string) => {
@@ -407,7 +524,7 @@ const chooseResource = (resource: string) => {
   resourceCustom.value = ''
   committingOption.value = resource
   showToast(`已记录 · ${resource}`)
-  void submitCurrentStep()
+  afterMainAnswer()
 }
 
 const submitResourceNote = (text: string) => {
@@ -417,7 +534,7 @@ const submitResourceNote = (text: string) => {
   resourceCustom.value = note
   committingOption.value = 'resource-note'
   showToast('已呈上补充')
-  void submitCurrentStep()
+  afterMainAnswer()
 }
 
 // One in-flight handshake shared by the prefetch and every retry: two parallel
@@ -495,6 +612,12 @@ const stepPayload = (): Record<string, unknown> => {
   return { daily_minutes: dailyMinutes.value, target_days: targetDays.value, ...timing, ...extras }
 }
 
+// 表单幕的按钮：先走追问，再落卷。
+const onSceneSubmit = () => {
+  if (!canSubmit.value || submitting.value) return
+  afterMainAnswer()
+}
+
 const submitCurrentStep = async () => {
   const current = state.value.session?.step
   if (!current || !canSubmit.value) return
@@ -518,6 +641,13 @@ const submitCurrentStep = async () => {
     // live request stay locked to the same backend step.
     state.value = { ...state.value, completing: false, submittedStepIds: state.value.submittedStepIds.filter((id) => id !== current.id) }
     committingOption.value = ''
+    // 落卷失败不要退回主问题：那等于把前面答过的几道又重来一遍。
+    // 退回"最后一问"那一屏、清掉这一问的选中，用户重答一次就能重试提交。
+    if (extraActive.value && storyQuestions.value.length) {
+      extraIndex.value = storyQuestions.value.length
+      extraCommit.value = ''
+      extraBubbleOpen.value = !storyQuestions.value[storyQuestions.value.length - 1]?.options.length
+    }
     error.value = cause instanceof Error ? cause.message : '本次作答未能提交'
     persist()
   } finally {
@@ -591,6 +721,15 @@ watch(sceneSource, (source, previous) => {
 watch(() => scene.value.sceneId, () => {
   clearChoiceTimer()
   if (performanceTimer) clearTimeout(performanceTimer)
+  // 换幕就从头问起：上一幕的追问序号不能带到这一幕。
+  if (extraTimer) {
+    clearTimeout(extraTimer)
+    extraTimer = undefined
+  }
+  extraIndex.value = 0
+  extraCommit.value = ''
+  extraActive.value = false
+  extraBubbleOpen.value = false
   committingOption.value = ''
   quizBubbleOpen.value = false
   identityBubbleOpen.value = false
@@ -632,6 +771,7 @@ onBeforeUnmount(() => {
   if (performanceTimer) clearTimeout(performanceTimer)
   if (choiceTimer) clearTimeout(choiceTimer)
   if (toastTimer) clearTimeout(toastTimer)
+  if (extraTimer) clearTimeout(extraTimer)
   quizShownAt = null
 })
 </script>

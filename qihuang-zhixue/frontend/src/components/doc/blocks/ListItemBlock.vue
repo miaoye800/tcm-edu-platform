@@ -46,9 +46,12 @@ const updateText = (text: string) => emit('update', { ...props.block, text })
 /**
  * 只改 type 之外什么都不动 —— 这正是 Notion「转成」不丢数据的原因：
  * checked 留在 props 里，转成标题再转回来，勾选状态还在。
+ *
+ * **勾选不受 editable 限制**：正文只读不等于任务清单不能勾。工坊里预览
+ * 刚生成的稿子时点不动复选框，用户会以为整个文档都是死的；这里照常
+ * 发 update，落不落库由父层决定（预览页会存回资源，流式生成中则忽略）。
  */
 const toggleChecked = () => {
-  if (!props.editable) return
   emit('update', { ...props.block, props: { ...(props.block.props || {}), checked: !props.block.props?.checked } })
 }
 </script>

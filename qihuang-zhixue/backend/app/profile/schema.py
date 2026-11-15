@@ -155,7 +155,8 @@ class IdentityCardView(BaseModel):
     revealable: bool
     revealed_now: bool
     confidence: float = Field(ge=0.0, le=1.0)
-    confidence_status: Literal["待取证", "已取证"]
+    # 三档与弟子档案同一套口径：有结论但置信度低是"已收集到"，不是"待取证"。
+    confidence_status: Literal["待取证", "已收集到", "已取证"]
     score: float | None = None
     radar_score: float | None = Field(default=None, ge=5.0, le=95.0)
     coverage: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -164,6 +165,11 @@ class IdentityCardView(BaseModel):
     display_value: str
     distribution: dict[str, float] = Field(default_factory=dict)
     distribution_scope: Literal["observed_evidence", "complete_profile"] = "observed_evidence"
+    # 牌名与组成说明：名字由当前证据组合现算，不依赖预设皮肤表；比例永远
+    # 和 distribution 用同一份数，界面不再出现"翻开了但牌面空白"。
+    card_name: str = ""
+    composition_basis: Literal["labels", "components", "none"] = "none"
+    composition_summary: str = ""
     items: list[dict[str, Any]] = Field(default_factory=list)
     cards: list[dict[str, Any]] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)

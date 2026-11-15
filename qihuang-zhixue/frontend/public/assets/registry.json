@@ -1,0 +1,2370 @@
+{
+  "version": 1,
+  "note": "素材登记表：唯一的索引。不在表里的图不存在，代码里也不许出现绕过它的路径。空库是合法状态——此时所有槽位走参数化母题或降级，成品不会因此崩掉。字段定义见 docs/studios/assets.md §3。",
+  "assets": [
+    {
+      "id": "photo-chenpi-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": [
+        "陈皮"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "饮片",
+        "果皮",
+        "实拍"
+      ],
+      "file": "assets/pictorial/photo-chenpi-01.webp",
+      "w": 1600,
+      "h": 1232,
+      "bytes": 69132,
+      "sha256": "d72e56bc68de7a00f4204bb2aa26a07f41cf0a21f0bbbc4484280b14a7d77572",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tangerine_peels.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "treatment": "photo-toned",
+      "added_at": "2026-11-08T15:02:18Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "photo-dangshen-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": [
+        "党参"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "饮片",
+        "根",
+        "实拍"
+      ],
+      "file": "assets/pictorial/photo-dangshen-01.webp",
+      "w": 1600,
+      "h": 1232,
+      "bytes": 55756,
+      "sha256": "9d10bc598bc4f61dcdb0fff46a4414b359809bdc79caf8a510f1efae05b12a28",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Dried_Codonopsis_pilosula_HC.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "treatment": "photo-toned",
+      "added_at": "2026-11-08T15:02:17Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "photo-huangqi-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": [
+        "黄芪"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "饮片",
+        "根",
+        "实拍"
+      ],
+      "file": "assets/pictorial/photo-huangqi-01.webp",
+      "w": 1600,
+      "h": 1232,
+      "bytes": 59064,
+      "sha256": "8ba62fdbdd143882a9d2970f8ee43fdef3770d4b970a6b0621b1f42fc9e12247",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Dried_astragalus_slices.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "treatment": "photo-toned",
+      "added_at": "2026-11-08T15:02:16Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "photo-jinyinhua-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": [
+        "金银花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "原植物",
+        "花",
+        "实拍"
+      ],
+      "file": "assets/pictorial/photo-jinyinhua-01.webp",
+      "w": 1600,
+      "h": 1233,
+      "bytes": 121312,
+      "sha256": "99cbac527ad52010577e2c5c1a1c4159f44c0b2f9b218655c2aef6ba3551d79f",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Lonicera_japonica,_Montour_Trail,_2024-09-24.jpg",
+      "attribution": "Father Pitt",
+      "treatment": "photo-toned",
+      "added_at": "2026-11-08T15:02:18Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "photo-taizishen-01",
+      "kind": "photo",
+      "slot_class": "evidence",
+      "subjects": [
+        "太子参"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "饮片",
+        "根",
+        "实拍"
+      ],
+      "file": "assets/pictorial/photo-taizishen-01.webp",
+      "w": 1600,
+      "h": 1232,
+      "bytes": 81660,
+      "sha256": "439cbb43ca23d34f879e17d790c6f0d241e0ca91e8667bd2a618af491476724f",
+      "license": "CC0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Dried_pseudostellaria_heterophylla.jpg",
+      "attribution": "Fumikas Sagisavas",
+      "treatment": "photo-toned",
+      "added_at": "2026-11-08T15:02:17Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-08",
+        "note": "归一化后色调与纸面协调；无水印、无主体裁切。待人眼复核后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "古埃及彩绘鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "古埃及",
+        "壁画",
+        "复古",
+        "复古插画",
+        "插画",
+        "纹样",
+        "装饰画",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-01.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 57988,
+      "sha256": "4596fa9a706db0cc0a45daf95364fd0b3d4cc6c15d3c1d99b3674e4106a5630e",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "彩绘鸳鸯"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "中医药",
+        "复古",
+        "复古插画",
+        "插画",
+        "水禽",
+        "纹样",
+        "装饰画",
+        "鸟类",
+        "鸳鸯"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-02.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 55742,
+      "sha256": "169a2faff35f02bd33b62c3f1fb5b3121726bfed864078ac747596d652956c70",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "蓝头长尾鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "工笔风格",
+        "插画",
+        "枝叶",
+        "装饰画",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-03.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 99224,
+      "sha256": "a73e56fd9bb10e8c4f4f102c14e5a8b9c90895d41cfbda34295900ad0c3a44d1",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "红嘴蓝尾鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "红嘴",
+        "蓝尾",
+        "装饰画",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-04.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 51876,
+      "sha256": "c6a144d062541c934acd8ef0ac5c76922dc2933d8ccf9948e3eba1c3cf338ee8",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅斑鸠"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古",
+        "复古插画",
+        "展翅",
+        "插画",
+        "斑鸠",
+        "线描",
+        "装饰画",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-05.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 57680,
+      "sha256": "20c6e6a342ada620a4e2aa66ec6c8172e19fa362483cf668d7c10984c0178fc2",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-06",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "绿头黄身水鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "水鸟",
+        "线描",
+        "绿头鸭",
+        "装饰画",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-06.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 62442,
+      "sha256": "cdb2144eb5db92353591138c50c47abb5611fd4d20b97fd86f31866590cb07d9",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-birdpaint-07",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "青绿雁形水禽"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "动物",
+        "复古",
+        "复古插画",
+        "插画",
+        "水禽",
+        "线描",
+        "装饰画",
+        "青绿色",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-birdpaint-07.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 55258,
+      "sha256": "109c443cecbfff3c9c8e2125048078a6cc6a5105ac6cfd4957e893fc9569c511",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-hasegawa-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "黄色菊花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古",
+        "插画",
+        "本草",
+        "植物插画",
+        "浮世绘",
+        "花卉",
+        "菊花"
+      ],
+      "file": "assets/pictorial/plate-hasegawa-01.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 181492,
+      "sha256": "1d4a3a57086ff22fef9500987235c861546ae8f954ba5940fb29814ccee5bef5",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-hasegawa-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "粉红菊花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "中医药",
+        "复古",
+        "插画",
+        "植物插画",
+        "浮世绘",
+        "花卉",
+        "菊花"
+      ],
+      "file": "assets/pictorial/plate-hasegawa-02.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 188186,
+      "sha256": "a74f3278de277a4b7668c28ed1d4734721153c0348d7d5527a4cf9124fe9e194",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-hasegawa-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "粉色独本菊"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古",
+        "插画",
+        "本草图谱",
+        "植物插画",
+        "浮世绘",
+        "线描",
+        "花卉",
+        "菊花"
+      ],
+      "file": "assets/pictorial/plate-hasegawa-03.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 183898,
+      "sha256": "7c7ea826e0c46341a1d9b9bb87b3023d04f16ace1863b65e04488726e40c360c",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-hasegawa-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "卷瓣红菊"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "中药材",
+        "复古",
+        "插画",
+        "植物插画",
+        "水彩",
+        "浮世绘",
+        "花卉",
+        "菊花"
+      ],
+      "file": "assets/pictorial/plate-hasegawa-04.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 200420,
+      "sha256": "04fa8f85c987bb8f6eb35ae1c878263b1ad6c22ff94151b70a802687f7d3e26c",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-merian-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "无花果与昆虫"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "图谱",
+        "复古博物画",
+        "插画",
+        "无花果",
+        "昆虫",
+        "植物",
+        "植物图谱",
+        "科学插画"
+      ],
+      "file": "assets/pictorial/plate-merian-01.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 133110,
+      "sha256": "38d1b41ac39e5ee519d049af4c287490218b45b6eadae4dc2b4313778c8f30e0",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature by Merian 07」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-merian-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "盘蛇与飞蛾"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "图谱",
+        "复古插画",
+        "插画",
+        "植物",
+        "蛇",
+        "飞蛾"
+      ],
+      "file": "assets/pictorial/plate-merian-02.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 188810,
+      "sha256": "85662d9ddf4ee60a2304567af936fec520f52e0aaa1ccec3e2a1da0730d964a1",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature by Merian 07」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-merian-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "天蚕蛾与柑橘"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "图谱",
+        "复古插画",
+        "天蚕蛾",
+        "插画",
+        "昆虫",
+        "柑橘",
+        "植物"
+      ],
+      "file": "assets/pictorial/plate-merian-03.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 131916,
+      "sha256": "2cf9f56e1b245ac0177a95ea99d4b2e2e96083a750bce7f4cceb35287dfd6ff3",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature by Merian 07」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "五角海星"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海星",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "黑白"
+      ],
+      "file": "assets/pictorial/plate-sealife-01.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 171084,
+      "sha256": "33ec39eedc34ab3d8fdb838b99a4f5401983f91fda109f254b5a4039d02eed55",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "海螺线描图"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "海螺",
+        "线描",
+        "线稿",
+        "装饰",
+        "贝壳"
+      ],
+      "file": "assets/pictorial/plate-sealife-02.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 33082,
+      "sha256": "ebb6a2e90220cd230b1ad9c3ac75ec427baf33e8b92e938f64a5e8585c04c51d",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "扇贝贝壳"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "中药材",
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "贝壳"
+      ],
+      "file": "assets/pictorial/plate-sealife-03.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 61660,
+      "sha256": "a01973ee1544ef327ac831584d1d726d9b107c083bb03a05cd0dd27178fee2d4",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "扇贝贝壳"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "贝壳",
+        "黑白"
+      ],
+      "file": "assets/pictorial/plate-sealife-04.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 166794,
+      "sha256": "c98a80760dac8f981fce1a0d4c70bb24f7c0012a2b3492cee9c7bea07264904e",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "两条游动的鱼"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古",
+        "插画",
+        "水生动物",
+        "海洋",
+        "线描",
+        "线稿",
+        "装饰",
+        "鱼类",
+        "黑白插画"
+      ],
+      "file": "assets/pictorial/plate-sealife-05.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 57694,
+      "sha256": "0a4ea496c5a7e382fe0236223f9ec5c8fb5fa27cff13a65cedfee2b5c564de8a",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-06",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "俯冲锦鲤"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古",
+        "插画",
+        "海洋",
+        "线描",
+        "线稿",
+        "装饰",
+        "锦鲤",
+        "鱼纹",
+        "黑白插画"
+      ],
+      "file": "assets/pictorial/plate-sealife-06.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 153720,
+      "sha256": "3049e34f88ecb4ce0067dd8d2042f3a1a8e0cf796cfed6e0c0295cb43e04fa30",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-07",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "甲骨文龟字"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "书法",
+        "复古",
+        "插画",
+        "海洋",
+        "甲骨文",
+        "线稿",
+        "装饰",
+        "象形文字",
+        "龟字"
+      ],
+      "file": "assets/pictorial/plate-sealife-07.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 35298,
+      "sha256": "4429a74c7e67c9b01a0ceb940aff2bb1ff513b96b2cd33cfe110261a6d32a4c9",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-08",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "长须对虾"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古插画",
+        "对虾",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "白描",
+        "线稿",
+        "装饰"
+      ],
+      "file": "assets/pictorial/plate-sealife-08.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 39966,
+      "sha256": "4e42abb10afed31fe54be0f5da1e3e850bd76e01d99dd750e4e270d5b409972a",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-sealife-09",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "多棘海鱼"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "鱼类",
+        "黑白"
+      ],
+      "file": "assets/pictorial/plate-sealife-09.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 108756,
+      "sha256": "80e31f8b218e7560a834b148549c746cefffd7cb42fbf795d5d9d2227fb31cc5",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-swallow-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅飞燕"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "墨线",
+        "复古插画",
+        "插画",
+        "水墨",
+        "留白",
+        "简笔",
+        "飞燕",
+        "飞鸟",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-swallow-01.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 37768,
+      "sha256": "aaa0e33a13fef32fc32bb86cbaffff4d1c8a7761a8708ad186191eb4bc51aced",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-swallow-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "写意飞燕"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "写意",
+        "墨线",
+        "插画",
+        "水墨",
+        "留白",
+        "简笔",
+        "飞燕",
+        "飞鸟",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-swallow-02.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 33480,
+      "sha256": "9a716fb9b7722a509dd7ffd8c8fb6976cd010d2e53f1e9f27167bbb7306f5d08",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-swallow-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅飞鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "墨线",
+        "复古插画",
+        "插画",
+        "留白",
+        "简笔画",
+        "线稿",
+        "飞鸟",
+        "黑白"
+      ],
+      "file": "assets/pictorial/plate-swallow-03.webp",
+      "w": 1100,
+      "h": 824,
+      "bytes": 34338,
+      "sha256": "35ed5200f3b2663cd20b88a4ae07b2a2e26706629948cd6155de986bb80849c7",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-swallow-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "俯冲飞燕"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "墨线",
+        "复古",
+        "插画",
+        "水墨",
+        "燕子",
+        "留白",
+        "简笔",
+        "飞鸟"
+      ],
+      "file": "assets/pictorial/plate-swallow-04.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 41018,
+      "sha256": "a94d3c099d9b52ea68063b2ead5a9f596b606d2e1cd3faa0734d3f0a2fdc3a2e",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-swallow-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅飞鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "墨线",
+        "复古",
+        "插画",
+        "水墨",
+        "留白",
+        "简笔",
+        "飞鸟"
+      ],
+      "file": "assets/pictorial/plate-swallow-05.webp",
+      "w": 1100,
+      "h": 824,
+      "bytes": 29286,
+      "sha256": "720b2c1a11aa275072b8cc100a008c01fb2fd36559da091d83de59312bcd8ecb",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-symph15-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "松枝与交嘴雀"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "交嘴雀",
+        "复古",
+        "复古博物画",
+        "插画",
+        "松果",
+        "科学插画",
+        "自然",
+        "花鸟",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-symph15-01.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 192934,
+      "sha256": "283ee90b66c7ba203bb70278666c48cb0e165369387b0a96dc090d4ee178fdd9",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 15」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-symph15-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "棕柳莺与粉花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "植物",
+        "粉花",
+        "自然",
+        "花鸟",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-symph15-02.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 147770,
+      "sha256": "be350677acfe9d91ebe12befe14f81f10518a31e96a8e750681e55935173c4e8",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 15」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-symph15-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "绣球花与黄林莺"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物插画",
+        "复古",
+        "复古手绘",
+        "插画",
+        "绣球花",
+        "自然",
+        "自然观察",
+        "花鸟",
+        "黄林莺"
+      ],
+      "file": "assets/pictorial/plate-symph15-03.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 94720,
+      "sha256": "dc58962c3d5e0b9ddd1ab063576765a2ee93157d808134d90df6cc1a8b235222",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 15」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-symph17-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "白花与小鸟"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "植物",
+        "自然",
+        "花卉",
+        "花鸟",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-symph17-01.webp",
+      "w": 822,
+      "h": 1100,
+      "bytes": 159050,
+      "sha256": "0b8ab34ad4c953b6c5147628b52e4236a557025819aaf0a1b17f551344463656",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 17」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-symph17-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "枝头鸽群"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "果树",
+        "自然",
+        "自然史",
+        "花鸟",
+        "鸽子"
+      ],
+      "file": "assets/pictorial/plate-symph17-02.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 141598,
+      "sha256": "214a91d6b955f5c94447d5d33435b5e7dceb14a47e79a687d44e524433376ce3",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 17」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-symph17-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双鸟栖枝图"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "工笔",
+        "插画",
+        "植物",
+        "自然",
+        "花鸟",
+        "鸟类"
+      ],
+      "file": "assets/pictorial/plate-symph17-03.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 146654,
+      "sha256": "f55d468dce5b67a21b75121fde230d946d8522c9a3b1ca9d9668e4a5df4388c7",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 17」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "单耳彩陶杯"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "器物",
+        "彩陶纹样",
+        "插画",
+        "线描",
+        "线稿",
+        "考古",
+        "花器",
+        "陶器"
+      ],
+      "file": "assets/pictorial/plate-vessel-01.webp",
+      "w": 1100,
+      "h": 824,
+      "bytes": 60184,
+      "sha256": "1e37328b954f1b7b8fcae161469ddca067f04fe178b195700ecd18ef4362a8fe",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "单耳鱼鳞纹陶杯"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "单耳杯",
+        "器物",
+        "复古插画",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "陶器",
+        "鱼鳞纹"
+      ],
+      "file": "assets/pictorial/plate-vessel-02.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 55218,
+      "sha256": "f1920d598dd8a41c8c7b6c3b608f4ce67b91b0f0284c8851d108d6606031cb06",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双耳瓜棱陶罐"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "双耳",
+        "器物",
+        "复古插画",
+        "插画",
+        "瓜棱纹",
+        "线描",
+        "线稿",
+        "花器",
+        "陶罐"
+      ],
+      "file": "assets/pictorial/plate-vessel-03.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 56616,
+      "sha256": "aa21bb61c65b68781fabc1f410081a191e89d4f6ea51a71065fc1f9bf5946564",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双耳尖底陶瓶"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "双耳瓶",
+        "器物",
+        "复古插画",
+        "尖底",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "陶器"
+      ],
+      "file": "assets/pictorial/plate-vessel-04.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 25176,
+      "sha256": "f9d53e84c78429a72cb703b81905699ffe132bf6d041f4b98e300a37b8ee6192",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双耳扇纹陶瓶"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "双耳",
+        "器物",
+        "复古",
+        "扇纹",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "陶瓶"
+      ],
+      "file": "assets/pictorial/plate-vessel-05.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 63268,
+      "sha256": "5932679fc9b9529d85fc62c8ed669861c300520acb9c647f6c7e449fde7e9f98",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-06",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "古埃及雪花石膏罐"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "古埃及",
+        "器物",
+        "复古插画",
+        "容器",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "象形文字"
+      ],
+      "file": "assets/pictorial/plate-vessel-06.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 42996,
+      "sha256": "a2640aa2a0d1f5600a1696da613c2930a031101d111cfa279dd71287071fdc87",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-07",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "彩绘尖底陶瓶"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "几何纹",
+        "器物",
+        "尖底瓶",
+        "插画",
+        "线描",
+        "线稿",
+        "考古",
+        "花器",
+        "陶器"
+      ],
+      "file": "assets/pictorial/plate-vessel-07.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 64610,
+      "sha256": "9019e17055082936e645386a393bb465f5c77c73d31bc5d700d18fe3170e0db8",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-08",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "单耳螺旋纹陶瓶"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "器物",
+        "尖底瓶",
+        "插画",
+        "线描",
+        "线稿",
+        "考古",
+        "花器",
+        "螺旋纹",
+        "陶器"
+      ],
+      "file": "assets/pictorial/plate-vessel-08.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 42284,
+      "sha256": "f9e1e6373d2e2392712ae2e118958f51758a6bd64c738a12fedf93cac979e656",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "plate-vessel-09",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "拟人化药瓶"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "中医药",
+        "器物",
+        "复古插画",
+        "拟人",
+        "插画",
+        "线稿",
+        "花器",
+        "药瓶"
+      ],
+      "file": "assets/pictorial/plate-vessel-09.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 41160,
+      "sha256": "e4f11104f4fb3565605d87840d604eea7761c5b5d4a332869ad442c5ab73ef09",
+      "license": "Heritage-Free",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "treatment": "vintage-keep",
+      "added_at": "2026-11-09T07:31:13Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "id": "ornament-corner-antique",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "古典角花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "角花",
+        "角饰",
+        "古典",
+        "卷草"
+      ],
+      "file": "assets/ornaments/ornament-corner-antique.svg",
+      "w": 1486,
+      "h": 770,
+      "bytes": 308891,
+      "sha256": "f63f1527fabe1018d374d75514f10ce4d09d6f3a649940f9e040545c9d4a71f1",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/333685",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:08.445Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-corner-nouveau",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "藤蔓角花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "角花",
+        "角饰",
+        "藤蔓",
+        "卷草"
+      ],
+      "file": "assets/ornaments/ornament-corner-nouveau.svg",
+      "w": 340,
+      "h": 340,
+      "bytes": 57516,
+      "sha256": "d3c73176675acb2cbe48661f49cac5bd0dd973405eca03c6cf349c289013631d",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/322454",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:09.687Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-corner-seamless-01",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "对称角花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "角花",
+        "角饰",
+        "对称"
+      ],
+      "file": "assets/ornaments/ornament-corner-seamless-01.svg",
+      "w": 2560,
+      "h": 1600,
+      "bytes": 52626,
+      "sha256": "32598324167821796298034a333f8ac37b0292863a9e8082dbe10cd63e96aadb",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/282429",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:10.413Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-corner-seamless-02",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "对称角花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "角花",
+        "角饰",
+        "对称"
+      ],
+      "file": "assets/ornaments/ornament-corner-seamless-02.svg",
+      "w": 2560,
+      "h": 1600,
+      "bytes": 98972,
+      "sha256": "30b232e18d501ced14d7bdc4fb2fc993c3b6effd469cd5010f22f3a383e496f3",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/282430",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:12.243Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-corner-seamless-03",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "对称角花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "角花",
+        "角饰",
+        "对称"
+      ],
+      "file": "assets/ornaments/ornament-corner-seamless-03.svg",
+      "w": 2560,
+      "h": 1600,
+      "bytes": 57134,
+      "sha256": "390a65c2bec6eb958c8b5636ed870eee9baebab1e99935c6435fa198869bd59a",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/282431",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:14.983Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-corner-seamless-04",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "对称角花"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "角花",
+        "角饰",
+        "对称"
+      ],
+      "file": "assets/ornaments/ornament-corner-seamless-04.svg",
+      "w": 2560,
+      "h": 1600,
+      "bytes": 120569,
+      "sha256": "fad1d2308ce8ce36692a88209b4e6f40365e0ede9293d4fa617ed872ec4634dd",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/282432",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:17.071Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-band-greekkey",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "回纹横带"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "回纹",
+        "横带",
+        "边框",
+        "几何"
+      ],
+      "file": "assets/ornaments/ornament-band-greekkey.svg",
+      "w": 1830,
+      "h": 1220,
+      "bytes": 16313,
+      "sha256": "55785266982fb916f3b81a54e80ecb866dd218da0a9643ac47ff3f2ff287e581",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/287501",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:17.575Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-band-flowers",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "花草边带"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "花边",
+        "横带",
+        "花草"
+      ],
+      "file": "assets/ornaments/ornament-band-flowers.svg",
+      "w": 891,
+      "h": 41,
+      "bytes": 6839,
+      "sha256": "99f5b204f6d6f7b77b5fa976acb014a2e49806c5749d3970a040d3a5f38aca69",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/244030",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:18.101Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-band-leafy",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "枝叶边带"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "花边",
+        "横带",
+        "枝叶"
+      ],
+      "file": "assets/ornaments/ornament-band-leafy.svg",
+      "w": 662,
+      "h": 69,
+      "bytes": 43673,
+      "sha256": "5cb7833e48c8cb353fce2b9cb58e51e6e327880ef3c7804c62fb4ffda6f8485e",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/181552",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:19.508Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-border-divider",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "分隔饰线"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "分隔",
+        "横带",
+        "饰线"
+      ],
+      "file": "assets/ornaments/ornament-border-divider.svg",
+      "w": 2082,
+      "h": 278,
+      "bytes": 11739,
+      "sha256": "37da50fa4b255dda40da2ba3a312c4d3ec8b948d8fffbd05495b78bd4c7d113c",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/242627",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:20.515Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-border-frame-01",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "装饰框"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "边框",
+        "框饰"
+      ],
+      "file": "assets/ornaments/ornament-border-frame-01.svg",
+      "w": 940,
+      "h": 1252,
+      "bytes": 390473,
+      "sha256": "da1b5adc559424557157bc0609527e53e6ad18d3839ce694f4900123223e1c54",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/222491",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:29.494Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-border-frame-02",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "装饰框"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "边框",
+        "框饰",
+        "花草"
+      ],
+      "file": "assets/ornaments/ornament-border-frame-02.svg",
+      "w": 1678,
+      "h": 1678,
+      "bytes": 120777,
+      "sha256": "6c12369ea041d8e316eaa5bde5b9b0078d2743e9ebc2684287c8cc1435d10589",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/249894",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:32.694Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-greek-frame-01",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "回纹框"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "回纹",
+        "框饰",
+        "几何"
+      ],
+      "file": "assets/ornaments/ornament-greek-frame-01.svg",
+      "w": 1020,
+      "h": 1020,
+      "bytes": 3871,
+      "sha256": "c5b73d05b2d5a4fadfec5c02ec71b6c46ef432fb8bf2d748eaf5c5781d29b82c",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/303831",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:33.930Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ornament-greek-frame-02",
+      "kind": "ornament",
+      "slot_class": "decorative",
+      "subjects": [
+        "回纹框"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "回纹",
+        "框饰",
+        "几何"
+      ],
+      "file": "assets/ornaments/ornament-greek-frame-02.svg",
+      "w": 1069,
+      "h": 1069,
+      "bytes": 5483,
+      "sha256": "85a443c6bbb625282eba9b0bb4310993c0f6a8af315138a69ac42a3d73b73448",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/303923",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:34.421Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-papercut-01",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "剪纸底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "剪纸",
+        "纹样",
+        "底纹",
+        "民间"
+      ],
+      "file": "assets/ornaments/ground-papercut-01.svg",
+      "w": 1753,
+      "h": 1754,
+      "bytes": 67301,
+      "sha256": "0aa1e41c0f8b8904201f5048661b20fd0c554f3a69faa0851bbac4a95502ba9a",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/190487",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:35.809Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-papercut-02",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "剪纸底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "剪纸",
+        "纹样",
+        "底纹",
+        "民间"
+      ],
+      "file": "assets/ornaments/ground-papercut-02.svg",
+      "w": 1351,
+      "h": 1350,
+      "bytes": 49927,
+      "sha256": "b59ff02663ed939136d0fe1a9b162139a87446b52948cfc7bc5e85b8e5cdc2eb",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/190490",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:37.688Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-papercut-03",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "剪纸底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "剪纸",
+        "纹样",
+        "底纹",
+        "民间"
+      ],
+      "file": "assets/ornaments/ground-papercut-03.svg",
+      "w": 1351,
+      "h": 1350,
+      "bytes": 49927,
+      "sha256": "b59ff02663ed939136d0fe1a9b162139a87446b52948cfc7bc5e85b8e5cdc2eb",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/190493",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:38.848Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-fret-tileable",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "回纹底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "回纹",
+        "底纹",
+        "方连",
+        "几何"
+      ],
+      "file": "assets/ornaments/ground-fret-tileable.svg",
+      "w": 1057,
+      "h": 1130,
+      "bytes": 19794,
+      "sha256": "d29d0dc11f7baf1ca108051405a69912b513b3e39b47420574aea1132bd74c48",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/216132",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:39.331Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-sayagata-01",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "卍字底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "卍字",
+        "纱绫",
+        "底纹",
+        "几何"
+      ],
+      "file": "assets/ornaments/ground-sayagata-01.svg",
+      "w": 1400,
+      "h": 1400,
+      "bytes": 410910,
+      "sha256": "8260f085101487409ae21581777ff75424d96983a355a5ad4f2537436171048e",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/290454",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:40.311Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-sayagata-02",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "卍字底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "卍字",
+        "纱绫",
+        "底纹",
+        "几何"
+      ],
+      "file": "assets/ornaments/ground-sayagata-02.svg",
+      "w": 1000,
+      "h": 1000,
+      "bytes": 128055,
+      "sha256": "8a0d6f32ff2909bdbac8f18a720a88b5f57884c41815421627ff6e84020c8cc0",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/290456",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:41.326Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-folk-01",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "民间纹样"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "民间",
+        "纹样",
+        "底纹"
+      ],
+      "file": "assets/ornaments/ground-folk-01.svg",
+      "w": 1561,
+      "h": 1563,
+      "bytes": 46171,
+      "sha256": "a1dfe59d0bccc36bdc61065ff8a9d602eb9f213a5288ea12db829f1f4d887257",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/182872",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:42.541Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-folk-02",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "冰裂底纹"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "冰裂纹",
+        "纹样",
+        "底纹"
+      ],
+      "file": "assets/ornaments/ground-folk-02.svg",
+      "w": 1164,
+      "h": 1280,
+      "bytes": 197787,
+      "sha256": "2082a46ba5085853b2be813bb9475e08c9e61fedf13668ebe28a5d26728f987d",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/263060",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:51.023Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-chinese-01",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "中式纹样"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "纹样",
+        "底纹",
+        "几何"
+      ],
+      "file": "assets/ornaments/ground-chinese-01.svg",
+      "w": 610,
+      "h": 810,
+      "bytes": 11846,
+      "sha256": "bfc428614d94e40f07037b9a1f198485cca4d1287fdc5e7eb45ad711a3c31897",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/48271",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:52.294Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-chinese-02",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "中式纹样"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "纹样",
+        "底纹",
+        "几何"
+      ],
+      "file": "assets/ornaments/ground-chinese-02.svg",
+      "w": 610,
+      "h": 810,
+      "bytes": 12422,
+      "sha256": "d70f56611cb98a2a0b1f70fbfbf549dfe701a514844a86c9dd9b817910112c70",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/48301",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:53.900Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    },
+    {
+      "id": "ground-chinese-03",
+      "kind": "ground-texture",
+      "slot_class": "decorative",
+      "subjects": [
+        "中式纹样"
+      ],
+      "herb_ids": [],
+      "tags": [
+        "纹样",
+        "底纹",
+        "斜纹",
+        "几何"
+      ],
+      "file": "assets/ornaments/ground-chinese-03.svg",
+      "w": 610,
+      "h": 810,
+      "bytes": 10934,
+      "sha256": "36a47dceaeb774283456c570baf47eedabfccac693585578b2ef412857315016",
+      "license": "CC0",
+      "source_url": "https://openclipart.org/detail/48283",
+      "attribution": "Openclipart（公有领域贡献）",
+      "treatment": "",
+      "added_at": "2026-11-15T11:13:54.390Z",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-15",
+        "note": "装饰素材包：人工策展自 Openclipart CC0。待人眼复核观感与降噪后把 reviewer 改成真人。"
+      }
+    }
+  ]
+}

@@ -848,11 +848,21 @@ def _profile_from_scoring_results(
     user_id: str,
     scoring: dict[DimensionKey, ScoringResult],
     evidence_cards: list[EvidenceCard],
+    base: Profile | None = None,
 ) -> Profile:
-    profile = create_blank_profile(user_id)
+    """把三师评审结果写进画像。
+
+    ``base`` 是合并底座。不给底座时等于"用这批证据重造一份画像"——收尾时这么
+    写一遍，会把用户在这局之外攒下的东西（确认过的学习目标、规划参数、之前
+    答过的小测）一起抹掉。所以只改写本批证据覆盖到的维度，其余原样保留。
+    """
+
+    profile = base.model_copy(deep=True) if base is not None else create_blank_profile(user_id)
     for dimension in DIMENSION_LABELS:
         result = scoring[dimension]
         cards = _cards_for_dimension(evidence_cards, dimension)
+        if base is not None and not cards:
+            continue
         for card in cards:
             card.objective_signal = {**card.objective_signal, "scoring_provenance": result.provenance}
         target = getattr(profile, dimension)
@@ -866,11 +876,14 @@ def _profile_from_scoring_results(
         if hasattr(target, "component_scores") and (any(card.component for card in cards) or result.component_scores):
             target.component_scores = dict(result.component_scores)
             required_components = COMPONENTS.get(dimension, ())
-            complete_component_score = (
-                result.aggregated_score is not None
-                and all(component in result.component_scores for component in required_components)
-            )
-            target.scoring_phase = "scored" if complete_component_score else "collecting"
+            # 相位只回答一个问题：这一维**有没有分**。
+            #
+            # 以前这里要求 5 个组件全部到齐才算 `scored`，而 `dimension_score`
+            # 的公式是覆盖度 ≥60% 就出分。于是 3/5 的真实情况变成"radar_score
+            # 已经是 53 分、相位却写着 collecting"——档案页据此判暗，用户刚聊
+            # 出来的目标维度在弟子档案里显示"派生值·待补充"。缺的那两项由
+            # `pending_components` 表达，不该反过来否定已经算出来的分数。
+            target.scoring_phase = "scored" if result.aggregated_score is not None else "collecting"
             target.pending_components = [
                 component for component in required_components if component not in result.component_scores
             ]

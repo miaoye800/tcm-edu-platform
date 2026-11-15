@@ -3,14 +3,17 @@ from app.profile.schema import EvidenceCard, WeakPoint, create_blank_profile
 from app.profile.update import profile_to_response
 
 
-def test_radar_uses_numeric_scores_and_category_derived_scores_with_confidence() -> None:
+def test_radar_uses_numeric_scores_and_agent_estimates_with_confidence() -> None:
     profile = create_blank_profile("student-radar")
     profile.knowledge_base.score = 72
     profile.knowledge_base.confidence = 0.82
+    # 分类维度只存分布；能上雷达的是评分阶段写下的 radar_score。
     profile.learning_goal.label = "应试提分"
+    profile.learning_goal.radar_score = 70
     profile.learning_goal.distribution = {"应试提分": 0.7, "临床实用": 0.3}
     profile.learning_goal.confidence = 0.76
     profile.learning_style.label = "视觉型"
+    profile.learning_style.radar_score = 60
     profile.learning_style.distribution = {"视觉型": 0.6, "文字型": 0.4}
     profile.learning_style.confidence = 0.66
     profile.weak_points.items = [WeakPoint(label="清热药·剂量", strength=2)]
@@ -21,6 +24,7 @@ def test_radar_uses_numeric_scores_and_category_derived_scores_with_confidence()
     profile.motivation.label = "内驱"
     profile.motivation.confidence = 0.72
     profile.resource_preference.label = "知识图谱"
+    profile.resource_preference.radar_score = 62.5
     profile.resource_preference.distribution = {"知识图谱": 0.625, "汤头歌诀": 0.375}  # type: ignore[dict-item]
     profile.resource_preference.confidence = 0.8
 
@@ -33,7 +37,7 @@ def test_radar_uses_numeric_scores_and_category_derived_scores_with_confidence()
     assert axes["knowledge_base"]["lit"] is True
     assert axes["knowledge_base"]["status"] == "solid"
     assert axes["learning_goal"]["metric"] == "目标锚定估计"
-    assert axes["learning_goal"]["kind"] == "derived"
+    assert axes["learning_goal"]["kind"] == "agent_estimate"
     assert axes["learning_goal"]["value"] == 70.0
     assert axes["learning_goal"]["raw_label"] == "应试提分"
     assert axes["resource_preference"]["value"] == 62.5
@@ -63,12 +67,11 @@ def test_radar_empty_and_low_confidence_profile_returns_placeholders() -> None:
     assert axes["learning_goal"]["raw_label"] == "学术深造"
     assert axes["learning_goal"]["value"] == 0.0
     assert axes["learning_goal"]["placeholder"] is False
-    assert axes["learning_goal"]["lit"] is True
-    # 虚线已删除：低置信度只影响区间宽度，不再改变线型。
-    assert axes["learning_goal"]["status"] == "solid"
+    assert axes["learning_goal"]["lit"] is False
+    assert axes["learning_goal"]["status"] == "dark"
 
 
-def test_low_confidence_evidence_reports_a_wide_interval_instead_of_a_dashed_axis() -> None:
+def test_low_confidence_label_without_a_computed_score_stays_unlit() -> None:
     profile = create_blank_profile("student-radar-dashed")
     profile.learning_goal.label = "兴趣科普"
     profile.learning_goal.distribution = {"兴趣科普": 0.65, "基础巩固": 0.35}
@@ -85,10 +88,11 @@ def test_low_confidence_evidence_reports_a_wide_interval_instead_of_a_dashed_axi
 
     axis = next(item for item in to_radar(profile)["axes"] if item["key"] == "learning_goal")
 
-    assert axis["value"] == 65.0
-    assert axis["lit"] is True
+    # 低置信度不是零证据，但不能拿标签分布伪造一个尚未计算的分数。
+    assert axis["value"] == 0
+    assert axis["lit"] is False
     assert axis["placeholder"] is False
-    assert axis["status"] == "solid"
+    assert axis["status"] == "dark"
     assert axis["low_confidence"] is True
     assert axis["score_interval"] is None
 

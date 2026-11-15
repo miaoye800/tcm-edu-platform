@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pydantic import AliasChoices
 from pydantic import Field
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +12,32 @@ _warned_default_auth_secret = False
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATABASE_PATH = BACKEND_ROOT / ".data" / "qihuang.db"
+
+#: 任务 → 模型槽位的默认映射。
+#:
+#: ``LLM_TASK_MODEL_MAP`` 是**整表覆盖**语义（环境变量给的是完整 JSON）。只写三个键
+#: 就会把其余任务抹掉，之后任何 ``chat("classify")`` 直接 ``ValueError``——这个坑
+#: 在切模型时真踩过。所以下面 ``_merge_default_task_map`` 把缺省的键补回来，
+#: 让 .env 里只写「要改的那几条」也安全。
+_DEFAULT_TASK_MODEL_MAP: dict[str, str] = {
+    "classify": "deepseek_model_flash",
+    "route": "deepseek_model_flash",
+    "reason": "deepseek_model_flash",
+    "generate": "deepseek_model_flash",
+    # 画像评分是有固定 JSON schema、规则融合和护栏兜底的批量任务。
+    # 默认使用 Flash，避免一次完成画像时对七个维度重复消耗 Pro 推理额度。
+    # 如需更强的人工复核，可通过 LLM_TASK_MODEL_MAP 单独改回
+    # "profile_jury": "deepseek_model_pro"。
+    "profile_jury": "deepseek_model_flash",
+    "profile_extract": "deepseek_model_flash",
+    "profile_update": "deepseek_model_flash",
+    "profile_narrative": "deepseek_model_flash",
+    "profile_goal": "deepseek_model_flash",
+    # 总控对话：每轮都要判断「调不调工具、调哪个」，用 Flash 且关思考。
+    # 换 Pro 的代价是首字延迟从 ~1s 涨到 3s 以上，而工具选择并不需要推理链。
+    "assistant": "deepseek_model_flash",
+    "vision": "glm-4.5v",
+}
 
 
 class Settings(BaseSettings):
@@ -29,7 +56,11 @@ class Settings(BaseSettings):
     )
     deepseek_base_url: str = Field(default="https://api.deepseek.com", alias="DEEPSEEK_BASE_URL")
     deepseek_model_pro: str = Field(default="deepseek-v4-pro", alias="DEEPSEEK_MODEL_PRO")
-    deepseek_model_flash: str = Field(default="deepseek-v4-flash", alias="DEEPSEEK_MODEL_FLASH")
+    #: `/models` 实际只认两个名字：`deepseek-flash`（V4.1 Flash）与 `deepseek-v4-pro`。
+    #: 旧值 `deepseek-v4-flash` 虽然还能被接受（服务端别名），但默认会带 800+ 推理
+    #: token；换成 `deepseek-flash` 且关掉 thinking 后，同一道题的 completion 从
+    #: 813 降到 56。默认额度按 token 计，所以这里用真名、不开思考。
+    deepseek_model_flash: str = Field(default="deepseek-flash", alias="DEEPSEEK_MODEL_FLASH")
     zhipu_api_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices("ZHIPU_API_KEY", "ZHIPUAI_API_KEY"),
@@ -49,22 +80,7 @@ class Settings(BaseSettings):
     qwen_model_plus: str = Field(default="qwen-plus", alias="QWEN_MODEL_PLUS")
     qwen_model_max: str = Field(default="qwen-max", alias="QWEN_MODEL_MAX")
     llm_task_model_map: dict[str, str] = Field(
-        default_factory=lambda: {
-            "classify": "deepseek_model_flash",
-            "route": "deepseek_model_flash",
-            "reason": "deepseek_model_flash",
-            "generate": "deepseek_model_flash",
-            # 画像评分是有固定 JSON schema、规则融合和护栏兜底的批量任务。
-            # 默认使用 Flash，避免一次完成画像时对七个维度重复消耗 Pro 推理额度。
-            # 如需更强的人工复核，可通过 LLM_TASK_MODEL_MAP 单独改回
-            # "profile_jury": "deepseek_model_pro"。
-            "profile_jury": "deepseek_model_flash",
-            "profile_extract": "deepseek_model_flash",
-            "profile_update": "deepseek_model_flash",
-            "profile_narrative": "deepseek_model_flash",
-            "profile_goal": "deepseek_model_flash",
-            "vision": "glm-4.5v",
-        },
+        default_factory=lambda: dict(_DEFAULT_TASK_MODEL_MAP),
         alias="LLM_TASK_MODEL_MAP",
     )
     # 录制回放开关：live=真调并录制，replay=只回放（e2e 用），auto=先回放后真调，
@@ -105,6 +121,15 @@ class Settings(BaseSettings):
     qihuang_db_path: Path = Field(default=DEFAULT_DATABASE_PATH, alias="QIHUANG_DB_PATH")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @field_validator("llm_task_model_map", mode="after")
+    @classmethod
+    def _merge_default_task_map(cls, value: dict[str, str]) -> dict[str, str]:
+        """把环境变量里没写的任务补回默认值，避免半张表导致 ``resolve`` 抛错。"""
+
+        merged = dict(_DEFAULT_TASK_MODEL_MAP)
+        merged.update(value or {})
+        return merged
 
 
 @lru_cache

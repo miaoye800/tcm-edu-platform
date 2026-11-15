@@ -1,16 +1,34 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { FREE_TOPIC_NODE_ID, NEW_SLIDE_TITLE, PPT_STEPS, SAVE_DEBOUNCE_MS, SLIDE_INTERVAL_MS } from '../config/pptStudio'
+import {
+  FREE_TOPIC_NODE_ID,
+  NEW_SLIDE_TITLE,
+  PPT_STEPS,
+  PPT_STEP_SHORTS,
+  SAVE_DEBOUNCE_MS,
+  SLIDE_INTERVAL_MS,
+} from '../config/pptStudio'
 import { DEFAULT_THEME_ID, pptThemes } from '../config/pptThemes'
 import { PptSaveError, confirmOutline as apiConfirmOutline, listRecentDecks, saveDeck } from '../services/pptStudioApi'
+import { confirmResourcePlan, reviseResourcePlan } from '../services/resourceApi'
+import type { ResourcePlan, ResourcePlanStep } from '../types/resource'
+import type { DeckDesign, DocDesign, MindmapDesign, SlotResolution } from '../types/design'
 import { getKnowledgeTree } from '../services/pathApi'
-import { createResourceTask, getResource, streamResourceTask } from '../services/resourceApi'
+import { createResourceTask, getResource, getResourceTask, streamResourceTask } from '../services/resourceApi'
 import type { KnowledgeNode } from '../types/path'
 import type { OutlineSlide, PptMode, SlideNode } from '../types/ppt'
 import { SLIDE_LIMITS } from '../types/ppt'
-import type { ResourceItem, ResourceTaskEvent } from '../types/resource'
+import type { ResourceItem, DeckPageCheck, DeckVerifyStats, ResourceTaskEvent } from '../types/resource'
 
-export type PptPhase = 'idle' | 'generating' | 'awaiting-outline' | 'editing' | 'failed'
+export type PptPhase = 'idle' | 'generating' | 'awaiting-outline' | 'awaiting-plan' | 'editing' | 'failed'
 export type SaveStatus = 'clean' | 'saving' | 'saved' | 'conflict' | 'error'
+export type PptDesign = DeckDesign | DocDesign | MindmapDesign
+
+/** 选材汇总：只用来在左栏写一句「三张图两张有据」，不参与渲染。 */
+export interface SlotSummary {
+  total?: number
+  counts?: Record<string, number>
+  unfilled?: string[]
+}
 
 const flattenNodes = (domains: KnowledgeNode[]) => {
   const rows: Array<{ node: KnowledgeNode; trail: string }> = []
@@ -48,6 +66,81 @@ const sanitizeSlide = (slide: SlideNode): SlideNode => ({
     .filter((column) => column.items.length > 0),
   note: slide.note.slice(0, SLIDE_LIMITS.note),
   source_indexes: [...slide.source_indexes],
+  // 结构化内容必须原样回传：后端 SlideNode 是 extra="forbid" 且这几项有默认值，
+  // 漏传就把一页数据卡 / 矩阵静默降级成要点页。
+  purpose: slide.purpose,
+  blocks: slide.blocks ?? [],
+  asset_refs: slide.asset_refs ?? [],
+  // 保存也要把场景带回去：不带，改一个错别字就会把整页的排版结果弄丢，
+  // 重新载入又退回旧渲染器（用户会以为「一保存就变丑」）。
+  ...(slide.scene ? { scene: slide.scene } : {}),
+})
+
+/**
+ * 事件里的页 → 编辑态。
+ *
+ * 之前这里逐字段手抄，新增 `purpose` / `blocks` / `asset_refs` 之后就成了漏字段的
+ * 温床（漏一个，页就从数据卡退成要点页）。改成「缺什么补什么」的拷贝。
+ *
+ * 入参放宽成结构类型：流事件推来的页与 `content_json` 里存的页形状一致，
+ * 但后者是历史数据，`subtitle` / `note` 可能整个键都不在。
+ */
+type SlideLike = {
+  id: string
+  kind: string
+  title: string
+  subtitle?: string
+  bullets?: string[]
+  columns?: Array<{ heading: string; items: string[] }>
+  note?: string
+  source_indexes?: number[]
+  purpose?: string
+  blocks?: Array<{
+    type: string
+    text?: string
+    heading?: string
+    items?: string[]
+    columns?: Array<{ heading: string; items: string[] }>
+    value?: string
+    source?: string
+  }>
+  asset_refs?: Array<{
+    slot: string
+    asset_id: string
+    result: 'parametric' | 'hit' | 'substitute' | 'generated' | 'none'
+    provenance: 'parametric' | 'library' | 'generated' | 'none'
+    license: string
+    attribution: string
+    file: string
+    note: string
+  }>
+  /** 排版层的结果。**丢了它整份稿就退回旧渲染器**——「每个 PPT 一个样」的根就在这。 */
+  scene?: unknown
+}
+
+const toSlideNode = (slide: SlideLike): SlideNode => ({
+  id: slide.id,
+  kind: slide.kind as SlideNode['kind'],
+  title: slide.title,
+  subtitle: slide.subtitle ?? '',
+  bullets: [...(slide.bullets ?? [])],
+  columns: (slide.columns ?? []).map((column) => ({ heading: column.heading, items: [...column.items] })),
+  note: slide.note ?? '',
+  source_indexes: [...(slide.source_indexes ?? [])],
+  purpose: slide.purpose as SlideNode['purpose'],
+  blocks: (slide.blocks ?? []).map((block) => ({
+    type: block.type as NonNullable<SlideNode['blocks']>[number]['type'],
+    text: block.text ?? '',
+    heading: block.heading ?? '',
+    items: [...(block.items ?? [])],
+    columns: (block.columns ?? []).map((column) => ({ heading: column.heading, items: [...column.items] })),
+    value: block.value ?? '',
+    source: block.source ?? '',
+  })),
+  asset_refs: (slide.asset_refs ?? []).map((ref) => ({ ...ref })),
+  // 排版层的场景必须跟着页走：`SlideRenderer` 有 scene 才走新渲染器。
+  // 这里漏掉过一版，于是后台把每一页都排了、用户看到的还是旧版式。
+  ...(slide.scene ? { scene: slide.scene as SlideNode['scene'] } : {}),
 })
 
 export const usePptStudio = () => {
@@ -55,6 +148,23 @@ export const usePptStudio = () => {
   const errorMessage = ref('')
   const stepIndex = ref(-1)
   const outline = ref<OutlineSlide[]>([])
+  const plan = ref<ResourcePlan | null>(null)
+  const planBusy = ref(false)
+  /**
+   * 设计单：版式、密度、槽位。与方案同批确认，确认后成稿只照它排——
+   * 生成期再改版式会让用户在确认单上做的手改全部作废。
+   */
+  const design = ref<PptDesign | null>(null)
+  /** 选材结果：逐槽解释「这张图为什么有 / 为什么没有」。只展示，不阻塞。 */
+  const slotResolutions = ref<SlotResolution[]>([])
+  const slotSummary = ref<SlotSummary>({})
+  /** 服务端下发的工序表。空数组表示还没开跑，步骤条退回本地兜底。 */
+  const remoteSteps = ref<ResourcePlanStep[]>([])
+  /** 逐页核对结果：哪一页不在方案内、哪一页空、哪一页引用越界。只报问题，不改内容。 */
+  const deckCheck = ref<DeckVerifyStats | null>(null)
+  const deckPages = ref<DeckPageCheck[]>([])
+  /** 校验后被定点重写过的页。校验本身不改内容；改的是这一页写错了的那几页。 */
+  const deckRevised = ref<{ page: number; issues: string[] }[]>([])
   const deckTitle = ref('')
   const slides = ref<SlideNode[]>([])
   const current = ref(0)
@@ -92,9 +202,23 @@ export const usePptStudio = () => {
     grounded: slides.value.filter((slide) => slide.source_indexes.length > 0).length,
   }))
 
+  /**
+   * 工序表：服务端下发优先，本地表只做兜底。
+   *
+   * 工序数量是会变的（v1 四步、v3 六步），前端若把步数写死，后端加一步
+   * 步骤条就会少一格、最后一步永远高亮不了。所以下标语义交给 `stepIndex`，
+   * 长度与标签都听服务端的。
+   */
+  const steps = computed<ResourcePlanStep[]>(() =>
+    remoteSteps.value.length
+      ? remoteSteps.value
+      : PPT_STEPS.map((step) => ({ id: step.id, label: step.label })),
+  )
+
   const stepStates = computed(() =>
-    PPT_STEPS.map((step, index) => ({
+    steps.value.map((step, index) => ({
       ...step,
+      short: PPT_STEP_SHORTS[step.id] ?? step.label.slice(0, 1),
       state: index < stepIndex.value ? 'done' : index === stepIndex.value ? 'active' : 'pending',
     })),
   )
@@ -109,6 +233,14 @@ export const usePptStudio = () => {
   let drainTimer = 0
   let draining = false
   let growthDone = false
+  /**
+   * 生成完成时要回灌的稿件 id。
+   *
+   * 流里的页是**敷演完、还没排版**的版本：没有 `scene`，只能走旧渲染器，
+   * 于是用户看到的是旧版「01 02 03 04 + 半句标签」。落库的成品才带
+   * 排版层的结果。所以要等逐页放完再换成成品页——换早了会长短不一地跳。
+   */
+  let pendingResourceId = ''
 
   const stopDrain = () => {
     if (drainTimer) {
@@ -127,12 +259,28 @@ export const usePptStudio = () => {
     phase.value = 'editing'
     saveStatus.value = 'clean'
     saveMessage.value = '未钤'
+    if (pendingResourceId) {
+      const id = pendingResourceId
+      pendingResourceId = ''
+      void applyResource(id)
+    }
   }
 
+  /**
+   * 放一页，再排下一拍。
+   *
+   * 队列空**不等于**生长结束：逐页敷演时两页之间隔着一次模型调用，
+   * 空档几十秒是常态。以前这里在空队列时直接 `finishGrowth()`，而那时
+   * `growthDone` 还是 false，它提前 return、`draining` 留在 true——
+   * 之后推来的页全堆在队列里，一拍都不再放（表现为「只有第 1 页」且
+   * 永远「炼制中」）。空队列必须把 `draining` 复位，让下一页能重新起拍；
+   * 真正的收卷交给 `done`。
+   */
   const drain = () => {
+    drainTimer = 0
     const next = queue.shift()
     if (!next) {
-      drainTimer = 0
+      draining = false
       finishGrowth()
       return
     }
@@ -199,6 +347,9 @@ export const usePptStudio = () => {
   }
 
   const handleEvent = (event: ResourceTaskEvent) => {
+    // 工序表可能随事件一起下发（plan / design 两个事件都带）。只有服务端说了算：
+    // 前端写死的四步表在 v3 是六步，长度对不上时最后一步永远高亮不了。
+    if (event.payload.steps?.length) remoteSteps.value = [...event.payload.steps]
     switch (event.event) {
       case 'step_start':
         stepIndex.value = event.step_index
@@ -210,33 +361,44 @@ export const usePptStudio = () => {
         outline.value = [...(event.payload.outline ?? [])]
         deckTitle.value = event.payload.deck_title || deckTitle.value
         break
+      case 'plan':
+        plan.value = event.payload.plan ?? null
+        break
+      case 'design':
+        // 设计单与方案同批确认；续跑时服务端会再推一次，用来恢复刷新后的面板。
+        if (event.payload.plan) plan.value = event.payload.plan
+        design.value = event.payload.design ?? null
+        break
+      case 'slot_resolution':
+        slotResolutions.value = [...(event.payload.slots ?? [])]
+        slotSummary.value = event.payload.summary ?? {}
+        break
       case 'slide': {
         const slide = event.payload.slide
         if (!slide) break
-        enqueue({
-          id: slide.id,
-          kind: slide.kind as SlideNode['kind'],
-          title: slide.title,
-          subtitle: slide.subtitle,
-          bullets: [...slide.bullets],
-          columns: slide.columns.map((column) => ({ heading: column.heading, items: [...column.items] })),
-          note: slide.note,
-          source_indexes: [...slide.source_indexes],
-        })
+        enqueue(toSlideNode(slide))
         break
       }
       case 'deck_verify': {
         const theme = event.payload.theme_id || ''
         if (pptThemes.some((item) => item.id === theme)) themeId.value = theme
+        // 校色步也会推同名事件，但只带校色统计、不带逐页结果：那一步不动核对结论。
+        if (event.payload.pages) {
+          deckPages.value = [...event.payload.pages]
+          deckRevised.value = [...(event.payload.revised ?? [])]
+          deckCheck.value = (event.payload.stats as unknown as DeckVerifyStats) ?? null
+        }
         break
       }
       case 'pause':
-        // 服务端推完大纲就断流：这是正常终止，不是错误，也不是「生成完成」。
-        phase.value = 'awaiting-outline'
+        // 服务端推完大纲/方案就断流：这是正常终止，不是错误，也不是「生成完成」。
+        phase.value = event.payload.reason === 'await_plan' ? 'awaiting-plan' : 'awaiting-outline'
         break
       case 'done':
         stepIndex.value = Math.max(0, event.total_steps - 1)
         growthDone = true
+        // 成品页（带排版层结果）等逐页放完再载入：见 pendingResourceId 的注释。
+        pendingResourceId = event.payload.resource_id || ''
         void adopt(event.payload.resource_id || '')
         // 队列已空时立刻收卷；否则等 drain 把最后一页放完再收。
         if (!draining && !queue.length) finishGrowth()
@@ -254,9 +416,18 @@ export const usePptStudio = () => {
   const reset = () => {
     stopDrain()
     growthDone = false
+    pendingResourceId = ''
     errorMessage.value = ''
     stepIndex.value = 0
     outline.value = []
+    plan.value = null
+    design.value = null
+    slotResolutions.value = []
+    slotSummary.value = {}
+    remoteSteps.value = []
+    deckCheck.value = null
+    deckPages.value = []
+    deckRevised.value = []
     deckTitle.value = ''
     slides.value = []
     current.value = 0
@@ -320,6 +491,47 @@ export const usePptStudio = () => {
       phase.value = 'awaiting-outline'
       errorMessage.value = readable(error)
     }
+  }
+
+  /** 修订方案。带上面板里手改过的那一版，避免服务端从最初那版重算把手改抹掉。 */
+  const revisePlan = async (feedback: string, goal = '', draft?: ResourcePlan) => {
+    if (!taskId.value || (!feedback.trim() && !goal.trim())) return
+    planBusy.value = true
+    try { plan.value = (await reviseResourcePlan(taskId.value, feedback, { plan: draft ?? plan.value ?? undefined, goal })).plan }
+    catch (error) { errorMessage.value = readable(error) }
+    finally { planBusy.value = false }
+  }
+
+  /** 主动退出协商：不生成。任务留在服务端待确认，随时可再进来接着改。 */
+  const cancelPlan = () => {
+    controller?.abort()
+    controller = null
+    planBusy.value = false
+    phase.value = 'idle'
+  }
+
+  /**
+   * 确认方案与设计单，从闸门后一步续跑。
+   *
+   * 设计单必须和方案一起交：只交方案，服务端只能自己再猜一遍版式，
+   * 用户在确认单上改的版式、密度、图位全部作废。
+   */
+  const confirmPlan = async (value: ResourcePlan, nextDesign?: PptDesign | null) => {
+    if (!taskId.value) return
+    controller?.abort()
+    controller = new AbortController()
+    planBusy.value = true
+    phase.value = 'generating'
+    try {
+      const accepted = await confirmResourcePlan(taskId.value, value, nextDesign ?? design.value)
+      // 服务端把归一化后的设计单回传（空对象表示这个能力没有设计步）。
+      const applied = accepted.design as PptDesign | undefined
+      if (applied && typeof applied === 'object' && Object.keys(applied).length) design.value = applied
+      // 续跑位置由服务端给：哪一步是闸门只有它知道（v3 落在 design）。
+      stepIndex.value = accepted.current_step ?? stepIndex.value
+      await stream(taskId.value, controller.signal)
+    } catch (error) { phase.value = 'awaiting-plan'; errorMessage.value = readable(error) }
+    finally { planBusy.value = false }
   }
 
   /** 大纲编辑：删页、改标题、改要点。ids 由后端给，前端只维护顺序与文案。 */
@@ -476,16 +688,9 @@ export const usePptStudio = () => {
     title.value = resource.title
     version.value = Number((resource.meta?.ppt_version as number) ?? 1)
     deckTitle.value = resource.title
-    slides.value = (content.slides ?? []).map((slide) => ({
-      id: slide.id,
-      kind: slide.kind,
-      title: slide.title,
-      subtitle: slide.subtitle ?? '',
-      bullets: [...(slide.bullets ?? [])],
-      columns: (slide.columns ?? []).map((column) => ({ heading: column.heading, items: [...column.items] })),
-      note: slide.note ?? '',
-      source_indexes: [...(slide.source_indexes ?? [])],
-    }))
+    // 存盘里已经有 v3 的结构化字段；这里逐字段抄会漏掉 blocks，
+    // 漏了就整份稿从数据卡退回要点页，所以走同一个白名单拷贝。
+    slides.value = (content.slides ?? []).map((slide) => toSlideNode(slide))
     const theme = String(content.theme_id ?? '')
     themeId.value = pptThemes.some((item) => item.id === theme) ? theme : DEFAULT_THEME_ID
     // 载入一份旧稿时把讲题填回左栏：不填的话「再起一稿」一进来就是灰的，
@@ -494,7 +699,7 @@ export const usePptStudio = () => {
     if (savedTopic) freeTopic.value = savedTopic
     current.value = 0
     phase.value = 'editing'
-    stepIndex.value = PPT_STEPS.length - 1
+    stepIndex.value = Math.max(0, steps.value.length - 1)
     saveStatus.value = 'clean'
     saveMessage.value = '未钤'
   }
@@ -505,6 +710,45 @@ export const usePptStudio = () => {
     } catch (error) {
       errorMessage.value = readable(error)
       phase.value = 'failed'
+    }
+  }
+
+  /**
+   * 回到同一个任务（刷新、从资源库点回来）。
+   *
+   * 待确认的方案原样摆回来，别重新提案——用户改过的那些字不能白改。
+   */
+  const restoreTask = async (id: string) => {
+    if (!id) return
+    controller?.abort()
+    controller = new AbortController()
+    const signal = controller.signal
+    reset()
+    taskId.value = id
+    try {
+      const snapshot = await getResourceTask(id)
+      plan.value = snapshot.plan ?? null
+      // 设计单跟着快照一起回来：否则用户改完版式一刷新，选择就丢了，
+      // 面板还会拿「模型重算的那一版」冒充他的选择。
+      design.value = snapshot.design ?? null
+      if (snapshot.steps?.length) remoteSteps.value = [...snapshot.steps]
+      if (snapshot.awaiting_plan && snapshot.plan) {
+        phase.value = 'awaiting-plan'
+        stepIndex.value = 0
+        return
+      }
+      if (snapshot.status === 'done' && snapshot.resource_id) {
+        await applyResource(snapshot.resource_id)
+        return
+      }
+      phase.value = 'generating'
+      stepIndex.value = Math.max(0, snapshot.current_step)
+      await stream(id, signal)
+    } catch (error) {
+      if (signal.aborted) return
+      stopDrain()
+      phase.value = 'failed'
+      errorMessage.value = readable(error)
     }
   }
 
@@ -548,7 +792,21 @@ export const usePptStudio = () => {
     errorMessage,
     stepIndex,
     stepStates,
+    /** 服务端下发的工序表（空态时为本地兜底），左栏与空态文案都用它。 */
+    steps,
     outline,
+    plan,
+    planBusy,
+    /** 设计单：确认单与线框都读它。 */
+    design,
+    slotResolutions,
+    slotSummary,
+    deckCheck,
+    deckPages,
+    deckRevised,
+    revisePlan,
+    confirmPlan,
+    cancelPlan,
     deckTitle,
     slides,
     current,
@@ -597,6 +855,7 @@ export const usePptStudio = () => {
     save,
     markDirty,
     openResource,
+    restoreTask,
     reloadFromServer,
     keepMine,
     abandon,

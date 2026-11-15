@@ -31,20 +31,17 @@ from app.profile.component_model import (
     CombinationType,
     COMPONENT_WEIGHTS,
     COVERAGE_THRESHOLD,
+    DIMENSION_BOUNDARY_GUIDE,
     DIMENSION_COMPONENT_LABELS,
     QUALITY_FACTOR_GUIDE,
-    QUALITY_FACTOR_TIERS,
-    QUALITY_TIER_LABELS,
-    QualityFactors,
     REQUIRES_MEASUREMENT,
     deduplicate_component_cards,
     dimension_score,
-    geometric_quality,
-    quality_tier_of,
     source_reliability_for,
     validate_normalized_claim,
     validate_story_card,
 )
+from app.profile.evidence import weak_point_label_of
 from app.profile.jury import ScoringResult, score_dimension, score_profile
 from app.profile.prescription import evaluate_prescription
 from app.profile.radar import LOW_CONFIDENCE_THRESHOLD
@@ -67,6 +64,7 @@ from app.profile.store import (
     get_profile,
     get_profile_session_row,
     list_chat_messages,
+    list_evidence,
     claim_dialogue_turn,
     complete_dialogue_turn,
     release_dialogue_turn,
@@ -357,6 +355,76 @@ class ProfileSession:
         return self.current_step.title if self.current_step else None
 
 
+def _evidence_identity(card: EvidenceCard) -> str:
+    """一条证据的稳定身份：优先 evidence_id，没有就按（维度, 来源, 原话）。
+
+    启动时继承来的历史证据不重复入库，靠这个键认人。rule 卡常常没有
+    evidence_id，退到三元组也能认出来。
+    """
+
+    if card.evidence_id:
+        return str(card.evidence_id)
+    return f"{card.dimension}|{card.source}|{card.quote or card.fact}"
+
+
+def _seed_dialogue_evidence(session: ProfileSession, *, db_path: Path) -> None:
+    """把用户已经攒下的证据接进这次对话。
+
+    以前对话会话从零开始：用户先走完收徒剧情、再开对话，牌阵和雷达是空的，
+    而弟子档案却已经点亮——两边看的是同一份东西，却给了两个答案。证据本来
+    就都落在同一个库里（剧情、问诊、校准都走 add_evidence），缺的只是"读回来"。
+
+    只读回原话还不够：分组分是评分阶段写在卡片上的派生值，而证据行是在评分
+    **之前**落库的，所以从库里捞回来的卡都没有 `component_score`。缺了它，
+    融合会认为"一个组件都没评分"，七张牌全部停在"待取证"——用户明明聊了
+    二十轮、档案里也有分。这里从已落库的画像把每个组件的分补回卡上。
+    """
+
+    if session.evidence_cards:
+        return
+    prior = list_evidence(session.user_id, db_path=db_path)
+    if not prior:
+        return
+    deduped, conflicts, _dropped = deduplicate_component_cards(prior)
+    session.evidence_cards = [*deduped, *conflicts]
+    _restore_seeded_component_scores(session, db_path=db_path)
+    # 这些卡已经在库里了，收尾时不能再插一遍（insert 没有唯一键，会真的重复）。
+    session.step_data["evidence_seeded_ids"] = [
+        _evidence_identity(card) for card in session.evidence_cards
+    ]
+
+
+def _restore_seeded_component_scores(session: ProfileSession, *, db_path: Path) -> None:
+    """用已落库画像里的组件分补齐继承来的证据卡。"""
+
+    profile = get_profile(session.user_id, db_path=db_path)
+    for card in session.evidence_cards:
+        component = card.component
+        if not component:
+            continue
+        if isinstance(card.objective_signal.get("component_score"), (int, float)):
+            continue
+        dimension = card.dimension
+        if dimension not in DIMENSION_LABELS:
+            continue
+        scores = getattr(profile, dimension).component_scores or {}
+        score = scores.get(component)
+        if isinstance(score, (int, float)):
+            card.objective_signal = {**card.objective_signal, "component_score": float(score)}
+
+
+def _persist_session_evidence(session: ProfileSession, *, db_path: Path) -> None:
+    """只把本次会话新产生的证据落库，继承来的旧证据跳过。"""
+
+    seeded = set(session.step_data.get("evidence_seeded_ids") or [])
+    for card in session.evidence_cards:
+        if _evidence_identity(card) in seeded:
+            continue
+        add_evidence(session.user_id, card, db_path=db_path)
+    session.persisted = True
+    session.persisted_db_path = str(db_path)
+
+
 def start_profile_session(user_id: str, mode: ProfileMode | str, db_path: Path = DB_PATH) -> ProfileSession:
     """Start a collection session and return the first step."""
 
@@ -374,6 +442,8 @@ def start_profile_session(user_id: str, mode: ProfileMode | str, db_path: Path =
         asked_questions = _dialogue_step_list(session.step_data, "asked_questions")
         _dialogue_remember(asked_questions, session.current_step.prompt)
         session.step_data["next_question"] = session.current_step.prompt
+        # 对话要接着用户已经有的画像往下聊，而不是从一张白纸开始。
+        _seed_dialogue_evidence(session, db_path=db_path)
     _save_profile_session(session, db_path=db_path)
     return session
 
@@ -510,7 +580,8 @@ def _story_extraction_messages(transcript: str, dimensions: tuple[DimensionKey, 
                 "你是「岐黄智学」的画像证据抽取器。只抽取证据，绝对不评分、不判档、不输出任何分数。"
                 "每条证据必须引用用户原话的连续子串；提炼句固定句式「谁+做了什么/具备什么+限定条件」，不超过30字，"
                 "不得加入原话里没有的信息，不得出现原话没有的专有名词；原话已经够清楚就直接截取原话。"
-                "只输出 JSON，不要 Markdown。"
+                "只输出 JSON，不要 Markdown。\n"
+                + DIMENSION_BOUNDARY_GUIDE
             ),
         },
         {
@@ -531,15 +602,6 @@ def _story_extraction_messages(transcript: str, dimensions: tuple[DimensionKey, 
         },
     ]
 
-
-# 审计里显示中文名，不要把英文键名直接摊给用户看。
-QUALITY_FACTOR_LABELS = {
-    "source_reliability": "来源可靠",
-    "expression_clarity": "表达清晰",
-    "content_specificity": "内容具体",
-    "freshness": "新鲜度",
-    "consistency": "一致性",
-}
 
 # 模型现在给的是档内区间里的具体数（见 QUALITY_FACTOR_GUIDE），字符串只作
 # 兼容回退：老提示词/老缓存会返回 "high"/"medium"/"low"，映射到该档中位，
@@ -682,10 +744,7 @@ def _finish_profile_session(session: ProfileSession, *, db_path: Path = DB_PATH)
     session.current_step = None
     session.updated_at = datetime.now(UTC)
     if not session.persisted:
-        for card in session.evidence_cards:
-            add_evidence(session.user_id, card, db_path=db_path)
-        session.persisted = True
-        session.persisted_db_path = str(db_path)
+        _persist_session_evidence(session, db_path=db_path)
     _save_profile_session(session, db_path=db_path)
     return session
 
@@ -752,7 +811,32 @@ def _session_from_row(row: dict[str, Any]) -> ProfileSession:
 
 
 def _persistable_step_data(step_data: dict[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in step_data.items() if not key.startswith("_")}
+    data = {key: value for key, value in step_data.items() if not key.startswith("_")}
+    # 审计时代的旧键里混着三师明细（每维一份），这里只迁移重评节奏需要的
+    # 四个字段；否则每次保存都会把历史明细原样写回库。
+    legacy = data.pop("component_scoring_audit", None)
+    if isinstance(legacy, dict) and "component_scoring_state" not in data:
+        data["component_scoring_state"] = _slim_scoring_state(legacy)
+    return data
+
+
+def _slim_scoring_state(state: dict[str, Any]) -> dict[str, Any]:
+    kept = ("component_scores", "evidence_watermark", "attempted_watermark", "attempts_at_watermark")
+    return {
+        str(dimension): {key: entry.get(key) for key in kept}
+        for dimension, entry in state.items()
+        if isinstance(entry, dict)
+    }
+
+
+# 审计流下线前落进 step_data 的键。老会话读出来时直接丢掉，下次保存就不会
+# 再把它们写回库——每轮一条、上万字符，纯占空间且没有任何读取方。
+_LEGACY_AUDIT_STEP_KEYS = (
+    "developer_audit",
+    "dimension_timeline",
+    "dialogue_evidence_rejected",
+    "_last_component_contract",
+)
 
 
 def _load_step_data(raw: str) -> dict[str, Any]:
@@ -760,7 +844,11 @@ def _load_step_data(raw: str) -> dict[str, Any]:
         value = json.loads(raw or "{}")
     except (TypeError, json.JSONDecodeError):
         return {}
-    return value if isinstance(value, dict) else {}
+    if not isinstance(value, dict):
+        return {}
+    for key in _LEGACY_AUDIT_STEP_KEYS:
+        value.pop(key, None)
+    return value
 
 
 def _step_for_index(
@@ -934,6 +1022,39 @@ QUESTION_TYPES: dict[str, dict[str, str]] = {
 }
 
 
+def _herb_answer_pools(
+    herbs: list[dict[str, Any]],
+) -> tuple[list[str], list[str], dict[str, list[str]], dict[str, list[str]]]:
+    """干扰项池：性味、使用注意、同小类/同大类兄弟药。派生题与轮换题共用这一份。
+
+    相似药题优先在小类（行气药）里找兄弟，小类里只有它自己时就退到大类
+    （理气药）——「同属理气药」仍然是真话，而 451 味药里绝大多数小类都很小，
+    只认小类的话这道题基本出不来。
+    """
+
+    nature_answers = sorted({
+        f"{str(herb.get('nature') or '').strip()} · {'、'.join(_string_list(herb.get('flavor')))}".strip(" ·")
+        for herb in herbs
+        if str(herb.get("nature") or "").strip()
+    })
+    caution_answers = sorted({
+        str(item).strip() for herb in herbs for item in _string_list(herb.get("cautions")) if str(item).strip()
+    })
+    by_subcategory: dict[str, list[str]] = {}
+    by_category: dict[str, list[str]] = {}
+    for herb in herbs:
+        name = str(herb.get("name") or "").strip()
+        if not name:
+            continue
+        bucket = str(herb.get("subcategory") or "").strip()
+        if bucket:
+            by_subcategory.setdefault(bucket, []).append(name)
+        family = str(herb.get("category") or "").strip()
+        if family:
+            by_category.setdefault(family, []).append(name)
+    return nature_answers, caution_answers, by_subcategory, by_category
+
+
 def _build_herb_questions(limit: int = 3, data_dir: Path | None = None) -> list[dict[str, Any]]:
     """Derive 性味 / 使用注意 / 相似药 questions from the herb knowledge files.
 
@@ -949,20 +1070,7 @@ def _build_herb_questions(limit: int = 3, data_dir: Path | None = None) -> list[
     rng.shuffle(picked)
     questions: list[dict[str, Any]] = []
 
-    nature_answers = sorted({
-        f"{str(herb.get('nature') or '').strip()} · {'、'.join(_string_list(herb.get('flavor')))}".strip(" ·")
-        for herb in herbs
-        if str(herb.get("nature") or "").strip()
-    })
-    caution_answers = sorted({
-        str(item).strip() for herb in herbs for item in _string_list(herb.get("cautions")) if str(item).strip()
-    })
-    by_subcategory: dict[str, list[str]] = {}
-    for herb in herbs:
-        bucket = str(herb.get("subcategory") or "").strip()
-        name = str(herb.get("name") or "").strip()
-        if bucket and name:
-            by_subcategory.setdefault(bucket, []).append(name)
+    nature_answers, caution_answers, by_subcategory, by_category = _herb_answer_pools(herbs)
 
     # 每种题型各出一题（而不是每味药轮一遍），否则连出三道性味题，另外两个
     # 组件永远收集不到。
@@ -982,6 +1090,7 @@ def _build_herb_questions(limit: int = 3, data_dir: Path | None = None) -> list[
                 nature_answers=nature_answers,
                 caution_answers=caution_answers,
                 by_subcategory=by_subcategory,
+                by_category=by_category,
             )
             if question is None:
                 continue
@@ -989,6 +1098,91 @@ def _build_herb_questions(limit: int = 3, data_dir: Path | None = None) -> list[
             used_herbs.add(herb_id)
             break
     return questions[:limit]
+
+
+# 识药只认五张有图的药。旧实现是「5 道功效题 + 3 道派生题」= 8 题，等于把一
+# 幕变成刷题，而且派生题会在别的药材里抽到没图鉴的（蛤蚧之类），照片根本认
+# 不出来。现在改成：药还是那五味有图的，题型在五味之间轮换，识药一步里同时
+# 考到功效、性味、使用注意、相似药——和后三幕要考的内容是同一套。
+_HERB_QUESTION_ROTATION = ("nature_flavor", "caution", "similar_herb", "nature_flavor")
+_HERB_QUESTION_SKILL = {
+    "nature_flavor": "性味识记",
+    "caution": "用药安全",
+    "similar_herb": "相似药鉴别",
+    "effect": "功效识记",
+}
+
+
+def _vary_herb_questions(
+    questions: list[dict[str, Any]],
+    *,
+    data_dir: Path | None = None,
+) -> list[dict[str, Any]]:
+    """Keep the illustrated five herbs, rotate what each question asks about.
+
+    The first question stays the bank's own effect question (it already carries the
+    photo, the accepted answers and the measured-performance tagging). The rest are
+    re-derived for the *same* herb, so the set never grows past five and every
+    question still has a photograph to look at.
+    """
+
+    if len(questions) < 2:
+        return questions
+    herbs = _load_herbs(data_dir)
+    if not herbs:
+        return questions
+    by_id: dict[str, dict[str, Any]] = {}
+    for herb in herbs:
+        name = str(herb.get("name") or "").strip()
+        key = str(herb.get("id") or _safe_id(name))
+        if key:
+            by_id[key] = herb
+        if name:
+            by_id.setdefault(_safe_id(name), herb)
+    nature_answers, caution_answers, by_subcategory, by_category = _herb_answer_pools(herbs)
+    rng = random.SystemRandom()
+    varied: list[dict[str, Any]] = []
+    for index, base in enumerate(questions):
+        if index == 0 or not isinstance(base, dict):
+            varied.append(base)
+            continue
+        herb = by_id.get(str(base.get("herb_id") or "")) or by_id.get(_safe_id(str(base.get("herb_name") or "")))
+        if herb is None:
+            varied.append(base)
+            continue
+        # 这味药可能缺某个字段（没有注意事项、亚类里没有兄弟药），换下一种题型再试：
+        # 一味药缺数据不该把整题的落点退回"功效"，否则五题又只剩功效一种。
+        start = (index - 1) % len(_HERB_QUESTION_ROTATION)
+        derived: dict[str, Any] | None = None
+        question_type = _HERB_QUESTION_ROTATION[start]
+        for offset in range(len(_HERB_QUESTION_ROTATION)):
+            question_type = _HERB_QUESTION_ROTATION[(start + offset) % len(_HERB_QUESTION_ROTATION)]
+            derived = _herb_question(
+                question_type,
+                herb,
+                rng=rng,
+                nature_answers=nature_answers,
+                caution_answers=caution_answers,
+                by_subcategory=by_subcategory,
+                by_category=by_category,
+            )
+            if derived is not None:
+                break
+        if derived is None:
+            # 三种派生题型都缺数据：保留原功效题，不清空题位。
+            varied.append(base)
+            continue
+        derived.update(
+            {
+                # 照片与题位提示跟着同一味药走，前端靠 herb_id 找图鉴。
+                "herb_id": str(base.get("herb_id") or herb.get("id") or ""),
+                "herb_name": str(herb.get("name") or base.get("herb_name") or ""),
+                "herb_hint": base.get("herb_hint") or "",
+                "skill": _HERB_QUESTION_SKILL.get(question_type, "性味识记"),
+            }
+        )
+        varied.append(derived)
+    return varied
 
 
 def _herb_question(
@@ -999,6 +1193,7 @@ def _herb_question(
     nature_answers: list[str],
     caution_answers: list[str],
     by_subcategory: dict[str, list[str]],
+    by_category: dict[str, list[str]] | None = None,
 ) -> dict[str, Any] | None:
     name = str(herb.get("name") or "").strip()
     if not name:
@@ -1017,6 +1212,8 @@ def _herb_question(
             "answer": answer,
             "accepted_answers": [answer],
             "topic": f"药性识记·{name}性味",
+            # 剧情里不能出现药名：药是在照片上认的，题面只问"这味药"。
+            "story_prompt": "这味药的性味，是哪一组？",
             "question_type": question_type,
             "dimension": spec["dimension"],
             "component": spec["component_tag"],
@@ -1034,6 +1231,7 @@ def _herb_question(
             "answer": answer,
             "accepted_answers": [answer],
             "topic": f"用药安全·{name}使用注意",
+            "story_prompt": "这味药的使用注意，下列哪一条是对的？",
             "question_type": question_type,
             "dimension": spec["dimension"],
             "component": spec["component_tag"],
@@ -1042,7 +1240,11 @@ def _herb_question(
     bucket = str(herb.get("subcategory") or "").strip()
     siblings = [item for item in by_subcategory.get(bucket, []) if item != name]
     if not bucket or not siblings:
-        return None
+        # 小类里没有兄弟药就退到大类：行气药只有陈皮一味时，"同属理气药"仍成立。
+        bucket = str(herb.get("category") or "").strip()
+        siblings = [item for item in (by_category or {}).get(bucket, []) if item != name]
+        if not bucket or not siblings:
+            return None
     answer = siblings[0]
     others = [item for names in by_subcategory.values() for item in names if item != name and item != answer]
     return {
@@ -1052,6 +1254,7 @@ def _herb_question(
         "answer": answer,
         "accepted_answers": [answer],
         "topic": f"相似药鉴别·{bucket}",
+        "story_prompt": f"下列哪味药，和这味药同属{bucket}？",
         "question_type": question_type,
         "dimension": spec["dimension"],
         "component": spec["component_tag"],
@@ -1332,10 +1535,9 @@ def _apprentice_step(index: int, *, step_data: dict[str, Any] | None = None) -> 
         if isinstance(cached, list) and cached:
             questions = cached
         else:
-            questions = load_diagnostic_questions(limit=5, photo_ready_only=True)
-            # 性味 / 使用注意 / 相似药三类题从知识图谱派生，补足知识基础与薄弱点的
-            # 组件覆盖度；题面仍然由前端渲染。
-            questions = questions + _build_herb_questions(limit=3)
+            # 五味有图的药，题型轮换（功效 / 性味 / 使用注意 / 相似药）。
+            # 不再追加派生题：8 题既让人疲劳，又会抽到没有图鉴的药材。
+            questions = _vary_herb_questions(load_diagnostic_questions(limit=5, photo_ready_only=True))
             if step_data is not None:
                 step_data["questions"] = questions
         return ProfileStep(
@@ -1471,15 +1673,7 @@ async def _answer_dialogue(session: ProfileSession, payload: dict[str, Any]) -> 
 
         extraction = DialogueExtraction.model_validate(extraction)
     cards = _dialogue_cards_from_extraction(extraction)
-    session.step_data["_last_component_contract"] = {
-        "turn_id": extraction.turn_id or turn_index,
-        "combination_type": extraction.combination_type,
-        "extraction_error": extraction.extraction_error,
-        "extraction_method": extraction.extraction_method,
-        "dimension_scan": [item.model_dump(mode="json") for item in extraction.dimension_scan],
-        "component_collection": [item.model_dump(mode="json") for item in extraction.component_collection],
-        "evidence_ids": [item.evidence_id for item in extraction.atomic_evidence],
-    }
+    cards, _rejected = _filter_dialogue_cards(cards, utterance=utterance, prior_cards=session.evidence_cards)
     for card in cards:
         card.objective_signal["turn_index"] = turn_index
         card.objective_signal["response_time_ms"] = response_time_ms
@@ -1550,13 +1744,12 @@ EXTRACTION_MAX_TOKENS = 8192
 # 0 条证据——用户看到"小岐答了话但画像一点没动"。截断在客户端无法修复，只能
 # 换一份更小的输出重问一次：丢掉 legacy 字段与七维组件清单，只保留证据本身。
 COMPACT_RETRY_SUFFIX = (
-    "\n上一次输出被长度上限截断，整份 JSON 作废。这一次只输出三个顶层字段，"
-    "不要输出 component_collection，不要输出 major/learning_goal 等 legacy 字段："
-    '{"turn_id":N,"dimension_scan":[{"dimension","status","reason","components"}],'
-    '"atomic_evidence":[{"evidence_id","dimension","component","evidence_group_id",'
-    '"source_turn_ids","quote","normalized_claim","evidence_type","collection_status",'
-    '"semantic_relation","quality_factors","quality_reason","quality_thinking"}]}。'
-    "atomic_evidence 最多 4 条；reason 每维不超过 20 字，不要复述量表原文。"
+    "\n上一次输出被长度上限截断，整份 JSON 作废。这一次只输出两个顶层字段："
+    '{"turn_id":N,"atomic_evidence":[{"evidence_id","dimension","component",'
+    '"evidence_group_id","source_turn_ids","quote","normalized_claim","evidence_type",'
+    '"collection_status","semantic_relation","quality_factors","quality_reason"}]}。'
+    "atomic_evidence 最多 3 条；quote 只截最能说明问题的一小段，quality_reason 不超过 20 字；"
+    "dimension_scan 与 fallback_signals 这次可以整段省略。"
 )
 
 
@@ -1617,6 +1810,8 @@ async def _try_llm_dialogue_turn(
             "content": (
                 "你是学习画像证据抽取器，只输出 JSON。阅读整段对话，为每个维度抽取标签/数值，"
                 "并给出用户【原话片段】作为 evidence。没有依据的维度必须 value=null，禁止猜测或填默认。"
+                "dialogue_history 只用于理解指代和上下文，【只能从 latest_user_utterance 抽取新证据】："
+                "历史轮次已经说过的内容不得再次出证，同一表达只形成一次有效认定。"
                 "target_dimension 只说明本轮原本想了解什么，绝不限制提取范围：用户即使答非所问，也必须扫描并提取全部七维线索。"
                 "审计只展示可复核的判断摘要，不输出私有思维链。dimension_scan 每维必须给简明依据；"
                 "另返回 excluded_candidates 数组，记录确实考虑过但不成立的维度/组件候选及排除理由，未考虑的候选不要臆造。"
@@ -1630,28 +1825,33 @@ async def _try_llm_dialogue_turn(
                 "learning_goal 落不进应试提分/临床实用/兴趣科普/学术深造时，使用“其他”，并仍需原话 evidence。"
                 "例如‘我想治病救人’是明确的学习目标方向（学习医学以帮助患者），可支持目标表达确定性和宽泛目标具体度；"
                 "帮助他人的价值也可能是内在动机线索，但不能据此推断长期投入、行动计划、专业资格或目标优先级。"
-                "优先输出完整 component_contract：dimension_scan 扫描全部七维；atomic_evidence 为每条可评分原子证据，"
-                "每条必须包含 evidence_id、dimension、component、evidence_group_id、source_turn_ids、quote(用户原话子串)、"
-                "normalized_claim、evidence_type、supports、collection_status、assessment、confirmed_aspects、pending_aspects、"
+                "atomic_evidence 是唯一事实源：每条可评分原子证据一项，必须包含 evidence_id、dimension、component、"
+                "evidence_group_id、source_turn_ids、quote(用户原话子串)、normalized_claim、evidence_type、supports、"
+                "collection_status、assessment、confirmed_aspects、pending_aspects、"
                 "semantic_relation(new/reinforcement/semantic_duplicate/conflict)、related_evidence_ids、"
                 "quality_factors、quality_reason 与 quality_thinking。\n"
                 + QUALITY_FACTOR_GUIDE
                 + "\n"
-                "component_collection 必须列出七维全部组件；没有证据时写 no_usable_evidence/pending 及原因，不能用低分代替未提及。"
+                "同一条信息只写一遍：已经落进 atomic_evidence 的内容，不要再抄成标签字段或组件清单；"
+                "没有证据的维度写进 dimension_scan 并说明原因，不能用低分代替未提及。\n"
+                + DIMENSION_BOUNDARY_GUIDE
             ),
         },
         {
             "role": "user",
             "content": (
                 json.dumps(prompt_payload, ensure_ascii=False)
-                + "\n输出一个扁平 JSON 对象，legacy 字段与审计字段放在同一层；不要嵌套 extraction。字段包含 major,learning_goal,base_level,learning_style,weak_points,motivation,"
-                "motivation_score,resource_preference,daily_minutes,target_days,mastery_hint；"
-                "其中每个字段都是 {value,confidence,basis,evidence,card_names,assessment}；assessment 为 "
-                "{radar_score,confidence_contribution,coverage,priority_strength,independence,confirmed_aspects,unknown_reasons,assessment_reason}。"
-                "learning_goal/motivation 的 value 可为标签分布对象。"
-                "weak_points 只抽用户自述的易错、薄弱、困惑知识点原文短句，没有原文证据则 value=null。"
-                "并在同一 JSON 顶层返回 turn_id、dimension_scan(每项含 excluded_candidates:[{dimension,component,reason}])、"
-                "atomic_evidence、component_collection；组件名必须来自系统提供的组件量表。不要省略扫描明细。"
+                + "\n只输出一个扁平 JSON 对象，四个顶层字段：turn_id、atomic_evidence、dimension_scan、fallback_signals。"
+                "atomic_evidence 是唯一事实源：有可评分证据就逐条列出，一条都不成立就输出空数组 []。"
+                "dimension_scan 只写【本轮没有抽到可用证据】的维度，每维一行 "
+                "{dimension,status:'no_usable_evidence',reason(不超过 15 字)}；"
+                "确实考虑过很近似的错误归属时，可在该行加 excluded_candidates:[{dimension,component,reason}]，最多 2 条。"
+                "有证据的维度不要写进 dimension_scan，系统会按 atomic_evidence 自动补全。"
+                "fallback_signals 是可选兜底：只有当你判断出整体标签"
+                "(learning_goal/base_level/learning_style/resource_preference/weak_points/motivation)"
+                "却拆不出原子证据时才填，最多 3 个键，每个 {value,evidence}；能拆成原子证据就整个省略该字段。"
+                "weak_points 只写用户自述的易错、薄弱、困惑知识点原话短句。"
+                "不要输出 component_collection，也不要输出 major/learning_goal/base_level 等顶层 legacy 字段。"
             ),
         },
     ]
@@ -1755,7 +1955,7 @@ def _validate_dialogue_payload_leniently(payload: dict[str, Any]) -> Any:
             extraction_method="rule_fallback",
             extraction_error=f"model_schema_or_request_error:{type(exc).__name__}",
         )
-    extraction.extraction_error = f"legacy_fields_invalid_preserved_component_contract:{legacy_error}"
+    extraction.extraction_error = f"legacy_fields_invalid_preserved_atomic_evidence:{legacy_error}"
     return extraction
 
 
@@ -1763,6 +1963,197 @@ def _canonical_dimension_name(value: Any) -> Any:
     """Map the legacy dimension names the model still emits onto canonical keys."""
 
     return canonical_dimension_name(value)
+
+
+def _scan_reason_text(value: Any) -> str:
+    """扫描理由可能是字符串、字符串数组，或 {"reason": ...} 这种形状。"""
+
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        for key in ("reason", "basis", "summary", "note"):
+            text = value.get(key)
+            if isinstance(text, str) and text.strip():
+                return text.strip()
+        return ""
+    if isinstance(value, list):
+        return "; ".join(str(item).strip() for item in value if str(item).strip())
+    return ""
+
+
+def _first_scan_reason(*candidates: Any) -> str:
+    for candidate in candidates:
+        text = _scan_reason_text(candidate)
+        if text:
+            return text
+    return ""
+
+
+#: 扫描表缺项时的兜底理由。不能写成"模型没有返回证据"——同一次返回里
+#: 可能既有原子证据、又缺这一行的扫描结论，那种说法会自相矛盾。
+_SCAN_BACKFILL_REASON = "本轮模型未单列该维度的扫描结论，已按同一份返回里的原子证据回填。"
+
+
+def _align_scan_with_atomic(data: dict[str, Any]) -> None:
+    """让维度扫描表与本轮原子证据一致。
+
+    实测（真实模型）：``dimension_scan`` 有时是 ``{found: bool, basis: str}``
+    的字典，有时漏掉某些维度。旧实现只认 ``status``，于是整张表落成
+    ``pending``、理由写"模型未返回可追溯证据"——而同一份 JSON 的
+    ``atomic_evidence`` 里有 3 条 scorable 卡。界面因此显示"这一维没抽到东西"，
+    与卡片区互相打脸。这里只做对齐，不改变评分口径。
+    """
+
+    atomic = data.get("atomic_evidence")
+    if not isinstance(atomic, list) or not atomic:
+        return
+
+    scorable_components: dict[str, list[str]] = {}
+    # 模型还有第三态：``tentative``（归一化后是 pending）。这类维度不是"没抽到"，
+    # 而是"抽到了但还不足以评分"，界面要说这句话，否则用户以为白答了一轮。
+    tentative_components: dict[str, list[str]] = {}
+    for item in atomic:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("collection_status") or "").strip().lower()
+        if status in {"scorable", "conflict"}:
+            bucket = scorable_components.setdefault(
+                str(_canonical_dimension_name(item.get("dimension")) or ""), []
+            )
+        elif status == "pending":
+            bucket = tentative_components.setdefault(
+                str(_canonical_dimension_name(item.get("dimension")) or ""), []
+            )
+        else:
+            continue
+        component = str(item.get("component") or "").strip()
+        if component and component not in bucket:
+            bucket.append(component)
+
+    if not scorable_components and not tentative_components:
+        return
+
+    scan = data.get("dimension_scan")
+    rows: list[Any] = list(scan) if isinstance(scan, list) else []
+    index: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if isinstance(row, dict):
+            key = str(row.get("dimension") or "")
+            if key:
+                index[key] = row
+
+    for dimension, components in scorable_components.items():
+        row = index.get(dimension)
+        if row is None:
+            row = {
+                "dimension": dimension,
+                "status": "evidence_found",
+                "reason": _SCAN_BACKFILL_REASON,
+                "components": components,
+            }
+            rows.append(row)
+            index[dimension] = row
+            continue
+        previous_reason = _scan_reason_text(row.get("reason"))
+        if row.get("status") != "evidence_found":
+            row["status"] = "evidence_found"
+            if not previous_reason or previous_reason.startswith("模型未"):
+                row["reason"] = _SCAN_BACKFILL_REASON
+            else:
+                row["reason"] = f"{previous_reason}（扫描结论与本轮证据不一致，已按证据认定）"
+        if not row.get("components"):
+            row["components"] = components
+
+    for dimension, components in tentative_components.items():
+        if dimension in scorable_components:
+            continue
+        note = f"本轮有 {len(components)} 项证据待确认，尚未达到可评分标准"
+        row = index.get(dimension)
+        if row is None:
+            row = {"dimension": dimension, "status": "pending", "reason": note, "components": components}
+            rows.append(row)
+            index[dimension] = row
+            continue
+        if row.get("status") in {"no_usable_evidence", "evidence_found"}:
+            # 同维没有可评分证据时，扫描行最多是"待确认"：说"已找到"会让用户
+            # 以为画像动了，说"无可用证据"又抹掉了刚抽到的那条。
+            row["status"] = "pending"
+        previous = _scan_reason_text(row.get("reason"))
+        if not previous or previous.startswith("模型未"):
+            row["reason"] = note
+        elif note not in previous:
+            row["reason"] = f"{note}；相关原话：{previous[:30]}"
+        if not row.get("components"):
+            row["components"] = components
+
+    # 最后一类不一致：模型在扫描里说"这一维有证据"，却没给出任何原子卡。
+    # 卡片是评分的唯一依据，扫描不能单独宣称有证据，否则审计页说"找到了"、
+    # 卡片区一片空白。
+    for row in rows:
+        if not isinstance(row, dict) or row.get("status") != "evidence_found":
+            continue
+        dimension = str(row.get("dimension") or "")
+        if dimension in scorable_components or dimension in tentative_components:
+            continue
+        row["status"] = "pending"
+        row["reason"] = "模型认为原话涉及这一维，但没有给出可追溯的证据卡，暂不计入"
+
+    data["dimension_scan"] = rows
+
+
+#: 模型可以只给一个整体标签、拆不出原子证据时用的兜底字段。
+#: 这条路径以前必须整份 11 个 legacy 对象一起输出（每个还带 7 项 assessment），
+#: 于是单轮输出被撑到 1 万多字符、15 秒以上，还经常在 max_tokens 处截断。
+#: 现在改为「能拆成原子证据就不填」，只有在拆不出来时才回落到这里。
+FALLBACK_SIGNAL_KEYS: dict[str, str] = {
+    "major": "major",
+    "learning_goal": "learning_goal",
+    "base_level": "base_level",
+    "base": "base_level",
+    "learning_style": "learning_style",
+    "style": "learning_style",
+    "weak_points": "weak_points",
+    "weakness": "weak_points",
+    "weaknesses": "weak_points",
+    "motivation": "motivation",
+    "resource_preference": "resource_preference",
+    "resource": "resource_preference",
+    "mastery_hint": "mastery_hint",
+    "mastery": "mastery_hint",
+}
+
+
+def _expand_fallback_signals(data: dict[str, Any]) -> None:
+    """把 ``fallback_signals`` 摊回 legacy 字段，旧解析路径无需改动。
+
+    只补空缺：模型如果真的按旧契约输出了 learning_goal 等字段，以原字段为准。
+    兜底信号没有 confidence 时给 0.6 —— 它是"有原话、但没有组件级拆解"的自述，
+    既不能当 0 分（会把卡片权重打成 0），也不能当 1.0（没有经过组件校验）。
+    """
+
+    fallback = data.get("fallback_signals")
+    if not isinstance(fallback, dict) or not fallback:
+        return
+    for raw_key, raw_value in fallback.items():
+        key = FALLBACK_SIGNAL_KEYS.get(str(raw_key).strip().lower())
+        if not key:
+            continue
+        if data.get(key) not in (None, {}, []):
+            continue
+        if isinstance(raw_value, dict):
+            item = dict(raw_value)
+        elif isinstance(raw_value, (str, list, int, float)):
+            item = {"value": raw_value}
+        else:
+            continue
+        evidence = item.get("evidence")
+        if isinstance(evidence, str):
+            item["evidence"] = [evidence] if evidence.strip() else []
+        elif evidence is None:
+            item["evidence"] = []
+        item.setdefault("confidence", 0.6)
+        item.setdefault("basis", "explicit" if item.get("evidence") else "inferred")
+        data[key] = item
 
 
 def _normalize_dialogue_extraction_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -1775,6 +2166,7 @@ def _normalize_dialogue_extraction_payload(payload: dict[str, Any]) -> dict[str,
     """
 
     data = dict(payload)
+    _expand_fallback_signals(data)
     # Preserve the model's explanation when older output placed it in `basis`;
     # the enum itself is normalized to the safe, non-assertive `inferred` value.
     signal_keys = (
@@ -1805,20 +2197,33 @@ def _normalize_dialogue_extraction_payload(payload: dict[str, Any]) -> dict[str,
             item = dict(raw) if isinstance(raw, dict) else {"reason": str(raw or "")}
             item.setdefault("dimension", dimension)
             item["dimension"] = _canonical_dimension_name(item.get("dimension"))
-            evidence = item.get("evidence")
-            if not item.get("reason") and evidence:
-                item["reason"] = "; ".join(map(str, evidence)) if isinstance(evidence, list) else str(evidence)
+            # 模型常用 {"found": bool, "basis": "..."} 表达扫描结论。只认 status
+            # 会把它整行落成 pending + "未返回证据"，与同一份 JSON 的原子证据矛盾。
+            reason = _first_scan_reason(item.get("reason"), item.get("basis"), item.get("evidence"), item.get("note"))
+            if reason:
+                item["reason"] = reason
             scan_status = str(item.get("status") or "").strip().lower()
+            raw_evidence = item.get("evidence")
             # 模型偶尔用中文写状态（"有证据"/"无可用证据"）。不映射就会被
             # 兜底成 pending，审计里明明抽到了证据却显示"待确认"。
             if scan_status in {"partial_evidence", "found", "evidence_found", "有证据", "部分证据", "已找到"}:
                 item["status"] = "evidence_found"
             elif scan_status in {"no_usable_evidence", "not_found", "no_evidence", "无证据", "无可用证据", "未找到"}:
                 item["status"] = "no_usable_evidence"
-            elif scan_status != "pending":
+            elif isinstance(item.get("found"), bool):
+                item["status"] = "evidence_found" if item.get("found") else "no_usable_evidence"
+            elif not scan_status and isinstance(raw_evidence, list):
+                # 只给了 evidence 列表：非空即认定有证据，空列表即该维没有可用证据。
+                # 这两句都比"待取证"准确，且不会与卡片区矛盾。
+                item["status"] = "evidence_found" if raw_evidence else "no_usable_evidence"
+            else:
                 item["status"] = "pending"
             if not item.get("reason"):
-                item["reason"] = "模型未返回该维度的可追溯原子证据；当前仅标记待取证，不推断为低分。"
+                item["reason"] = (
+                    "本轮原话没有涉及这一维，因此没有可用证据。"
+                    if item.get("status") == "no_usable_evidence"
+                    else "模型未给出这一维的扫描理由；当前仅标记待取证，不推断为低分。"
+                )
             normalized_scan.append(item)
         data["dimension_scan"] = normalized_scan
     elif isinstance(scan, list):
@@ -1829,14 +2234,22 @@ def _normalize_dialogue_extraction_payload(payload: dict[str, Any]) -> dict[str,
                 continue
             item = dict(raw)
             item["dimension"] = _canonical_dimension_name(item.get("dimension"))
+            reason = _first_scan_reason(item.get("reason"), item.get("basis"), item.get("evidence"), item.get("note"))
+            if reason:
+                item["reason"] = reason
             status = str(item.get("status") or "").strip().lower()
             if status in {"partial_evidence", "found"}:
                 item["status"] = "evidence_found"
             elif status in {"not_found", "no_evidence"}:
                 item["status"] = "no_usable_evidence"
+            elif isinstance(item.get("found"), bool):
+                item["status"] = "evidence_found" if item.get("found") else "no_usable_evidence"
             if not item.get("reason"):
-                evidence = item.get("evidence")
-                item["reason"] = "; ".join(map(str, evidence)) if isinstance(evidence, list) and evidence else "模型未提供扫描理由；当前仅标记待取证。"
+                item["reason"] = (
+                    "本轮原话没有涉及这一维，因此没有可用证据。"
+                    if item.get("status") == "no_usable_evidence"
+                    else "模型未提供扫描理由；当前仅标记待取证。"
+                )
             normalized_scan.append(item)
         data["dimension_scan"] = normalized_scan
 
@@ -1915,6 +2328,8 @@ def _normalize_dialogue_extraction_payload(payload: dict[str, Any]) -> dict[str,
                 item["quality_factors"] = normalized_factors
             normalized_atomic.append(item)
         data["atomic_evidence"] = normalized_atomic
+
+    _align_scan_with_atomic(data)
     return data
 
 
@@ -1992,6 +2407,80 @@ def _dialogue_cards_from_extraction(extraction: Any) -> list[EvidenceCard]:
     from app.profile.nodes import _dialogue_cards
 
     return _dialogue_cards(extraction)
+
+
+_DIALOGUE_DEDUP_STRIP = " \t\r\n，。！？、；：,.!?;:\"'“”‘’（）()【】[]…—"
+
+
+def _compact_claim(text: str) -> str:
+    """Normalise a claim/quote so punctuation and spacing cannot hide a repeat."""
+
+    return "".join(character for character in str(text or "") if character not in _DIALOGUE_DEDUP_STRIP).casefold()
+
+
+def _dialogue_evidence_signature(card: EvidenceCard) -> tuple[str, str, str]:
+    """Identity of one *valid determination*, not of one model call.
+
+    The extractor is shown the whole transcript for pronoun resolution, so the
+    same sentence can be re-emitted on later turns. A determination is the same
+    when it lands on the same dimension + component with the same claim (or, if
+    the model gave no claim, the same quote).
+    """
+
+    claim = _compact_claim(card.normalized_claim or card.fact or "")
+    return (str(card.dimension), str(card.component or ""), claim or _compact_claim(card.quote or ""))
+
+
+def _utterance_text(utterance: str) -> str:
+    return _compact_claim(utterance)
+
+
+def _filter_dialogue_cards(
+    cards: list[EvidenceCard],
+    *,
+    utterance: str,
+    prior_cards: list[EvidenceCard],
+) -> tuple[list[EvidenceCard], list[dict[str, Any]]]:
+    """Keep only evidence newly stated in *this* turn.
+
+    Two deterministic guards, because prompt wording alone has repeatedly failed:
+
+    1. the quote must appear in the latest utterance — the transcript is context
+       for resolving references, never a second chance to re-extract old turns;
+    2. a determination already on record (same dimension + component + claim)
+       is not counted twice, no matter how it is worded around.
+    """
+
+    spoken = _utterance_text(utterance)
+    known = {_dialogue_evidence_signature(card) for card in prior_cards}
+    kept: list[EvidenceCard] = []
+    rejected: list[dict[str, Any]] = []
+    for card in cards:
+        quote = _compact_claim(card.quote or "")
+        signature = _dialogue_evidence_signature(card)
+        if spoken and quote and quote not in spoken:
+            rejected.append(
+                {
+                    "evidence_id": card.evidence_id,
+                    "dimension": card.dimension,
+                    "component": card.component,
+                    "reason": "history_replay",
+                }
+            )
+            continue
+        if signature in known:
+            rejected.append(
+                {
+                    "evidence_id": card.evidence_id,
+                    "dimension": card.dimension,
+                    "component": card.component,
+                    "reason": "duplicate_determination",
+                }
+            )
+            continue
+        known.add(signature)
+        kept.append(card)
+    return kept, rejected
 
 
 def _has_profile_extract_key() -> bool:
@@ -2085,6 +2574,152 @@ def _dialogue_fusion(evidence_cards: list[EvidenceCard]) -> dict[DimensionKey, F
                 ),
             )
     return fused
+
+
+def _dialogue_effective_fusion(
+    session: ProfileSession,
+    *,
+    db_path: Path | None = None,
+    fusion: dict[DimensionKey, FusionResult] | None = None,
+) -> dict[DimensionKey, FusionResult]:
+    """在规则融合之上，接一层"档案里已经判定的结论"。
+
+    重开一局对话时证据是从库里捞回来的：原话、归属、质量分都在，但那只是
+    "事实"，不是"结论"。结论（维度分、牌名、置信度）是评分阶段写进档案的。
+    两边各算一遍，就会出现"档案里 33 分、对话里待取证"——同一份证据给出两个
+    答案，用户没法相信任何一个。
+
+    所以已判定的结论直接沿用，条件是这期间没有出现新的组件评分。一旦模型重评
+    并写回新的组件分，就以新结论为准，交给融合继续算——只增证据不重评时不该
+    把已经给出的结论打折。
+    """
+
+    fused = fusion if fusion is not None else _dialogue_fusion(session.evidence_cards)
+    if db_path is None:
+        return fused
+    profile = get_profile(session.user_id, db_path=db_path)
+    return {
+        dimension: _adopt_stored_result(
+            getattr(profile, dimension),
+            result,
+            evidence_cards=session.evidence_cards,
+        )
+        for dimension, result in fused.items()
+    }
+
+
+def _stored_dimension_conclusion(dimension_state: Any) -> bool:
+    """档案里这个维度是否已经有结论（不是一个只有证据的空壳）。"""
+
+    return bool(
+        getattr(dimension_state, "scoring_phase", "collecting") == "scored"
+        or getattr(dimension_state, "score", None) is not None
+        or getattr(dimension_state, "label", None)
+        or getattr(dimension_state, "items", None)
+        or getattr(dimension_state, "radar_score", None) is not None
+    )
+
+
+def _adopt_stored_result(
+    dimension_state: Any,
+    result: FusionResult,
+    *,
+    evidence_cards: list[EvidenceCard],
+) -> FusionResult:
+    """用档案里的结论替换现算的融合结果；没有结论或已有新评分就原样返回。"""
+
+    if not _stored_dimension_conclusion(dimension_state):
+        return result
+    gate = result.metadata.get("component_collection")
+    live_scores = {
+        str(key): float(value)
+        for key, value in ((gate or {}).get("component_scores") or {}).items()
+        if isinstance(value, (int, float))
+    }
+    stored_scores = {
+        str(key): float(value)
+        for key, value in (getattr(dimension_state, "component_scores", None) or {}).items()
+        if isinstance(value, (int, float))
+    }
+    if set(live_scores) - set(stored_scores):
+        # 冒出了档案里没有的组件分 → 模型刚重评过，结论已过期，按新的算。
+        return result
+    if not stored_scores:
+        # 没有组件账本可比（剧情式画像只有维度级结论），退到证据条数：
+        # 这一维多出证据说明还没重评，仍以档案里的结论为准。
+        seen = sum(1 for card in evidence_cards if card.dimension == result.dimension)
+        if seen > len(getattr(dimension_state, "evidence", None) or []):
+            return result
+    stored_distribution = getattr(dimension_state, "distribution", None) or {}
+    # 组件账本也一并沿用：档案说"5/5 已评分"，对话里却按"这一局能读到几张卡"
+    # 重数一遍，就会出现"档案有分、牌面评分暂缓"——同一个维度两套进度。
+    stored_gate = _stored_component_gate(result.dimension, dimension_state, stored_scores, gate)
+    metadata = {**result.metadata, "adjudicated": True}
+    if stored_gate is not None:
+        metadata["component_collection"] = stored_gate
+    return replace(
+        result,
+        confidence=float(getattr(dimension_state, "confidence", result.confidence) or 0.0),
+        radar_score=getattr(dimension_state, "radar_score", result.radar_score),
+        score=(
+            getattr(dimension_state, "score")
+            if hasattr(dimension_state, "score")
+            else result.score
+        ),
+        label=getattr(dimension_state, "label", None) or result.label,
+        distribution=stored_distribution or result.distribution,
+        metadata=metadata,
+    )
+
+
+def _stored_component_gate(
+    dimension: DimensionKey,
+    dimension_state: Any,
+    stored_scores: dict[str, float],
+    live_gate: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """按档案里的组件账本还原一份 gate，供牌面与进度条复用。
+
+    只有"是否已评分"以档案为准（那是结论），进度取两边的较大值——新收集到的
+    组件不该因为沿用旧结论而在界面上倒退。
+    """
+
+    required = COMPONENTS.get(dimension, ())
+    matrix = getattr(dimension_state, "component_matrix", None) or {}
+    keys = tuple(matrix) or tuple(stored_scores) or tuple(getattr(dimension_state, "pending_components", None) or ())
+    if not keys and not required and not live_gate:
+        return None
+    archived_collected = sum(
+        1
+        for value in matrix.values()
+        if isinstance(value, dict) and value.get("status") in {"collected", "scorable", "scored"}
+    )
+    if not matrix:
+        archived_collected = len(stored_scores)
+    live = live_gate if isinstance(live_gate, dict) else {}
+    pending = [
+        str(item)
+        for item in (getattr(dimension_state, "pending_components", None) or [])
+        if str(item)
+    ]
+    # 相位只回答"这一维有没有分"，不看档案里那个可能过期的 `scoring_phase`：
+    # 历史数据里有"3/5 组件已出 53 分、相位却写着 collecting"的记录，沿用旧
+    # 相位会把已经算出来的结论重新判成"评分暂缓"，牌面当场翻回去。
+    archived_has_score = (
+        getattr(dimension_state, "score", None) is not None
+        or getattr(dimension_state, "radar_score", None) is not None
+    )
+    return {
+        **live,
+        "collected": max(archived_collected, int(live.get("collected") or 0)),
+        "total": int(live.get("total") or 0) or len(required) or len(keys),
+        "coverage": round(float(getattr(dimension_state, "coverage", 0.0) or 0.0), 4),
+        "weighted_mean": live.get("weighted_mean"),
+        "missing_components": pending or list(live.get("missing_components") or []),
+        "unscored_components": pending or list(live.get("unscored_components") or []),
+        "component_scores": dict(stored_scores) or dict(live.get("component_scores") or {}),
+        "scoring_phase": "scored" if (archived_has_score or live.get("scoring_phase") == "scored") else "collecting",
+    }
 
 
 # 35 个组件各配一个「意图锚点」。提示词只给意思和角度，措辞交给模型；本地事后
@@ -2800,8 +3435,13 @@ def _dialogue_confidences(
 
 
 def dialogue_session_summary(session: ProfileSession, *, db_path: Path | None = None) -> dict[str, Any]:
-    fusion = _dialogue_fusion(session.evidence_cards)
-    profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion)
+    fusion = _dialogue_effective_fusion(session, db_path=db_path)
+    profile = _profile_from_fusion(
+        session.user_id,
+        session.evidence_cards,
+        fusion=fusion,
+        base=get_profile(session.user_id, db_path=db_path) if db_path is not None else None,
+    )
     card_scores, inferred_card = _identity_card_scores(session.evidence_cards, fusion=fusion)
     identity_cards = _dialogue_identity_cards_view(
         session.evidence_cards,
@@ -2826,7 +3466,6 @@ def dialogue_session_summary(session: ProfileSession, *, db_path: Path | None = 
         "profile_progress": _dialogue_profile_progress(session.evidence_cards, fusion=fusion),
         "evidence_panel": _dialogue_evidence_panel(session.evidence_cards, fusion=fusion),
         "identity_cards": identity_cards,
-        "developer_audit": _dialogue_developer_audit(session.step_data),
         "chat_history": chat_history,
         "evidence_cards": cards_to_json(session.evidence_cards),
         "evidence_count": len(session.evidence_cards),
@@ -2848,6 +3487,11 @@ def _dialogue_scored_components(dimension: DimensionKey, evidence_cards: list[Ev
 # 时效性让位给成本：每轮都重评意味着用户每说一句话就打一次评分模型，而
 # 证据条数没变时重评只会得到同一份结论。
 SCORING_RERUN_EVIDENCE_STEP = 3
+
+# 一次评分调用什么都没评出来（模型失败、返回空、只有维度级三师没有组件分）时，
+# 同一批水位线最多再试两次。旧实现用「组件集合没变就不再试」把维度永久钉死在
+# 「评分暂缓」：截图里 3/5 已收集、0/5 已评分，之后每轮都不再送评。
+SCORING_EMPTY_RESULT_MAX_ATTEMPTS = 2
 
 
 def _dialogue_scorable_cards(dimension: DimensionKey, evidence_cards: list[EvidenceCard]) -> list[EvidenceCard]:
@@ -2900,91 +3544,73 @@ def _dialogue_scoring_due(
         return True
     if watermark - last_watermark >= SCORING_RERUN_EVIDENCE_STEP:
         return True
-    # 上次一个组件分都没拿到（模型失败/返回空），允许用同一批证据重试一次，
-    # 但不能无限重试：同一批组件试过就不再打模型。
-    return (
-        not audit_entry.get("component_scores")
-        and audit_entry.get("attempt_signature") != sorted(collected)
-    )
+    # 上次一个组件分都没拿到（模型失败/返回空）：允许用同一批证据再试，
+    # 但不能无限重试。
+    if audit_entry.get("component_scores"):
+        return False
+    attempted_watermark = audit_entry.get("attempted_watermark")
+    attempts_at_watermark = int(audit_entry.get("attempts_at_watermark") or 0)
+    if attempted_watermark != watermark:
+        # 证据水位线变了就是新的一批证据，重试额度随之重置。
+        return True
+    return attempts_at_watermark < SCORING_EMPTY_RESULT_MAX_ATTEMPTS
 
 
-def _dialogue_scoring_trigger(
+def _dialogue_scoring_reason(
     dimension: DimensionKey,
     evidence_cards: list[EvidenceCard],
-    audit_entry: dict[str, Any],
+    entry: dict[str, Any],
     collected: set[str],
 ) -> str:
-    """审计里一句话说清"这次为什么又评了一遍"。"""
+    """给用户看的一句话：这一维为什么现在（重新）评分。"""
 
     watermark = _dialogue_evidence_watermark(dimension, evidence_cards)
-    last = audit_entry.get("evidence_watermark")
+    last = entry.get("evidence_watermark")
     if isinstance(last, int):
-        return f"重评：新增 {watermark - last} 条去重原子证据（水位线 {last} → {watermark}）"
-    return (
-        f"首评：已收集 {len(collected)}/{len(COMPONENTS[dimension])} 个组件，"
-        f"首次达到 {COVERAGE_THRESHOLD:.0%} 门槛（评分时该维度有 {watermark} 条去重证据）"
-    )
+        added = max(watermark - last, 0)
+        return f"你又补了 {added} 条证据，我按新的材料重新看了一遍"
+    return f"这一维已经收到 {len(collected)}/{len(COMPONENTS[dimension])} 个组件，可以给出第一个分数了"
 
 
-def _dialogue_scoring_record(
+def _dialogue_scoring_state(
     result: ScoringResult,
     *,
     attempts: int,
-    signature: list[str],
-    turn_index: int | None = None,
     watermark: int | None = None,
-    trigger: str = "",
 ) -> dict[str, Any]:
-    """Persist one scoring call for the developer audit and the retry guard."""
+    """重评节奏所需的最小状态。
+
+    只留四件事：上次评分时的证据水位线、这一批水位线试过几次、组件分本身。
+    审计面板下线后，三师明细、逐组件推导、警告全文都不再落盘——它们只服务
+    开发期观察，不参与任何计分或提示。
+    """
 
     return {
-        "provenance": result.provenance,
-        "dimension_summary": result.narrative,
         "component_scores": result.component_scores,
-        "scoring_deferred": result.radar_score is None,
-        "scoring_attempts": attempts,
-        # 这份分数是哪一轮评出来的：评分明细跨轮保留后，审计必须能说清
-        # "现在看到的三师落点来自第 2 轮，不是本轮"。
-        "scoring_turn": turn_index,
-        # 评分水位线：评这一份分时，本维度去重后有 N 条原子证据。下次要等
-        # 水位线再涨 3 条才重评（见 SCORING_RERUN_EVIDENCE_STEP）。
         "evidence_watermark": watermark,
-        "scoring_trigger": trigger,
-        # 本次模型实际重评了哪些组件、哪些沿用了上一轮的分数。
-        "rescored_components": list(result.rescored_components),
-        "carried_components": list(result.carried_components),
-        "missing_component_scores": [
-            component for component in COMPONENTS[result.dimension_key]
-            if component not in result.component_scores
-        ],
-        "attempt_signature": signature,
-        # 三师会诊的分数、推理摘要与评语要进审计：用户要求"模型怎么打分的、
-        # 附带思考过程"。这是结构化评分依据，不是私有思维链。
-        "jury": {
-            name: item.model_dump(mode="json")
-            for name, item in result.jury.items()
-        },
-        "jury_mean": result.jury_mean,
-        # 逐组件三师落点 + 每位老师加权出来的维度分。维度级 jury 现在由这两项
-        # 推导（不再让模型另给一组整维印象分），审计要能还原推导过程。
-        "component_jury": {
-            component: {name: item.model_dump(mode="json") for name, item in teachers.items()}
-            for component, teachers in result.component_jury.items()
-        },
-        "teacher_dimension_scores": result.teacher_dimension_scores,
-        "coverage": result.coverage,
-        "radar_score": result.radar_score,
-        "warnings": [
-            {"reason": warning.reason, "original": warning.original, "corrected": warning.corrected}
-            for warning in result.warnings
-        ],
+        "attempted_watermark": watermark,
+        "attempts_at_watermark": attempts,
     }
+
+
+def _dialogue_scoring_state_of(step_data: dict[str, Any], *, create: bool = False) -> dict[str, Any]:
+    """读取评分状态，兼容审计时代留下的旧键名。"""
+
+    state = step_data.get("component_scoring_state")
+    if not isinstance(state, dict):
+        legacy = step_data.get("component_scoring_audit")
+        state = legacy if isinstance(legacy, dict) else {}
+    if create:
+        # 迁移完就丢掉旧键，别让它带着三师明细继续落盘。
+        step_data.pop("component_scoring_audit", None)
+        step_data["component_scoring_state"] = state
+    return state
 
 
 async def recover_dialogue_component_scores(session: ProfileSession, *, db_path: Path = DB_PATH) -> bool:
     """Retry deferred component scoring when a saved dialogue is restored."""
     changed = False
-    scoring_audit = session.step_data.setdefault("component_scoring_audit", {})
+    scoring_audit = _dialogue_scoring_state_of(session.step_data, create=True)
     for dimension, required in COMPONENTS.items():
         cards = [card for card in session.evidence_cards if card.dimension == dimension]
         entry = scoring_audit.get(dimension)
@@ -3007,34 +3633,20 @@ async def recover_dialogue_component_scores(session: ProfileSession, *, db_path:
                         "component_score": result.component_scores[component],
                     }
             changed = True
-        scoring_audit[dimension] = _dialogue_scoring_record(
+        scoring_audit[dimension] = _dialogue_scoring_state(
             result,
             attempts=attempts,
-            signature=sorted(collected),
-            turn_index=session.step_index,
             watermark=_dialogue_evidence_watermark(dimension, session.evidence_cards),
-            trigger=_dialogue_scoring_trigger(dimension, session.evidence_cards, entry, collected),
         )
     if changed:
-        fusion = _dialogue_fusion(session.evidence_cards)
-        profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion)
+        fusion = _dialogue_effective_fusion(session, db_path=db_path)
+        profile = _profile_from_fusion(
+            session.user_id,
+            session.evidence_cards,
+            fusion=fusion,
+            base=get_profile(session.user_id, db_path=db_path),
+        )
         upsert_profile(profile, db_path=db_path)
-        audits = _dialogue_developer_audit(session.step_data)
-        if audits:
-            latest = audits[-1]
-            latest.setdefault("system_result", {})["dimensions"] = _dialogue_audit_record(
-                turn_index=session.step_index,
-                target=_as_dialogue_dimension(session.step_data.get("dialogue_target")) or "learning_goal",
-                next_target=_as_dialogue_dimension(session.step_data.get("dialogue_target")) or "learning_goal",
-                utterance="",
-                cards=[],
-                fusion_before=fusion,
-                fusion=fusion,
-                extraction_contract={},
-                prior_cards=session.evidence_cards,
-                all_cards=session.evidence_cards,
-                scoring_audit=scoring_audit,
-                )["system_result"]["dimensions"]
         _save_profile_session(session, db_path=db_path)
     elif scoring_audit:
         _save_profile_session(session, db_path=db_path)
@@ -3064,17 +3676,17 @@ async def stream_dialogue_chat_events(
     claim = claim_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
     if claim == "completed":
         session = get_profile_session(session_id, user_id=user_id, db_path=db_path)
-        yield "state", _dialogue_state_payload(session, target=session.step_data.get("dialogue_target"), converged=False)
+        yield "state", _dialogue_state_payload(session, target=session.step_data.get("dialogue_target"), converged=False, db_path=db_path)
         yield "done", {}
         return
     if claim == "processing":
         if session.step_data.get("last_client_turn_id") == legacy_client_turn_id:
             complete_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
-            yield "state", _dialogue_state_payload(session, target=session.step_data.get("dialogue_target"), converged=False)
+            yield "state", _dialogue_state_payload(session, target=session.step_data.get("dialogue_target"), converged=False, db_path=db_path)
             yield "done", {}
             return
         yield "error", {"message": "本轮对话正在处理中，请勿重复提交"}
-        yield "state", _dialogue_state_payload(session, target=None, converged=False, error="turn_in_progress")
+        yield "state", _dialogue_state_payload(session, target=None, converged=False, error="turn_in_progress", db_path=db_path)
         yield "done", {}
         return
     lock = _dialogue_session_lock(session_id, db_path)
@@ -3083,13 +3695,13 @@ async def stream_dialogue_chat_events(
         if claim == "claimed":
             release_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
         yield "error", {"message": "本轮对话正在处理中，请勿重复提交"}
-        yield "state", _dialogue_state_payload(session, target=None, converged=False, error="turn_in_progress")
+        yield "state", _dialogue_state_payload(session, target=None, converged=False, error="turn_in_progress", db_path=db_path)
         yield "done", {}
         return
     await lock.acquire()
     if session.current_step is None:
         complete_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
-        yield "state", _dialogue_state_payload(session, target=None, converged=False)
+        yield "state", _dialogue_state_payload(session, target=None, converged=False, db_path=db_path)
         yield "done", {}
         lock.release()
         return
@@ -3110,7 +3722,6 @@ async def stream_dialogue_chat_events(
     thinking_parts.append(thinking_status)
     yield "thinking", {"delta": thinking_status}
     response_time_ms = _response_time_ms({"utterance": utterance}, session.current_step.started_at)
-    prior_evidence_cards = list(session.evidence_cards)
     try:
         cards = await _dialogue_extract_cards_for_chat(
             session=session,
@@ -3129,18 +3740,8 @@ async def stream_dialogue_chat_events(
             extraction_method="rule_fallback",
             extraction_error=f"extraction_pipeline_error:{type(exc).__name__}",
         )
-        session.step_data["_last_component_contract"] = {
-            "turn_id": turn_index,
-            "combination_type": extraction.combination_type,
-            "extraction_error": extraction.extraction_error,
-            "extraction_method": extraction.extraction_method,
-            "dimension_scan": [],
-            "atomic_evidence": [],
-            "component_collection": [],
-        }
         cards = []
     yield "thinking", {"delta": "\n正在校验原话引用，并整理证据归属与来源关系。"}
-    fusion_before = _dialogue_fusion(prior_evidence_cards)
     session.evidence_cards.extend(cards)
     # Commit the newly extracted evidence before any component-scoring model
     # calls. A transient scorer failure must not discard a completed turn or
@@ -3151,14 +3752,18 @@ async def stream_dialogue_chat_events(
         session.persisted = True
         session.persisted_db_path = str(db_path)
     upsert_profile(
-        _profile_from_fusion(user_id, session.evidence_cards, fusion=_dialogue_fusion(session.evidence_cards)),
+        _profile_from_fusion(
+            user_id,
+            session.evidence_cards,
+            fusion=_dialogue_effective_fusion(session, db_path=db_path),
+            base=get_profile(user_id, db_path=db_path),
+        ),
         db_path=db_path,
     )
     _save_profile_session(session, db_path=db_path)
-    # 这个键必须持久化（不带下划线前缀）。以前叫 _component_scoring_audit，
-    # 保存时被 _persistable_step_data 过滤掉，于是第 2 轮起审计里就查不到
-    # 第 1 轮评出来的三师落点，只剩一个孤零零的组件分。
-    scoring_audit = session.step_data.setdefault("component_scoring_audit", {})
+    # 这个键必须持久化（不带下划线前缀），否则第 2 轮读不到第 1 轮的评分
+    # 水位线，会每轮重复送评。
+    scoring_audit = _dialogue_scoring_state_of(session.step_data, create=True)
     for dimension, required_components in COMPONENTS.items():
         dimension_cards = [card for card in session.evidence_cards if card.dimension == dimension]
         entry = scoring_audit.get(dimension)
@@ -3166,8 +3771,8 @@ async def stream_dialogue_chat_events(
         if not _dialogue_scoring_due(dimension, session.evidence_cards, entry):
             continue
         collected = _dialogue_collected_components(dimension, session.evidence_cards)
-        trigger = _dialogue_scoring_trigger(dimension, session.evidence_cards, entry, collected)
-        yield "thinking", {"delta": f"\n{DIMENSION_LABELS[dimension]}触发评分——{trigger}。"}
+        reason = _dialogue_scoring_reason(dimension, session.evidence_cards, entry, collected)
+        yield "thinking", {"delta": f"\n{DIMENSION_LABELS[dimension]}：{reason}。"}
         score_result = await score_dimension(dimension, dimension_cards)
         scoring_attempts = 1
         # 只看本次真正重评的组件：合并后的 component_scores 里还带着沿用的旧分，
@@ -3176,7 +3781,7 @@ async def stream_dialogue_chat_events(
         rescored = set(score_result.rescored_components) or set(score_result.component_scores)
         missing_model_scores = collected - rescored
         if missing_model_scores and score_result.provenance != "no_key_rule_fallback":
-            yield "thinking", {"delta": f"\n评分模型尚未覆盖全部已收集组件，正在携带完整证据包重试缺失评分（{len(missing_model_scores)} 项）。"}
+            yield "thinking", {"delta": f"\n还有 {len(missing_model_scores)} 个方面没看全，我带上完整材料再看一遍。"}
             score_result = await score_dimension(dimension, dimension_cards)
             scoring_attempts = 2
         # A scoring result is the only source allowed to publish component
@@ -3192,13 +3797,10 @@ async def stream_dialogue_chat_events(
                 **card.objective_signal,
                 "component_score": score_result.component_scores[component],
             }
-        scoring_audit[dimension] = _dialogue_scoring_record(
+        scoring_audit[dimension] = _dialogue_scoring_state(
             score_result,
             attempts=scoring_attempts,
-            signature=sorted(collected),
-            turn_index=turn_index,
             watermark=_dialogue_evidence_watermark(dimension, session.evidence_cards),
-            trigger=trigger,
         )
     planning_fusion = _dialogue_fusion(session.evidence_cards)
     # Soft lock: keep working the current drawer while it still has an
@@ -3250,6 +3852,73 @@ async def stream_dialogue_chat_events(
     yield "thinking", {"delta": "\n证据与缺项已整理，正在让小岐据此组织自然回应和下一问。"}
     router = ModelRouter()
     use_rule_reply = _dialogue_router_uses_mock_client(router)
+    guard_keywords = tuple((planning_focus or {}).get("guard_keywords") or ())
+    question_emitted = False
+    statement_emitted = False
+    emitted_any = False
+
+    def _restatement() -> str:
+        """One sentence that gives back what the user just said.
+
+        Every reply must open by acknowledging the user before asking. When the
+        model jumps straight to a question (or its question is withheld), this
+        deterministic sentence keeps the "总结 + 问话" shape.
+        """
+
+        claim = next(
+            (
+                str(card.normalized_claim or card.fact or "").strip()
+                for card in cards
+                if str(card.normalized_claim or card.fact or "").strip()
+            ),
+            "",
+        )
+        if not claim:
+            claim = re.split(r"[。！？!?，,\n]", utterance.strip())[0].strip()
+        if not claim:
+            return ""
+        return f"你说的“{claim[:40]}”，我记下了。"
+
+    def _segments(sentence: str) -> list[str]:
+        """Gate one sentence: show statements, show at most one *on-target* question.
+
+        A drifted question is withheld rather than shown and later replaced.
+        The calibrated question is appended at the end instead, so the bubble
+        never deletes text the user has already read.
+        """
+
+        nonlocal question_emitted, statement_emitted
+        cleaned = sanitize_dialogue_reply(
+            _remove_component_rubric_leak(_sanitize_visible_dialogue_text(sentence), planning_focus)
+        )
+        if not cleaned:
+            return []
+        if not re.search(r"[？?]", cleaned):
+            statement_emitted = True
+            return [cleaned]
+        if question_emitted:
+            return []
+        if guard_keywords and not any(word in cleaned for word in guard_keywords):
+            return []
+        question_emitted = True
+        prefix = [] if statement_emitted else [text for text in (_restatement(),) if text]
+        statement_emitted = True
+        return [*prefix, cleaned]
+
+    # 逐字上屏的节奏。以前是 12 字/35ms（≈340 字/秒），整段话在两秒内炸完，
+    # 看起来和"一次性返回"没有区别；现在 2 字/55ms（≈36 字/秒），接近正常
+    # 阅读速度，一句话能看清在长出来。实测 70 字正文约 2 秒。
+    async def _stream_segments(segments: list[str], *, size: int = 2, delay: float = 0.055) -> None:
+        nonlocal emitted_any
+        for segment in segments:
+            if not segment:
+                continue
+            assistant_parts.append(segment)
+            emitted_any = True
+            for index in range(0, len(segment), size):
+                yield "message", {"delta": segment[index:index + size]}
+                await asyncio.sleep(delay)
+
     if use_rule_reply:
         thinking_delta = "正在生成小岐的回应。"
         thinking_parts.append(thinking_delta)
@@ -3259,7 +3928,6 @@ async def stream_dialogue_chat_events(
         pending_prefix = ""
         prefix_released = False
         sentence_buffer = ""
-        asked_question = False
         try:
             async for kind, delta in router.chat_stream(
                 "reason",
@@ -3291,62 +3959,72 @@ async def stream_dialogue_chat_events(
                         delta = ""
                     if prefix_released:
                         sentence_buffer += delta
+                        # 首段不等句号。按整句缓冲时，第一句没写完就什么都不显示，
+                        # 用户要在"凝神推演"里干等模型把一句话生成完（实测十几秒），
+                        # 体感就是"不流式、最后整段蹦出来"。只要还没吐过正文、缓冲
+                        # 里也没有问号，就先放出一小段；问句仍然整句过 gate，不会
+                        # 出现"偏题问句先给用户看、再撤回"。
+                        if (
+                            not emitted_any
+                            and "？" not in sentence_buffer
+                            and "?" not in sentence_buffer
+                            and len(sentence_buffer) >= 14
+                        ):
+                            lead, sentence_buffer = sentence_buffer[:14], sentence_buffer[14:]
+                            async for event in _stream_segments(_segments(lead)):
+                                yield event
                         sentences = re.split(r"(?<=[。！？!?])", sentence_buffer)
                         sentence_buffer = sentences.pop() if sentences else ""
                         for sentence in sentences:
-                            safe_sentence = sanitize_dialogue_reply(
-                                _remove_component_rubric_leak(
-                                    _sanitize_visible_dialogue_text(sentence), planning_focus
-                                )
-                            )
-                            if not safe_sentence:
-                                continue
-                            # One question per bubble: later questions are dropped
-                            # so the user is never handed a form.
-                            if asked_question and re.search(r"[？?]", safe_sentence):
-                                continue
-                            asked_question = asked_question or bool(re.search(r"[？?]", safe_sentence))
-                            assistant_parts.append(safe_sentence)
-                            for index in range(0, len(safe_sentence), 12):
-                                yield "message", {"delta": safe_sentence[index:index + 12]}
-                                await asyncio.sleep(0.035)
+                            async for event in _stream_segments(_segments(sentence)):
+                                yield event
             if pending_prefix and not use_rule_reply:
                 sentence_buffer += pending_prefix
             if not use_rule_reply and sentence_buffer:
-                safe_sentence = sanitize_dialogue_reply(
-                    _remove_component_rubric_leak(
-                        _sanitize_visible_dialogue_text(sentence_buffer), planning_focus
-                    )
-                )
-                if safe_sentence and not (asked_question and re.search(r"[？?]", safe_sentence)):
-                    assistant_parts.append(safe_sentence)
-                    for index in range(0, len(safe_sentence), 12):
-                        yield "message", {"delta": safe_sentence[index:index + 12]}
-                        await asyncio.sleep(0.035)
+                async for event in _stream_segments(_segments(sentence_buffer)):
+                    yield event
         except Exception:
-            use_rule_reply = True
+            # 已经说出口的话必须留着：这里只补一个校准问句，绝不重写正文。
+            use_rule_reply = not emitted_any
 
-    if use_rule_reply:
-        assistant_parts.clear()
+    if use_rule_reply and not emitted_any:
         assistant_text = _fallback_visible_dialogue_reply(session, target=target, turn_index=turn_index, utterance=utterance)
+        fallback_segments: list[str] = []
+        for sentence in re.split(r"(?<=[。！？!?])", assistant_text):
+            fallback_segments.extend(_segments(sentence))
         # Keep the fallback path visually streaming as well.
-        assistant_parts.extend(assistant_text)
-        for index in range(0, len(assistant_text), 2):
-            yield "message", {"delta": assistant_text[index:index + 2]}
-            await asyncio.sleep(max(0.055, get_settings().mock_stream_delay))
-    else:
-        # Provider content is sanitized and streamed sentence-by-sentence as
-        # it arrives above, instead of being buffered until generation ends.
-        pass
+        async for event in _stream_segments(fallback_segments, size=2, delay=max(0.055, get_settings().mock_stream_delay)):
+            yield event
+
+    # 这一轮必须真的问到计划中的那一格；模型没问、问偏或只说了半句，都在
+    # 末尾补上校准问句，而不是把已经流出去的总结替换掉。
+    if not question_emitted and planning_question:
+        tail: list[str] = []
+        if not statement_emitted:
+            restatement = _restatement()
+            if restatement:
+                tail.append(restatement)
+        tail.append(planning_question)
+        async for event in _stream_segments(tail):
+            yield event
 
     assistant_text = "".join(assistant_parts)
 
-    asked_dimension = await _dialogue_classify_visible_reply_asked_dimension(assistant_text, target)
     if _dialogue_user_asked_evidence(utterance) and not _dialogue_visible_reply_addresses_evidence(assistant_text):
         evidence_tail = " 你问得对，画像旁边的「证据清单」会按维度列出分/标签、置信度和你的原文引用；我不会编证据，只按你说过的话更新。"
         assistant_parts.append(evidence_tail)
         assistant_text = "".join(assistant_parts)
         yield "message", {"delta": evidence_tail}
+
+    # 正文到这里就结束了，立刻收掉打字游标。
+    #
+    # 下面还有一次「这句问的是哪一维」的模型分类、融合、落库与评分，全都在
+    # 正文之后串行跑；以前 message_done 压在这些之后才发，前端就表现为
+    # 「字都出完了，末尾的竖线还杵在那儿好几秒」。游标的生命周期只属于正文。
+    yield "message_done", {}
+    message_done_sent = True
+
+    asked_dimension = await _dialogue_classify_visible_reply_asked_dimension(assistant_text, target)
     _log_dialogue_stream_fulltext(session.session_id, turn_index, thinking_parts, assistant_parts)
 
     try:
@@ -3363,84 +4041,29 @@ async def stream_dialogue_chat_events(
             pure_chat_streak,
         )
 
-        fusion_after = _dialogue_fusion(session.evidence_cards)
+        fusion_after = _dialogue_effective_fusion(session, db_path=db_path)
         identity_cards = _dialogue_identity_cards_view(
             session.evidence_cards,
             fusion=fusion_after,
             step_data=session.step_data,
         )
         converged = _dialogue_converged(turn_index, session.evidence_cards, fusion=fusion_after)
-        profile = _profile_from_fusion(session.user_id, session.evidence_cards, fusion=fusion_after)
+        profile = _profile_from_fusion(
+            session.user_id,
+            session.evidence_cards,
+            fusion=fusion_after,
+            base=get_profile(session.user_id, db_path=db_path),
+        )
         # 记下这一维是不是连着两轮没长出新组件；长不出来就该换抽屉了。
         _dialogue_note_stall(session, target)
-        if hit_target or pure_chat_streak >= DIALOGUE_TARGET_RETRY_LIMIT:
-            next_target = _dialogue_target(
-                session.evidence_cards,
-                fusion=fusion_after,
-                asked_dimensions=asked_dimensions,
-                current_target=target,
-                stalled=_dialogue_stalled(session),
-                stalled_dimension=_dialogue_stalled_dimension(session),
-                component_ask_counts=_dialogue_asked_components(session.step_data),
-            )
-        else:
-            next_target = target
-        focus = _dialogue_component_focus(
-            session.evidence_cards,
-            next_target,
-            asked_counts=_dialogue_asked_components(session.step_data),
-        )
-        # 只有下一轮还是问同一格时，才复用这一轮的规划问句。若这一格刚被
-        # "问满两次"让位（focus 换了），复用旧问句等于把刚放弃的格子又问一遍。
-        same_component = bool(
-            focus
-            and planning_focus
-            and focus.get("component") == planning_focus.get("component")
-        )
-        next_component_question = planning_question if same_component and next_target == target else ""
-        if focus and not next_component_question:
-            next_component_question = _fallback_dialogue_question(
-                next_target,
-                turn_index,
-                asked_questions=asked_questions,
-                asked_dimensions=asked_dimensions,
-                evidence_cards=session.evidence_cards,
-                focus=focus,
-            )
-        # The response model is instructed to ask exactly one question.  Only
-        # add the calibrated fallback when it produced no question at all;
-        # appending on a text mismatch caused duplicate questions and exposed
-        # the internal rubric direction in otherwise natural replies.
-        has_visible_question = "？" in assistant_text or "?" in assistant_text
-        # 问了，但问偏了：整段回复没碰到这一格的关键词，等于这轮白问。
-        guard_keywords = tuple((focus or {}).get("guard_keywords") or ())
-        drifted_off_component = bool(
-            guard_keywords
-            and has_visible_question
-            and not any(word in assistant_text for word in guard_keywords)
-        )
-        if (
-            focus
-            and next_component_question
-            and next_component_question not in assistant_text
-            and (not has_visible_question or drifted_off_component)
-        ):
-            # 计划要求的是"替换漂移问句"，不是叠成两个问题。文字已经流式发出去
-            # 了，所以这里发一条 replace 让前端整段换掉，而不是再追加一句。
-            assistant_text = sanitize_dialogue_reply(
-                assistant_text,
-                fallback_question=next_component_question,
-                anchor=focus,
-            )
-            assistant_parts.append(f"\n\n[replace]{assistant_text}")
-            for card in cards:
-                card.objective_signal["next_question"] = next_component_question
-            # 替换出来的问句也是用户真正看到的提问，必须进账本；否则这一格
-            # 可以靠"被替换"绕过两轮上限，实测就是这样又问出了第三、第四遍
-            # "你坚持多久了"。同一格已在规划时记过一次的不要重复记。
-            if not same_component:
-                _dialogue_note_asked_component(session.step_data, focus)
-            yield "replace", {"text": assistant_text}
+        # 下一轮问哪一维，只能由「用户这一轮实际看到的问题」决定。以前这里
+        # 会重新规划一个 next_target：用户答的是 A 维，系统按 B 维去抽取，
+        # 同一句话就被记到两个抽屉里——实测"优先级信号"和"B 站看视频"在
+        # 第 3、4 轮各丢了一次。维度推进统一放到下一轮开头 `_dialogue_target()`，
+        # 那时才同时看得到新证据、问过的格子和软锁定状态。
+        next_target = target
+        # 可见问句已经是这一轮的落点，不再事后替换或补第二个问句。
+        # `replace` 事件保留在协议里给旧客户端，但服务端不再产生它。
         append_chat_messages(
             user_id=user_id,
             session_id=session.session_id,
@@ -3451,32 +4074,6 @@ async def stream_dialogue_chat_events(
             db_path=db_path,
         )
         _log_dialogue_stream_fulltext(session.session_id, turn_index, thinking_parts, assistant_parts)
-        yield "message_done", {}
-        message_done_sent = True
-        _append_dimension_timeline(
-            session.step_data,
-            turn_index=turn_index,
-            fusion=fusion_after,
-            cards=cards,
-            all_cards=session.evidence_cards,
-        )
-        audit_record = _dialogue_audit_record(
-            turn_index=turn_index,
-            target=target,
-            next_target=next_target,
-            utterance=utterance,
-            cards=cards,
-            fusion_before=fusion_before,
-            fusion=fusion_after,
-            extraction_contract=session.step_data.pop("_last_component_contract", {}),
-            prior_cards=prior_evidence_cards,
-            all_cards=session.evidence_cards,
-            # 不 pop：评分明细要跨轮保留。否则第 3 轮再看"学习目标"，上一轮
-            # 的三师落点和三师维度分就凭空消失了，只剩一个组件分。
-            scoring_audit=session.step_data.get("component_scoring_audit", {}),
-            timeline=session.step_data.get("dimension_timeline", {}),
-        )
-        _store_dialogue_audit(session.step_data, audit_record)
         session.finished = False
         session.current_step = _dialogue_turn_step(turn_index + 1, assistant_text, next_target)
         session.step_data["next_question"] = assistant_text
@@ -3490,7 +4087,6 @@ async def stream_dialogue_chat_events(
         complete_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
 
         yield "evidence", {"cards": cards_to_json(cards)}
-        yield "audit", audit_record
         yield "identity_cards", {"items": identity_cards}
         yield "radar", _radar_payload(profile)
         # The chips answer the question the user can see now, not the internal
@@ -3500,6 +4096,7 @@ async def stream_dialogue_chat_events(
             target=next_target,
             quick_replies=_dialogue_quick_replies_for_question(assistant_text, asked_dimension or target),
             converged=converged,
+            db_path=db_path,
         )
     except Exception as exc:
         release_dialogue_turn(user_id, session_id, legacy_client_turn_id, db_path=db_path)
@@ -3514,7 +4111,7 @@ async def stream_dialogue_chat_events(
             # Close that message before emitting the recoverable turn error.
             yield "message_done", {}
         yield "error", {"message": "本轮证据整理暂时不可用，已保留对话内容，请稍后重试"}
-        yield "state", _dialogue_state_payload(session, target=target, converged=False, error="profile_update_failed")
+        yield "state", _dialogue_state_payload(session, target=target, converged=False, error="profile_update_failed", db_path=db_path)
     finally:
         if lock.locked():
             lock.release()
@@ -3886,18 +4483,11 @@ async def _dialogue_extract_cards_for_chat(
 
     if isinstance(extraction, dict):
         extraction = DialogueExtraction.model_validate(extraction)
-    if isinstance(extraction, DialogueExtraction):
-        session.step_data["_last_component_contract"] = {
-            "turn_id": extraction.turn_id if extraction.turn_id is not None else turn_index,
-            "combination_type": extraction.combination_type,
-            "extraction_error": extraction.extraction_error,
-            "extraction_method": extraction.extraction_method,
-            "dimension_scan": [item.model_dump(mode="json") for item in extraction.dimension_scan],
-            "atomic_evidence": [item.model_dump(mode="json") for item in extraction.atomic_evidence],
-            "component_collection": [item.model_dump(mode="json") for item in extraction.component_collection],
-            "extraction_method": extraction.extraction_method,
-        }
-    cards = _dialogue_cards_from_extraction(extraction)
+    cards, _rejected = _filter_dialogue_cards(
+        _dialogue_cards_from_extraction(extraction),
+        utterance=utterance,
+        prior_cards=session.evidence_cards,
+    )
     for card in cards:
         card.objective_signal["turn_index"] = turn_index
         card.objective_signal["response_time_ms"] = response_time_ms
@@ -3996,18 +4586,34 @@ def _dialogue_messages_text(messages: list[dict[str, str]]) -> str:
     )
 
 
-async def _profile_from_dialogue_scoring(user_id: str, evidence_cards: list[EvidenceCard]) -> Profile:
+async def _profile_from_dialogue_scoring(
+    user_id: str,
+    evidence_cards: list[EvidenceCard],
+    *,
+    base: Profile | None = None,
+) -> Profile:
     from app.profile.nodes import _profile_from_scoring_results
 
     scoring: dict[DimensionKey, ScoringResult] = await score_profile(evidence_cards)
-    return _profile_from_scoring_results(user_id=user_id, scoring=scoring, evidence_cards=evidence_cards)
+    return _profile_from_scoring_results(
+        user_id=user_id,
+        scoring=scoring,
+        evidence_cards=evidence_cards,
+        base=base,
+    )
 
 
 async def _finish_dialogue_profile_session(session: ProfileSession, *, db_path: Path) -> ProfileSession:
     if session.finished:
         return session
     baseline = _dialogue_radar_baseline(session, db_path=db_path)
-    profile = await _profile_from_dialogue_scoring(session.user_id, session.evidence_cards)
+    # 收尾只重判这一局谈到的维度；档案里其余部分（已确认的学习目标、规划
+    # 参数、之前答过的小测）不属于本局，不能跟着一起重置。
+    profile = await _profile_from_dialogue_scoring(
+        session.user_id,
+        session.evidence_cards,
+        base=get_profile(session.user_id, db_path=db_path),
+    )
     final_radar = _radar_payload(profile)
     changes = _radar_changes(
         baseline,
@@ -4020,12 +4626,6 @@ async def _finish_dialogue_profile_session(session: ProfileSession, *, db_path: 
     session.updated_at = datetime.now(UTC)
     session.step_data["radar_changes"] = changes
     session.step_data["summary_text"] = _radar_summary_text(changes)
-    _dialogue_identity_cards_view(
-        session.evidence_cards,
-        fusion=_dialogue_fusion(session.evidence_cards),
-        step_data=session.step_data,
-        consume_revealed_now=False,
-    )
     # The dialogue entry only stages a proposal; confirmation remains explicit.
     from app.profile.goal_agent import run_goal_agent
 
@@ -4038,11 +4638,15 @@ async def _finish_dialogue_profile_session(session: ProfileSession, *, db_path: 
         proposal = await run_goal_agent(user_goal_text, profile=profile)
         session.step_data["goal_proposal"] = proposal.model_dump(mode="json")
     if not session.persisted:
-        for card in session.evidence_cards:
-            add_evidence(session.user_id, card, db_path=db_path)
-        session.persisted = True
-        session.persisted_db_path = str(db_path)
+        _persist_session_evidence(session, db_path=db_path)
     upsert_profile(profile, db_path=db_path)
+    # 翻开标记要按"刚写进去的这份结论"记，否则记下的是上一版的判定。
+    _dialogue_identity_cards_view(
+        session.evidence_cards,
+        fusion=_dialogue_effective_fusion(session, db_path=db_path),
+        step_data=session.step_data,
+        consume_revealed_now=False,
+    )
     _save_profile_session(session, db_path=db_path)
     return session
 
@@ -4071,8 +4675,9 @@ def _dialogue_state_payload(
     quick_replies: list[str] | None = None,
     converged: bool,
     error: str | None = None,
+    db_path: Path | None = None,
 ) -> dict[str, Any]:
-    fusion = _dialogue_fusion(session.evidence_cards)
+    fusion = _dialogue_effective_fusion(session, db_path=db_path)
     payload: dict[str, Any] = {
         "session_id": session.session_id,
         "turn_index": session.step_index,
@@ -4149,473 +4754,6 @@ def _dialogue_evidence_panel(
         }
         for dimension in DIMENSION_LABELS
     ]
-
-
-def _quality_audit(card: EvidenceCard) -> dict[str, Any]:
-    """把"这条证据的质量分是怎么来的"写清楚，供审计直接展示。
-
-    五项里三项由模型判（表达清晰、内容具体、一致性），两项由规则算
-    （来源可靠看证据类型、新鲜度看来源轮次）。三项模型判断项各有三档区间，
-    模型先判档、再在档内选点；档位由系统按落点反推，所以"档"和"数"不会
-    互相矛盾。五项各占 20%，几何平均后才是这条证据的贡献值——短板会拉低
-    整体，所以一句含糊的话很难靠其余四项撑起来。
-    """
-
-    raw = card.quality_factors or card.objective_signal.get("quality_factors") or {}
-    try:
-        factors = QualityFactors.model_validate(raw) if raw else QualityFactors()
-    except Exception:  # noqa: BLE001 - 历史卡可能存了残缺结构，不能让审计整体失败
-        factors = QualityFactors()
-    model_judged = ["expression_clarity", "content_specificity", "consistency"]
-    rule_computed = ["source_reliability", "freshness"]
-    values = factors.model_dump(mode="json")
-    items = []
-    for key, value in values.items():
-        if not isinstance(value, (int, float)):
-            continue
-        source = "rule" if key in rule_computed else "model"
-        tier = quality_tier_of(float(value)) if source == "model" else None
-        span = QUALITY_FACTOR_TIERS.get(tier) if tier else None
-        items.append({
-            "key": key,
-            "label": QUALITY_FACTOR_LABELS.get(key, key),
-            "value": value,
-            "source": source,
-            "tier": tier,
-            "tier_label": QUALITY_TIER_LABELS.get(tier) if tier else None,
-            "tier_range": [span[0], span[1]] if span else None,
-        })
-    weights = [float(v) for v in values.values() if isinstance(v, (int, float))]
-    formula = (
-        "(" + " × ".join(f"{w:g}" for w in weights) + f")^(1/{len(weights)})"
-        if weights else ""
-    )
-    return {
-        "factors": values,
-        "items": items,
-        "score": geometric_quality(factors),
-        "model_judged": model_judged,
-        "rule_computed": rule_computed,
-        "weight_note": "五项等权，各占 20%，几何平均：短板会明显拉低整体。",
-        "formula": formula,
-        "evidence_type": card.objective_signal.get("evidence_type"),
-        "reason": card.quality_reason or str(card.objective_signal.get("quality_reason") or ""),
-        "thinking": card.quality_thinking or str(card.objective_signal.get("quality_thinking") or ""),
-    }
-
-
-TIMELINE_MAX_TURNS = 24
-
-
-def _card_quality_score(card: EvidenceCard) -> float | None:
-    """证据质量分；算不出来返回 None——一条坏卡不该让整条时间线断掉。"""
-
-    try:
-        value = _quality_audit(card)["score"]
-    except Exception:  # noqa: BLE001 - 审计是旁路，任何异常都不能影响主流程
-        return None
-    return round(float(value), 4) if isinstance(value, (int, float)) else None
-
-
-def _append_dimension_timeline(
-    step_data: dict[str, Any],
-    *,
-    turn_index: int,
-    fusion: dict[DimensionKey, FusionResult],
-    cards: list[EvidenceCard],
-    all_cards: list[EvidenceCard],
-) -> None:
-    """每轮给每个维度记一行「证据 / 质量 / 置信度 / 分数」，跨轮累积。
-
-    置信度每轮重算、维度分只在触发轮变，两个数天然来自不同时刻。以前审计
-    只显示当前值，看到「80 分 + 71%」会以为 80 分是在 71% 下算的。逐轮记
-    一行之后，评分轮那行的置信度就是"评分时"的置信度，不必再单独存快照。
-    """
-
-    timeline = step_data.get("dimension_timeline")
-    if not isinstance(timeline, dict):
-        timeline = step_data["dimension_timeline"] = {}
-    scoring_audit = step_data.get("component_scoring_audit", {})
-    for dimension, result in fusion.items():
-        rows = timeline.get(dimension)
-        if not isinstance(rows, list):
-            rows = timeline[dimension] = []
-        # 同一轮重试或重放时覆盖最后一行，避免出现两条"第 N 轮"。
-        if rows and rows[-1].get("turn") == turn_index:
-            rows.pop()
-        new_scores = [
-            score
-            for score in (_card_quality_score(card) for card in cards if card.dimension == dimension)
-            if score is not None
-        ]
-        all_scores = [
-            score
-            for score in (_card_quality_score(card) for card in all_cards if card.dimension == dimension)
-            if score is not None
-        ]
-        entry = scoring_audit.get(dimension) if isinstance(scoring_audit, dict) else None
-        rows.append(
-            {
-                "turn": turn_index,
-                "evidence": sum(1 for card in all_cards if card.dimension == dimension),
-                "new_evidence": sum(1 for card in cards if card.dimension == dimension),
-                "watermark": _dialogue_evidence_watermark(dimension, all_cards),
-                "confidence": round(float(result.confidence or 0.0), 4),
-                # 本轮新增证据的平均质量（这轮说得清不清楚）与累计平均（证据底子）。
-                "quality_new": round(sum(new_scores) / len(new_scores), 4) if new_scores else None,
-                "quality_avg": round(sum(all_scores) / len(all_scores), 4) if all_scores else None,
-                "score": result.radar_score,
-                "scored_this_turn": bool(isinstance(entry, dict) and entry.get("scoring_turn") == turn_index),
-            }
-        )
-        if len(rows) > TIMELINE_MAX_TURNS:
-            del rows[:-TIMELINE_MAX_TURNS]
-
-
-def _dialogue_audit_record(
-    *,
-    turn_index: int,
-    target: DimensionKey,
-    next_target: DimensionKey,
-    utterance: str,
-    cards: list[EvidenceCard],
-    fusion_before: dict[DimensionKey, FusionResult],
-    fusion: dict[DimensionKey, FusionResult],
-    extraction_contract: dict[str, Any] | None = None,
-    prior_cards: list[EvidenceCard] | None = None,
-    all_cards: list[EvidenceCard] | None = None,
-    scoring_audit: dict[str, Any] | None = None,
-    timeline: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Build a developer-readable trace without exposing prompts or reasoning.
-
-    The record differentiates agent-authored semantic assessments from the
-    system's deterministic quote validation, source grouping and aggregation.
-    It is deliberately a result trace, never a model chain-of-thought dump.
-    """
-
-    evidence: list[dict[str, Any]] = []
-    for card in cards:
-        signal = card.objective_signal
-        assessment = signal.get("agent_assessment")
-        evidence.append(
-            {
-                "dimension": card.dimension,
-                "dimension_label": DIALOGUE_TARGET_LABELS.get(card.dimension, DIMENSION_LABELS[card.dimension]),
-                "fact": card.fact,
-                "normalized_claim": card.normalized_claim,
-                "assessment": signal.get("assessment"),
-                "supports": card.supports or signal.get("supports", []),
-                "evidence_id": card.evidence_id,
-                "quotes": _evidence_quote_texts(card),
-                "basis": card.basis,
-                "extraction_confidence": card.extraction_confidence,
-                "extraction_method": card.extraction_method,
-                "agent_assessment": assessment if isinstance(assessment, dict) else None,
-                "validation": {
-                    "quote_traceable": bool(_evidence_quote_texts(card)),
-                    "same_response_unit": str(signal.get("evidence_unit_id") or ""),
-                },
-                "component": card.component,
-                "evidence_group_id": card.evidence_group_id or signal.get("evidence_group_id"),
-                "source_turn_ids": card.source_turn_ids or [turn_index],
-                "semantic_relation": card.semantic_relation or signal.get("semantic_relation") or "new",
-                "related_evidence_ids": card.related_evidence_ids,
-                "confirmed_aspects": card.confirmed_aspects or signal.get("confirmed_aspects", []),
-                "pending_aspects": card.pending_aspects or signal.get("pending_aspects", []),
-                "quality_factors": card.quality_factors or signal.get("quality_factors", {}),
-                "quality_audit": _quality_audit(card),
-            }
-        )
-    dimensions = []
-    extraction_contract = extraction_contract or {}
-    prior_cards = prior_cards or []
-    all_cards = all_cards or [*prior_cards, *cards]
-    scoring_audit = scoring_audit or {}
-    timeline = timeline or {}
-    scan_by_dimension = {
-        str(item.get("dimension")): item
-        for item in extraction_contract.get("dimension_scan", [])
-        if isinstance(item, dict)
-    }
-    component_collection_by_key = {
-        (str(item.get("dimension")), str(item.get("component"))): item
-        for item in extraction_contract.get("component_collection", [])
-        if isinstance(item, dict)
-    }
-    for dimension, result in fusion.items():
-        before = fusion_before[dimension]
-        dimension_cards = [card for card in cards if card.dimension == dimension]
-        prior_dimension_cards = [card for card in prior_cards if card.dimension == dimension]
-        all_dimension_cards = [card for card in all_cards if card.dimension == dimension]
-        deduplicated_cards, conflict_cards, dropped_evidence_ids = deduplicate_component_cards(all_dimension_cards)
-        scoring_package_cards = [*deduplicated_cards, *conflict_cards]
-        prior_components = {card.component for card in prior_dimension_cards if card.component}
-        collected_components = {card.component for card in all_dimension_cards if card.component and card.collection_status == "scorable"}
-        matrix_before = {component: component in prior_components for component in COMPONENTS[dimension]}
-        matrix_after = {component: component in collected_components for component in COMPONENTS[dimension]}
-        pending_components = [component for component in COMPONENTS[dimension] if component not in collected_components]
-        missing_reasons = {
-            component: next((
-                str(missing)
-                for item in all_dimension_cards if item.component == component
-                for missing in item.pending_aspects if str(missing).strip()
-            ), COMPONENT_RUBRICS[dimension][component]["followup_direction"])
-            for component in pending_components
-        }
-        dimension_scoring = scoring_audit.get(dimension, {}) if isinstance(scoring_audit.get(dimension), dict) else {}
-        scored = dimension_scoring.get("component_scores") or (result.metadata.get("component_collection", {}).get("component_scores", {}) if isinstance(result.metadata.get("component_collection"), dict) else {})
-        missing_scores = [component for component in COMPONENTS[dimension] if component not in scored]
-        # 出分只看覆盖度门槛，不看"组件是否收齐"。4/5 已收集时覆盖 80%、
-        # 门槛已开，维度就有分；旧实现把 5/5 当成出分条件，于是这类维度
-        # 明明有分可算，审计里却写着"评分暂缓"、雷达一直是暗的。
-        scored_coverage = round(len(scored) / len(COMPONENTS[dimension]), 4)
-        if result.radar_score is None:
-            missing_labels = [DIMENSION_COMPONENT_LABELS[dimension][key] for key in pending_components]
-            deferred_reason = (
-                f"评分暂缓：组件覆盖 {len(scored)}/{len(COMPONENTS[dimension])}（{scored_coverage:.0%}）"
-                f"未达 {COVERAGE_THRESHOLD:.0%} 门槛"
-                + (f"，还缺 {', '.join(missing_labels)}" if missing_labels else "")
-                + "。"
-            )
-        else:
-            deferred_reason = None
-        component_records = []
-        rescored_components = set(dimension_scoring.get("rescored_components") or [])
-        carried_components = set(dimension_scoring.get("carried_components") or [])
-        for component in COMPONENTS[dimension]:
-            component_cards = [card for card in all_dimension_cards if card.component == component]
-            rubric = COMPONENT_RUBRICS[dimension][component]
-            score_card = next((card for card in component_cards if isinstance(card.objective_signal.get("component_score"), (int, float))), None)
-            component_records.append({
-                "key": component,
-                "label": DIMENSION_COMPONENT_LABELS[dimension][component],
-                "weight": COMPONENT_WEIGHTS[dimension][component],
-                "rubric": rubric,
-                "collected": matrix_after[component],
-                "score": scored.get(component),
-                # 这个分是刚评的，还是上一轮评完这轮没动？重评只覆盖"证据变了的
-                # 组件"，不区分的话用户会以为所有组件每轮都重新判过。
-                "score_source": (
-                    "rescored" if component in rescored_components
-                    else "carried" if component in carried_components
-                    else None
-                ),
-                "reason": score_card.objective_signal.get("component_score_reason") if score_card else None,
-                "conflict_handling": score_card.objective_signal.get("component_conflict_handling") if score_card else None,
-                "evidence_ids": [card.evidence_id for card in component_cards],
-                # 这个组件的三师落点：审计里要能回答"为什么是 58 分"。
-                "jury": [
-                    {
-                        "teacher": name,
-                        "score": item.get("score"),
-                        "reason": "；".join(str(line) for line in (item.get("reasoning_chain") or []) if str(line).strip()),
-                    }
-                    for name, item in (dimension_scoring.get("component_jury") or {}).get(component, {}).items()
-                    if isinstance(item, dict)
-                ],
-                "jury_mean": scored.get(component),
-            })
-        scan_item = scan_by_dimension.get(dimension, {})
-        assessments = [
-            card.objective_signal.get("agent_assessment")
-            for card in dimension_cards
-            if isinstance(card.objective_signal.get("agent_assessment"), dict)
-        ]
-        confirmed_aspects = list(
-            dict.fromkeys(
-                aspect
-                for assessment in assessments
-                for aspect in assessment.get("confirmed_aspects", [])
-                if isinstance(aspect, str) and aspect.strip()
-            )
-        )[:5]
-        dimensions.append(
-            {
-            "key": dimension,
-            "label": DIALOGUE_TARGET_LABELS.get(dimension, DIMENSION_LABELS[dimension]),
-            "status": "本轮已收集" if dimension_cards else "本轮未收集",
-            "confidence_before": before.confidence,
-            "radar_score": result.radar_score,
-            "confidence": result.confidence,
-            "coverage": result.coverage,
-            "confidence_breakdown": result.confidence_breakdown,
-            "confidence_formula": str(result.metadata.get("confidence_formula") or ""),
-            "radar_formula": str(result.metadata.get("radar_formula") or ""),
-            "confidence_units": result.metadata.get("confidence_units", []),
-            "confirmed_aspects": confirmed_aspects,
-            "unknown_reasons": result.unknown_reasons,
-            "observed_distribution": result.distribution,
-            "evidence_count": len(dimension_cards),
-            "component_collection": result.metadata.get("component_collection", {}),
-            "scoring_deferred": bool(result.metadata.get("component_collection", {}).get("scoring_phase") == "collecting") if isinstance(result.metadata.get("component_collection"), dict) else False,
-            "component_matrix": component_records,
-            "matrix_before": matrix_before,
-            "matrix_after": matrix_after,
-            "pending_components": pending_components,
-            "followup_reasons": missing_reasons,
-            "dimension_scan": scan_item,
-            "score_formula": "Σ(component_score × component_weight)",
-            "score_weight_sum": sum(COMPONENT_WEIGHTS[dimension].values()),
-            "deduplicated_evidence_package": [
-                {
-                    "evidence_id": card.evidence_id,
-                    "component": card.component,
-                    "quote": card.quote,
-                    "claim": card.normalized_claim or card.fact,
-                    "group_id": card.evidence_group_id,
-                    "relation": card.semantic_relation,
-                    "source_turn_ids": card.source_turn_ids,
-                    "conflict": card.semantic_relation == "conflict",
-                    "quality_score": _quality_audit(card)["score"],
-                    "quality_reason": _quality_audit(card)["reason"],
-                }
-                for card in scoring_package_cards
-            ],
-            "confidence_audit": result.metadata.get("component_confidence", {}),
-            "scoring_phase": "scored" if result.radar_score is not None else "collecting",
-            "scoring_provenance": dimension_scoring.get("provenance"),
-            "scoring_attempts": dimension_scoring.get("scoring_attempts", 0),
-            "scoring_turn": dimension_scoring.get("scoring_turn"),
-            # 评分节奏：这次为什么评、下次什么时候评。
-            "scoring_trigger": dimension_scoring.get("scoring_trigger"),
-            "scoring_watermark": dimension_scoring.get("evidence_watermark"),
-            "current_watermark": _dialogue_evidence_watermark(dimension, all_cards),
-            # 逐轮时间线：置信度每轮都动、维度分只在触发轮动，并排看才知道
-            # 当前这个分是哪一轮、在多少置信度下评出来的。
-            "confidence_timeline": timeline.get(dimension) if isinstance(timeline.get(dimension), list) else [],
-            "next_scoring_watermark": (
-                int(dimension_scoring["evidence_watermark"]) + SCORING_RERUN_EVIDENCE_STEP
-                if isinstance(dimension_scoring.get("evidence_watermark"), int) else None
-            ),
-            "rescored_components": sorted(rescored_components),
-            "carried_components": sorted(carried_components),
-            "unscored_components": missing_scores,
-            "dimension_summary": dimension_scoring.get("dimension_summary"),
-            "scoring_input": {
-                "dimension": dimension,
-                "components": [
-                    {
-                        "key": component,
-                        "weight": COMPONENT_WEIGHTS[dimension][component],
-                        "rubric": COMPONENT_RUBRICS[dimension][component],
-                        "deduplicated_evidence": [
-                            {
-                                "evidence_id": card.evidence_id,
-                                "quote": card.quote,
-                                "claim": card.normalized_claim or card.fact,
-                                "source_group": card.evidence_group_id,
-                                "source_turn_ids": card.source_turn_ids,
-                                "turn_label": "、".join(f"第{index}轮" for index in card.source_turn_ids) or "本轮",
-                                "relation": card.semantic_relation,
-                                "quality_score": _quality_audit(card)["score"],
-                            }
-                            for card in scoring_package_cards
-                            if card.component == component and card.semantic_relation != "conflict"
-                        ],
-                        "conflicts": [
-                            {"evidence_id": card.evidence_id, "quote": card.quote, "claim": card.normalized_claim or card.fact}
-                            for card in conflict_cards
-                            if card.component == component
-                        ],
-                        "source_groups": sorted({card.evidence_group_id for card in scoring_package_cards if card.component == component and card.evidence_group_id}),
-                    }
-                    for component in COMPONENTS[dimension]
-                ],
-                "deduplicated_evidence_ids": dropped_evidence_ids,
-            },
-            "scoring_output": [
-                {
-                    "component": component,
-                    "score": scored.get(component),
-                    "source": "rescored" if component in rescored_components else "carried",
-                    "reason": next((card.objective_signal.get("component_score_reason") for card in all_dimension_cards if card.component == component and card.objective_signal.get("component_score_reason")), None),
-                    "conflict_handling": next((card.objective_signal.get("component_conflict_handling") for card in all_dimension_cards if card.component == component and card.objective_signal.get("component_conflict_handling")), None),
-                    "jury": [
-                        {"teacher": name, "score": item.get("score"), "reason": "；".join(str(line) for line in (item.get("reasoning_chain") or []) if str(line).strip())}
-                        for name, item in (dimension_scoring.get("component_jury") or {}).get(component, {}).items()
-                        if isinstance(item, dict)
-                    ],
-                }
-                for component in COMPONENTS[dimension]
-                if component in scored
-            ],
-            # 三师会诊的结构化判分依据：分数、逐条比对摘要、评语。
-            # 这是"模型怎么打分的"唯一可展示来源，不是私有思维链。
-            # 维度级三师现在是"逐组件三师 → 按权重合成"，不是模型另给的一组印象分。
-            "jury_panel": [
-                {
-                    "teacher": name,
-                    "score": item.get("score"),
-                    "reasoning_chain": [str(line) for line in (item.get("reasoning_chain") or []) if str(line).strip()],
-                    "comment": item.get("comment"),
-                }
-                for name, item in (dimension_scoring.get("jury") or {}).items()
-                if isinstance(item, dict)
-            ],
-            "jury_derivation": "每位老师先对自己的组件落点按固定权重合成维度分，再取三人平均；维度分本身仍由组件分加权得出。",
-            "teacher_dimension_scores": dimension_scoring.get("teacher_dimension_scores") or {},
-            "jury_mean": dimension_scoring.get("jury_mean"),
-            "scoring_warnings": dimension_scoring.get("warnings") or [],
-            "scoring_deferred_reason": deferred_reason,
-        }
-        )
-    return {
-        "turn_index": turn_index,
-        "stages": [
-            {"actor": "模型", "label": "七维扫描", "detail": f"{extraction_contract.get('extraction_method', 'unknown')}；扫描 {len(scan_by_dimension)}/7 维；产出 {len(evidence)} 条可追溯原子证据。"},
-            {"actor": "系统", "label": "原话与来源校验", "detail": f"保留 {len(cards)} 条可追溯证据；同轮来源关联按 evidence_group_id 复用，不重复计为独立来源。"},
-            {"actor": "系统", "label": "组件矩阵更新", "detail": f"七维矩阵均已比较本轮前后状态；本轮涉及 {sum(1 for item in dimensions if item['status'] == '本轮已收集')} 个维度。"},
-            {"actor": "模型", "label": "组件评分门禁", "detail": f"已评分 {sum(1 for item in dimensions if item['scoring_phase'] == 'scored')} 个维度；其余维度保留待收组件并暂缓评分。"},
-            {"actor": "系统", "label": "分数与确认度", "detail": "覆盖度达到 60% 的维度进入固定权重统分，未达门槛的维度保留待收组件；确认度只随已出分的维度展示。"},
-            {"actor": "系统", "label": "补问规划", "detail": f"下一目标：{DIALOGUE_TARGET_LABELS.get(next_target, next_target)}；优先补齐该维度仍缺少的组件。"},
-            {"actor": "模型", "label": "回答组织", "detail": "回答模型在扫描、组件缺项和补问目标确定后生成可见回应。"},
-        ],
-        "current_target": target,
-        "next_target": next_target,
-        "user_input": utterance,
-        "model_result": {
-            "method": cards[0].extraction_method if cards else extraction_contract.get("extraction_method", "no_evidence"),
-            "failure_reason": extraction_contract.get("extraction_error"),
-            "scan_available": bool(scan_by_dimension),
-            "scan_complete": set(scan_by_dimension) == set(DIMENSION_LABELS),
-            "collected_count": len(cards),
-            "evidence": evidence,
-            "combination_type": extraction_contract.get("combination_type"),
-            "dimension_scan": [
-                {
-                    "dimension": dimension,
-                    **scan_by_dimension.get(dimension, {
-                        "status": "evidence_found" if any(card.dimension == dimension for card in cards) else "no_usable_evidence",
-                        "reason": "本轮存在可追溯原子证据。" if any(card.dimension == dimension for card in cards) else "模型未返回扫描明细；系统只标记本轮未收集，不推断为低分。",
-                    }),
-                }
-                for dimension in DIMENSION_LABELS
-            ],
-            "component_collection": extraction_contract.get("component_collection", []),
-            "excluded_candidates": [
-                {"dimension": item.get("dimension"), "component": item.get("component"), "reason": item.get("reason")}
-                for scan in scan_by_dimension.values()
-                for item in scan.get("excluded_candidates", [])
-                if isinstance(item, dict)
-            ],
-        },
-        "system_result": {
-            "confidence_explanation": "每个独立来源先计算 证据贡献 x 独立性 x 时间衰减；再用 1-连乘(1-有效贡献) 合并。相同回答只计一个最强单元。",
-            "radar_explanation": "雷达值是模型给出的维度估计按 证据贡献、覆盖度、优先性 和时间衰减加权平均；它不等同于卡牌组成占比。",
-            "dimensions": dimensions,
-        },
-    }
-
-
-def _store_dialogue_audit(step_data: dict[str, Any], record: dict[str, Any]) -> None:
-    existing = _dialogue_developer_audit(step_data)
-    step_data["developer_audit"] = [*existing, record][-24:]
-
-
-def _dialogue_developer_audit(step_data: dict[str, Any]) -> list[dict[str, Any]]:
-    raw = step_data.get("developer_audit")
-    return [item for item in raw if isinstance(item, dict)] if isinstance(raw, list) else []
 
 
 def _dialogue_evidence_collected(
@@ -4732,22 +4870,20 @@ def _identity_distribution_item(
     *,
     keep_revealed: bool,
 ) -> dict[str, Any]:
-    distribution = _normalize_identity_distribution(result.distribution)
-    cards = [
-        {
-            "canonical_label": label,
-            "display_name": _identity_distribution_display_name(dimension, label, evidence_cards),
-            "meaning": _identity_card_meaning(dimension, label, evidence_cards),
-            "ratio": ratio,
-            "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
-            "evidence_refs": _identity_evidence_refs_for_label(dimension, label, evidence_cards),
-        }
-        for label, ratio in distribution.items()
-    ]
     revealable, revealed, revealed_now = _identity_reveal_state(
         dimension, result.confidence, revealed_flags, revealed_now_flags, keep_revealed=keep_revealed,
         component_pending=_dialogue_components_pending(result),
+        adjudicated=_result_is_adjudicated(result),
     )
+    distribution = _normalize_identity_distribution(result.distribution)
+    basis: str = "labels" if distribution else "none"
+    if not distribution and revealed:
+        # 翻开了却没有任何组成，界面就只能显示四张"未成形"的空牌。组成
+        # 不该依赖模型是否顺手给了 distribution：先在证据里找标签，找不到
+        # 就退到"哪些组件已经收集"，比例仍用同一份权重口径。
+        distribution, basis = _derived_dimension_distribution(dimension, evidence_cards)
+    card_name = _identity_composed_card_name(dimension, distribution, evidence_cards)
+    cards = _identity_distribution_cards(dimension, distribution, evidence_cards, basis=basis)
     return _identity_card_view(
         dimension=dimension,
         kind="distribution",
@@ -4759,7 +4895,200 @@ def _identity_distribution_item(
         revealed_now=revealed_now,
         display_value=_dialogue_fusion_value(result),
         distribution=distribution,
+        card_name=card_name,
+        composition_basis=basis if distribution else "none",
+        composition_summary=_identity_composition_summary(distribution, basis),
     )
+
+
+def _identity_distribution_cards(
+    dimension: DimensionKey,
+    distribution: dict[str, float],
+    evidence_cards: list[EvidenceCard],
+    *,
+    basis: str,
+) -> list[dict[str, Any]]:
+    if basis == "components":
+        label_to_component = {
+            name: component
+            for component, name in DIMENSION_COMPONENT_LABELS[dimension].items()
+        }
+        cards: list[dict[str, Any]] = []
+        for label, ratio in distribution.items():
+            component = label_to_component.get(label, "")
+            rubric = COMPONENT_RUBRICS.get(dimension, {}).get(component, {})
+            cards.append(
+                {
+                    "canonical_label": label,
+                    "display_name": label,
+                    "meaning": str(rubric.get("definition") or "该组件已收集到可追溯证据。"),
+                    "ratio": ratio,
+                    "quotes": _component_quotes_for_label(dimension, component, evidence_cards),
+                    "evidence_refs": _component_evidence_refs(dimension, component, evidence_cards),
+                    "component": component,
+                }
+            )
+        return cards
+    return [
+        {
+            "canonical_label": label,
+            "display_name": _identity_distribution_display_name(dimension, label, evidence_cards),
+            "meaning": _identity_card_meaning(dimension, label, evidence_cards),
+            "ratio": ratio,
+            "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
+            "evidence_refs": _identity_evidence_refs_for_label(dimension, label, evidence_cards),
+        }
+        for label, ratio in distribution.items()
+    ]
+
+
+def _component_quotes_for_label(
+    dimension: DimensionKey,
+    component: str,
+    evidence_cards: list[EvidenceCard],
+) -> list[str]:
+    quotes: list[str] = []
+    for card in evidence_cards:
+        if card.dimension != dimension or card.component != component:
+            continue
+        for quote in _evidence_quote_texts(card):
+            if quote not in quotes:
+                quotes.append(quote)
+    return quotes[:3]
+
+
+def _component_evidence_refs(
+    dimension: DimensionKey,
+    component: str,
+    evidence_cards: list[EvidenceCard],
+) -> list[str]:
+    return [
+        f"{card.source}#{index}"
+        for index, card in enumerate(
+            (item for item in evidence_cards if item.dimension == dimension), start=1
+        )
+        if card.component == component
+    ]
+
+
+def _derived_dimension_distribution(
+    dimension: DimensionKey,
+    evidence_cards: list[EvidenceCard],
+) -> tuple[dict[str, float], str]:
+    """Build a composition when the model omitted ``distribution``.
+
+    Labels first (what the user actually said); if no label was ever emitted,
+    fall back to which components already carry evidence. The ratios always sum
+    to 1 and are derived from the same cards the card face cites.
+    """
+
+    weights: dict[str, float] = {}
+    for card in evidence_cards:
+        if card.dimension != dimension or card.collection_status not in (None, "scorable"):
+            continue
+        signal = card.objective_signal or {}
+        base = max(0.1, float(card.weight or 1.0))
+        raw_distribution = signal.get("distribution")
+        if isinstance(raw_distribution, dict):
+            for label, ratio in raw_distribution.items():
+                name = str(label or "").strip()
+                if not name:
+                    continue
+                try:
+                    value = max(0.0, float(ratio))
+                except (TypeError, ValueError):
+                    continue
+                weights[name] = weights.get(name, 0.0) + base * value
+        for key in ("label", "weak_label"):
+            name = str(signal.get(key) or "").strip()
+            if name:
+                weights[name] = weights.get(name, 0.0) + base
+        for name in signal.get("weak_labels") or []:
+            text = str(name or "").strip()
+            if text:
+                weights[text] = weights.get(text, 0.0) + base
+    if weights:
+        total = sum(weights.values())
+        if total > 0:
+            return (
+                {
+                    label: round(value / total, 4)
+                    for label, value in sorted(weights.items(), key=lambda item: (-item[1], item[0]))
+                },
+                "labels",
+            )
+
+    collected = [
+        component
+        for component in COMPONENTS[dimension]
+        if any(
+            card.dimension == dimension
+            and card.component == component
+            # 与标签分支同一口径：没标状态的旧证据也算数。只认 "scorable"
+            # 时，历史卡片会一路走到空组成，牌面又是四张"未成形"。
+            and card.collection_status in (None, "scorable")
+            for card in evidence_cards
+        )
+    ]
+    if collected:
+        # 只要翻开了就必须有牌面。以前要求「至少两个组件」才出牌，于是只收到
+        # 一个组件、又没给 label 的维度翻开后是四张"未成形"——用户看到的是
+        # "你说点亮了，牌是空的"。一个组件就是 100% 的一张牌，占比口径不变。
+        component_weights = COMPONENT_WEIGHTS[dimension]
+        total = sum(component_weights[component] for component in collected)
+        if total > 0:
+            return (
+                {
+                    DIMENSION_COMPONENT_LABELS[dimension][component]: round(component_weights[component] / total, 4)
+                    for component in sorted(collected, key=lambda item: -component_weights[item])
+                },
+                "components",
+            )
+    return {}, "none"
+
+
+def _identity_composed_card_name(
+    dimension: DimensionKey,
+    distribution: dict[str, float],
+    evidence_cards: list[EvidenceCard],
+) -> str:
+    """Name the card from its own composition.
+
+    Preset skins only cover the labels we anticipated. A learner whose intent
+    falls outside them still gets a real name: the strongest label's own words
+    plus a concentration suffix, never a generic "未成形".
+    """
+
+    if not distribution:
+        return ""
+    ordered = sorted(distribution.items(), key=lambda item: (-item[1], item[0]))
+    primary, primary_ratio = ordered[0]
+    skins = IDENTITY_CARD_SKINS.get(dimension, {})
+    generated = _identity_generated_card_name(dimension, primary, evidence_cards)
+    primary_name = generated or skins.get(primary) or primary[:5]
+    second = next(
+        (
+            skins.get(label) or _identity_generated_card_name(dimension, label, evidence_cards) or label[:4]
+            for label, ratio in ordered[1:]
+            if ratio >= 0.25
+        ),
+        "",
+    )
+    if second and second != primary_name:
+        return f"{primary_name}·{second}"
+    suffix = "专" if primary_ratio >= 0.6 else "兼"
+    return f"{primary_name}·{suffix}"
+
+
+def _identity_composition_summary(distribution: dict[str, float], basis: str) -> str:
+    if not distribution:
+        return ""
+    parts = [
+        f"{label} {round(ratio * 100)}%"
+        for label, ratio in sorted(distribution.items(), key=lambda item: (-item[1], item[0]))[:4]
+    ]
+    prefix = "已收集组件构成" if basis == "components" else "已观察到的组成"
+    return f"{prefix}：" + " · ".join(parts)
 
 
 def _identity_level_item(
@@ -4786,6 +5115,7 @@ def _identity_level_item(
     revealable, revealed, revealed_now = _identity_reveal_state(
         dimension, result.confidence, revealed_flags, revealed_now_flags, keep_revealed=keep_revealed,
         component_pending=_dialogue_components_pending(result),
+        adjudicated=_result_is_adjudicated(result),
     )
     return _identity_card_view(
         dimension=dimension,
@@ -4815,19 +5145,17 @@ def _identity_tags_item(
         for label, ratio in fused_distribution.items()
         if _identity_has_weak_point_evidence(label, evidence_cards)
     }
-    cards = [
-        {
-            "label": label,
-            "strength": _identity_tag_strength(dimension, label, evidence_cards),
-            "quotes": _identity_quotes_for_label(dimension, label, evidence_cards),
-            "evidence_refs": _identity_evidence_refs_for_label(dimension, label, evidence_cards),
-        }
-        for label in distribution
-    ]
     revealable, revealed, revealed_now = _identity_reveal_state(
         dimension, result.confidence, revealed_flags, revealed_now_flags, keep_revealed=keep_revealed,
         component_pending=_dialogue_components_pending(result),
+        adjudicated=_result_is_adjudicated(result),
     )
+    if revealed and not distribution:
+        # 翻开了就必须有牌面：薄弱点没有独立标签时，退到已收集的组件构成。
+        distribution, basis = _derived_dimension_distribution(dimension, evidence_cards)
+    else:
+        basis = "labels"
+    cards = _identity_distribution_cards(dimension, distribution, evidence_cards, basis=basis)
     return _identity_card_view(
         dimension=dimension,
         kind="tags",
@@ -4837,9 +5165,31 @@ def _identity_tags_item(
         revealable=revealable,
         revealed=revealed,
         revealed_now=revealed_now,
-        display_value=cards[0]["label"] if cards else "待取证",
+        # 牌面取值统一走 display_name：组成卡的字面标签是 `display_name`
+        # （`label` 属于另一套结构）。按 `["label"]` 取会直接 KeyError，而这条
+        # 路径只在「薄弱点已评分并翻开」时才走到——正是档案里最亮的那一维。
+        display_value=_identity_card_headline(cards) if cards else "待取证",
         distribution=distribution,
+        # 薄弱点也得说清"是什么占了多少"：只有条目没有摘要，用户看到一排
+        # 没有比例的标签，等于又回到空牌面。
+        composition_basis=basis if distribution else "none",
+        composition_summary=_identity_composition_summary(distribution, basis),
     )
+
+
+def _identity_card_headline(cards: list[dict[str, Any]]) -> str:
+    """取最强的那张组成卡作为牌面主值，取不到就退回"已成形"。"""
+
+    if not cards:
+        return "待取证"
+    strongest = max(cards, key=lambda item: float(item.get("ratio") or 0.0))
+    return str(strongest.get("display_name") or strongest.get("canonical_label") or "已成形")
+
+
+def _result_is_adjudicated(result: FusionResult) -> bool:
+    """这条融合结论是不是"已经判过"的（取自档案，而不是现算的规则融合）。"""
+
+    return bool(isinstance(result.metadata, dict) and result.metadata.get("adjudicated"))
 
 
 def _identity_reveal_state(
@@ -4850,6 +5200,7 @@ def _identity_reveal_state(
     *,
     keep_revealed: bool,
     component_pending: bool = False,
+    adjudicated: bool = False,
 ) -> tuple[bool, bool, bool]:
     if component_pending:
         # A partial component set must not reveal a final identity card or
@@ -4857,7 +5208,10 @@ def _identity_reveal_state(
         revealed_flags.pop(dimension, None)
         revealed_now_flags.discard(dimension)
         return False, False, False
-    revealable = confidence >= LOW_CONFIDENCE_THRESHOLD
+    # 已经判定的维度必须翻开：档案里它明明有结论，只因为这里重算的规则置信度
+    # 比 0.5 低就退回"待取证"，用户看到的就是"档案和刚聊完的画像不是同一份"。
+    # 置信度低只该影响措辞（已收集到 / 区间宽），不该决定"有没有结论"。
+    revealable = adjudicated or confidence >= LOW_CONFIDENCE_THRESHOLD
     previous = bool(revealed_flags.get(dimension))
     revealed = revealable or (keep_revealed and previous)
     if revealable and not previous:
@@ -4884,6 +5238,9 @@ def _identity_card_view(
     revealed_now: bool,
     display_value: str,
     distribution: dict[str, float] | None = None,
+    card_name: str = "",
+    composition_basis: str = "none",
+    composition_summary: str = "",
 ) -> dict[str, Any]:
     """Serialize an identity card without deriving another score or confidence."""
 
@@ -4894,7 +5251,14 @@ def _identity_card_view(
         revealable = False
         revealed = False
         revealed_now = False
-    confidence_status = "已取证" if revealable else "待取证"
+    # 三档，和弟子档案同一套口径：有材料但没到结论 = "已收集到"，不是"待取证"。
+    # 以前只有两档，于是同一个维度在档案里显示"已收集到 33 分"、在对话里显示
+    # "待取证"，用户以为两边读的不是同一份画像。
+    has_dimension_evidence = any(card.dimension == dimension for card in evidence_cards)
+    confidence_status = (
+        "已取证" if revealable and result.confidence >= LOW_CONFIDENCE_THRESHOLD
+        else ("已收集到" if (revealable or has_dimension_evidence) else "待取证")
+    )
     provenance = _identity_provenance(dimension, evidence_cards)
     if not any(card.dimension == dimension for card in evidence_cards):
         pending_reason = "尚未收集该维度的可追溯证据。"
@@ -4923,6 +5287,9 @@ def _identity_card_view(
         confidence_breakdown=result.confidence_breakdown,
         display_value=display_value,
         distribution=distribution or {},
+        card_name=card_name,
+        composition_basis=cast(Any, composition_basis),
+        composition_summary=composition_summary,
         items=items,
         cards=items,
         evidence_refs=result.evidence_refs,
@@ -4983,6 +5350,8 @@ def _identity_tag_strength(dimension: DimensionKey, label: str, evidence_cards: 
 def _identity_has_weak_point_evidence(label: str, evidence_cards: list[EvidenceCard]) -> bool:
     return any(
         card.dimension == "weak_points"
+        # 页面级埋点（跳过「画像引导」）不是学业薄弱点，不能挂到牌面上。
+        and weak_point_label_of(card) is not None
         and _identity_label_vote_weight(card.objective_signal, label, dimension="weak_points") > 0
         and (
             card.claim_status == "verified"
@@ -5173,18 +5542,31 @@ def _profile_from_fusion(
     evidence_cards: list[EvidenceCard],
     *,
     fusion: dict[DimensionKey, FusionResult] | None = None,
+    base: Profile | None = None,
 ) -> Profile:
-    profile = create_blank_profile(user_id)
+    """把融合结果写进画像。
+
+    ``base`` 是合并底座（数据库里已有的那份档案）。不给底座就等于"用这一局的
+    证据重新造一份画像"——每次对话推进都这么写一遍，会把用户之前确认过的学习
+    目标、规划参数、以及本局没提到的维度一起抹成默认值。档案不是本局对话的
+    快照，只在有证据的维度上被这一局改写。
+    """
+
+    profile = base.model_copy(deep=True) if base is not None else create_blank_profile(user_id)
     fused = fusion or fuse_profile(evidence_cards)
     for dimension in DIMENSION_LABELS:
         result = fused[dimension]
         target = getattr(profile, dimension)
+        cards = [card for card in evidence_cards if card.dimension == dimension]
+        if base is not None and not cards:
+            # 这一局完全没谈这个维度：一分不动，否则档案会被逐轮掏空。
+            continue
         target.confidence = result.confidence
         target.radar_score = result.radar_score
         target.coverage = result.coverage
         target.unknown_reasons = result.unknown_reasons
         target.confidence_breakdown = result.confidence_breakdown
-        target.evidence = [card for card in evidence_cards if card.dimension == dimension]
+        target.evidence = cards
         target.narrative = result.narrative
         gate = result.metadata.get("component_collection")
         if isinstance(gate, dict):

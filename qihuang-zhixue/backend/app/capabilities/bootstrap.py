@@ -7,9 +7,17 @@
 from __future__ import annotations
 
 from . import registry
+from .handlers import doc as doc_handlers
 from .handlers import kb as kb_handlers
 from .handlers import mindmap as mindmap_handlers
+from .handlers import plan as plan_handlers
+from .handlers import path_focus as path_focus_handlers
+from .handlers import plan_present as plan_present_handlers
+from .handlers import ppt as ppt_handlers
+from .handlers import profile as profile_handlers
+from .handlers import quiz as quiz_handlers
 from .handlers import resource as resource_handlers
+from .handlers import story as story_handlers
 from . import kg_bridge
 
 _INSTALLED = False
@@ -22,6 +30,22 @@ def install(*, force: bool = False) -> None:
     if force:
         registry.clear()
     for spec, handler in mindmap_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in ppt_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in doc_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in quiz_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in story_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in profile_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in plan_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in plan_present_handlers.SPECS:
+        registry.register(spec, handler)
+    for spec, handler in path_focus_handlers.SPECS:
         registry.register(spec, handler)
     for spec, handler in resource_handlers.SPECS:
         registry.register(spec, handler)

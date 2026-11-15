@@ -5,9 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from app.api.auth import router as auth_router
+from app.assistant.api import router as assistant_router
 from app.capabilities.http import router as capabilities_router
 from app.api.chat import router as chat_router
 from app.api.learning import router as learning_router
+from app.api.meridian import router as meridian_router
 from app.api.immersive import router as immersive_router
 from app.api.path import router as path_router
 from app.api.profile import router as profile_router
@@ -36,6 +38,7 @@ app.include_router(chat_router)
 app.include_router(profile_router)
 app.include_router(learning_router)
 app.include_router(path_router)
+app.include_router(meridian_router)
 app.include_router(resources_router)
 app.include_router(graph_router)
 app.include_router(kg_router)
@@ -43,6 +46,7 @@ app.include_router(immersive_router)
 app.include_router(quiz_router)
 app.include_router(mistakes_router)
 app.include_router(capabilities_router)
+app.include_router(assistant_router)
 
 
 @app.get("/health")

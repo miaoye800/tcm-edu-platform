@@ -27,7 +27,6 @@ export type MenuItem = {
   /** 角标由真实数据算出来，不能写死数字——写死就等于对学生撒谎。 */
   dynamicBadge?: 'mistakeCount'
   badge?: string | number
-  assistantTrigger?: boolean
   disabled?: boolean
 }
 
@@ -80,8 +79,8 @@ export const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    group: '浮层',
-    items: [{ icon: MagicStick, label: '学习助手·小岐', route: '/assistant', assistantTrigger: true }],
+    group: '助手',
+    items: [{ icon: MagicStick, label: 'AI 服务助手', route: '/assistant' }],
   },
 ]
 

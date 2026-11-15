@@ -191,7 +191,7 @@ def test_generate_content_doc_returns_document_payload(monkeypatch) -> None:
     from app.resources import service as resource_service
 
     class _FakeAgent:
-        async def generate(self, request: str, docs=None) -> DocResult:  # noqa: ANN001
+        async def generate(self, request: str, docs=None, **_kwargs) -> DocResult:  # noqa: ANN001
             return DocResult(
                 title="人参三周学习计划",
                 blocks=[{"id": "b1", "type": "paragraph", "text": "正文"}],
@@ -209,3 +209,98 @@ def test_generate_content_doc_returns_document_payload(monkeypatch) -> None:
     assert content["source_mode"] == "general"
     assert content["blocks"][0]["type"] == "paragraph"
     assert sources == []
+
+
+# ── 定向补篇幅（_expand_once）──────────────────────────────────────────────
+
+
+class _StubRouter:
+    """记调用、按序回话的路由替身。select 必须返回非 MockClient，否则补篇幅直接跳过。"""
+
+    def __init__(self, replies: list[str]) -> None:
+        self.replies = list(replies)
+        self.calls: list[list[dict[str, str]]] = []
+
+    def select(self, task_type: str) -> object:
+        return object()
+
+    async def chat(self, task_type: str, messages: list[dict[str, str]], **_kwargs) -> str:
+        self.calls.append(messages)
+        return self.replies.pop(0)
+
+
+def _expand_spec() -> "DocSpec":
+    from app.docs.spec import DocSectionSpec, DocSpec
+
+    return DocSpec(
+        title="人参入门",
+        genre="explain",
+        target_words=2000,
+        sections=[
+            DocSectionSpec(heading="性味归经", goal="记药性", must_cover=["四气五味"]),
+            DocSectionSpec(heading="怎么用", goal="会用", must_cover=["剂量"]),
+        ],
+    )
+
+
+_SHORT_MARKDOWN = (
+    "## 性味归经\n\n甘、微苦，微温。\n\n## 怎么用\n\n3~9g，煎服。\n\n"
+)
+
+
+def test_expand_once_grows_thin_sections() -> None:
+    """两节都远低于目标：扩写回来的版本要被采用，标题一字不改。"""
+
+    long_body = "人参味甘微苦，性微温，归脾肺心经。" * 30
+    expanded = f"## 性味归经\n\n{long_body}\n\n## 怎么用\n\n{long_body}\n"
+    agent = DocAgent()
+    agent.router = _StubRouter([expanded])
+
+    result = asyncio.run(agent._expand_once(_SHORT_MARKDOWN, _expand_spec(), "人参"))
+
+    assert result is not _SHORT_MARKDOWN
+    assert "性味归经" in result and "怎么用" in result
+    assert len(result) > len(_SHORT_MARKDOWN) * 3, "采用的前提是真的变长了"
+
+
+def test_expand_once_rejects_same_length_rewrite() -> None:
+    """模型把话换个说法不叫扩写：没变长就交原稿。"""
+
+    agent = DocAgent()
+    agent.router = _StubRouter([_SHORT_MARKDOWN])
+
+    result = asyncio.run(agent._expand_once(_SHORT_MARKDOWN, _expand_spec(), "人参"))
+
+    assert result == _SHORT_MARKDOWN
+
+
+def test_expand_once_skips_when_words_already_met() -> None:
+    """字数到位就不再打扰模型：路由一次都不能被调。"""
+
+    agent = DocAgent()
+    agent.router = _StubRouter([])
+    spec = _expand_spec().model_copy(update={"target_words": 60})
+
+    result = asyncio.run(agent._expand_once(_SHORT_MARKDOWN, spec, "人参"))
+
+    assert result == _SHORT_MARKDOWN
+    assert agent.router.calls == []
+
+
+def test_expand_once_keeps_injected_llm_call_contract() -> None:
+    """注入式 llm_call 的调用次数契约：补篇幅不得多打电话。"""
+
+    markdown = _SHORT_MARKDOWN
+    calls: list[int] = []
+
+    async def fake_llm(messages: list[dict[str, str]]) -> str:
+        calls.append(len(messages))
+        return markdown
+
+    async def run() -> object:
+        agent = DocAgent(llm_call=fake_llm)
+        return await agent._expand_once(_SHORT_MARKDOWN, _expand_spec(), "人参")
+
+    result = asyncio.run(run())
+    assert result == _SHORT_MARKDOWN
+    assert calls == [], "注入式调用方自己管整段文本，补篇幅不得插手"

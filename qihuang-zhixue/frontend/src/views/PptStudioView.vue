@@ -1,6 +1,7 @@
 <template>
   <main class="studio" data-qh-theme="light">
     <PptTopicPanel :studio="studio" />
+    <PlanReview v-if="phase === 'awaiting-plan' && plan" :plan="plan" :design="design" :busy="planBusy" :error="errorMessage" @revise="revisePlan" @confirm="confirmPlan" @cancel="cancelPlan" />
 
     <section class="sheet">
       <!-- 稿头：左「稿名 + 体量」，右一把工具。放在舞台之外，不遮纸面内容。 -->
@@ -10,8 +11,9 @@
           <p class="deck-meta">
             <template v-if="hasSlides">
               {{ slides.length }} 页 · {{ stats.bullets }} 条要点 · {{ groundedLabel }}
+              <template v-if="varietyLabel"> · {{ varietyLabel }}</template>
             </template>
-            <template v-else>立骨 → 谋篇 → 敷演 → 校色</template>
+            <template v-else>{{ flowLabel }}</template>
           </p>
         </div>
 
@@ -29,6 +31,17 @@
         />
       </header>
 
+      <!-- 逐页核对：只报问题，不偷偷改内容。没问题时不占版面。 -->
+      <p v-if="deckIssues.length || deckRevised.length || (deckCheck && (deckCheck.missing.length || deckCheck.duplicates.length || deckCheck.empty || deckCheck.bad_sources))" class="verify-line">
+        <span class="verify-tag">核对</span>
+        <!-- 重写过的页要说一声：正文变了却不明说，用户会以为是自己记错了。 -->
+        <span v-if="deckRevised.length">已重写第 {{ deckRevised.map((item) => item.page).join('、') }} 页（装不下 / 空页 / 引用越界），其余页未动</span>
+        <span v-if="deckCheck?.missing.length">方案里这几页没落：{{ deckCheck.missing.join('、') }}</span>
+        <span v-if="deckCheck?.duplicates.length">标题重复：{{ deckCheck.duplicates.join('、') }}</span>
+        <span v-for="page in deckIssues" :key="page.index">
+          第 {{ page.index + 1 }} 页「{{ page.title }}」：{{ page.issues.join('、') }}
+        </span>
+      </p>
       <div class="stage-zone">
         <div class="stage-wrap">
           <DeckStage
@@ -37,6 +50,7 @@
             :current="current"
             :theme-id="themeId"
             :deck-title="deckName"
+            :design="deckDesign"
             @update="updateSlide(current, $event)"
             @update-column="applyColumn"
             @add-bullet="addBullet(current)"
@@ -86,6 +100,7 @@
         :slides="slides"
         :current="current"
         :theme-id="themeId"
+        :design="deckDesign"
         :limit="SLIDE_LIMITS.slides"
         @select="goTo"
         @add="addSlide"
@@ -112,21 +127,26 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ensurePptFonts } from '../utils/pptFonts'
 import { StateEmpty, StateError, StateLoading } from '../components/state'
 import DeckStage from '../components/ppt/DeckStage.vue'
 import OutlineConfirm from '../components/ppt/OutlineConfirm.vue'
+import PlanReview from '../components/resources/PlanReview.vue'
 import PptToolbar from '../components/ppt/PptToolbar.vue'
 import PptTopicPanel from '../components/ppt/PptTopicPanel.vue'
 import SlideFilmstrip from '../components/ppt/SlideFilmstrip.vue'
 import { usePptStudio } from '../composables/usePptStudio'
 import { SLIDE_LIMITS } from '../types/ppt'
+import { isDeckDesign } from '../types/design'
 
-/** 每道工序在空态里的一句话，替用户说清「现在在等什么」。 */
+/** 每道工序在空态里的一句话，替用户说清「现在在等什么」。id 与 v3 工序表对应。 */
 const STEP_HINTS: Record<string, string> = {
-  frame: '先搭骨架：封面、章节、收束',
-  outline: '再排页序：每页讲哪一件事',
-  compose: '逐页敷演：把要点摊成能讲的话',
-  polish: '最后校色：换纸、对齐、收口',
+  plan: '先拟方案：讲给谁、分几页、每页讲哪件事',
+  design: '再定版式：纸面、密度、图位，逐页配版式原型',
+  select: '去找图：库里有就用，没有退母题，实在没有改版式',
+  compose: '逐页成稿：把要点摊成能讲的话',
+  verify: '最后校验：依据是否越界、页是否超载',
+  seal: '封存入库：一份能直接讲、能直接导出的稿',
 }
 
 const route = useRoute()
@@ -136,7 +156,17 @@ const {
   phase,
   errorMessage,
   stepStates,
+  steps,
   outline,
+  plan,
+  planBusy,
+  design,
+  revisePlan,
+  confirmPlan,
+  cancelPlan,
+  deckCheck,
+  deckPages,
+  deckRevised,
   deckTitle,
   title,
   slides,
@@ -163,6 +193,7 @@ const {
   loadNodes,
   refreshRecent,
   openResource,
+  restoreTask,
   reloadFromServer,
   keepMine,
 } = studio
@@ -170,6 +201,14 @@ const {
 const exporting = ref(false)
 
 const hasSlides = computed(() => slides.value.length > 0)
+
+/**
+ * 舞台要的是「幻灯设计单」，不是三选一的设计单。
+ * 文稿/导图任务也会下发 design，用 isDeckDesign 判一次，避免把体裁单当版式单读。
+ */
+const deckDesign = computed(() => (isDeckDesign(design.value) ? design.value : null))
+/** 有问题的页（最多三条）：指出第几页错在哪，比「共 2 页有问题」有用。 */
+const deckIssues = computed(() => deckPages.value.filter((page) => page.issues.length).slice(0, 3))
 /**
  * 稿名取封面页的标题，而不是只取模型给的 deck_title：
  * 用户在大纲里改了封面、或在纸面上直接改，稿头必须跟着变，否则一份稿两个名字。
@@ -185,7 +224,24 @@ const groundedLabel = computed(() =>
   stats.value.grounded >= stats.value.slides ? '每页有据' : `${stats.value.grounded}/${stats.value.slides} 页有据`,
 )
 
+/**
+ * 版式多样性：用户抱怨过「十二页里八九页长得一样」，所以这一条要常驻稿头，
+ * 而不是等出错才显示。数字来自后端 `deck_conformance`，前端不自己数。
+ */
+const varietyLabel = computed(() => {
+  const variety = deckCheck.value?.variety
+  if (!variety || !variety.pages) return ''
+  const parts = [`${variety.role_variety} 种版式`]
+  // 「配图 N 页」= 真的有图的页数。以前写成 `N/M 页配图`，M 是方案里要图位的页、
+  // N 却是「有任何引用」的页（纸纹也算），读起来像自相矛盾。
+  if (variety.with_figure) parts.push(`配图 ${variety.with_figure} 页`)
+  if (variety.monotone) parts.push(`连续 ${variety.longest_run} 页同一版式`)
+  return parts.join(' · ')
+})
+
 const activeStep = computed(() => stepStates.value.find((item) => item.state === 'active') ?? null)
+/** 空态那行小字：工序名直接来自服务端，加一步不会漏写。 */
+const flowLabel = computed(() => steps.value.map((step) => step.label).join(' → '))
 const loadingTitle = computed(() => (activeStep.value ? `正在${activeStep.value.label}` : '正在起稿'))
 const loadingHint = computed(() => {
   const id = activeStep.value?.id
@@ -223,6 +279,8 @@ const exportPptx = async () => {
       title: deckName.value,
       themeId: themeId.value,
       slides: slides.value,
+      // 场景里的文字只声明 display / body 角色，真正的字族由设计单的字对决定。
+      fontPairId: deckDesign.value?.type_pair,
     })
     ElMessage.success(`已导出 ${filename}`)
   } catch (error) {
@@ -234,8 +292,13 @@ const exportPptx = async () => {
 }
 
 onMounted(async () => {
+  // 思源宋/黑 + 霞鹜文楷的分片 webfont：幻灯文字全靠这三族，按需加载。
+  ensurePptFonts()
   void loadNodes()
   void refreshRecent()
+  // 刷新回来先认任务：待确认的方案还在服务端，不该重开一份新的。
+  const pending = route.query.task
+  if (typeof pending === 'string' && pending) await restoreTask(pending)
   const target = route.query.resource
   if (typeof target === 'string' && target) await openResource(target)
 })
@@ -303,6 +366,30 @@ onMounted(async () => {
   font-size: var(--qh-text-footnote);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.3px;
+}
+
+/* 核对条：只陈述事实，不做「已为您优化」这类自我表扬。 */
+.verify-line {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 7px 18px;
+  border-bottom: 1px solid var(--qh-line);
+  background: color-mix(in srgb, var(--qh-ochre-300) 16%, transparent);
+  color: var(--qh-fg-muted);
+  font-size: var(--qh-text-footnote);
+  line-height: 1.5;
+}
+
+.verify-tag {
+  padding: 1px 6px;
+  border-radius: var(--qh-radius-pill);
+  background: color-mix(in srgb, var(--qh-ochre-500) 22%, transparent);
+  color: var(--qh-ochre-600);
+  letter-spacing: 0.5px;
 }
 
 /*

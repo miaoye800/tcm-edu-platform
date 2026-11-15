@@ -32,8 +32,9 @@ import { gsap } from 'gsap'
 import xiaoqi from '../assets/mascot/xiaoqi.png'
 import { assessmentVisual as visual } from '../config/assessment'
 import { useAssessmentStore } from '../stores/assessment'
+import { usePathStore } from '../stores/path'
 import type { AssessmentQuestion } from '../types/assessment'
-const route = useRoute(); const router = useRouter(); const store = useAssessmentStore(); const nodeId = computed(() => String(route.params.nodeId || 'herb_mahuang')); const nodeLabel = computed(() => {
+const route = useRoute(); const router = useRouter(); const store = useAssessmentStore(); const pathStore = usePathStore(); const nodeId = computed(() => String(route.params.nodeId || 'herb_mahuang')); const nodeLabel = computed(() => {
   // 兜底不能写死某味药。现在只有沉浸层一个入口会带 label（`ImmersiveLayer`
   // push 时传 `query.label`），直接访问 `/assessment/<nodeId>` 时没有这个参数，
   // 旧代码就显示成「麻黄」——实测 d17.s1.p1（黄芪）标题写着麻黄，题目却是黄芪。
@@ -56,7 +57,33 @@ const sourceLabel = (q: AssessmentQuestion) =>
 const sourceDetail = (q: AssessmentQuestion) => Object.entries(q.source_detail).map(([k, v]) => `${k}: ${v}`).join('\n')
 const resetTimer = () => { window.clearInterval(timer); remaining.value = store.currentGate?.recommended_seconds || 0; if (store.currentGate?.id === 'quick') timer = window.setInterval(() => { remaining.value -= 1; if (remaining.value <= 0) { window.clearInterval(timer); if (selected.value) void submit(); } }, 1000) }
 const submit = async () => { if (!selected.value) return; if (store.currentGate?.id === 'case' && caseStep.value < 2) { caseStep.value += 1; return } const before = performance.now(); const grade = await store.submit(selected.value, Math.round((store.currentGate?.recommended_seconds || 0) - remaining.value + (performance.now() - before) / 1000)); if (!grade) return; if (grade.correct) { correctFlash.value = true; await nextTick(); if (card.value) gsap.fromTo(card.value, { boxShadow: '0 0 0 0 var(--qh-accent)' }, { boxShadow: '0 0 0 26px transparent', duration: .46 }); window.setTimeout(() => correctFlash.value = false, 470) } else { wrongFlash.value = true; if (card.value) gsap.fromTo(card.value, { x: -5 }, { x: 5, duration: .045, repeat: 3, yoyo: true, clearProps: 'x' }); window.setTimeout(() => wrongFlash.value = false, visual.wrongFlashMs) } window.setTimeout(() => { selected.value = ''; caseStep.value = 0; store.next(); resetTimer() }, visual.quickTransitionMs) }
-const requestExit = () => { exitVisible.value = true }; const returnToMap = () => router.push({ path: '/path', query: { [visual.passReturnQuery]: nodeId.value } }); const restart = () => void store.begin(nodeId.value); const openRemediation = () => router.push({ path: '/resources', query: { node_id: store.result?.remediation?.node_id || nodeId.value } })
+const requestExit = () => { exitVisible.value = true }
+/**
+ * 回地图之前先走一次 `complete`。
+ *
+ * 判卷本身只记分数；「学完这一关、进度往前推一格、该补救的插一关」这些是
+ * L3 调整的产出。不调这一步，用户过了关回到地图，`current` 还停在原处——
+ * 这是 P0-3 记的那个断点。
+ *
+ * 目标 id 用后端算出来的 `kc_node_id`：从沉浸层进来时带的是图谱实体
+ * （`herb_mahuang`），地图按知识树点 id 组织，直接拿原 id 跳会落空。
+ */
+const returning = ref(false)
+const returnToMap = async () => {
+  if (returning.value) return
+  returning.value = true
+  const target = store.result?.kc_node_id || nodeId.value
+  try {
+    await pathStore.complete(target)
+  } catch {
+    // 判卷时后端已经落了 completed；这里失败只意味着「跳级/补救」没算成，
+    // 不该把已经过关的人堵在结果页。
+  } finally {
+    returning.value = false
+    void router.push({ path: '/path', query: { [visual.passReturnQuery]: target } })
+  }
+}
+const restart = () => void store.begin(nodeId.value); const openRemediation = () => router.push({ path: '/resources', query: { node_id: store.result?.remediation?.node_id || nodeId.value } })
 watch(() => question.value?.id, () => resetTimer()); watch(() => store.result?.score, (score) => { if (score == null) return; gsap.to(scoreDisplay, { value: score, duration: .72, ease: 'power2.out', snap: { value: 1 } }); if (store.result?.passed) nextTick(() => { if (seal.value) gsap.fromTo(seal.value, { scale: 1.5, opacity: 0, filter: 'blur(4px)' }, { scale: 1, opacity: 1, filter: 'blur(0px)', duration: visual.sealMs / 1000, ease: 'back.out(2)' }) }) }); onMounted(() => void store.begin(nodeId.value)); onBeforeUnmount(() => window.clearInterval(timer))
 </script>
 <style scoped lang="scss">

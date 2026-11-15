@@ -74,7 +74,8 @@ def test_identity_card_contract_is_stable_for_all_seven_dimensions() -> None:
         assert required <= item.keys()
         assert item["label"] == DIMENSION_LABELS[item["key"]]
         assert item["confidence"] == fused[item["key"]].confidence
-        assert item["confidence_status"] in {"待取证", "已取证"}
+        # 三档口径：有结论但置信度低、有材料但没到结论，都不该被写成"已取证"。
+        assert item["confidence_status"] in {"待取证", "已收集到", "已取证"}
         assert item["cards"] == item["items"]
         assert item["provenance"] == "no_key_rule_fallback"
 
@@ -96,6 +97,105 @@ def test_distribution_items_are_exact_fusion_ratios_with_traceable_quotes() -> N
     for entry in item["items"]:
         assert entry["evidence_refs"]
         assert all(quote in {card.quote for card in cards} for quote in entry["quotes"])
+
+
+def test_revealed_card_without_model_distribution_still_shows_composition() -> None:
+    """翻开牌却四张全空——因为组成只认模型顺手给的 distribution。
+
+    现在翻开的牌必须自带组成：先按用户说过的标签算比例，没有标签就按已收集
+    的组件算，并且一定要报出牌名与占比摘要。
+    """
+
+    cards = [
+        _card("learning_goal", {"label": "应试提分", "component_score": 78}, "明年考药师，先把药性补上")
+        .model_copy(update={"component": "goal_specificity"}),
+        _card("learning_goal", {"label": "临床实用", "component_score": 66}, "也想看懂门诊的方子")
+        .model_copy(update={"component": "action_orientation"}),
+        _card("learning_goal", {"label": "应试提分", "component_score": 70}, "先把考试顶过去")
+        .model_copy(update={"component": "priority_signal"}),
+    ]
+    fused = modes._dialogue_fusion(cards)
+    item = next(
+        entry
+        for entry in modes._dialogue_identity_cards_view(
+            cards, fusion=fused, revealed_flags={"learning_goal": True}
+        )
+        if entry["key"] == "learning_goal"
+    )
+
+    assert item["revealed"] is True, "这份证据已经够翻牌"
+    assert item["distribution"], "翻开的牌不能没有组成"
+    assert abs(sum(item["distribution"].values()) - 1.0) < 0.01, "占比要归一"
+    assert len(item["items"]) >= 1 and all(entry.get("ratio") for entry in item["items"])
+    assert item["composition_basis"] == "labels"
+    assert item["card_name"], "预设之外的组合也要有牌名"
+    assert "%" in item["composition_summary"]
+
+
+def test_revealed_card_falls_back_to_collected_components() -> None:
+    """一条标签都没有时，用"哪些组件已经收集"当组成，牌面不留白。"""
+
+    cards = [
+        _card("motivation", {"component_score": 72}, "我自己想把这事弄明白")
+        .model_copy(update={"component": "intrinsic_value"}),
+        _card("motivation", {"component_score": 55}, "还是想弄明白")
+        .model_copy(update={"component": "actual_investment"}),
+        _card("motivation", {"component_score": 60}, "先做完手上的事")
+        .model_copy(update={"component": "external_commitment"}),
+    ]
+    fused = modes._dialogue_fusion(cards)
+    item = next(
+        entry
+        for entry in modes._dialogue_identity_cards_view(
+            cards, fusion=fused, revealed_flags={"motivation": True}
+        )
+        if entry["key"] == "motivation"
+    )
+
+    assert item["revealed"] is True
+    assert item["composition_basis"] == "components", "没有标签时必须退回组件构成"
+    assert item["distribution"], "组件回退也要给比例"
+    assert abs(sum(item["distribution"].values()) - 1.0) < 0.01
+    assert item["card_name"], "组件构成也要能报出牌名"
+    assert "已收集组件构成" in item["composition_summary"]
+    assert len(item["items"]) >= 2, "翻开的牌至少要有两张非空牌面"
+
+
+def test_revealed_card_with_single_component_is_not_blank() -> None:
+    """只收到一个组件、又没有标签时，翻开必须有一张 100% 的牌。
+
+    旧实现要求"至少两个组件"才回退到组件构成，于是这类维度翻开后是四张
+    "未成形"——用户看到的是"你说点亮了，牌是空的"。
+    """
+
+    from app.profile.fusion import FusionResult
+
+    cards = [
+        _card("learning_goal", {}, "我想考公务员").model_copy(
+            update={"component": "goal_specificity", "collection_status": "scorable"}
+        )
+    ]
+    result = FusionResult(
+        dimension="learning_goal",
+        dimension_label="学习目标",
+        score=60,
+        label=None,
+        distribution={},
+        confidence=0.66,
+        variance=0.0,
+        evidence_refs=[],
+        narrative="",
+    )
+    item = modes._identity_distribution_item(
+        "learning_goal", result, cards, {}, set(), keep_revealed=True
+    )
+
+    assert item["revealed"] is True
+    assert item["composition_basis"] == "components"
+    assert item["distribution"] == {"目标具体度": 1.0}
+    assert len(item["items"]) == 1
+    assert item["items"][0]["ratio"] == 1.0
+    assert item["card_name"], "单组件也要报得出牌名"
 
 
 def test_goal_answer_can_form_multiple_short_named_cards() -> None:
@@ -206,7 +306,7 @@ def test_low_confidence_card_stays_pending_with_an_explanation() -> None:
     assert item["revealable"] is False
     assert item["revealed"] is False
     assert item["revealed_now"] is False
-    assert item["confidence_status"] == "待取证"
+    assert item["confidence_status"] == "已收集到"
     assert item["pending_reason"]
     assert "0/5" in item["pending_reason"]
     assert "评分暂缓" in item["pending_reason"]
@@ -268,3 +368,40 @@ def test_finish_repeat_and_reload_do_not_repeat_revealed_now(tmp_path: Path) -> 
     assert all(not item["revealed_now"] for item in reloaded_summary["identity_cards"])
     assert all(not item["revealed"] for item in reloaded_summary["identity_cards"])
     assert len(list_evidence(session.user_id, db_path=db_path)) == len(session.evidence_cards)
+
+
+def test_dialogue_session_inherits_persisted_evidence_without_duplicating_it(tmp_path: Path) -> None:
+    """对话要接住用户已经攒下的证据，收尾时又不能把它们再插一遍。
+
+    以前对话会话从零开始：先走完收徒剧情、再开对话，牌阵是空的，弟子档案
+    却是亮的——同一份证据给了两个答案。证据本来就都在同一个库里，缺的只是
+    "读回来"。
+    """
+
+    db = tmp_path / "inherit.db"
+    from app.profile.store import add_evidence, list_evidence
+
+    story_card = _card("motivation", {"label": "内驱"}, "我自己想把这事弄明白").model_copy(
+        update={"component": "intrinsic_value", "collection_status": "scorable", "evidence_id": "ev-story-1"}
+    )
+    add_evidence("u-inherit", story_card, db_path=db)
+
+    session = modes.start_profile_session("u-inherit", "dialogue", db_path=db)
+    assert [card.evidence_id for card in session.evidence_cards] == ["ev-story-1"]
+
+    # 牌阵要认得出剧情留下的动机证据：置信度不再是从零，且没翻开时说明缺什么。
+    identity = modes._dialogue_identity_cards_view(session.evidence_cards)
+    motivation = next(item for item in identity if item["key"] == "motivation")
+    assert motivation["confidence"] > 0
+    assert motivation["revealed"] is False
+    assert motivation["pending_reason"], "没翻开的牌必须说明还差什么，而不是空白"
+
+    # 本轮新证据正常入库，继承来的那条不重复插入。
+    fresh = _card("learning_goal", {"label": "应试提分"}, "我想考公务员").model_copy(
+        update={"component": "goal_specificity", "collection_status": "scorable", "evidence_id": "ev-new-1"}
+    )
+    session.evidence_cards.append(fresh)
+    modes._finish_profile_session(session, db_path=db)
+
+    stored = list_evidence("u-inherit", db_path=db)
+    assert sorted(card.evidence_id for card in stored) == ["ev-new-1", "ev-story-1"]

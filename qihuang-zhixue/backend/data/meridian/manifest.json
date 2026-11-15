@@ -1,0 +1,81 @@
+{
+  "geometry_version": "bodyparts3d4@tcm3d-e8b9ad1c-skin1",
+  "source": {
+    "repo": "JICio/tcm-3d",
+    "commit": "e8b9ad1c17e67a25e94406100e3fb5c296c24f7a",
+    "atlas_url": "https://raw.githubusercontent.com/JICio/tcm-3d/e8b9ad1c17e67a25e94406100e3fb5c296c24f7a/public/models/atlas.json",
+    "surface_url": "https://raw.githubusercontent.com/JICio/tcm-3d/e8b9ad1c17e67a25e94406100e3fb5c296c24f7a/app/meridian-surface.json"
+  },
+  "licenses": [
+    {
+      "asset": "coordinates",
+      "license": "MIT",
+      "holder": "© JIC contributors",
+      "note": "穴位体表坐标由 JIC 人工标定并吸附到 BodyParts3D 表面；未经过逐穴临床校核。"
+    },
+    {
+      "asset": "geometry",
+      "license": "CC BY 4.0",
+      "holder": "© The Database Center for Life Science (BodyParts3D 4.0)",
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "changes": "抽取 integumentary 系统（FJ2810）单独打包；肌肉层做体素简化；坐标轴与单位沿用上游（米 / Y 轴向上）。"
+    }
+  ],
+  "attribution": "人体几何来自 BodyParts3D 4.0（© DBCLS，CC BY 4.0），经由 JICio/tcm-3d@e8b9ad1c 适配与吸附；本项目仅抽取皮肤单件并重新打包，肌肉层经体素简化。穴位坐标为 JIC contributors（MIT）人工标定，未经临床校核。",
+  "assets": [
+    {
+      "name": "skin",
+      "bytes": 1040772,
+      "gzip_bytes": 585251,
+      "sha256": "eec96ee4759544639110a4adb3d927096ef5cbb788096c26f153dd2c95def61b",
+      "vertex_count": 22902,
+      "triangles": 44744,
+      "attributes": [
+        "position",
+        "normal",
+        "index",
+        "part"
+      ],
+      "part_offset": 949164,
+      "part_count": 1,
+      "url": "/api/meridian/asset/skin.bin.gz"
+    },
+    {
+      "name": "muscle",
+      "bytes": 2885032,
+      "gzip_bytes": 1407410,
+      "sha256": "b9bb3ac2bbac9cd5678a43ca74f0b2189dd303ecc7a7477366bded6a923352ba",
+      "vertex_count": 43997,
+      "triangles": 159758,
+      "attributes": [
+        "position",
+        "normal",
+        "index",
+        "part"
+      ],
+      "part_offset": 2709044,
+      "part_count": 402,
+      "url": "/api/meridian/asset/muscle.bin.gz"
+    },
+    {
+      "name": "skeleton",
+      "bytes": 2700388,
+      "gzip_bytes": 1442189,
+      "sha256": "be02d081da80cb011ab82add50ad03aaa9cbb11e264533dd072faee81e13a8a4",
+      "vertex_count": 52991,
+      "triangles": 127882,
+      "attributes": [
+        "position",
+        "normal",
+        "index",
+        "part"
+      ],
+      "part_offset": 2488424,
+      "part_count": 296,
+      "url": "/api/meridian/asset/skeleton.bin.gz"
+    }
+  ],
+  "points": 670,
+  "paths": 26,
+  "first_screen_bytes": 585251
+}

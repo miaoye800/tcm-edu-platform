@@ -555,7 +555,6 @@ def test_17_story_five_acts_collect_at_least_three_components_per_dimension() ->
     import asyncio
 
     from app.profile.modes import (
-        _build_herb_questions,
         _card,
         _identity_cards,
         _learning_rule_cards,
@@ -563,6 +562,7 @@ def test_17_story_five_acts_collect_at_least_three_components_per_dimension() ->
         _quiz_cards,
         _resource_card,
         _story_extra_cards,
+        _vary_herb_questions,
         load_diagnostic_questions,
     )
 
@@ -573,7 +573,12 @@ def test_17_story_five_acts_collect_at_least_three_components_per_dimension() ->
         {"story_answers": {"extra_goal_scene": "想跟门诊抄方，明年春天上手", "extra_goal_priority": "配伍剂量"}},
         source="序幕·叩问初心",
     )
-    quiz = load_diagnostic_questions(limit=5, photo_ready_only=True) + _build_herb_questions(limit=3)
+    # 识药就是五味有图的药，题型轮换（功效 / 性味 / 使用注意 / 相似药）。
+    quiz = _vary_herb_questions(load_diagnostic_questions(limit=5, photo_ready_only=True))
+    assert len(quiz) == 5, "识药题固定五味药，不再追加派生题"
+    assert {question.get("question_type") for question in quiz if question.get("question_type")} >= {
+        "nature_flavor", "caution", "similar_herb",
+    }, "五题要覆盖性味 / 使用注意 / 相似药，不能只考功效"
     answers = []
     for index, question in enumerate(quiz):
         picked = question["answer"] if index < 2 else question["options"][0]

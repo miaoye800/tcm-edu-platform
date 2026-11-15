@@ -1,7 +1,10 @@
-import type { EvidenceCard, GoalCandidate, IdentityCardView, ProfileBuildMode, ProfileDeveloperAuditRecord, ProfileNarrative, ProfileResponse, ProfileSessionResponse, ProfileTrust } from '../types/profile'
+import type { EvidenceCard, GoalCandidate, IdentityCardView, ProfileBuildMode, ProfileNarrative, ProfileResponse, ProfileSessionResponse, ProfileTrust } from '../types/profile'
 import { authHeaders, handleUnauthorized, requestJson, requestResponse } from './request'
 
-const PROFILE_TIMEOUT_MS = 800
+// 画像档案是整页的主数据，一次读要带上七维、证据与变迁录。它以前给了 800ms
+// 预算，超时就把整页换成空白兜底——后端只要冷启动一次，用户就会看到"画像空
+// 了、证据没了"。读取本身已经是纯读（毫秒级），这里给一个正常请求的预算即可。
+const PROFILE_TIMEOUT_MS = 15_000
 const PROFILE_NARRATIVE_TIMEOUT_MS = 8_000
 const PROFILE_STREAM_CONNECT_TIMEOUT_MS = 10_000
 // Finishing the story flow runs the evidence extraction (three batches, real
@@ -13,7 +16,7 @@ const PROFILE_SESSION_FINISH_TIMEOUT_MS = 90_000
 export const readProfile = (pagination?: { limit?: number; offset?: number }): Promise<ProfileResponse> =>
   requestJson<ProfileResponse>(`/api/profile?limit=${pagination?.limit ?? 20}&offset=${pagination?.offset ?? 0}`, undefined, {
     timeoutMs: PROFILE_TIMEOUT_MS,
-    timeoutMessage: '画像档案加载超时，已切换为本地兜底数据',
+    timeoutMessage: '画像档案加载超时，请稍后重试',
   })
 
 export const readProfileTrust = (): Promise<ProfileTrust> => requestJson<ProfileTrust>('/api/profile/trust')
@@ -65,6 +68,26 @@ export const startProfileSession = (mode: ProfileBuildMode): Promise<ProfileSess
 export const readProfileSession = (sessionId: string): Promise<ProfileSessionResponse> =>
   requestJson<ProfileSessionResponse>(`/api/profile/session/${encodeURIComponent(sessionId)}`)
 
+export type ProfileSessionHistoryItem = {
+  session_id: string
+  mode: ProfileBuildMode
+  finished: boolean
+  turn_index: number
+  created_at: string
+  updated_at: string
+  evidence_count: number
+  message_count: number
+  last_user_message: string
+}
+
+/**
+ * 历史会话由后端按 user_id 给出。
+ *
+ * 会话 id 以前只存在前端 sessionStorage 里，关掉浏览器就再也回不到那次对话。
+ */
+export const listProfileSessions = (mode?: ProfileBuildMode, limit = 20): Promise<{ items: ProfileSessionHistoryItem[]; total: number }> =>
+  requestJson(`/api/profile/sessions?limit=${limit}${mode ? `&mode=${encodeURIComponent(mode)}` : ''}`)
+
 export const answerProfileSession = (
   sessionId: string,
   stepId: string,
@@ -92,7 +115,6 @@ export type ProfileDialogueStreamEvent =
   | { event: 'replace'; data: { text?: string } }
   | { event: 'message_done'; data: Record<string, never> }
   | { event: 'evidence'; data: { cards?: EvidenceCard[] } }
-  | { event: 'audit'; data: ProfileDeveloperAuditRecord }
   | { event: 'identity_cards'; data: { items?: IdentityCardView[] } }
   | { event: 'radar'; data: NonNullable<ProfileSessionResponse['radar']> }
   | { event: 'state'; data: Partial<ProfileSessionResponse> & { converged?: boolean; target?: string | null; target_label?: string | null; error?: string } }
@@ -136,7 +158,7 @@ export const streamProfileDialogueChat = async (
 
   if (!response.ok || !response.body) {
     const detail = await readStreamError(response)
-    if (response.status === 409) throw new Error(detail || '鏈疆瀵硅瘽姝ｅ湪澶勭悊涓紝璇峰嫙閲嶆柊鎻愪氦')
+    if (response.status === 409) throw new Error(detail || '本轮对话正在处理中，请勿重复提交')
     if (response.status >= 500) throw new Error('无法连接画像服务，请确认后端已启动后重试')
     if (response.status === 404) throw new Error(detail || '画像会话已过期，请重新开始')
     throw new Error(detail || `对话流请求失败：${response.status}`)

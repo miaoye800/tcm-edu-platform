@@ -171,13 +171,24 @@ async def _assert_quiz_agent_outputs_valid_questions() -> None:
 
 
 def test_node_resource_task_sse_resume_and_library(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """新流程：先给方案，确认后才生成；续跑不重跑已完成的步骤。
+
+    这条测试同时守住三件事：
+      1. 未确认前不产生任何正文事件（没有 block / done）；
+      2. 确认时提交的**改过的方案**就是生成输入（不是重新拟一份）；
+      3. 断线重连从 plan 之后继续，step_start 与 step_done 一一对应。
+    """
+
     db_path = tmp_path / "qihuang.db"
     upsert_node({"id": "mahuang", "name": "麻黄", "level": "point"}, db_path)
     app.dependency_overrides[get_resource_db_path] = lambda: db_path
 
-    async def stub(resource_type: str, topic: str):
+    seen: dict[str, object] = {}
+
+    async def stub(resource_type: str, topic: str, **kwargs):
         assert topic == "麻黄"
         if resource_type == "doc":
+            seen["plan"] = (kwargs.get("params") or {}).get("confirmed_plan")
             return ({"blocks": [{"type": "heading", "text": "麻黄"}, {"type": "paragraph", "text": "发汗解表 [0]"}]}, [{"出处": "本草纲目", "原文摘录": "麻黄", "定位": "草部"}])
         return ({"nodes": []}, [])
 
@@ -193,19 +204,51 @@ def test_node_resource_task_sse_resume_and_library(tmp_path: Path, monkeypatch: 
     first = asyncio.run(anext(iterator))
     asyncio.run(iterator.aclose())
     assert first["event"] == "step_start"
-    remaining = asyncio.run(_collect(resource_service.stream_task(task_id, session["user"]["user_id"], db_path)))
-    assert remaining[0]["event"] == "step_done"
-    events = [first, *remaining]
+
+    paused = asyncio.run(_collect(resource_service.stream_task(task_id, session["user"]["user_id"], db_path)))
+    # v3：plan 之后不再直接暂停——先出设计单，方案与设计同批确认。
+    sequence = [event["event"] for event in paused]
+    assert sequence[-1] == "pause" and "design" in sequence
+    assert paused[-1]["payload"]["reason"] == "await_plan"
+    plan = next(event for event in paused if event["event"] == "plan")["payload"]["plan"]
+    assert next(event for event in paused if event["event"] == "design")["payload"]["design"]
+    assert plan["kind"] == "doc"
+    assert plan["units"] and plan["goal"]
+    assert set(plan["evidence"]) == {"knowledge_base", "user_material", "model"}
+    assert "block" not in [event["event"] for event in paused], "未确认方案就生成了正文"
+
+    task = resource_storage.get_task(task_id, session["user"]["user_id"], db_path)
+    assert task["status"] == "pending"
+    assert task["steps_done"]["plan"]["goal"] == plan["goal"]
+
+    # 用户改掉第一节标题再确认：生成必须读这一版。
+    edited = json.loads(json.dumps(plan, ensure_ascii=False))
+    edited["units"][0]["label"] = "我改过的第一节"
+    edited["units"][0]["intent"] = "按我的要求先讲结论"
+    confirmed = client.post(
+        f"/api/resource/tasks/{task_id}/plan/confirm",
+        json={"plan": edited},
+        headers=session["headers"],
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    assert confirmed.json()["plan"]["units"][0]["label"] == "我改过的第一节"
+
+    events = asyncio.run(_collect(resource_service.stream_task(task_id, session["user"]["user_id"], db_path)))
     assert events[-1]["event"] == "done"
     starts = [event for event in events if event["event"] == "step_start"]
     dones = [event for event in events if event["event"] == "step_done"]
-    assert len(starts) == len(dones) == 5
+    assert len(starts) == len(dones) == 3, "plan 已确认，续跑只剩三步"
     assert [event["payload"]["block"]["text"] for event in events if event["event"] == "block"] == ["麻黄", "发汗解表 [0]"]
+    assert "doc_verify" in [event["event"] for event in events]
+    assert seen["plan"]["units"][0]["label"] == "我改过的第一节", "生成阶段没有使用确认方案"
 
     resource_id = events[-1]["payload"]["resource_id"]
     detail = client.get(f"/api/resources/{resource_id}", headers=session["headers"])
     assert detail.status_code == 200
     assert detail.json()["content"]["blocks"][1]["text"] == "发汗解表 [0]"
+    # 方案与校验结果随成品落库：刷新后仍能追溯
+    assert detail.json()["meta"]["plan"]["units"][0]["label"] == "我改过的第一节"
+    assert detail.json()["meta"]["verify"]["sections"] == 1
     favorite = client.post(f"/api/resources/{resource_id}/favorite", headers=session["headers"])
     assert favorite.json()["favorited"] is True
     listing = client.get("/api/resources", params={"node_id": "mahuang", "type": "doc", "favorited": True, "q": "麻黄"}, headers=session["headers"])
@@ -228,7 +271,7 @@ def test_doc_task_uses_params_topic(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     seen: dict[str, str] = {}
 
-    async def stub(resource_type: str, topic: str):
+    async def stub(resource_type: str, topic: str, **kwargs):
         if resource_type == "doc":
             seen["topic"] = topic
             return ({"blocks": [{"type": "heading", "text": topic}]}, [])
@@ -243,7 +286,15 @@ def test_doc_task_uses_params_topic(tmp_path: Path, monkeypatch: pytest.MonkeyPa
         headers=session["headers"],
     )
     assert created.status_code == 201, created.text
-    events = asyncio.run(_collect(resource_service.stream_task(created.json()["task_id"], session["user"]["user_id"], db_path)))
+    task_id = created.json()["task_id"]
+
+    paused = asyncio.run(_collect(resource_service.stream_task(task_id, session["user"]["user_id"], db_path)))
+    plan = next(event for event in paused if event["event"] == "plan")["payload"]["plan"]
+    assert plan["goal"].endswith("五行学说的临床应用") or "五行学说的临床应用" in plan["goal"]
+    confirmed = client.post(f"/api/resource/tasks/{task_id}/plan/confirm", json={"plan": plan}, headers=session["headers"])
+    assert confirmed.status_code == 200, confirmed.text
+
+    events = asyncio.run(_collect(resource_service.stream_task(task_id, session["user"]["user_id"], db_path)))
     assert events[-1]["event"] == "done"
     assert seen["topic"] == "五行学说的临床应用"
     # 标题同样跟随自由主题（_task_topic），资源卡不再显示「中药学总论」。

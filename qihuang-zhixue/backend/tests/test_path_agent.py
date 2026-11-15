@@ -141,7 +141,11 @@ def test_llm_strict_edge_violation_is_rejected_to_topological_order() -> None:
     result = asyncio.run(PathAgent(_context(), llm_call=invalid_llm).plan_l1())
 
     assert [stage.domain_id for stage in result.plan.stages] == ["general", "d_exam", "d_fun"]
-    assert "当前按先修拓扑" in result.suggestion
+    # 从"整单退回底稿"改成"单条拒 + 说清楚修了什么"：模型的话保留，但必须交代
+    # 哪一处被内核按拓扑改掉了，否则用户看到的是自己没同意过的顺序。
+    assert "违规提前解表药" in result.suggestion
+    assert "违反先修边" in result.suggestion
+    assert [item["code"] for item in result.proposal["rejected"]] == ["proposal.strict_conflict"]
 
 
 def test_llm_failure_does_not_raise_and_disables_aggressive_parameters() -> None:

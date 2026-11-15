@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "note": "由 backend/app/ppt/channels.py 生成，不要手改。",
+  "channels": [
+    {
+      "id": "local.heritage",
+      "cls": "A",
+      "label": "Heritage Library 复古插画",
+      "what": "修复过的彩版博物画：花鸟、海星贝壳、陶罐花器、浮世绘菊、水墨飞燕",
+      "how": "按 subject 查 registry.json，直接拿 file",
+      "purposes": [
+        "western-deco",
+        "oriental-deco"
+      ],
+      "license": "Heritage-Free",
+      "persist": "library",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "ready",
+      "note": "CC0 但明文禁止再配布素材文件本身；只在成品里用，不提供下载",
+      "entry": "",
+      "scale": "43 条"
+    },
+    {
+      "id": "local.herbs",
+      "cls": "A",
+      "label": "饮片实拍（本地 CC0）",
+      "what": "黄芪、党参、太子参、陈皮、金银花的饮片实拍",
+      "how": "按 subject 查 registry，slot_class=evidence",
+      "purposes": [
+        "herb-evidence"
+      ],
+      "license": "CC0",
+      "persist": "library",
+      "slot_classes": [
+        "evidence",
+        "decorative"
+      ],
+      "status": "ready",
+      "note": "只覆盖五味药；缺的药必须降级，不许拿别的药顶替",
+      "entry": "",
+      "scale": "5 条"
+    },
+    {
+      "id": "api.wellcome",
+      "cls": "B",
+      "label": "Wellcome Collection",
+      "what": "中医古籍图谱：《本草品汇精要》明抄彩绘 92 张、《本草纲目》1590 刻本 148 张、针灸图、17 世纪本草",
+      "how": "GET /catalogue/v2/images?query=；图像走 IIIF /image/{id}/full/1200,/0/default.jpg",
+      "purposes": [
+        "herb-evidence",
+        "oriental-deco"
+      ],
+      "license": "pdm / cc-by / cc-by-nc（逐条取 license 字段）",
+      "persist": "url-only",
+      "slot_classes": [
+        "evidence",
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "IIIF 带 CORS、缓存 28 天；只取 pdm 与 cc-by，cc-by-nc 仅限装饰位",
+      "entry": "https://api.wellcomecollection.org/catalogue/v2/images",
+      "scale": "300+ 条"
+    },
+    {
+      "id": "api.cleveland",
+      "cls": "B",
+      "label": "Cleveland Museum of Art",
+      "what": "中国书画绢本、陶瓷、器物；`chinese painting` 命中 951 件水墨",
+      "how": "GET /api/artworks?q=；原图建议经 wsrv 代理",
+      "purposes": [
+        "oriental-deco",
+        "pattern"
+      ],
+      "license": "CC0",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "免 key；API 有 CORS，原图无 CORS 需 wsrv；1600px 代理后约 32KB",
+      "entry": "https://openaccess-api.clevelandart.org/api",
+      "scale": ""
+    },
+    {
+      "id": "api.iconify",
+      "cls": "B",
+      "label": "Iconify（含微软 Fluent / 菜鸟 / Phosphor）",
+      "what": "二十万级图标，SVG，支持 currentColor 自动跟随文字色",
+      "how": "GET /{prefix}:{name}.svg；前缀列表见 collections",
+      "purposes": [
+        "icon"
+      ],
+      "license": "按图标集（Fluent 为 MIT，菜鸟为自定义）",
+      "persist": "library",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "图标首选。MIT 类可落盘，自定义许可的只 pin URL",
+      "entry": "https://api.iconify.design",
+      "scale": ""
+    },
+    {
+      "id": "api.smithsonian",
+      "cls": "B",
+      "label": "Smithsonian Open Access",
+      "what": "植物标本、民俗器物、馆藏照片",
+      "how": "GET /openaccess/api/v1.0/search?q=&api_key=",
+      "purposes": [
+        "photo",
+        "oriental-deco"
+      ],
+      "license": "CC0 为主，部分受限",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "DEMO_KEY 限 30 次/小时，正式使用需申请 key",
+      "entry": "https://api.si.edu/openaccess/api/v1.0",
+      "scale": ""
+    },
+    {
+      "id": "api.met",
+      "cls": "B",
+      "label": "The Met",
+      "what": "中国陶瓷、绘画、织物",
+      "how": "GET /public/collection/v1.1/search?q=&limit=（v1 已于 2026-10 退休）",
+      "purposes": [
+        "oriental-deco",
+        "pattern"
+      ],
+      "license": "CC0（须查 isPublicDomain）",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "命中率高但公开域比例低，必须先看 isPublicDomain 再取图",
+      "entry": "https://collectionapi.metmuseum.org/public/collection/v1.1",
+      "scale": ""
+    },
+    {
+      "id": "api.vam",
+      "cls": "B",
+      "label": "V&A",
+      "what": "中国纹样、外销瓷、装饰图案",
+      "how": "GET /v2/objects/search?q=&page_size=",
+      "purposes": [
+        "pattern",
+        "oriental-deco"
+      ],
+      "license": "多为 CC BY",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "适合做纹样底，不适合做主图；CC BY 必须带 attribution",
+      "entry": "https://api.vam.ac.uk/v2",
+      "scale": ""
+    },
+    {
+      "id": "api.phylopic",
+      "cls": "B",
+      "label": "PhyloPic",
+      "what": "生物单色剪影（动植物轮廓）",
+      "how": "GET /images?filter_name={分类单元}&build=562",
+      "purposes": [
+        "silhouette",
+        "icon"
+      ],
+      "license": "CC0 / CC BY",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "必须带 build 参数，否则 307 重定向后取不到内容；适合章节页极简符号",
+      "entry": "https://api.phylopic.org",
+      "scale": ""
+    },
+    {
+      "id": "web.opendoodles",
+      "cls": "C",
+      "label": "Open Doodles",
+      "what": "手绘涂鸦人物与小物",
+      "how": "按站点分组页取名，无检索",
+      "purposes": [
+        "hand-drawn",
+        "western-deco"
+      ],
+      "license": "商用与个人均免费，无需署名",
+      "persist": "library",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "九条 C 类里唯一许可最干净的一条，可以落盘",
+      "entry": "https://www.opendoodles.com",
+      "scale": ""
+    },
+    {
+      "id": "web.pngimg",
+      "cls": "C",
+      "label": "pngimg",
+      "what": "透明底实物抠图（约 12 万张，34 个分类，**无中草药类目**）",
+      "how": "只能按分类页取；直链无 CORS，必须经 wsrv 代理",
+      "purposes": [
+        "photo",
+        "icon"
+      ],
+      "license": "CC BY-NC 4.0",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "演示期放行（记入 DEMO_ONLY_LICENSES），商业化前必须逐条替换；无搜索接口",
+      "entry": "https://pngimg.com",
+      "scale": "约 12 万"
+    },
+    {
+      "id": "web.unsplash",
+      "cls": "C",
+      "label": "Unsplash",
+      "what": "通用实拍照片、纹理",
+      "how": "图床直链 https://images.unsplash.com/photo-{id}；官方 API 需 key",
+      "purposes": [
+        "photo",
+        "texture"
+      ],
+      "license": "Unsplash License（可商用、不可转售）",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "`source.unsplash.com` 已下线；没有 key 就没有检索，只能走人工清单",
+      "entry": "https://unsplash.com",
+      "scale": ""
+    },
+    {
+      "id": "web.pexels",
+      "cls": "C",
+      "label": "Pexels",
+      "what": "通用实拍照片",
+      "how": "CDN 直链可用，API 暂停签发",
+      "purposes": [
+        "photo",
+        "texture"
+      ],
+      "license": "Pexels License",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "blocked",
+      "note": "CDN 200 + CORS + 1 年缓存，但 API 不签发，只能人工准备 URL 清单",
+      "entry": "https://www.pexels.com",
+      "scale": ""
+    },
+    {
+      "id": "web.linustock",
+      "cls": "C",
+      "label": "Linustock",
+      "what": "日式线描插画",
+      "how": "按分类页取，只能 pin URL",
+      "purposes": [
+        "hand-drawn"
+      ],
+      "license": "禁止再配布",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "**只能运行时引用，绝不能下载进仓库**——进了就是再配布",
+      "entry": "https://www.linustock.com",
+      "scale": ""
+    },
+    {
+      "id": "web.enpitsu-sozai",
+      "cls": "C",
+      "label": "えんぴつ素材",
+      "what": "铅笔手绘小素材",
+      "how": "按分类页取，只能 pin URL",
+      "purposes": [
+        "hand-drawn"
+      ],
+      "license": "禁止再配布",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "同上，只 pin 不落盘",
+      "entry": "https://enpitsu-sozai.com",
+      "scale": ""
+    },
+    {
+      "id": "web.rakugakiicon",
+      "cls": "C",
+      "label": "らくがきアイコン",
+      "what": "涂鸦风图标",
+      "how": "按分类页取，只能 pin URL",
+      "purposes": [
+        "hand-drawn",
+        "icon"
+      ],
+      "license": "禁止再配布",
+      "persist": "url-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "verified",
+      "note": "同上，只 pin 不落盘",
+      "entry": "https://rakugakiicon.com",
+      "scale": ""
+    },
+    {
+      "id": "gen.image",
+      "cls": "D",
+      "label": "文生图",
+      "what": "无对应素材时的兜底灵感图",
+      "how": "POST 生图接口，返回文件路径",
+      "purposes": [
+        "western-deco",
+        "hand-drawn"
+      ],
+      "license": "自产",
+      "persist": "memory-only",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "ready",
+      "note": "每份稿 ≤3 张；**禁止进证据位**；必须记 prompt/model/seed，否则不可复现",
+      "entry": "",
+      "scale": ""
+    },
+    {
+      "id": "param.motif",
+      "cls": "E",
+      "label": "参数化母题",
+      "what": "纸底 3、远山 2、角花 3、界格 2、印章 1、水纹 1，共 14 个，代码现场生成 SVG",
+      "how": "给母题 id + 参数对象，渲染层出 SVG",
+      "purposes": [
+        "texture",
+        "pattern",
+        "icon"
+      ],
+      "license": "无（自产）",
+      "persist": "library",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "ready",
+      "note": "零成本零风险，**应当优先于任何远程渠道**；同一母题换参数即换样子",
+      "entry": "",
+      "scale": "14 个"
+    },
+    {
+      "id": "font.pair",
+      "cls": "F",
+      "label": "字体对",
+      "what": "八套「标题 + 正文」组合：宋楷、楷宋、黑宋、思源宋、思源黑、仿宋、隶楷、行楷",
+      "how": "设计单里给 type_pair id，渲染层读两个 CSS 变量",
+      "purposes": [
+        "icon"
+      ],
+      "license": "系统字体",
+      "persist": "library",
+      "slot_classes": [
+        "decorative"
+      ],
+      "status": "ready",
+      "note": "**PPTX 不能嵌入字体**，导出只写字体名，放映端没有就替换",
+      "entry": "",
+      "scale": "8 套"
+    }
+  ],
+  "routes": {
+    "herb-evidence": [
+      "local.herbs",
+      "api.wellcome"
+    ],
+    "oriental-deco": [
+      "param.motif",
+      "api.wellcome",
+      "api.cleveland",
+      "api.met",
+      "api.vam",
+      "local.heritage"
+    ],
+    "western-deco": [
+      "local.heritage",
+      "web.opendoodles",
+      "gen.image"
+    ],
+    "icon": [
+      "param.motif",
+      "api.iconify",
+      "api.phylopic",
+      "web.rakugakiicon"
+    ],
+    "silhouette": [
+      "param.motif",
+      "api.phylopic"
+    ],
+    "texture": [
+      "param.motif",
+      "web.unsplash",
+      "web.pexels"
+    ],
+    "photo": [
+      "web.unsplash",
+      "web.pexels",
+      "web.pngimg",
+      "api.smithsonian"
+    ],
+    "pattern": [
+      "param.motif",
+      "api.vam",
+      "api.met",
+      "api.cleveland"
+    ],
+    "hand-drawn": [
+      "web.opendoodles",
+      "web.linustock",
+      "web.enpitsu-sozai",
+      "param.motif"
+    ]
+  },
+  "hint": "你可以从这些渠道取素材，按用途查 routes：\n- A 本地库（local.herbs / local.heritage）零成本，先查；\n- B 有检索 API（wellcome / cleveland / iconify / phylopic …）可以换词重搜；\n- C 无检索站点只能在分类页里点名，搜不到就是没有，别反复试；\n- E 参数化母题优先于一切远程渠道，纸纹、角花、界格都该自己画；\n- D 生成是兜底，一份稿最多 3 张，且只能是装饰。\n\n硬规矩：\n1. 证据位（讲「这就是某味药」）只能用 local.herbs 与 api.wellcome 的 pdm 条目；\n   查不到就降级成无图版式，**不许拿别的药或\"通用植物图\"顶替**。\n2. persist=url-only 的渠道只能把 URL 钉进稿子，不许下载进仓库；\n   persist=library 才能落盘。\n3. 先 look 再 assign：取到候选先看主体对不对，不对就换词重搜；\n   不许未看图就占位。\n4. 一份稿最多 12 轮取素材，单页引用不超过 2 张，生成图不超过 3 张。\n"
+}

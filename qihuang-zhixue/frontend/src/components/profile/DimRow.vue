@@ -6,7 +6,7 @@
         <small>{{ axis.metric }} · {{ axis.raw }}</small>
       </div>
       <div class="dim-row__badges">
-        <Badge :tone="axis.lowConfidence ? 'muted' : 'jade'" :label="axis.confidenceStatus" />
+        <Badge :tone="axis.confidenceStatus === '已取证' ? 'jade' : 'muted'" :label="axis.confidenceStatus" />
         <span v-if="axis.pending_verification" class="pending-verification">待验证</span>
       </div>
     </div>

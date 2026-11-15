@@ -1,0 +1,1182 @@
+{
+  "subject": "herb",
+  "title": "中药学",
+  "textbook": {
+    "title": "中药学",
+    "edition": "第10版",
+    "editor": "钟赣生",
+    "publisher": "中国中医药出版社",
+    "toc_source": "《中药学》第10版（钟赣生主编，中国中医药出版社）印刷目录：总论第一章—第七章；各论第八章—第二十八章。核对来源 https://book.cppinfo.cn/Encyclopedias/home/Index/4288630 （国家出版发行信息公共服务平台·本书目录页）"
+  },
+  "schema_version": 1,
+  "chapters": [
+    {
+      "no": 1,
+      "book_no": 1,
+      "part": "总论",
+      "title": "中药的起源和中药学的发展",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中药的起源和中药学的发展",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 2,
+      "book_no": 2,
+      "part": "总论",
+      "title": "中药的产地、采集与贮藏",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中药的产地",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "中药的采集",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "中药的贮藏",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 3,
+      "book_no": 3,
+      "part": "总论",
+      "title": "中药的炮制",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中药炮制的目的",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "中药炮制的方法",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 4,
+      "book_no": 4,
+      "part": "总论",
+      "title": "中药的性能",
+      "sections": [
+        {
+          "no": 1,
+          "title": "四气",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "五味",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "升降浮沉",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "归经",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "中药的毒性",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 5,
+      "book_no": 5,
+      "part": "总论",
+      "title": "中药的配伍",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中药的配伍",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 6,
+      "book_no": 6,
+      "part": "总论",
+      "title": "中药的用药禁忌",
+      "sections": [
+        {
+          "no": 1,
+          "title": "配伍禁忌",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "证候用药禁忌",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "妊娠用药禁忌",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "服药饮食禁忌",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 7,
+      "book_no": 7,
+      "part": "总论",
+      "title": "中药的剂量与用法",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中药的剂量",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "中药的用法",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 8,
+      "book_no": 8,
+      "part": "各论",
+      "title": "解表药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "发散风寒药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "麻黄",
+            "桂枝",
+            "紫苏叶",
+            "生姜",
+            "香薷",
+            "荆芥",
+            "防风",
+            "羌活",
+            "白芷",
+            "细辛",
+            "藁本",
+            "苍耳子",
+            "辛夷",
+            "葱白",
+            "胡荽",
+            "西河柳"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "发散风热药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "薄荷",
+            "牛蒡子",
+            "蝉蜕",
+            "桑叶",
+            "菊花",
+            "蔓荆子",
+            "柴胡",
+            "升麻",
+            "葛根",
+            "淡豆豉",
+            "浮萍",
+            "木贼",
+            "谷精草"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 9,
+      "book_no": 9,
+      "part": "各论",
+      "title": "清热药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "清热泻火药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "石膏",
+            "寒水石",
+            "知母",
+            "芦根",
+            "天花粉",
+            "竹叶",
+            "淡竹叶",
+            "鸭跖草",
+            "栀子",
+            "夏枯草",
+            "决明子",
+            "密蒙花",
+            "青葙子"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "清热燥湿药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "黄芩",
+            "黄连",
+            "黄柏",
+            "龙胆",
+            "秦皮",
+            "苦参",
+            "白鲜皮"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "清热解毒药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "金银花",
+            "连翘",
+            "穿心莲",
+            "大青叶",
+            "板蓝根",
+            "青黛",
+            "贯众",
+            "蒲公英",
+            "紫花地丁",
+            "野菊花",
+            "重楼",
+            "拳参",
+            "漏芦",
+            "土茯苓",
+            "鱼腥草",
+            "金荞麦",
+            "大血藤",
+            "败酱草",
+            "射干",
+            "山豆根",
+            "马勃",
+            "青果",
+            "木蝴蝶",
+            "白头翁",
+            "马齿苋",
+            "鸦胆子",
+            "地锦草",
+            "半边莲",
+            "白花蛇舌草",
+            "山慈菇",
+            "熊胆粉",
+            "千里光",
+            "白蔹",
+            "四季青",
+            "绿豆"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "清热凉血药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "生地黄",
+            "玄参",
+            "牡丹皮",
+            "赤芍",
+            "紫草",
+            "水牛角"
+          ]
+        },
+        {
+          "no": 5,
+          "title": "清虚热药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "青蒿",
+            "白薇",
+            "地骨皮",
+            "银柴胡",
+            "胡黄连"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 10,
+      "book_no": 10,
+      "part": "各论",
+      "title": "泻下药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "攻下药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "大黄",
+            "芒硝",
+            "番泻叶",
+            "芦荟"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "润下药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "火麻仁",
+            "郁李仁",
+            "松子仁"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "峻下逐水药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "甘遂",
+            "京大戟",
+            "芫花",
+            "商陆",
+            "牵牛子",
+            "巴豆霜",
+            "千金子"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 11,
+      "book_no": 11,
+      "part": "各论",
+      "title": "祛风湿药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "祛风寒湿药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "独活",
+            "威灵仙",
+            "徐长卿",
+            "川乌",
+            "蕲蛇",
+            "乌梢蛇",
+            "木瓜",
+            "蚕沙",
+            "伸筋草",
+            "油松节",
+            "海风藤",
+            "青风藤",
+            "丁公藤",
+            "昆明山海棠",
+            "路路通",
+            "穿山龙"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "祛风湿热药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "秦艽",
+            "防己",
+            "桑枝",
+            "豨莶草",
+            "臭梧桐",
+            "海桐皮",
+            "络石藤",
+            "雷公藤",
+            "老鹳草",
+            "丝瓜络"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "祛风湿强筋骨药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "五加皮",
+            "桑寄生",
+            "狗脊",
+            "千年健",
+            "雪莲花"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 12,
+      "book_no": 12,
+      "part": "各论",
+      "title": "化湿药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "化湿药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "广藿香",
+            "佩兰",
+            "苍术",
+            "厚朴",
+            "砂仁",
+            "豆蔻",
+            "草豆蔻",
+            "草果"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 13,
+      "book_no": 13,
+      "part": "各论",
+      "title": "利水渗湿药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "利水消肿药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "茯苓",
+            "薏苡仁",
+            "猪苓",
+            "泽泻",
+            "冬瓜皮",
+            "玉米须",
+            "葫芦",
+            "香加皮",
+            "枳椇子"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "利尿通淋药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "车前子",
+            "滑石",
+            "木通",
+            "通草",
+            "瞿麦",
+            "萹蓄",
+            "地肤子",
+            "海金沙",
+            "石韦",
+            "冬葵子",
+            "灯心草",
+            "萆薢"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "利湿退黄药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "茵陈",
+            "金钱草",
+            "虎杖",
+            "地耳草",
+            "垂盆草",
+            "鸡骨草",
+            "珍珠草"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 14,
+      "book_no": 14,
+      "part": "各论",
+      "title": "温里药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "温里药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "附子",
+            "干姜",
+            "肉桂",
+            "吴茱萸",
+            "小茴香",
+            "丁香",
+            "高良姜",
+            "花椒",
+            "胡椒",
+            "荜茇",
+            "荜澄茄"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 15,
+      "book_no": 15,
+      "part": "各论",
+      "title": "理气药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "理气药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "陈皮",
+            "青皮",
+            "枳实",
+            "木香",
+            "沉香",
+            "檀香",
+            "川楝子",
+            "乌药",
+            "荔枝核",
+            "香附",
+            "佛手",
+            "香橼",
+            "玫瑰花",
+            "梅花",
+            "娑罗子",
+            "薤白",
+            "大腹皮",
+            "甘松",
+            "刀豆",
+            "柿蒂"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 16,
+      "book_no": 16,
+      "part": "各论",
+      "title": "消食药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "消食药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "山楂",
+            "六神曲",
+            "麦芽",
+            "稻芽",
+            "莱菔子",
+            "鸡内金"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 17,
+      "book_no": 17,
+      "part": "各论",
+      "title": "驱虫药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "驱虫药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "使君子",
+            "苦楝皮",
+            "槟榔",
+            "南瓜子",
+            "鹤草芽",
+            "雷丸",
+            "鹤虱",
+            "榧子",
+            "芜荑"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 18,
+      "book_no": 18,
+      "part": "各论",
+      "title": "止血药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "凉血止血药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "小蓟",
+            "大蓟",
+            "地榆",
+            "槐花",
+            "侧柏叶",
+            "白茅根",
+            "苎麻根",
+            "羊蹄"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "化瘀止血药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "三七",
+            "茜草",
+            "蒲黄",
+            "花蕊石"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "收敛止血药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "白及",
+            "仙鹤草",
+            "紫珠叶",
+            "棕榈炭",
+            "血余炭",
+            "藕节"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "温经止血药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "艾叶",
+            "炮姜",
+            "灶心土"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 19,
+      "book_no": 19,
+      "part": "各论",
+      "title": "活血化瘀药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "活血止痛药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "川芎",
+            "延胡索",
+            "郁金",
+            "姜黄",
+            "乳香",
+            "没药",
+            "五灵脂",
+            "降香"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "活血调经药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "丹参",
+            "红花",
+            "桃仁",
+            "益母草",
+            "泽兰",
+            "牛膝",
+            "鸡血藤",
+            "王不留行",
+            "月季花",
+            "凌霄花"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "活血疗伤药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "土鳖虫",
+            "马钱子",
+            "自然铜",
+            "苏木",
+            "骨碎补",
+            "血竭",
+            "儿茶",
+            "刘寄奴"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "破血消癥药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "莪术",
+            "三棱",
+            "水蛭",
+            "虻虫",
+            "斑蝥",
+            "穿山甲"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 20,
+      "book_no": 20,
+      "part": "各论",
+      "title": "化痰止咳平喘药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "温化寒痰药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "半夏",
+            "天南星",
+            "白附子",
+            "芥子",
+            "皂荚",
+            "旋覆花",
+            "白前",
+            "猫爪草"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "清化热痰药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "川贝母",
+            "浙贝母",
+            "瓜蒌",
+            "竹茹",
+            "竹沥",
+            "天竺黄",
+            "前胡",
+            "桔梗",
+            "胖大海",
+            "海藻",
+            "昆布",
+            "黄药子",
+            "海蛤壳",
+            "海浮石",
+            "瓦楞子",
+            "礞石"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "止咳平喘药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "苦杏仁",
+            "紫苏子",
+            "百部",
+            "紫菀",
+            "款冬花",
+            "马兜铃",
+            "枇杷叶",
+            "桑白皮",
+            "葶苈子",
+            "白果",
+            "矮地茶",
+            "洋金花"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 21,
+      "book_no": 21,
+      "part": "各论",
+      "title": "安神药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "重镇安神药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "朱砂",
+            "磁石",
+            "龙骨",
+            "琥珀"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "养心安神药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "酸枣仁",
+            "柏子仁",
+            "灵芝",
+            "首乌藤",
+            "合欢皮",
+            "远志"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 22,
+      "book_no": 22,
+      "part": "各论",
+      "title": "平肝息风药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "平抑肝阳药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "石决明",
+            "珍珠母",
+            "牡蛎",
+            "紫贝齿",
+            "代赭石",
+            "刺蒺藜",
+            "罗布麻叶"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "息风止痉药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "羚羊角",
+            "牛黄",
+            "珍珠",
+            "钩藤",
+            "天麻",
+            "地龙",
+            "全蝎",
+            "蜈蚣",
+            "僵蚕"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 23,
+      "book_no": 23,
+      "part": "各论",
+      "title": "开窍药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "开窍药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "麝香",
+            "冰片",
+            "苏合香",
+            "石菖蒲"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 24,
+      "book_no": 24,
+      "part": "各论",
+      "title": "补虚药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "补气药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "人参",
+            "西洋参",
+            "党参",
+            "太子参",
+            "黄芪",
+            "白术",
+            "山药",
+            "白扁豆",
+            "甘草",
+            "大枣",
+            "刺五加",
+            "绞股蓝",
+            "红景天",
+            "沙棘",
+            "饴糖",
+            "蜂蜜"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "补阳药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "鹿茸",
+            "紫河车",
+            "淫羊藿",
+            "巴戟天",
+            "仙茅",
+            "胡芦巴",
+            "杜仲",
+            "续断",
+            "肉苁蓉",
+            "锁阳",
+            "补骨脂",
+            "益智仁",
+            "菟丝子",
+            "沙苑子",
+            "蛤蚧",
+            "核桃仁",
+            "冬虫夏草",
+            "韭菜子",
+            "阳起石",
+            "紫石英",
+            "海狗肾",
+            "海马",
+            "哈蟆油"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "补血药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "当归",
+            "熟地黄",
+            "白芍",
+            "阿胶",
+            "何首乌",
+            "龙眼肉"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "补阴药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "北沙参",
+            "南沙参",
+            "百合",
+            "麦冬",
+            "天冬",
+            "石斛",
+            "玉竹",
+            "黄精",
+            "枸杞子",
+            "墨旱莲",
+            "女贞子",
+            "桑椹",
+            "黑芝麻",
+            "龟甲",
+            "鳖甲"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 25,
+      "book_no": 25,
+      "part": "各论",
+      "title": "收涩药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "固表止汗药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "麻黄根",
+            "浮小麦",
+            "糯稻根"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "敛肺涩肠药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "五味子",
+            "乌梅",
+            "五倍子",
+            "罂粟壳",
+            "诃子",
+            "石榴皮",
+            "肉豆蔻",
+            "赤石脂",
+            "禹余粮"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "固精缩尿止带药",
+          "kind": "herb_group",
+          "virtual": false,
+          "entries": [
+            "山茱萸",
+            "覆盆子",
+            "桑螵蛸",
+            "海螵蛸",
+            "金樱子",
+            "莲子",
+            "芡实",
+            "刺猬皮",
+            "椿皮",
+            "鸡冠花"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 26,
+      "book_no": 26,
+      "part": "各论",
+      "title": "涌吐药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "涌吐药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "常山",
+            "甜瓜蒂",
+            "胆矾",
+            "藜芦"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 27,
+      "book_no": 27,
+      "part": "各论",
+      "title": "攻毒杀虫止痒药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "攻毒杀虫止痒药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "雄黄",
+            "硫黄",
+            "白矾",
+            "蛇床子",
+            "土荆皮",
+            "蜂房",
+            "樟脑",
+            "蟾酥",
+            "大蒜"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 28,
+      "book_no": 28,
+      "part": "各论",
+      "title": "拔毒化腐生肌药",
+      "sections": [
+        {
+          "no": 1,
+          "title": "拔毒化腐生肌药",
+          "kind": "herb_group",
+          "virtual": true,
+          "entries": [
+            "红粉",
+            "轻粉",
+            "砒石",
+            "铅丹",
+            "炉甘石",
+            "硼砂"
+          ]
+        }
+      ]
+    }
+  ]
+}

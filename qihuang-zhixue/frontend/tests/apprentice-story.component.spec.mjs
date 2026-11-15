@@ -139,14 +139,24 @@ test('every scene reports a real reaction time instead of a constant', () => {
 })
 
 test('extra story questions are collected and sent back with the step', () => {
-  assert(view.includes(':questions="storyQuestions"'), 'the追问 panel is driven by the step payload')
+  // 追问改成三轮独立对话：一次只显示一道，答完才推进到下一道。
+  assert(view.includes(':question="activeExtraQuestion"'), 'the追问 renders one question at a time')
+  assert(view.includes('const activeExtraQuestion = computed'), 'the current follow-up comes from the step payload order')
+  assert(view.includes('extraIndex.value = next'), 'a committed answer advances exactly one turn')
+  assert(view.includes('const chooseExtraAnswer = '), 'option answers go through one commit path')
+  assert(view.includes('const submitExtraNote = '), 'self-written answers go through the same commit path')
   assert(view.includes('step.value?.payload.story_questions'), 'questions come from the backend, never hardcoded')
   assert(view.includes('const extras = Object.keys(storyAnswers).length ? { story_answers: { ...storyAnswers } } : {}'), 'answers travel as story_answers')
   assert(view.includes('Object.keys(storyAnswers).forEach((key) => delete storyAnswers[key])'), 'answers are cleared with the rest of the step fields')
-  const extra = read('../src/components/story/StoryExtraQuestions.vue')
-  assert(!extra.includes('component'), 'the component tag must stay server-side')
-  assert(!extra.includes('dimension'), 'the dimension tag must stay server-side')
-  assert(extra.includes('可留白'), 'a disciple may skip a follow-up question')
+  const extra = read('../src/views/apprentice/ExtraQuestionScene.vue')
+  // 追问只带题目本身：后端拿它写什么证据（dimension / component）不下发到前端，
+  // 否则界面就有机会替用户"预判"这题在测什么。
+  const storyQuestionType = read('../src/types/profile.ts').slice(
+    read('../src/types/profile.ts').indexOf('export type ProfileSessionStoryQuestion'),
+    read('../src/types/profile.ts').indexOf('export type ProfileSessionStep'),
+  )
+  assert(!storyQuestionType.includes('dimension') && !storyQuestionType.includes('component'), 'the dimension/component tags must stay server-side')
+  assert(!extra.includes('dimension'), 'the scene must not read a dimension tag')
 })
 
 test('loading and disabled submission guards remain', () => {
@@ -313,7 +323,8 @@ test('the later chapters speak on the seconds the film speaks on', () => {
   assert.equal(opening('make-rule', 2.9).speaker, '旁白')
 
   assert.equal(opening('apprentice-complete', 2).text, '拜师礼成')
-  assert.equal(opening('apprentice-complete', 4).text, '此乃你此刻之画像，随你修行，自会不断生长')
+  assert.equal(opening('apprentice-complete', 4).text, '此乃你此刻之画像')
+  assert.equal(opening('apprentice-complete', 7).text, '随你修行，自会不断生长', '第 7 秒才说画像会长')
   assert.equal(opening('apprentice-complete', 2).speaker, '老中医')
 
   // Every cue must land inside its own film, otherwise the line never shows.
@@ -369,7 +380,7 @@ test('the closing beat ends on the master, with no card in the way', () => {
   assert(!read('../src/config/apprenticeStoryCues.ts').includes("'apprentice-complete': '今日所答"), '收徒礼成没有旁白操作指引')
   const cueModule = compile('../src/config/apprenticeStoryCues.ts')
   const closing = config.apprenticeScenes.find((scene) => scene.sceneId === 'apprentice-complete')
-  assert.equal(cueModule.dialogueAt(closing, 99).text, '此乃你此刻之画像，随你修行，自会不断生长', '气泡停在老中医最后一句')
+  assert.equal(cueModule.dialogueAt(closing, 99).text, '随你修行，自会不断生长', '气泡停在老中医最后一句')
   assert.equal(cueModule.dialogueAt(closing, 99).speaker, '老中医')
 })
 
@@ -378,6 +389,82 @@ test('the herb photo map covers the five illustrated specimens', () => {
     assert(view.includes(`herb_${herb}: '/story/herbs/${herb}.jpg'`), `${herb} needs a specimen photo`)
   }
   assert(view.includes("|| '/story/herbs/field-card.svg'"), 'unknown herbs fall back to the placeholder card')
+})
+
+test('落卷期间字幕照常走，礼成三句各占一拍', () => {
+  // 落卷要等模型，礼成那一段十几秒。旧实现把对话框钉在"师父正在看你的回答"，
+  // 用户看不到"拜师礼成"，以为礼还没成。
+  assert(!view.includes("if (submitting.value) return '（师父正在看你的回答…）'"), '落卷不能锁死对话框')
+  assert(view.includes('if (line.text) return line'), '有人在说话时字幕优先，等待文案只是静场兜底')
+  assert(view.includes('const dialogueLine = computed'), '文案与说话人必须同源，否则会出现「旁白：拜师礼成」')
+  assert(view.includes('const speakerName = computed(() => dialogueLine.value.speaker)'), '说话人跟着同一句走')
+
+  const shots = compile('../src/config/apprenticeStoryCues.ts')
+  const closing = { sceneId: 'apprentice-complete', dialogue: '（灯影摇了一下，他搁下手中的笔。）', speaker: '旁白' }
+  assert.equal(shots.dialogueAt(closing, 1.9).speaker, '旁白', '第 2 秒之前礼还没成')
+  assert.equal(shots.dialogueAt(closing, 2).text, '拜师礼成')
+  assert.equal(shots.dialogueAt(closing, 4).text, '此乃你此刻之画像')
+  assert.equal(shots.dialogueAt(closing, 7).text, '随你修行，自会不断生长')
+})
+
+test('每一题都是同一块舞台：答案竖排在右，题干在对话框，一题一屏', () => {
+  // 用户要的不是"把三问塞进聊天记录"，而是这三问各自长成和主问题一样的一屏：
+  // 背景不换、选项浮在右侧、题干由底部对话框报。所以追问走的是 Stage 内的场景组件，
+  // 而不是 Stage 之外的另一套界面。
+  assert(view.includes("if (extra) return { text: extra.prompt, speaker: '老中医' }"), '题干要由底部对话框报出')
+
+  const stageStart = view.indexOf('<div class="apprentice-story__stage">')
+  const extraSceneAt = view.indexOf('<ExtraQuestionScene')
+  assert(stageStart !== -1 && extraSceneAt > stageStart, '追问场景必须长在 stage 里面，和其他题共用同一块舞台')
+  assert(!view.includes('v-if="!extraActive"'), '追问时不要整块收起主场景（那会变成另一套界面）')
+  assert(!view.includes('StoryTurnChat'), '聊天流水式的追问已经不存在')
+  assert(!view.includes('StoryExtraQuestions'), '旧的"追问面板"也不存在')
+
+  const extra = read('../src/views/apprentice/ExtraQuestionScene.vue')
+  // 和 IdentityScene / QuizScene 同一套件：右侧竖排 pill + 展开式自述框。
+  assert(extra.includes('StoryChoiceStack'), '答案用与其他题一样的选项栏')
+  assert(extra.includes('StoryDiscipleBubble'), '自述用与其他题一样的输入气泡')
+  assert(extra.includes('justify-content: flex-end'), '选项落在右侧，和身份牌那一屏一致')
+  assert(extra.includes("label: '自己说说'"), '每题都留一个自己说的出口')
+  assert(extra.includes('SEALS'), '选项带甲乙丙丁序号，和识药题一致')
+  assert(extra.includes("index: ''"), '自述那一条不带序号')
+  assert(extra.includes('props.question.options'), '选项来自后端题目，不硬编码')
+
+  // 一题一屏的排他性：同一时刻只渲染一题。
+  assert(/<ExtraQuestionScene\s+v-if="activeExtraQuestion"/.test(view), '有追问时只渲染当前这一题')
+  assert(/<QuizScene\r?\n\s+v-else-if="showQuizChoices && currentQuestion"/.test(view), '主问题在追问时让位，而不是叠在一起')
+
+  // 顺序必须是「主问题 → 追问 → 落卷」：追问的措辞依赖主问题
+  // （"刚认过的这几味药…"、"为什么挑这件药宝"），抢在前面问就落空了。
+  assert(view.includes('const afterMainAnswer = () => {'), '主问题答完要先进追问')
+  for (const handler of ['chooseIdentity', 'chooseResource', 'advanceQuiz']) {
+    const start = view.indexOf(`const ${handler} = `)
+    assert(start !== -1, `${handler} 不见了`)
+    const block = view.slice(start, view.indexOf('\n}', start))
+    assert(block.includes('afterMainAnswer()'), `${handler} 必须走追问再落卷`)
+  }
+  assert(view.includes('@submit="onSceneSubmit"'), '表单幕也走同一条路')
+  const onScene = view.slice(view.indexOf('const onSceneSubmit'), view.indexOf('const submitCurrentStep'))
+  assert(onScene.includes('afterMainAnswer()'), '表单幕提交先追问')
+
+  const advance = view.slice(view.indexOf('const advanceExtra'), view.indexOf('const resourceTypes'))
+  assert(advance.includes('void submitCurrentStep()'), '追问问完才带着答案落卷')
+  // 最后一问答完不能先关掉：activeExtraQuestion 钳到最后一题，屏幕保持原样，
+  // 选项还是金色选中，不会空一块也不会闪回上一题。
+  assert(view.includes('list[Math.min(extraIndex.value, list.length - 1)]'), '最后一题答完仍停在那一屏')
+  assert(!advance.includes('extraActive.value = false'), '落卷期间这一屏要留着')
+  assert(view.includes('if (!list.length) return null'), '没有追问时不能返回空对象')
+
+  // 最后一问答完后 `activeExtraQuestion` 仍钳在那一题（为了屏幕不空），
+  // 如果 `extraPending` 只看它，就会永远"还有题在问"，canSubmit 恒为 false，
+  // 整个剧情卡在最后一屏 —— 真实浏览器跑出来过：一个 session/answer 请求都没发。
+  assert(view.includes('const extraPending = computed(() => Boolean(activeExtraQuestion.value) && !extraFinished.value)'), 'extraPending 必须排除"已答完正在落卷"')
+  assert(/extraFinished = computed\(\(\) => extraIndex\.value >= storyQuestions\.value\.length\)/.test(view), 'extraFinished 按序号判，不依赖当前题')
+
+  // 没有预设选项的题，输入框直接展开：否则右侧只剩一条"自己说说"，
+  // 等于让人多点一次才看到输入口。
+  assert(view.includes('extraBubbleOpen.value = !storyQuestions.value[0]?.options.length'), '首题无选项时自述框默认展开')
+  assert(view.includes('extraBubbleOpen.value = !storyQuestions.value[next]?.options.length'), '换题时同样按有无选项决定是否展开')
 })
 
 test('the production docs the story depends on still exist', () => {

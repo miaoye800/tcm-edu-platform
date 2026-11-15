@@ -48,6 +48,8 @@ export type JuryPayload = {
 
 export type DimensionPayload = {
   score?: number | null
+  /** 兼容别名：分类维度在模型里只有 radar_score，接口会把分同时写到 score。 */
+  radar_score?: number | null
   label?: string | null
   distribution?: Record<string, number>
   confidence?: number
@@ -269,6 +271,10 @@ export type IdentityCardView = {
   display_value: string
   distribution: Record<string, number>
   distribution_scope?: 'observed_evidence' | 'complete_profile' | string
+  /** 由已观察组成推导出的牌名（预设之外的组合也不留空）。 */
+  card_name?: string
+  composition_basis?: 'labels' | 'components' | 'none' | string
+  composition_summary?: string
   items: IdentityCardItem[]
   cards?: IdentityCardItem[]
   evidence_refs: string[]
@@ -312,6 +318,8 @@ export type ProfileSessionQuestion = {
   options: string[]
   topic?: string
   skill?: string
+  /** 剧情题面：不含药名，靠照片认药时用。 */
+  story_prompt?: string
   herb_id?: string
   herb_name?: string
   herb_hint?: string
@@ -381,7 +389,6 @@ export type ProfileSessionResponse = {
   next_question?: string | null
   radar_changes?: RadarChange[]
   summary_text?: string
-  developer_audit?: ProfileDeveloperAuditRecord[]
   chat_history?: Array<{ role: 'assistant' | 'user'; content: string }>
 }
 
@@ -415,135 +422,4 @@ export type ProfileDialogueStreamUiEvent = {
   // 修正文本时把它整段换掉，而不是再追加一个问句。
   type: 'thinking' | 'message' | 'replace' | 'message_done' | 'done' | 'reset'
   delta?: string
-}
-
-export type ProfileDeveloperAuditEvidence = {
-  evidence_id?: string
-  dimension: DimensionKey
-  dimension_label: string
-  fact: string
-  normalized_claim?: string | null
-  assessment?: string | null
-  supports?: string[]
-  quotes: string[]
-  basis: 'explicit' | 'inferred' | string
-  extraction_confidence: number
-  extraction_method: string
-  agent_assessment?: {
-    radar_score?: number | null
-    confidence_contribution?: number
-    coverage?: number
-    priority_strength?: number
-    independence?: number
-    confirmed_aspects?: string[]
-    unknown_reasons?: string[]
-    assessment_reason?: string
-  } | null
-  validation: { quote_traceable: boolean; same_response_unit: string }
-  component?: string | null
-  evidence_group_id?: string | null
-  source_turn_ids?: number[]
-  semantic_relation?: 'new' | 'reinforcement' | 'semantic_duplicate' | 'conflict' | string
-  related_evidence_ids?: string[]
-  confirmed_aspects?: string[]
-  pending_aspects?: string[]
-  quality_factors?: Record<string, unknown>
-  quality_audit?: {
-    factors: Record<string, number>
-    score: number
-    model_judged: string[]
-    rule_computed: string[]
-    evidence_type?: string | null
-    reason: string
-    // 逐项明细：模型判的三项带档位与档内区间，规则算的两项标 source='rule'。
-    items?: Array<{ key: string; label: string; value: number; source: 'model' | 'rule'; tier?: string | null; tier_label?: string | null; tier_range?: [number, number] | null }>
-    // 几何平均算式，如 "(0.85 × 0.72 × 0.88 × 1 × 0.6)^(1/5)"。
-    formula?: string
-    weight_note?: string
-    // 判定过程：看到什么原话 → 命中哪档 → 档内为什么落这里。
-    thinking?: string
-  }
-}
-
-export type ProfileDeveloperAuditRecord = {
-  turn_index: number
-  stages: Array<{ actor: '模型' | '系统'; label: string; detail: string }>
-  current_target: DimensionKey
-  next_target: DimensionKey
-  user_input: string
-  model_result: {
-    method: string
-    failure_reason?: string | null
-    collected_count: number
-    scan_available?: boolean
-    scan_complete?: boolean
-    evidence: ProfileDeveloperAuditEvidence[]
-    combination_type?: string
-    dimension_scan?: Array<{ dimension: DimensionKey; status: string; reason: string; components?: string[]; excluded_candidates?: Array<{ dimension?: string; component?: string; reason: string }> }>
-    component_collection?: Array<{ dimension: DimensionKey; component: string; status: string; evidence_ids: string[]; missing_information: string[] }>
-  }
-  system_result: {
-    dimensions: Array<{
-      key: DimensionKey
-      label: string
-      status: string
-      confidence_before: number
-      radar_score?: number | null
-      confidence: number
-      coverage: number
-      confidence_breakdown: Record<string, number>
-      confidence_formula: string
-      radar_formula: string
-      confidence_units: Array<{
-        source_unit: string
-        fact: string
-        agent_contribution: number
-        independence: number
-        decay: number
-        effective_contribution: number
-        agent_radar_score?: number | null
-      }>
-      confirmed_aspects: string[]
-      unknown_reasons: string[]
-      observed_distribution: Record<string, number>
-      evidence_count: number
-      component_collection?: { collected?: number; total?: number; coverage?: number; weighted_mean?: number; missing_components?: string[]; unscored_components?: string[]; scoring_phase?: string }
-      scoring_deferred?: boolean
-      component_matrix?: Array<{ key: string; label: string; weight: number; rubric: Record<string, unknown>; collected: boolean; score?: number | null; score_source?: 'rescored' | 'carried' | null; reason?: string | null; conflict_handling?: string | null; evidence_ids: string[]; jury?: Array<{ teacher: string; score?: number | null; reason?: string }>; jury_mean?: number | null }>
-      matrix_before?: Record<string, boolean>
-      matrix_after?: Record<string, boolean>
-      pending_components?: string[]
-      followup_reasons?: Record<string, string>
-      dimension_scan?: { status?: string; reason?: string; components?: string[]; excluded_candidates?: Array<{ dimension?: string; component?: string; reason: string }> }
-      score_formula?: string
-      score_weight_sum?: number
-      deduplicated_evidence_package?: Array<{ evidence_id: string; component?: string | null; quote?: string | null; claim: string; group_id?: string | null; relation?: string | null; source_turn_ids: number[]; conflict: boolean }>
-      confidence_audit?: Record<string, unknown>
-      scoring_phase?: 'collecting' | 'scored' | string
-      scoring_provenance?: string | null
-      scoring_attempts?: number
-      scoring_turn?: number | null
-      // 评分节奏：本次为什么评、水位线在哪、下次要涨到多少条证据才重评。
-      scoring_trigger?: string | null
-      scoring_watermark?: number | null
-      current_watermark?: number | null
-      // 逐轮时间线：置信度每轮都动、维度分只在触发轮动，同一行才是同一时刻。
-      confidence_timeline?: Array<{ turn: number; evidence: number; new_evidence: number; watermark: number; confidence: number; quality_new?: number | null; quality_avg?: number | null; score?: number | null; scored_this_turn: boolean }>
-      next_scoring_watermark?: number | null
-      rescored_components?: string[]
-      carried_components?: string[]
-      unscored_components?: string[]
-      dimension_summary?: string | null
-      scoring_input?: { dimension: string; components: Array<{ key: string; weight: number; rubric: Record<string, unknown>; deduplicated_evidence: Array<Record<string, unknown>>; conflicts: Array<Record<string, unknown>>; source_groups: string[] }> }
-      scoring_output?: Array<{ component: string; score?: number | null; source?: 'rescored' | 'carried'; reason?: string | null; conflict_handling?: string | null; jury?: Array<{ teacher: string; score?: number | null; reason?: string }> }>
-      jury_panel?: Array<{ teacher: string; score?: number | null; reasoning_chain: string[]; comment?: string | null }>
-      jury_derivation?: string
-      teacher_dimension_scores?: Record<string, number>
-      jury_mean?: number | null
-      scoring_warnings?: Array<{ reason: string; original?: unknown; corrected?: unknown }>
-      scoring_deferred_reason?: string | null
-    }>
-    confidence_explanation: string
-    radar_explanation: string
-  }
 }

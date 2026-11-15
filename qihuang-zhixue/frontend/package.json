@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --configLoader runner",
-    "test": "node tests/profile-dialogue.component.spec.mjs && node tests/onboarding-dialogue.component.spec.mjs && node tests/profile-enhancements.component.spec.mjs && node tests/apprentice-story.component.spec.mjs && node tests/button-system.component.spec.mjs && node tests/story-kit.component.spec.mjs && node tests/meridian-map.component.spec.mjs && node tests/immersive-resources.component.spec.mjs && node tests/immersive-doc.component.spec.mjs && node tests/graph-view.component.spec.mjs && node tests/doc-graph-polish.component.spec.mjs && node tests/doc-notion-blocks.component.spec.mjs && node tests/doc-studio.component.spec.mjs && node tests/mindmap-resource.component.spec.mjs && node tests/mindmap-studio.component.spec.mjs && node tests/ppt-studio.spec.mjs && node tests/assessment.component.spec.mjs && node tests/kg-compare-attribution.component.spec.mjs && node tests/kg-graph-p7-p8.component.spec.mjs",
+    "test": "node tests/profile-dialogue.component.spec.mjs && node tests/profile-archive-read.spec.mjs && node tests/onboarding-dialogue.component.spec.mjs && node tests/onboarding-invite.component.spec.mjs && node tests/profile-enhancements.component.spec.mjs && node tests/apprentice-story.component.spec.mjs && node tests/button-system.component.spec.mjs && node tests/story-kit.component.spec.mjs && node tests/meridian-map.component.spec.mjs && node tests/immersive-resources.component.spec.mjs && node tests/immersive-doc.component.spec.mjs && node tests/graph-view.component.spec.mjs && node tests/doc-graph-polish.component.spec.mjs && node tests/doc-notion-blocks.component.spec.mjs && node tests/doc-studio.component.spec.mjs && node tests/mindmap-resource.component.spec.mjs && node tests/mindmap-studio.component.spec.mjs && node tests/ppt-studio.spec.mjs && node tests/plan-negotiation.component.spec.mjs && node tests/assessment.component.spec.mjs && node tests/kg-compare-attribution.component.spec.mjs && node tests/kg-graph-p7-p8.component.spec.mjs && node tests/assistant.component.spec.mjs",
     "test:e2e:graph": "node tests/graph-interactions.e2e.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
     "build": "vue-tsc --noEmit && vite build --configLoader runner",
     "preview": "vite preview --host 127.0.0.1 --configLoader runner",
     "shot:story": "node scripts/shot-story.mjs",
+    "baseline:ppt": "node scripts/shot-ppt-baseline.mjs",
+    "baseline:ppt:update": "node scripts/shot-ppt-baseline.mjs --update",
     "build:fonts": "python scripts/build-fonts.py"
   },
   "dependencies": {

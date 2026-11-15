@@ -32,9 +32,10 @@ from app.mindmap.params import validate_mindmap_params
 from app.profile.store import DB_PATH
 from app.resources import service as resource_service
 from app.resources import storage
+from app.resources.constants import CURRENT_PIPELINE_VERSION, steps_for
 
 from ..errors import CapabilityError, ErrorCode
-from ..spec import ArtifactSpec, CapabilityResult, CapabilitySpec, ErrorSpec, StepSpec
+from ..spec import ArtifactSpec, CapabilityResult, CapabilitySpec, ErrorSpec
 from . import CapabilityInput
 
 #: 自由主题统一挂在这个真实节点下：``user_resource.node_id`` 是外键，不能自造。
@@ -69,7 +70,7 @@ class MindmapExpandInput(CapabilityInput):
 
 _GENERATE_ERRORS = (
     ErrorSpec(ErrorCode.TOPIC_EMPTY, 422, "没有说要画什么", "在 query 里给一个主题，如「麻黄」或「解表药的分类」"),
-    ErrorSpec(ErrorCode.INVALID_INPUT, 422, "参数越界", "层数 2~4、分支 3~8"),
+    ErrorSpec(ErrorCode.INVALID_INPUT, 422, "参数越界", "层数 2~5、分支 3~8"),
     ErrorSpec(ErrorCode.NOT_FOUND, 404, "知识节点不存在", "换一个 node_id，或留空走自由主题"),
     ErrorSpec(ErrorCode.STRUCTURE_UNKNOWN, 422, "不认识这种结构", f"可选：{'、'.join(sorted(ALLOWED_STRUCTURE_IDS))}，或 auto"),
     ErrorSpec(ErrorCode.THEME_UNKNOWN, 422, "不认识这套配色", f"可选：{'、'.join(sorted(ALLOWED_THEME_IDS))}"),
@@ -78,19 +79,12 @@ _GENERATE_ERRORS = (
 
 _ARTIFACT = ArtifactSpec(kind="mindmap", open_url_template="/mindmap?resource={resource_id}", resolve_on="done")
 
-#: 工序表与 resources 的 v2 九步一致。手写一份不引用常量，是为了让 spec 保持纯数据；
-#: 一致性由 tests/test_capabilities.py 的对应断言守着。
-_PIPELINE = (
-    StepSpec("resolve", "辨明主题"),
-    StepSpec("gather", "采撷素材"),
-    StepSpec("plan", "谋篇立骨"),
-    StepSpec("compose", "敷演枝叶"),
-    StepSpec("normalize", "收束形制"),
-    StepSpec("check", "校验枝据"),
-    StepSpec("render", "落墨成像"),
-    StepSpec("persist", "封存入库"),
-    StepSpec("handoff", "开卷可改"),
-)
+#: 工序表从 ``resources/constants`` 派生，不再手写第二份。
+#:
+#: 升级前这里是一份 9 步的手抄表：少了 ``plan``、顺序与后端不同、也没有 ``pause``
+#: 事件——对「读契约编程」的调用方来说，用户确认闸门是隐形的。现在契约与 SSE
+#: 读的是同一个 ``steps_for``，一致性由构造方式保证，不再靠测试守着。
+_PIPELINE = steps_for("mindmap", CURRENT_PIPELINE_VERSION)
 
 
 SPEC_GENERATE = CapabilitySpec(
@@ -127,7 +121,7 @@ SPEC_GENERATE = CapabilitySpec(
     audiences=("agent", "frontend", "human"),
     artifact=_ARTIFACT,
     pipeline=_PIPELINE,
-    events=("step_start", "step_done", "node", "mindmap_verify", "done", "error"),
+    events=("step_start", "step_done", "plan", "pause", "node", "mindmap_verify", "done", "error"),
     idempotency=True,
     errors=_GENERATE_ERRORS,
     side_effects=("新建一条炼制任务", "完成后在用户资源库落一张导图"),

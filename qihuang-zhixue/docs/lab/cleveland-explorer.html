@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cleveland CC0 藏品浏览器 · 岐黄智学</title>
+<style>
+  :root{
+    --paper:#F7F4EC; --card:#FFFDF8; --ink:#2B2724; --muted:#6F6862;
+    --line:rgba(43,39,36,.14); --accent:#A8442E; --accent-soft:rgba(168,68,46,.08);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px; line-height:1.6;
+  }
+  header{
+    position:sticky; top:0; z-index:20; background:rgba(247,244,236,.96);
+    border-bottom:1px solid var(--line); padding:14px 24px 12px;
+    backdrop-filter:blur(6px);
+  }
+  h1{
+    margin:0 0 10px; font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:17px; font-weight:600; letter-spacing:.02em;
+  }
+  h1 span{font-family:inherit; font-size:12px; color:var(--muted); font-weight:400; margin-left:8px}
+  .bar{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  input[type=search]{
+    flex:1 1 280px; min-width:200px; padding:8px 12px; font-size:14px;
+    border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink);
+    font-family:inherit;
+  }
+  input[type=search]:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+  button{
+    padding:8px 14px; font-size:13px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--ink); font-family:inherit;
+  }
+  button:hover{border-color:var(--accent); color:var(--accent)}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+  button.primary:hover{opacity:.9; color:#fff}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+  .chip{
+    padding:4px 11px; font-size:12px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--muted);
+  }
+  .chip:hover{border-color:var(--accent); color:var(--accent)}
+  .chip.on{background:var(--accent); border-color:var(--accent); color:#fff}
+  main{padding:20px 24px 60px}
+  .stat{color:var(--muted); font-size:12px; margin-bottom:14px; min-height:18px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:16px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s;
+  }
+  .card:hover{border-color:var(--accent); transform:translateY(-2px)}
+  .card .thumb{aspect-ratio:4/3; background:#EDE8DC; overflow:hidden}
+  .card img{width:100%; height:100%; object-fit:cover; display:block}
+  .card .meta{padding:9px 11px 11px}
+  .card .t{
+    font-family:"Songti SC","Noto Serif SC",serif; font-size:13px; font-weight:600;
+    line-height:1.45; margin-bottom:3px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .card .s{font-size:11px; color:var(--muted); display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+  .more{display:flex; justify-content:center; margin-top:24px}
+  .empty{color:var(--muted); padding:40px 0; text-align:center}
+  .modal{
+    position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+    background:rgba(43,39,36,.55); padding:24px;
+  }
+  .modal.on{display:flex}
+  .sheet{
+    background:var(--paper); border-radius:12px; max-width:1000px; width:100%;
+    max-height:calc(100vh - 48px); overflow:auto; display:grid;
+    grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr);
+  }
+  .sheet .big{background:#EDE8DC; display:flex; align-items:center; justify-content:center; min-height:320px}
+  .sheet .big img{max-width:100%; max-height:calc(100vh - 48px); object-fit:contain; display:block}
+  .sheet .info{padding:20px; border-left:1px solid var(--line)}
+  .sheet h2{font-family:"Songti SC","Noto Serif SC",serif; font-size:16px; margin:0 0 4px; line-height:1.5}
+  .sheet .alt{font-size:12px; color:var(--muted); margin-bottom:14px}
+  dl{margin:0; display:grid; grid-template-columns:64px 1fr; gap:6px 10px; font-size:12px}
+  dt{color:var(--muted)}
+  dd{margin:0; word-break:break-word}
+  .desc{font-size:12px; color:var(--muted); margin:12px 0 0; max-height:120px; overflow:auto}
+  .acts{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
+  .close{position:absolute; top:14px; right:16px; background:transparent; border:0; font-size:22px; color:var(--muted); cursor:pointer}
+  a{color:var(--accent)}
+  @media(max-width:760px){ .sheet{grid-template-columns:1fr} .sheet .info{border-left:0; border-top:1px solid var(--line)} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cleveland 美术馆 · CC0 藏品浏览器<span>public domain，可商用，免申请密钥</span></h1>
+  <div class="bar">
+    <input id="q" type="search" placeholder="英文检索词，例如 medicinal / chinese painting / plant study / pharmacy jar" autocomplete="off">
+    <button class="primary" id="go">检索</button>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+<main>
+  <div class="stat" id="stat">正在载入…</div>
+  <div class="grid" id="grid"></div>
+  <div class="more"><button id="more" style="display:none">加载更多</button></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <button class="close" id="close">×</button>
+    <div class="big"><img id="big" alt=""></div>
+    <div class="info">
+      <h2 id="mt"></h2>
+      <div class="alt" id="ma"></div>
+      <dl id="md"></dl>
+      <p class="desc" id="mdesc"></p>
+      <div class="acts">
+        <button id="copyW">复制图片 URL</button>
+        <button id="copyO">复制原页链接</button>
+        <a id="openA" target="_blank" rel="noopener"><button>打开官网</button></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://openaccess-api.clevelandart.org/api/artworks/';
+const PRESETS = ['medicinal','herbal','plant study','materia medica','pharmacy jar','chinese painting','mountain','scholar','bamboo','silk'];
+const PAGE = 48;
+const QS = new URLSearchParams(location.search);
+let q = (QS.get('q') || 'medicinal').trim(), skip = 0, total = 0, busy = false, lastItem = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function proxy(url, w) {
+  if (!url) return '';
+  return 'https://wsrv.nl/?url=' + encodeURIComponent(url.replace(/^https?:\/\//, '')) + '&w=' + w + '&output=webp';
+}
+function yearOf(a) {
+  const d = a.creation_date || '';
+  return d ? String(d).slice(0, 7) : '年代不详';
+}
+
+async function run(reset) {
+  if (busy) return;
+  busy = true;
+  if (reset) { skip = 0; $('grid').innerHTML = ''; }
+  $('stat').textContent = '检索中…';
+  try {
+    const url = API + '?q=' + encodeURIComponent(q) + '&cc0=1&has_image=1&limit=' + PAGE + '&skip=' + skip;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    total = (data.info && data.info.total) || 0;
+    const items = data.data || [];
+    if (reset) $('grid').innerHTML = '';
+    if (!items.length && reset) {
+      $('grid').innerHTML = '<div class="empty">没有结果。换一个英文词试试，例如 <b>medicinal</b> 或 <b>chinese painting</b>。</div>';
+    }
+    items.forEach((a) => $('grid').appendChild(makeCard(a)));
+    skip += items.length;
+    $('stat').textContent = '「' + q + '」共 ' + total + ' 件 CC0 藏品，已显示 ' + Math.min(skip, total) + ' 件';
+    $('more').style.display = skip < total ? 'inline-block' : 'none';
+  } catch (e) {
+    $('stat').textContent = '检索失败：' + e.message + '（请检查网络，或直接打开官网）';
+  } finally {
+    busy = false;
+  }
+}
+
+function makeCard(a) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  const img = (a.images && a.images.web && a.images.web.url) || '';
+  el.innerHTML =
+    '<div class="thumb"><img loading="lazy" src="' + proxy(img, 400) + '" alt=""></div>' +
+    '<div class="meta"><div class="t">' + esc(a.title) + '</div>' +
+    '<div class="s">' + esc(yearOf(a)) + ' · ' + esc((a.culture && a.culture[0]) || a.department || '') + '</div></div>';
+  el.addEventListener('click', () => openDetail(a));
+  return el;
+}
+
+function openDetail(a) {
+  lastItem = a;
+  const img = (a.images && a.images.web && a.images.web.url) || '';
+  $('big').src = proxy(img, 1600);
+  $('mt').textContent = a.title || '无题';
+  const alts = (a.alternate_titles || []).filter(Boolean);
+  $('ma').textContent = alts.length ? alts[0] : '';
+  const rows = [
+    ['年份', yearOf(a)],
+    ['文化', (a.culture || []).join('；')],
+    ['门类', a.department || ''],
+    ['技法', (a.technique || '').slice(0, 120)],
+    ['作者', (a.creators || []).map((c) => c.description).join('；')],
+    ['藏品号', a.accession_number || ''],
+    ['许可', a.share_license_status || 'CC0'],
+  ];
+  $('md').innerHTML = rows.filter((r) => r[1]).map((r) => '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>').join('');
+  $('mdesc').textContent = (a.description || '').replace(/<[^>]+>/g, '').slice(0, 400);
+  $('openA').href = 'https://www.clevelandart.org/art/' + (a.accession_number || '');
+  $('modal').classList.add('on');
+}
+
+function copy(text) {
+  navigator.clipboard.writeText(text).then(
+    () => { $('stat').textContent = '已复制：' + text.slice(0, 80) + '…'; },
+    () => { $('stat').textContent = '复制失败，请手动选择'; }
+  );
+}
+
+$('go').addEventListener('click', () => { q = $('q').value.trim() || 'medicinal'; run(true); });
+$('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { q = $('q').value.trim() || 'medicinal'; run(true); } });
+$('more').addEventListener('click', () => run(false));
+$('close').addEventListener('click', () => $('modal').classList.remove('on'));
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) $('modal').classList.remove('on'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('modal').classList.remove('on'); });
+$('copyW').addEventListener('click', () => {
+  if (!lastItem) return;
+  const u = (lastItem.images && lastItem.images.web && lastItem.images.web.url) || '';
+  copy(proxy(u, 1600));
+});
+$('copyO').addEventListener('click', () => {
+  if (!lastItem) return;
+  copy('https://www.clevelandart.org/art/' + (lastItem.accession_number || ''));
+});
+
+$('chips').innerHTML = PRESETS.map((p) => '<button class="chip' + (p === q ? ' on' : '') + '" data-q="' + p + '">' + p + '</button>').join('');
+$('chips').addEventListener('click', (e) => {
+  const b = e.target.closest('.chip');
+  if (!b) return;
+  [...$('chips').children].forEach((c) => c.classList.toggle('on', c === b));
+  q = b.dataset.q;
+  $('q').value = q;
+  run(true);
+});
+
+$('q').value = q;
+run(true);
+</script>
+</body>
+</html>

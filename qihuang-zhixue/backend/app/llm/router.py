@@ -18,7 +18,9 @@ from app.llm.clients import (
     MockClient,
     QwenClient,
     StreamToken,
+    ToolTurn,
     ZhipuClient,
+    tool_turn_from_message,
 )
 
 DEEPSEEK_PRO_SLOT = "deepseek_model_pro"
@@ -183,6 +185,82 @@ class ModelRouter:
         )
         self._after_call(task_type, client, mode, fingerprint_value, messages, params, text)
         return text
+
+    async def chat_tools(self, task_type: str, messages: Sequence[ChatMessage], **kw: Any) -> ToolTurn:
+        """一轮带工具的对话。
+
+        与 ``chat()`` 共用模型选择、思考默认值、计量与回放，差别只在响应里保留
+        ``tool_calls``。**任何失败都返回空 ToolTurn**，不抛异常：工具循环挂掉应当
+        退化成「没有配图」，而不是让整份稿子生成失败。
+        """
+
+        params = self._with_default_params(kw)
+        mode = self._mode()
+
+        if mode == "mock":
+            client = self._mock_client_for_task(task_type)
+            return await client.chat_tools(messages, **params)
+
+        spec = self.resolve(task_type)
+        fingerprint_value = replay.fingerprint(
+            task_type=task_type, model=spec.model_name, messages=messages, params=params
+        )
+        if mode in {"replay", "auto"}:
+            cached = replay.load_message(fingerprint_value, db_path=self._db_path())
+            if cached is not None:
+                return tool_turn_from_message(cached)
+            if mode == "replay":
+                logger.info("replay 未命中工具轮次：%s（%s）", task_type, fingerprint_value[:12])
+                return ToolTurn()
+
+        turn, client = await self._call_tools_with_retry(task_type, messages, params)
+        db_path = self._db_path()
+        usage.record_usage(
+            task_type=task_type,
+            provider=client.provider,
+            model=client.model_name,
+            usage=client.last_usage,
+            mode=mode,
+            db_path=db_path,
+        )
+        if mode in {"live", "auto"} and not isinstance(client, MockClient) and turn.message:
+            replay.save(
+                fingerprint_value=fingerprint_value,
+                task_type=task_type,
+                provider=client.provider,
+                model=client.model_name,
+                messages=messages,
+                params=params,
+                response_text=turn.text,
+                response_message=turn.message,
+                usage=client.last_usage,
+                db_path=db_path,
+            )
+        return turn
+
+    async def _call_tools_with_retry(
+        self,
+        task_type: str,
+        messages: Sequence[ChatMessage],
+        params: Mapping[str, Any],
+    ) -> tuple[ToolTurn, BaseLLMClient]:
+        client = self.select(task_type)
+        if isinstance(client, MockClient):
+            return await client.chat_tools(messages, **params), client
+
+        attempts = max(0, self.settings.llm_max_retries) + 1
+        timeout = max(self.settings.llm_timeout_seconds, 0.001)
+        last_exc: Exception | None = None
+        for attempt in range(1, attempts + 1):
+            try:
+                turn = await asyncio.wait_for(client.chat_tools(messages, **params), timeout=timeout)
+                return turn, client
+            except Exception as exc:  # noqa: BLE001 - 统一转成兜底
+                last_exc = exc
+                if not self._should_retry(exc) or attempt >= attempts:
+                    break
+        self._log_fallback_reason(last_exc)
+        return ToolTurn(), client
 
     async def classify(
         self,

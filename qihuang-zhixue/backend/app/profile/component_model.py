@@ -596,6 +596,26 @@ QUALITY_FACTOR_GUIDE = (
 )
 
 
+#: 维度/组件的互斥边界。真实模型抽样（8 次调用）里最常犯的五类越界：
+#: 把"我不太清楚"当成实测表现、把看视频的平台当成知识范围、把"跟不上讲授
+#: 节奏"当成知识薄弱点、只提一个目标就填目标优先级、一次困难就填动机坚持。
+#: 这些卡会照常进评分，把 coverage 和雷达分一起抬高，所以在抽取侧拦住。
+DIMENSION_BOUNDARY_GUIDE = (
+    "维度边界（越界即错，宁缺勿滥）：\n"
+    "- 知识基础：只收对知识本身的掌握；measured_performance（实测表现）必须有答题或操作结果，"
+    "“我不太清楚”“记不准”这类自评只能落自评类组件；在哪里看视频、用什么资料属资源偏好，"
+    "不计入 knowledge_scope（知识范围）。\n"
+    "- 薄弱点：只收自述记不住、易错的知识点；“老师讲得快就跟不上”“这个方法不适合我”属"
+    "学习风格的效果匹配（effect_fit），不是薄弱点。跨场景稳定性（cross_context_stability）"
+    "需要同一知识点在两个场景下都表现过，单次困难不算。\n"
+    "- 学习风格只收学习方式与策略；“我第一反应是小柴胡汤”“辨证先看什么”是知识基础的调取应用，"
+    "不算学习风格；比较选择（comparative_choice）指在两种学习方式之间取舍，不是临床选方。\n"
+    "- 学习目标的目标优先级（priority_signal）需要用户明确比较或放弃过另一个目标；只提一个目标时不得填。\n"
+    "- 动机的困境坚持（persistence_under_obstacle）需要持续投入的证据；一次困难表达不算。\n"
+    "- 学习目标标签：考研/读研/升学归“学术深造”；“应试提分”指为某门课程考试提分。\n"
+)
+
+
 class AtomicEvidence(BaseModel):
     model_config = ConfigDict(extra="allow")
     evidence_id: str
@@ -927,6 +947,19 @@ def deduplicate_evidence(evidence: list[AtomicEvidence]) -> tuple[list[AtomicEvi
     return list(selected.values()), conflicts
 
 
+def _quote_identity(card: EvidenceCard) -> str:
+    """同一条原话的规范化指纹（去空白与标点）。
+
+    模型的 ``evidence_group_id`` 是"它认为这几条同源"，但实测它会跨轮给同一句
+    原话换一个组号：用户说"想学来能让我有钱赚"，第 3 轮和第 5 轮各抽一次、
+    组号不同，送评证据包里就出现两条一模一样的引用。用户看到的正是
+    "我明明只说了一次，为什么算两条证据"。
+    """
+
+    text = str(card.quote or "").strip() or str(card.normalized_claim or card.fact or "").strip()
+    return re.sub(r"[\s，。！？、,.!?；;：:\"'“”‘’（）()【】\[\]…—\-]+", "", text)
+
+
 def deduplicate_component_cards(cards: list[EvidenceCard]) -> tuple[list[EvidenceCard], list[EvidenceCard], list[str]]:
     """Apply the agent-authored source grouping to persisted cards.
 
@@ -953,7 +986,28 @@ def deduplicate_component_cards(cards: list[EvidenceCard]) -> tuple[list[Evidenc
             selected[key] = card
         else:
             dropped.append(card.evidence_id)
-    return list(selected.values()), conflicts, dropped
+    # 第二道闸门：组号不同、原话相同的，按"同一表达只认定一次"合并。
+    # 只比字符串本身，不做语义相似度——宁可在提示词里要求模型给对组号，
+    # 也不要在这里猜两句话是不是一个意思。
+    by_quote: dict[tuple[str, str, str], EvidenceCard] = {}
+    for card in list(selected.values()):
+        fingerprint = _quote_identity(card)
+        if not fingerprint:
+            by_quote[(card.dimension, card.component or "", f"id:{card.evidence_id}")] = card
+            continue
+        quote_key = (card.dimension, card.component or "", f"quote:{fingerprint}")
+        current = by_quote.get(quote_key)
+        if current is None:
+            by_quote[quote_key] = card
+            continue
+        current_quality = _card_quality(current)
+        candidate_quality = _card_quality(card)
+        if candidate_quality > current_quality or (candidate_quality == current_quality and card.timestamp > current.timestamp):
+            dropped.append(current.evidence_id)
+            by_quote[quote_key] = card
+        else:
+            dropped.append(card.evidence_id)
+    return list(by_quote.values()), conflicts, dropped
 
 
 def _card_quality(card: EvidenceCard) -> float:

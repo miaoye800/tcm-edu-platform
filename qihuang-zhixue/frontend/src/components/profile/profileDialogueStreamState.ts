@@ -93,6 +93,16 @@ export const appendProfileDialogueAssistantDelta = (
   return 'appended'
 }
 
+/**
+ * A server-side `replace` must never delete text the user has already read.
+ *
+ * The old implementation assigned `text = next`, so when the backend re-ran its
+ * answer the bubble visibly collapsed and re-typed a shorter reply ("先总结再
+ * 问问题" 然后只剩 "最近有没有什么变化？"). The backend no longer emits this
+ * event, and the client now treats it strictly as a forward sync: identical text
+ * is a no-op, a longer text that extends what is on screen appends only the tail,
+ * and anything else is ignored so a visible answer can never shrink.
+ */
 export const replaceProfileDialogueAssistantText = (
   state: ProfileDialogueMessageState,
   text: string,
@@ -100,9 +110,19 @@ export const replaceProfileDialogueAssistantText = (
   const next = text ?? ''
   if (!next) return 'none'
   const idx = ensureProfileDialogueStreamingAssistant(state)
-  state.messages[idx].reasoningStreaming = false
-  state.messages[idx].text = next
-  return 'replaced'
+  const message = state.messages[idx]
+  message.reasoningStreaming = false
+  const current = message.text ?? ''
+  if (current === next) return 'none'
+  if (!current) {
+    message.text = next
+    return 'appended'
+  }
+  if (next.startsWith(current)) {
+    message.text = current + next.slice(current.length)
+    return 'appended'
+  }
+  return 'none'
 }
 
 export const appendProfileDialogueAssistantReasoning = (

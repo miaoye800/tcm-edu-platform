@@ -11,6 +11,7 @@ const studioView = read('views/DocStudioView.vue')
 const topicPanel = read('components/doc/DocTopicPanel.vue')
 const useStudio = read('composables/useDocStudio.ts')
 const config = read('config/docStudio.ts')
+const listItem = read('components/doc/blocks/ListItemBlock.vue')
 
 // 1) Notion 导出格式的解析能力：aside 改写、callout 图标表、嵌套列表→toggle
 assert.match(markdown, /rewriteNotionAsides/, 'markdownToBlocks 缺少 aside 预处理')
@@ -60,5 +61,33 @@ assert.match(config, /FREE_TOPIC_NODE_ID = 'general'/)
 for (const step of ['source', 'relate', 'distill', 'verify', 'layout']) {
   assert.ok(config.includes(`id: '${step}'`), `docStudio.ts 缺少工序 ${step}`)
 }
+
+// 7) 方案协商：先出方案、确认之后才落笔
+assert.match(studioView, /phase === 'awaiting-plan' && plan/, '只在拿到方案时开面板')
+assert.match(studioView, /@revise="revisePlan"/, '面板可带反馈修订')
+assert.match(studioView, /@confirm="confirmPlan"/, '面板可确认')
+assert.match(studioView, /@cancel="cancelPlan"/, '面板可退出（暂不生成）')
+assert.match(useStudio, /case 'plan':/, '消费方案事件')
+assert.match(useStudio, /await_plan/, '识别「等确认方案」的暂停')
+assert.match(useStudio, /confirmResourcePlan/, '确认走方案接口')
+assert.match(studioView, /route\.query\.task/, '刷新回来先认任务，不重开一份')
+
+// 8) 逐节依据：整篇一个「有依据」等于没标
+assert.match(useStudio, /case 'doc_verify':/, '消费逐节核对事件')
+assert.match(useStudio, /sectionSources/, '逐节依据留在前端')
+assert.match(studioView, /教材依据/, '教材依据与模型补充分开写')
+assert.match(studioView, /docCheck/, '核对结论（未落章节 / 无效引文）要显示')
+
+// 9) 复选框：预览只读 ≠ 清单不能勾；勾了必须存回资源，不能只改本地
+assert.doesNotMatch(
+  listItem,
+  /if \(!props\.editable\) return/,
+  '复选框不得因为正文只读就点不动——用户会以为整篇文档都是死的',
+)
+assert.match(studioView, /@update="toggleCheck"/, '工坊要把待办勾选接住')
+assert.match(useStudio, /const toggleCheck/, '工坊要能勾选待办')
+assert.match(useStudio, /saveDocument\(/, '勾选要存回资源（只改本地等于下次打开又变没勾）')
+assert.match(useStudio, /doc_version/, '存回要带版本号，否则撞版本冲突')
+assert.match(useStudio, /replaceInTree/, '折叠块里的待办要按树改，不能只替换顶层')
 
 console.log('doc studio contract checks passed')

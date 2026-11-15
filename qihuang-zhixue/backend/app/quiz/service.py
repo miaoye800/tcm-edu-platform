@@ -9,6 +9,7 @@ from typing import Any
 
 from app.llm.clients import MockClient
 from app.llm.router import ModelRouter
+from app.mastery.alias import resolve_kc
 from app.mastery.bkt import get_mastery, record_mastery_event
 from app.path.state import set_state
 from app.profile.update import ProfileUpdateEvent, get_latest_profile, update_profile_from_event
@@ -236,6 +237,10 @@ async def finish_assessment_for_user(*, user_id: str, assessment_id: str, db_pat
     active_weights = sum(ASSESSMENT_GATE_WEIGHTS[gate] for gate in gate_scores)
     total = round(sum(gate_scores[gate]*ASSESSMENT_GATE_WEIGHTS[gate] for gate in gate_scores)/active_weights,2)
     threshold = int(assessment["payload"]["threshold"]); passed = total >= threshold
+    # 测评从沉浸层进来时带的是**图谱实体 id**（`herb_mahuang`），而地图、路线、
+    # 掌握度都按知识树点 id（`d01.s1.p1`）组织。两个空间只在读取时映射过一次
+    # （P0-1），写入这一侧也得落一份——否则「测评过了」在地图上一片漆黑。
+    kc_id = resolve_kc(assessment["node_id"], db_path=db_path) or assessment["node_id"]
     weak = []
     for answer in assessment["answers"]:
         if answer["result"]["correct"]:
@@ -243,9 +248,15 @@ async def finish_assessment_for_user(*, user_id: str, assessment_id: str, db_pat
         question = get_question(answer["question_id"], db_path)
         if question:
             weak.append(question["exam_point_id"])
-    result = {"assessment_id":assessment_id,"node_id":assessment["node_id"],"score":total,"gate_scores":gate_scores,"threshold":threshold,"passed":passed,"weak_exam_point_ids":sorted(set(weak)),"remediation": {"entry":"/api/resources/generate","node_id":assessment["node_id"]} if not passed else None}
+    result = {"assessment_id":assessment_id,"node_id":assessment["node_id"],"kc_node_id":kc_id,"score":total,"gate_scores":gate_scores,"threshold":threshold,"passed":passed,"weak_exam_point_ids":sorted(set(weak)),"remediation": {"entry":"/api/resources/generate","node_id":assessment["node_id"]} if not passed else None}
     finish_assessment(assessment_id,result,db_path)
-    if passed: set_state(user_id,assessment["node_id"],"completed",meta={"assessment_id":assessment_id,"score":total,"gate_scores":gate_scores,"threshold":threshold,"finished_at":get_assessment(assessment_id,user_id,db_path)["finished_at"]},db_path=db_path)
+    if passed:
+        meta = {"assessment_id":assessment_id,"score":total,"gate_scores":gate_scores,"threshold":threshold,"finished_at":get_assessment(assessment_id,user_id,db_path)["finished_at"]}
+        set_state(user_id,assessment["node_id"],"completed",meta=meta,db_path=db_path)
+        if kc_id != assessment["node_id"]:
+            # 两个 id 都点亮：前者是这次测评的出处（历史要能追溯），后者是地图上
+            # 真正那一格。只写前者，用户回到地图看不到任何变化。
+            set_state(user_id,kc_id,"completed",meta={**meta,"via_node_id":assessment["node_id"]},db_path=db_path)
     return result
 
 

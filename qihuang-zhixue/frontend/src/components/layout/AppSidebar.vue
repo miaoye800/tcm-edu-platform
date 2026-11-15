@@ -32,12 +32,12 @@
         <section v-if="groupIndex === 0" class="nav-group">
           <p class="nav-group__title" :class="{ 'is-collapsed': collapsed }">{{ group.group }}</p>
           <div class="nav-group__items">
-            <NavItem :item="group.items[0]" :collapsed="collapsed" @assistant="assistant.show" />
+            <NavItem :item="group.items[0]" :collapsed="collapsed" />
             <button class="theme-switch" type="button" :class="{ 'is-collapsed': collapsed }" :aria-label="theme === 'dark' ? '切换浅色模式' : '切换深色模式'" @click="toggleTheme"><el-icon><Sunny v-if="theme === 'dark'" /><Moon v-else /></el-icon><span>{{ theme === 'dark' ? '浅色模式' : '深色模式' }}</span></button>
-            <NavItem v-for="item in group.items.slice(1)" :key="item.route" :item="item" :collapsed="collapsed" @assistant="assistant.show" />
+            <NavItem v-for="item in group.items.slice(1)" :key="item.route" :item="item" :collapsed="collapsed" />
           </div>
         </section>
-        <NavGroup v-else :group="group" :collapsed="collapsed" @assistant="assistant.show" />
+        <NavGroup v-else :group="group" :collapsed="collapsed" />
       </template>
     </nav>
   </aside>
@@ -52,7 +52,6 @@ import xiaoqi from '../../assets/mascot/xiaoqi-avatar.png'
 import XiaoqiMascot from '../ui/XiaoqiMascot.vue'
 import { menuGroups } from '../../config/menu'
 import { readOnboardingState } from '../../services/onboardingStorage'
-import { useAssistantStore } from '../../stores/assistant'
 import { useAuthStore } from '../../stores/auth'
 import { useProfileStore } from '../../stores/profile'
 import NavGroup from './NavGroup.vue'
@@ -64,7 +63,6 @@ defineProps<{
   collapsed: boolean
 }>()
 
-const assistant = useAssistantStore()
 const auth = useAuthStore()
 const profile = useProfileStore()
 const router = useRouter()

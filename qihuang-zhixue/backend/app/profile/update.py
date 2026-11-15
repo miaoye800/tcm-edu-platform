@@ -21,6 +21,7 @@ from app.profile.jury import LLMCall, ScoringResult, score_dimension
 from app.profile.prescription import evaluate_prescription
 from app.profile.radar import to_radar
 from app.profile.schema import DIMENSION_LABELS, DimensionKey, EvidenceCard, EvidenceTier, Profile, WeakPoint
+from app.profile.evidence import weak_point_label_of
 from app.profile.store import (
     DB_PATH,
     add_evidence,
@@ -226,6 +227,94 @@ async def get_latest_profile(
     return profile
 
 
+def read_profile_snapshot(
+    user_id: str,
+    *,
+    db_path: Path = DB_PATH,
+    settings: Settings | None = None,
+) -> Profile:
+    """对外「看画像」的唯一入口：只读已落库快照，不跑模型、不写库。
+
+    过去画像页的 GET 走 ``get_latest_profile``，那条路径会在**读**里跑三师评审
+    （带证据但还没有结果的维度一律送模型）。后果是：刚结束对话、刚确认完学习
+    目标时，一次「看一眼档案」要等几个模型调用；前端几百毫秒的超时先到，就把
+    整页换成空的兜底数据——数据库里明明有 59 张证据卡和一个 100KB 的画像。
+
+    读路径因此定为纯读：页面看到的就是收尾时写进库的那份快照，与对话里刚看到
+    的雷达完全一致。需要重算的地方都在**写**路径（答题、收尾、确认目标），
+    它们各自负责把结论落库。
+
+    唯一的例外是「没配模型就不出分」：写路径会落一个规则融合分，而用户视角
+    的契约是维度留空、只报置信度与未评分原因。这一步是纯字符串与字段整理，
+    不进模型，仍然算读。
+    """
+
+    profile = get_profile(user_id, db_path=db_path)
+    return _apply_user_view_contract(profile, settings=settings)
+
+
+def _apply_user_view_contract(profile: Profile, *, settings: Settings | None = None) -> Profile:
+    """把落库快照整理成「用户该看到的那一份」：没有模型密钥就不出分。"""
+
+    active_settings = settings or get_settings()
+    if _has_configured_llm_key(active_settings):
+        return profile
+    provenance = _profile_provenance(profile)
+    for dimension in DIMENSION_LABELS:
+        if not str(provenance.get(dimension, "")).startswith("no_key"):
+            continue
+        dim = getattr(profile, dimension)
+        for field in ("score", "radar_score"):
+            # 不出分就不能留一个旧分：否则雷达上是亮点、下面写"暂不评分"。
+            # 分类维度没有 `score` 字段，分只存在 `radar_score` 里，两处都要清。
+            if getattr(dim, field, None) is not None:
+                setattr(dim, field, None)
+        _stamp_scoring_provenance(dim.evidence or [], "no_key")
+    return profile
+
+
+def attach_evidence_to_dimension(
+    user_id: str,
+    dimension: DimensionKey,
+    *,
+    db_path: Path = DB_PATH,
+    now: datetime | None = None,
+) -> Profile:
+    """把某维度的新证据接进画像，但不覆盖已经得出的结论。
+
+    典型场景是「对话结束后又确认了一条学习目标」：这条自述要出现在档案的依据
+    里，但学习目标的分数是对话里按组件评出来的，不能被一次规则融合改写成另一
+    个数字。所以：有结论就只补证据，没结论才按规则融合出一个起步结论。
+    """
+
+    profile = get_profile(user_id, db_path=db_path)
+    cards = [card for card in list_evidence(user_id, db_path=db_path) if card.dimension == dimension]
+    if not cards:
+        return profile
+
+    dim = getattr(profile, dimension)
+    if _dimension_has_result(profile, dimension):
+        if [card.evidence_id for card in dim.evidence] != [card.evidence_id for card in cards]:
+            dim.evidence = cards
+            upsert_profile(profile, db_path=db_path)
+        return profile
+
+    trust = get_trust(user_id, db_path=db_path)
+    fusion = fuse_dimension(dimension, cards, now=now, self_report_trust=trust)
+    _apply_fusion_to_profile(
+        profile,
+        dimension,
+        fusion,
+        cards,
+        db_path=db_path,
+        reason="新证据接入",
+        source_event="evidence_attach",
+        provenance="fusion" if _has_configured_llm_key(get_settings()) else "no_key_rule_fallback",
+    )
+    upsert_profile(profile, db_path=db_path)
+    return profile
+
+
 def evidence_cards_from_event(event: ProfileUpdateEvent, *, now: datetime | None = None) -> list[EvidenceCard]:
     """Event hook: quiz/prescription/interaction behavior to evidence cards."""
 
@@ -241,6 +330,16 @@ def profile_to_response(profile: Profile) -> dict[str, Any]:
     """Stable API payload with latest profile and per-dimension confidence."""
 
     payload = profile.model_dump(mode="json")
+    for dimension in DIMENSION_LABELS:
+        item = payload.get(dimension)
+        if not isinstance(item, dict):
+            continue
+        # 分类维度（学习目标/风格/资源偏好）在模型里只有 `radar_score`，没有
+        # `score` 字段；而前端与卡片一律读 `score`。不补这一行，刚聊出来的
+        # 53 分在对话牌面是 53、进弟子档案就成了"派生值·待补充"。
+        # 对外只暴露一个分数入口：score 是权威，radar_score 是兼容别名。
+        if item.get("score") is None and item.get("radar_score") is not None:
+            item["score"] = item["radar_score"]
     payload["confidence"] = {
         dimension: getattr(profile, dimension).confidence for dimension in DIMENSION_LABELS
     }
@@ -647,16 +746,15 @@ def _fusion_has_result(fusion: FusionResult) -> bool:
 def _weak_points_from_cards(cards: list[EvidenceCard]) -> list[WeakPoint]:
     counter: Counter[str] = Counter()
     for card in cards:
+        label = weak_point_label_of(card)
+        if label:
+            counter[label] += 1
         signal = card.objective_signal
-        for key in ("label", "topic", "knowledge_point"):
-            value = signal.get(key)
-            if isinstance(value, str) and value.strip():
-                counter[value.strip()] += 1
         weak_labels = signal.get("weak_labels")
-        if isinstance(weak_labels, list):
-            for label in weak_labels:
-                if isinstance(label, str) and label.strip():
-                    counter[label.strip()] += 1
+        if isinstance(weak_labels, list) and label:
+            for item in weak_labels:
+                if isinstance(item, str) and item.strip() and item.strip() != label:
+                    counter[item.strip()] += 1
     return [WeakPoint(label=label, strength=strength) for label, strength in counter.most_common()]
 
 

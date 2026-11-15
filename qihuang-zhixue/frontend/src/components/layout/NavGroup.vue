@@ -7,7 +7,6 @@
         :key="item.route"
         :item="item"
         :collapsed="collapsed"
-        @assistant="emit('assistant')"
       />
     </div>
   </section>
@@ -20,10 +19,6 @@ import NavItem from './NavItem.vue'
 defineProps<{
   group: MenuGroup
   collapsed: boolean
-}>()
-
-const emit = defineEmits<{
-  assistant: []
 }>()
 </script>
 

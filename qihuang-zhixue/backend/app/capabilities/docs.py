@@ -90,8 +90,12 @@ def render(snapshot: dict[str, Any]) -> str:
                 "",
                 f"- 类型：`{artifact['kind']}`",
                 f"- 打开地址：`{artifact['open_url_template']}`（{artifact['resolve_on']} 后可填）",
-                "",
             ]
+            # 一种能力落成几种体裁时，每种体裁的地址不一样。文档里漏掉，
+            # 接的人只能读源码才知道 /resources 也是这条能力的产物。
+            for variant in artifact.get("variants") or []:
+                lines.append(f"- 也可能是 `{variant['kind']}`：`{variant['open_url_template']}`")
+            lines.append("")
         if cap["pipeline"]:
             lines += ["**工序**", "", " → ".join(step["label"] for step in cap["pipeline"]), ""]
         if cap["events"]:

@@ -7,7 +7,6 @@ import KgAskView from '../views/KgAskView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import DocStudioView from '../views/DocStudioView.vue'
-// LearnView is retained for compatibility; /learn redirects to the meridian entry.
 import LoginView from '../views/LoginView.vue'
 import MyResourcesView from '../views/MyResourcesView.vue'
 import ResourceDetailView from '../views/ResourceDetailView.vue'
@@ -16,7 +15,6 @@ import MeridianDemo from '../views/MeridianDemo.vue'
 import AlchemyDemo from '../views/AlchemyDemo.vue'
 import MeridianMapView from '../views/MeridianMapView.vue'
 import OnboardingView from '../views/OnboardingView.vue'
-import PathView from '../views/PathView.vue'
 import PrescriptionView from '../views/PrescriptionView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import QuizView from '../views/QuizView.vue'
@@ -24,9 +22,10 @@ import PptStudioView from '../views/PptStudioView.vue'
 import AssessmentView from '../views/AssessmentView.vue'
 import ApprenticeStoryView from '../views/ApprenticeStoryView.vue'
 import ReviewView from '../views/ReviewView.vue'
+import AssistantView from '../views/AssistantView.vue'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
-import { readOnboardingState } from '../services/onboardingStorage'
+import { readOnboardingState, readOnboardingInvite, markOnboardingInvited } from '../services/onboardingStorage'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -62,6 +61,13 @@ const routes: RouteRecordRaw[] = [
           name: 'mindmap-canvas-lab',
           component: () => import('../views/MindmapCanvasHarness.vue'),
           meta: { title: '导图画布联调', public: true },
+        } as RouteRecordRaw,
+        {
+          // 十种版式 × 四套纸面的视觉验收页：版式一改就能一眼看出哪里塌了。
+          path: '/_lab/ppt',
+          name: 'ppt-deck-lab',
+          component: () => import('../views/PptDeckLab.vue'),
+          meta: { title: '幻灯版式验证', public: true },
         } as RouteRecordRaw,
       ]
     : []),
@@ -216,7 +222,9 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assistant',
-        redirect: '/dashboard',
+        name: 'assistant',
+        component: AssistantView,
+        meta: { title: 'AI 服务助手', group: '助手', mode: 'embedded' },
       },
     ],
   },
@@ -276,7 +284,12 @@ router.beforeEach(async (to) => {
       await profile.loadProfile()
     }
 
-    if (!profile.usingMock && !profile.hasBuiltProfile && !onboarding) {
+    // 画像入口只邀请一次：用户只要离开过（点侧栏任何页面），就视为暂不绘制
+    // 画像，此后不再拦截页面切换。是否继续完全由侧栏入口决定。
+    // 读失败（loadFailed）时不做任何判断：拿不到数据不等于"还没画画像"，
+    // 把用户弹进入口只会掩盖一次网络故障。
+    if (!profile.loadFailed && !profile.usingMock && !profile.hasBuiltProfile && !onboarding && !readOnboardingInvite(userId)) {
+      markOnboardingInvited(userId)
       return {
         name: 'onboarding',
         query: { redirect: to.fullPath },

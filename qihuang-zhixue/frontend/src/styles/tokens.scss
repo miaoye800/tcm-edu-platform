@@ -262,6 +262,10 @@
   --qh-color-cream: var(--qh-ink-050);
   --qh-color-cream-line: var(--qh-line-strong);
   --qh-color-mist: var(--qh-ink-400);
+  // 多学科图层用色（六门课同屏时图例要能一眼分开）。不新造色相：
+  // 紫藤取赭石与板岩之间的中间色相，深青直接用青瓷的深阶，都是既有色阶的延伸。
+  --qh-color-violet: #a897c9;
+  --qh-color-pine: var(--qh-celadon-600);
   // 明暗表面（历史名 night，实为页面底）
   --qh-color-night: var(--qh-bg);
   --qh-color-night-soft: var(--qh-surface);

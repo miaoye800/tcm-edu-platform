@@ -1,18 +1,5 @@
 <template>
-  <button
-    v-if="item.assistantTrigger"
-    class="nav-item"
-    :class="{ 'is-collapsed': collapsed, 'is-disabled': item.disabled }"
-    type="button"
-    @click="emit('assistant')"
-  >
-    <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-    <span class="nav-label">{{ item.label }}</span>
-    <Badge v-if="item.badge" class="nav-badge" tone="coral" :label="item.badge" />
-  </button>
-
   <RouterLink
-    v-else
     class="nav-item"
     :class="{ 'is-collapsed': collapsed, 'is-disabled': item.disabled }"
     :to="item.route"
@@ -31,10 +18,6 @@ import Badge from '../ui/Badge.vue'
 defineProps<{
   item: MenuItem
   collapsed: boolean
-}>()
-
-const emit = defineEmits<{
-  assistant: []
 }>()
 </script>
 

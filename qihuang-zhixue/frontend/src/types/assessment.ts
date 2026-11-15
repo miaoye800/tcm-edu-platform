@@ -14,5 +14,5 @@ export interface AssessmentQuestion {
 export interface AssessmentGate { id: AssessmentGateId; name: string; recommended_seconds: number; questions: AssessmentQuestion[] }
 export interface AssessmentStartResponse { assessment_id: string; gates: AssessmentGate[]; strictness: string; threshold: number }
 export interface AssessmentGrade { question_id: string; correct: boolean; score: number; missing_points: string[]; comment: string; analysis: string; remediation?: Record<string, unknown> | null }
-export interface AssessmentFinishResponse { assessment_id: string; node_id: string; score: number; gate_scores: Record<string, number>; threshold: number; passed: boolean; weak_exam_point_ids: string[]; remediation: { entry: string; node_id: string } | null }
+export interface AssessmentFinishResponse { assessment_id: string; node_id: string; /** 落到知识树上的点 id；从图谱实体进来的测评，两个 id 不是一个空间 */ kc_node_id: string; score: number; gate_scores: Record<string, number>; threshold: number; passed: boolean; weak_exam_point_ids: string[]; remediation: { entry: string; node_id: string } | null }
 export interface AssessmentAnswerRequest { assessment_id: string; question_id: string; answer: string | string[]; elapsed_seconds?: number }

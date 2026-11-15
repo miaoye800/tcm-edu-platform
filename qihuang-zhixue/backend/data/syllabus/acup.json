@@ -1,0 +1,339 @@
+{
+  "subject": "acup",
+  "title": "针灸学",
+  "textbook": {
+    "title": "针灸学",
+    "edition": "新世纪第5版（十四五规划）",
+    "editor": "梁繁荣、王华",
+    "publisher": "中国中医药出版社",
+    "toc_source": "《针灸学》（梁繁荣、王华主编，中国中医药出版社，2021-07，ISBN 9787513268127）绪论 + 上篇经络腧穴 3 章 + 中篇刺灸法 2 章 + 下篇治疗 2 章 + 附篇 4 章。上篇三章共 23 个节名逐条对自 https://book.cppinfo.cn/Encyclopedias/home/Index/4288613 ；篇/章结构另有 2024 年安徽中医药大学专升本《针灸学》考试大纲（指定本版）旁证：https://www.hlsok.com/ah/news/64195.html 。注意：中篇、下篇、附篇各章教材只印章名、不印节号，本文件按不分节处理。",
+    "entries_note": "中篇/下篇/附篇各章教材未印节号，按章级单节点处理；补节须对照纸质目录"
+  },
+  "schema_version": 1,
+  "chapters": [
+    {
+      "no": 1,
+      "book_no": 0,
+      "part": "绪论",
+      "title": "绪论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "绪论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": [
+            "针灸学发展简史",
+            "针灸学的对外传播",
+            "针灸学的基本内容和学习方法"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 2,
+      "book_no": 1,
+      "part": "上篇",
+      "title": "经络总论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "经络的发现",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "经络系统的组成",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "经络的标本、根结和气街、四海",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "经络的作用和经络学说的临床应用",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 3,
+      "book_no": 2,
+      "part": "上篇",
+      "title": "腧穴总论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "腧穴的分类和命名",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "腧穴的主治特点和规律",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "特定穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "腧穴的定位方法",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 4,
+      "book_no": 3,
+      "part": "上篇",
+      "title": "经络腧穴各论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "手太阴肺经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "手阳明大肠经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "足阳明胃经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "足太阴脾经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "手少阴心经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 6,
+          "title": "手太阳小肠经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 7,
+          "title": "足太阳膀胱经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 8,
+          "title": "足少阴肾经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 9,
+          "title": "手厥阴心包经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 10,
+          "title": "手少阳三焦经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 11,
+          "title": "足少阳胆经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 12,
+          "title": "足厥阴肝经及其腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 13,
+          "title": "奇经八脉及其相关腧穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 14,
+          "title": "十五络脉及其络穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 15,
+          "title": "常用经外奇穴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 5,
+      "book_no": 4,
+      "part": "中篇",
+      "title": "刺灸法总论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "刺灸法总论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 6,
+      "book_no": 5,
+      "part": "中篇",
+      "title": "刺灸法各论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "刺灸法各论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 7,
+      "book_no": 6,
+      "part": "下篇",
+      "title": "针灸治疗总论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "针灸治疗总论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 8,
+      "book_no": 7,
+      "part": "下篇",
+      "title": "针灸治疗各论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "针灸治疗各论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 9,
+      "book_no": 8,
+      "part": "附篇",
+      "title": "针灸研究进展",
+      "sections": [
+        {
+          "no": 1,
+          "title": "针灸研究进展",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 10,
+      "book_no": 9,
+      "part": "附篇",
+      "title": "古代人体部位释义",
+      "sections": [
+        {
+          "no": 1,
+          "title": "古代人体部位释义",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 11,
+      "book_no": 10,
+      "part": "附篇",
+      "title": "子午流注针法与灵龟八法",
+      "sections": [
+        {
+          "no": 1,
+          "title": "子午流注针法与灵龟八法",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 12,
+      "book_no": 11,
+      "part": "附篇",
+      "title": "针灸歌赋选",
+      "sections": [
+        {
+          "no": 1,
+          "title": "针灸歌赋选",
+          "kind": "concept",
+          "virtual": true,
+          "entries": []
+        }
+      ]
+    }
+  ]
+}

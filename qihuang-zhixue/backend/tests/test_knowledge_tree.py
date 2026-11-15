@@ -60,6 +60,26 @@ def test_topo_sort_obeys_strict_edges_and_groups_free_nodes() -> None:
     assert positions["a"] == positions["c"]
 
 
+def test_topo_sort_drops_free_hints_that_contradict_strict_order() -> None:
+    """free 只是「可以并行」的提示，撞上 strict 时该丢提示，而不是让调用方崩。
+
+    这条来自实测：六个学科的树合到一起后，某个域的 free 边把 A、B、C 并成一组，
+    而 A→C 又是 strict，旧实现直接抛 ValueError，`POST /api/path/detail/draft`
+    整单 500——用户点「就用这个顺序」只看到红字。
+    """
+
+    nodes = ["a", "b", "c"]
+    edges = [
+        {"from_node_id": "a", "to_node_id": "c", "order_sensitivity": "strict"},
+        {"from_node_id": "a", "to_node_id": "b", "order_sensitivity": "free"},
+        {"from_node_id": "b", "to_node_id": "c", "order_sensitivity": "free"},
+    ]
+    stages = topo_sort(nodes, edges)
+    positions = {node_id: index for index, stage in enumerate(stages) for node_id in stage}
+    assert positions["a"] < positions["c"]
+    assert sorted(positions) == ["a", "b", "c"]
+
+
 def test_seed_is_idempotent(tmp_path: Path) -> None:
     db_path = tmp_path / "knowledge.db"
     seed = _seed_module().seed

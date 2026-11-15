@@ -115,7 +115,12 @@ def test_stream_one_shot_emits_outline_slides_and_done(tmp_path: Path):
     resource = resource_storage.get_resource(done["payload"]["resource_id"], "u-ppt", db_path)
     assert resource is not None
     assert resource["type"] == "ppt"
-    assert resource["title"] == "麻黄 · 讲稿"
+    # 标题取封面页的标题，不再抄用户原句：方案定了什么名，成品就叫什么名。
+    cover_title = str(slides[0]["payload"]["slide"].get("title") or "").strip()
+    assert cover_title
+    assert resource["title"] == f"{cover_title} · 讲稿"
+    # 「再起一稿」要靠原句，所以原句留在 meta.topic 里。
+    assert resource["meta"]["topic"]
     assert resource["meta"]["ppt_version"] == 1
     assert resource["meta"]["generator"] == "ppt-agent"
     assert len(resource["content"]["slides"]) == len(slides)

@@ -1,0 +1,531 @@
+{
+  "subject": "basic",
+  "title": "中医基础理论",
+  "textbook": {
+    "title": "中医基础理论",
+    "edition": "新世纪第5版（十四五规划）",
+    "editor": "郑洪新、杨柱",
+    "publisher": "中国中医药出版社",
+    "toc_source": "《中医基础理论》（郑洪新、杨柱主编，中国中医药出版社，2021，ISBN 9787513269056）绪论 + 九章、38 节。目录逐节取自该版版权页，核对来源 https://www.iyunshu.com/item.html?itemId=2109090001656236 。本书不分总论/各论：绪论按总纲处理（part=总论），第一—九章为正文（part=各论）。",
+    "entries_source": {
+      "title": "中医基础理论（新世纪第5版，全国中医药行业高等教育“十四五”规划教材）",
+      "url": "https://www.iyunshu.com/item.html?itemId=2109090001656236",
+      "isbn": "9787513269056"
+    }
+  },
+  "schema_version": 1,
+  "chapters": [
+    {
+      "no": 1,
+      "book_no": 0,
+      "part": "绪论",
+      "title": "绪论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "绪论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": [
+            "中医学理论体系的形成和发展",
+            "中医学理论体系的主要特点",
+            "《中医基础理论》课程的主要内容"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 2,
+      "book_no": 1,
+      "part": "各论",
+      "title": "中医学的哲学基础",
+      "sections": [
+        {
+          "no": 1,
+          "title": "气一元论",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "气的哲学概念与气一元论",
+            "气一元论的基本内容",
+            "气一元论在中医学中的运用"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "阴阳学说",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "阴阳的概念与归类",
+            "阴阳学说的基本内容",
+            "阴阳学说在中医学中的运用"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "五行学说",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "五行的概念与归类",
+            "五行学说的基本内容",
+            "五行学说在中医学中的运用"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 3,
+      "book_no": 2,
+      "part": "各论",
+      "title": "中医学的主要思维方式",
+      "sections": [
+        {
+          "no": 1,
+          "title": "象思维",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "形象思维",
+            "意象思维",
+            "应象思维"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "系统思维",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "整体宏观",
+            "天人合一",
+            "形神合一"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "变易思维",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "恒动变化",
+            "动静相召"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 4,
+      "book_no": 3,
+      "part": "各论",
+      "title": "藏象",
+      "sections": [
+        {
+          "no": 1,
+          "title": "概述",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "藏象的基本概念",
+            "藏象学说的形成",
+            "藏象学说的特点",
+            "脏腑分类及各自的生理特点"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "五脏",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "心",
+            "肺",
+            "脾",
+            "肝",
+            "肾"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "六腑",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "胆",
+            "胃",
+            "小肠",
+            "大肠",
+            "膀胱",
+            "三焦"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "奇恒之腑",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "脑",
+            "髓",
+            "女子胞"
+          ]
+        },
+        {
+          "no": 5,
+          "title": "脏腑之间的关系",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "脏与脏之间的关系",
+            "腑与腑之间的关系",
+            "脏与腑之间的关系",
+            "五脏与奇恒之腑之间的关系"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 5,
+      "book_no": 4,
+      "part": "各论",
+      "title": "精气血津液神",
+      "sections": [
+        {
+          "no": 1,
+          "title": "精",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "人体之精的基本概念",
+            "人体之精的生成、贮藏和输泄",
+            "人体之精的功能"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "气",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "人体之气的基本概念",
+            "人体之气的生成",
+            "人体之气的运动与变化",
+            "人体之气的功能",
+            "人体之气的分类"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "血",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "血的基本概念",
+            "血的生成",
+            "血的运行",
+            "血的功能"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "津液",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "津液的基本概念",
+            "津液的生成、输布和排泄",
+            "津液的功能"
+          ]
+        },
+        {
+          "no": 5,
+          "title": "神",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "人体之神的基本概念",
+            "人体之神的生成",
+            "人体之神的功能",
+            "人体之神的分类"
+          ]
+        },
+        {
+          "no": 6,
+          "title": "精气血津液神之间的关系",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "气与血的关系",
+            "气与津液的关系",
+            "精血津液之间的关系",
+            "精气神之间的关系"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 6,
+      "book_no": 5,
+      "part": "各论",
+      "title": "经络",
+      "sections": [
+        {
+          "no": 1,
+          "title": "概述",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "经络的基本概念",
+            "经络学说的形成",
+            "经络系统的组成"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "十二经脉",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "十二经脉的名称",
+            "十二经脉的走向和交接规律",
+            "十二经脉的分布规律",
+            "十二经脉的表里关系",
+            "十二经脉的气血流注次序"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "奇经八脉",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "奇经八脉的名称",
+            "奇经八脉的走向和分布特点",
+            "奇经八脉的生理功能",
+            "奇经八脉各自的生理功能"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "经别、经筋、皮部、别络",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "十二经别",
+            "十二经筋",
+            "十二皮部",
+            "十五络脉"
+          ]
+        },
+        {
+          "no": 5,
+          "title": "经络的生理功能和应用",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "经络的生理功能",
+            "经络学说的应用"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 7,
+      "book_no": 6,
+      "part": "各论",
+      "title": "体质",
+      "sections": [
+        {
+          "no": 1,
+          "title": "体质的概念与构成要素",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "体质的概念与特点",
+            "体质的构成要素与评价"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "体质的生理学基础与形成因素",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "体质的生理学基础",
+            "体质的形成因素"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "体质的分类",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "体质的分类方法",
+            "体质的基本分类及特征"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "体质学说的应用",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "体质与养生",
+            "体质与病因",
+            "体质与病机",
+            "体质与辨证论治"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 8,
+      "book_no": 7,
+      "part": "各论",
+      "title": "病因",
+      "sections": [
+        {
+          "no": 1,
+          "title": "外感病因",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "六淫",
+            "疠气"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "内伤病因",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "七情内伤",
+            "饮食失宜",
+            "劳逸失度"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "病理产物性病因",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "痰饮",
+            "瘀血",
+            "结石"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "其他病因",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "外伤",
+            "诸虫",
+            "毒邪",
+            "药邪",
+            "医过",
+            "先天病因"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 9,
+      "book_no": 8,
+      "part": "各论",
+      "title": "病机",
+      "sections": [
+        {
+          "no": 1,
+          "title": "发病",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "发病的基本原理",
+            "影响发病的主要因素",
+            "发病类型"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "基本病机",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "邪正盛衰",
+            "阴阳失调",
+            "精气血的失常",
+            "津液失常"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "内生五邪",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "风气内动",
+            "寒从中生",
+            "湿浊内生",
+            "津伤化燥",
+            "火热内生"
+          ]
+        },
+        {
+          "no": 4,
+          "title": "疾病传变",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "疾病传变的形式",
+            "影响疾病传变的因素"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 10,
+      "book_no": 9,
+      "part": "各论",
+      "title": "养生与防治原则",
+      "sections": [
+        {
+          "no": 1,
+          "title": "养生",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "养生的概念与衰老机制",
+            "养生的基本原则"
+          ]
+        },
+        {
+          "no": 2,
+          "title": "治未病",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "未病先防",
+            "既病防变",
+            "愈后防复"
+          ]
+        },
+        {
+          "no": 3,
+          "title": "治则",
+          "kind": "concept",
+          "virtual": false,
+          "entries": [
+            "正治与反治",
+            "治标与治本"
+          ]
+        }
+      ]
+    }
+  ]
+}

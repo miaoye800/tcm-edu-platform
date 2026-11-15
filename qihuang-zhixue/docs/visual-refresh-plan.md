@@ -43,8 +43,11 @@
 | `styles/story.scss` | 16 |
 | `components/layout/` | 10 |
 
-> 注：`MeridianDemo` / `MindmapThemesDemo` / `Stage4Lab` / `AlchemyDemo` 是开发用的演示页，
+> 注：`MeridianDemo` / `Stage4Lab` / `AlchemyDemo` 是开发用的演示页，
 > 可以只保证「不报错」不追求观感。真正要修的是 profile / learning / assessment / path。
+>
+> 上表是当时的审计快照。其中 `views/PathView.vue` 与 `MindmapThemesDemo.vue`
+> 已删除（前者被 `MeridianMapView` 取代，后者是退役的版式演示页），这两行的处数不再可复算。
 
 ### 1.3 知识图谱是「浅色孤岛」
 

@@ -80,7 +80,7 @@
       <section v-if="currentSlide" class="block">
         <div class="block-head">
           <span class="block-label">当前页</span>
-          <span class="count">{{ SLIDE_KIND_LABELS[currentSlide.kind] }} · {{ current + 1 }}/{{ stats.slides }}</span>
+          <span class="count">{{ slideLayoutLabel(currentSlide) }} · {{ current + 1 }}/{{ stats.slides }}</span>
         </div>
         <div class="page-actions">
           <button class="mini" type="button" :disabled="current === 0" @click="moveSlide(current, current - 1)">前移</button>
@@ -126,7 +126,7 @@
 import { computed } from 'vue'
 import { AUDIENCE_CHOICES, PAGE_CHOICES, PPT_MODES } from '../../config/pptStudio'
 import type { usePptStudio } from '../../composables/usePptStudio'
-import { SLIDE_KIND_LABELS } from '../../types/ppt'
+import { slideLayoutLabel } from '../../types/ppt'
 
 const props = defineProps<{ studio: ReturnType<typeof usePptStudio> }>()
 const {

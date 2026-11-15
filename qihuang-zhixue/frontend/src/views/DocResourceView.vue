@@ -66,6 +66,10 @@
               @drag-start="onDragStart"
               @drag-end="onDragEnd"
             />
+            <!-- 计划快照：每个知识点都能回到地图上那个穴位。只对带 node_id 的块出现。 -->
+            <button v-if="mapNodeOf(block)" class="block-map-jump" type="button" @click="openOnMap(block)">
+              在地图上看
+            </button>
           </section>
 
           <button v-if="editable" class="block-tail" type="button" @click="appendBlock">+ 继续输入</button>
@@ -210,6 +214,15 @@ const toc = computed<TocItem[]>(() => blocks.value
   .map(block => ({ id: headingId(block.id), text: plainText(block), level: headingLevel(block.type) || 2 })))
 
 const headingId = (blockId: string) => `doc-heading-${blockId}`
+
+/** 计划快照的块带 node_id；普通文稿没有，也就不会出现「在地图上看」。 */
+const mapNodeOf = (block: DocBlock) => String(block.meta?.node_id || '')
+
+const openOnMap = (block: DocBlock) => {
+  const nodeId = mapNodeOf(block)
+  if (!nodeId) return
+  void router.push(`/path?focus=${encodeURIComponent(nodeId)}`)
+}
 
 /**
  * 有序列表的序号必须按「连续同类块」重新起算，不能用全局下标：
@@ -669,6 +682,23 @@ onBeforeUnmount(() => {
     color: var(--qh-fg);
     font-size: 12px;
     cursor: pointer;
+  }
+}
+
+.block-map-jump {
+  margin: 4px 0 0 2px;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--qh-color-jade) 40%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qh-color-jade);
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--qh-color-jade) 14%, transparent);
+    outline: none;
   }
 }
 

@@ -2,12 +2,14 @@
   <div class="stage" :style="vars">
     <Transition name="page">
       <div v-if="slide" :key="slide.id" class="stage-page">
-        <SlideSurface
+        <SlideRenderer
           :slide="slide"
           :theme-id="themeId"
           :index="current"
           :total="slides.length"
           :deck-title="deckTitle"
+          :design="design"
+          :font-pair-id="design?.type_pair"
           interactive
           @update="$emit('update', $event)"
           @update-column="$emit('update-column', $event)"
@@ -38,13 +40,16 @@
 import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { pptThemeVars } from '../../config/pptThemes'
 import type { SlideNode } from '../../types/ppt'
-import SlideSurface from './SlideSurface.vue'
+import type { DeckDesign } from '../../types/design'
+import SlideRenderer from './SlideRenderer.vue'
 
 const props = defineProps<{
   slides: SlideNode[]
   current: number
   themeId: string
   deckTitle: string
+  /** 设计单：纸面处方与角饰从它来。没有设计单时用默认纸、不画角饰。 */
+  design?: DeckDesign | null
 }>()
 
 const emit = defineEmits<{

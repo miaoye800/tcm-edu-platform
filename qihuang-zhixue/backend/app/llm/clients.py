@@ -3,6 +3,7 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 import httpx
@@ -13,6 +14,40 @@ ChatMessage = Mapping[str, Any]
 StreamTokenKind = Literal["thinking", "message"]
 StreamToken = tuple[StreamTokenKind, str]
 logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True, frozen=True)
+class ToolCall:
+    """模型发起的一次工具调用。
+
+    ``arguments`` 已经解析成 dict；解析失败时是空 dict，原始串留在
+    ``raw_arguments`` 里。**不能因为模型写错一个逗号就抛异常**——正确的处理是把
+    「你上一轮的参数不是合法 JSON」回给模型让它重试，那是一次正常对话轮次。
+    """
+
+    id: str
+    name: str
+    arguments: dict[str, Any]
+    raw_arguments: str = ""
+
+
+@dataclass(slots=True)
+class ToolTurn:
+    """一轮工具对话的完整结果。
+
+    ``message`` 是**原样的 assistant message**（含 ``tool_calls``），下一轮直接
+    append 回 messages 即可。只留 ``text`` 会丢掉工具调用，循环无法继续，回放也无法
+    复现——这是升级前 ``chat()`` 的真实缺陷。
+    """
+
+    text: str = ""
+    tool_calls: list[ToolCall] = field(default_factory=list)
+    message: dict[str, Any] = field(default_factory=dict)
+    usage: dict[str, Any] | None = None
+
+    @property
+    def wants_tools(self) -> bool:
+        return bool(self.tool_calls)
 
 
 class LLMClientError(RuntimeError):
@@ -104,6 +139,17 @@ class BaseLLMClient(ABC):
         if False:
             yield ("message", "")
 
+    async def chat_tools(self, messages: Sequence[ChatMessage], **kw: Any) -> ToolTurn:
+        """一轮带工具的对话。
+
+        默认实现退化成普通 ``chat()``：不支持工具的模型照样能用，只是永远不发起
+        调用——调用方据此判定「这轮没有工具意图」并走兜底，不需要为每个 provider
+        写一份 ``NotImplementedError``。
+        """
+
+        text = await self.chat(messages, **kw)
+        return ToolTurn(text=text, message={"role": "assistant", "content": text})
+
 
 class MockClient(BaseLLMClient):
     """Deterministic client used when no API key is configured."""
@@ -135,6 +181,10 @@ class DeepSeekClient(BaseLLMClient):
         "thinking",
         "reasoning_effort",
         "response_format",
+        # 工具调用：不放进白名单，`tools` 会被静默丢掉，模型永远收不到工具清单。
+        "tools",
+        "tool_choice",
+        "parallel_tool_calls",
     )
 
     def __init__(
@@ -208,6 +258,60 @@ class DeepSeekClient(BaseLLMClient):
         raise LLMResponseParseError(
             f"DeepSeek response missing non-empty message.content/reasoning_content: {data}"
         )
+
+    async def chat_tools(self, messages: Sequence[ChatMessage], **kw: Any) -> ToolTurn:
+        """一轮带工具的对话，返回文本、工具调用与整条 message。
+
+        与 ``chat()`` 的差别只有两点：请求体里有 ``tools``，响应里保留
+        ``tool_calls``。**没有工具调用时行为与 ``chat()`` 完全一致**，所以调用方
+        可以用同一个入口处理两种情况。
+        """
+
+        if not self.api_key:
+            return await MockClient(self.model_name, self.provider).chat_tools(messages, **kw)
+        timeout_seconds = _timeout_seconds(kw, self.timeout_seconds)
+        payload: dict[str, Any] = {
+            "model": self.model_name,
+            "messages": [dict(message) for message in messages],
+            "stream": False,
+        }
+        self._apply_params(payload, kw)
+        _log_deepseek_chat_request(payload, timeout_seconds=timeout_seconds)
+
+        try:
+            async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+        except httpx.HTTPError as exc:
+            raise _wrap_httpx_error("tool request", exc) from exc
+
+        _raise_for_status(response)
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise LLMResponseParseError(
+                f"DeepSeek response JSON decode failed: {exc}",
+                fallback_reason=exc.__class__.__name__,
+            ) from exc
+        try:
+            message = data["choices"][0]["message"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise LLMResponseShapeError(f"DeepSeek response missing choices[0].message: {data}") from exc
+
+        self._capture_usage(data)
+        calls = _tool_calls_from_message(message)
+        text = _deepseek_message_text(message, prefer_reasoning_content=bool(kw.get("prefer_reasoning_content")))
+        if not text and not calls:
+            raise LLMResponseParseError(f"DeepSeek response has neither content nor tool_calls: {data}")
+        # 原样回传 message：`tool_calls` 的 id 必须与后续 tool 消息的
+        # `tool_call_id` 对上，自己重建一份容易漏字段（尤其 reasoning 系列）。
+        return ToolTurn(text=text, tool_calls=calls, message=dict(message), usage=self.last_usage)
 
     async def chat_stream(self, messages: Sequence[ChatMessage], **kw: Any) -> AsyncIterator[StreamToken]:
         if not self.api_key:
@@ -330,6 +434,60 @@ class ZhipuClient(BaseLLMClient):
             return await MockClient(self.model_name, self.provider).chat(messages, **kw)
         raise NotImplementedError("Zhipu real API calls will be added in a later task.")
 
+    async def chat_tools(self, messages: Sequence[ChatMessage], **kw: Any) -> ToolTurn:
+        """一轮带工具的对话，返回文本、工具调用与整条 message。
+
+        与 ``chat()`` 的差别只有两点：请求体里有 ``tools``，响应里保留
+        ``tool_calls``。**没有工具调用时行为与 ``chat()`` 完全一致**，所以调用方
+        可以用同一个入口处理两种情况。
+        """
+
+        if not self.api_key:
+            return await MockClient(self.model_name, self.provider).chat_tools(messages, **kw)
+        timeout_seconds = _timeout_seconds(kw, self.timeout_seconds)
+        payload: dict[str, Any] = {
+            "model": self.model_name,
+            "messages": [dict(message) for message in messages],
+            "stream": False,
+        }
+        self._apply_params(payload, kw)
+        _log_deepseek_chat_request(payload, timeout_seconds=timeout_seconds)
+
+        try:
+            async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+        except httpx.HTTPError as exc:
+            raise _wrap_httpx_error("tool request", exc) from exc
+
+        _raise_for_status(response)
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise LLMResponseParseError(
+                f"DeepSeek response JSON decode failed: {exc}",
+                fallback_reason=exc.__class__.__name__,
+            ) from exc
+        try:
+            message = data["choices"][0]["message"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise LLMResponseShapeError(f"DeepSeek response missing choices[0].message: {data}") from exc
+
+        self._capture_usage(data)
+        calls = _tool_calls_from_message(message)
+        text = _deepseek_message_text(message, prefer_reasoning_content=bool(kw.get("prefer_reasoning_content")))
+        if not text and not calls:
+            raise LLMResponseParseError(f"DeepSeek response has neither content nor tool_calls: {data}")
+        # 原样回传 message：`tool_calls` 的 id 必须与后续 tool 消息的
+        # `tool_call_id` 对上，自己重建一份容易漏字段（尤其 reasoning 系列）。
+        return ToolTurn(text=text, tool_calls=calls, message=dict(message), usage=self.last_usage)
+
     async def chat_stream(self, messages: Sequence[ChatMessage], **kw: Any) -> AsyncIterator[StreamToken]:
         if not self.api_key:
             async for token in MockClient(self.model_name, self.provider).chat_stream(messages, **kw):
@@ -401,6 +559,57 @@ def _log_deepseek_stream_delta(delta: Mapping[str, Any]) -> None:
         len(reasoning),
         len(content),
     )
+
+
+def tool_turn_from_message(message: Mapping[str, Any]) -> ToolTurn:
+    """把一条 assistant message 还原成 ``ToolTurn``（回放路径用）。
+
+    与真实调用走同一个解析函数，回放出来的工具调用与录制时逐字节一致——
+    否则「回放通过、线上失败」这类问题查起来最费时间。
+    """
+
+    return ToolTurn(
+        text=_deepseek_message_text(message),
+        tool_calls=_tool_calls_from_message(message),
+        message=dict(message),
+    )
+
+
+def _tool_calls_from_message(message: Mapping[str, Any]) -> list[ToolCall]:
+    """把响应里的 ``tool_calls`` 解析成结构化对象。
+
+    参数解析失败的调用**保留**（arguments 为空 dict），由调用方回一句「参数不是合法
+    JSON」让模型重来——直接丢弃等于模型以为自己成功调用了。
+    """
+
+    raw = message.get("tool_calls")
+    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes, bytearray)):
+        return []
+    calls: list[ToolCall] = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, Mapping):
+            continue
+        function = item.get("function")
+        if not isinstance(function, Mapping):
+            continue
+        name = str(function.get("name") or "").strip()
+        if not name:
+            continue
+        raw_arguments = function.get("arguments")
+        text = raw_arguments if isinstance(raw_arguments, str) else json.dumps(raw_arguments or {}, ensure_ascii=False)
+        try:
+            parsed = json.loads(text) if text.strip() else {}
+        except json.JSONDecodeError:
+            parsed = {}
+        calls.append(
+            ToolCall(
+                id=str(item.get("id") or f"call-{index}"),
+                name=name,
+                arguments=dict(parsed) if isinstance(parsed, Mapping) else {},
+                raw_arguments=text,
+            )
+        )
+    return calls
 
 
 def _deepseek_message_text(

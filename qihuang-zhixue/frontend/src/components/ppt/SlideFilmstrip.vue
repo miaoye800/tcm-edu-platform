@@ -13,7 +13,14 @@
         @click="$emit('select', index)"
       >
         <span class="thumb-page">
-          <SlideSurface :slide="slide" :theme-id="themeId" :index="index" :total="slides.length" />
+          <SlideRenderer
+            :slide="slide"
+            :theme-id="themeId"
+            :index="index"
+            :total="slides.length"
+            :design="design"
+            :font-pair-id="design?.type_pair"
+          />
         </span>
         <span class="thumb-no">{{ String(index + 1).padStart(2, '0') }}</span>
       </button>
@@ -29,13 +36,20 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import type { SlideNode } from '../../types/ppt'
-import SlideSurface from './SlideSurface.vue'
+import type { DeckDesign } from '../../types/design'
+import SlideRenderer from './SlideRenderer.vue'
 
 const props = defineProps<{
   slides: SlideNode[]
   current: number
   themeId: string
   limit: number
+  /**
+   * 缩略图与成品必须同一套装帧。传整份设计单而不是拆开的 `paper` / `ornament`：
+   * 拆开之后每加一个装帧字段（字对、角饰集）都要改三个调用方，而漏改一处的结果
+   * 是「小图和大图不一样」——用户在小图上看到的版式不是他拿到的那张。
+   */
+  design?: DeckDesign | null
 }>()
 
 defineEmits<{ select: [index: number]; add: [] }>()

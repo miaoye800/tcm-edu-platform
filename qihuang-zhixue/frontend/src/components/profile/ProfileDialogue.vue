@@ -9,8 +9,21 @@
         <span class="status-pill" :class="{ 'is-ready': converged }">{{ converged ? '已收束' : '取证中' }}</span>
       </div>
 
+      <nav v-if="turnAnchors.length >= 2" class="turn-nav" aria-label="回到某一轮对话">
+        <span class="turn-nav__label">回到</span>
+        <button
+          v-for="anchor in turnAnchors"
+          :key="`turn-${anchor.turn}`"
+          type="button"
+          :class="['turn-chip', { 'is-active': focusedTurn === anchor.turn }]"
+          :title="anchor.preview"
+          @click="focusTurnById(anchor.turn)"
+        >第 {{ anchor.turn }} 轮</button>
+        <button v-if="focusedTurn" type="button" class="turn-chip is-back" @click="backToLatest">回到最新</button>
+      </nav>
+
       <div ref="flowRef" class="bubble-flow" aria-live="polite" @scroll="updateFlowPinned">
-        <div v-for="message in messages" :key="message.id" :class="['bubble-row', `is-${message.role}`]">
+        <div v-for="message in messages" :key="message.id" :class="['bubble-row', `is-${message.role}`, { 'is-focused': focusedTurn !== null && turnOfMessage(message.id) === focusedTurn }]" :data-turn="turnOfMessage(message.id)">
           <img
             v-if="message.role === 'assistant'"
             class="bubble-avatar"
@@ -283,7 +296,6 @@
             </article>
           </div>
         </details>
-        <ProfileDeveloperAudit :records="developerAudit" />
     </section>
   </section>
 </template>
@@ -302,13 +314,11 @@ import type {
   IdentityCardItem,
   ProfileDialogueChatMessage,
   ProfileDialogueStreamUiEvent,
-  ProfileDeveloperAuditRecord,
   ProfileProgress,
   RadarAxis,
 } from '../../types/profile'
 import RadarChart from './RadarChart.vue'
 import DestinyCardBoard from './DestinyCardBoard.vue'
-import ProfileDeveloperAudit from './ProfileDeveloperAudit.vue'
 import {
   bestScoredCard,
   cardIsFlipped,
@@ -332,6 +342,7 @@ import {
   createProfileDialogueIdentityCardState,
   createProfileDialogueMessageState,
   createProfileDialogueUserMessage,
+  markProfileDialogueVisibleMessageComplete,
 } from './profileDialogueStreamState'
 
 const props = withDefaults(
@@ -350,7 +361,6 @@ const props = withDefaults(
     converged?: boolean
     quickReplies?: string[]
     streamEvents?: ProfileDialogueStreamUiEvent[]
-    developerAudit?: ProfileDeveloperAuditRecord[]
     disabled?: boolean
     pending?: boolean
   }>(),
@@ -368,7 +378,6 @@ const props = withDefaults(
     converged: false,
     quickReplies: () => [],
     streamEvents: () => [],
-    developerAudit: () => [],
     disabled: false,
     pending: false,
   },
@@ -386,6 +395,55 @@ const messageState = reactive(createProfileDialogueMessageState())
 const identityCardState = reactive(createProfileDialogueIdentityCardState())
 const renderedIdentityCards = ref<IdentityCardsDimensionView[]>([])
 const messages = computed(() => messageState.messages)
+/**
+ * 轮次回溯：第 k 条用户发言就是后端的第 k 轮。
+ *
+ * 退出重进后对话是按历史重建的（消息本身没有 turn 字段），所以轮次由「第几条
+ * 用户发言」推导，和后端 turn_index 严格对齐；点某一轮能回到那一次的上下文，
+ * 而不是只能看最后一句。
+ */
+const focusedTurn = ref<number | null>(null)
+const messageTurnMap = computed(() => {
+  const map = new Map<number, number>()
+  let turn = 0
+  for (const message of messageState.messages) {
+    if (message.role === 'user') turn += 1
+    map.set(message.id, turn)
+  }
+  return map
+})
+const turnOfMessage = (id: number) => messageTurnMap.value.get(id) ?? 0
+const turnAnchors = computed(() => {
+  const anchors: Array<{ turn: number; preview: string }> = []
+  for (const message of messageState.messages) {
+    if (message.role !== 'user') continue
+    anchors.push({ turn: turnOfMessage(message.id), preview: message.text.slice(0, 48) })
+  }
+  return anchors.filter((anchor) => anchor.turn > 0)
+})
+const scrollToTurn = async (turn: number) => {
+  await nextTick()
+  const flow = flowRef.value
+  if (!flow) return
+  const row = flow.querySelector<HTMLElement>(`[data-turn="${turn}"]`)
+  if (!row) return
+  // 用相对 flow 的偏移定位：直接用 scrollIntoView 会把整页一起滚走。
+  const top = row.getBoundingClientRect().top - flow.getBoundingClientRect().top + flow.scrollTop
+  flow.scrollTop = Math.max(0, top - 8)
+  flowPinned.value = false
+}
+const focusTurnById = (turn: number) => {
+  if (focusedTurn.value === turn) {
+    backToLatest()
+    return
+  }
+  focusedTurn.value = turn
+  void scrollToTurn(turn)
+}
+const backToLatest = () => {
+  focusedTurn.value = null
+  void scrollFlow(true)
+}
 const flowPinned = ref(true)
 const selectedDimensionKey = ref<DimensionKey | null>(null)
 const goalText = ref('')
@@ -397,25 +455,47 @@ let flipTimer: ReturnType<typeof window.setTimeout> | null = null
 const flowBottomThreshold = 28
 const identityFlipDurationMs = stage4Visual.dialogue.identityFlipMs
 
+const resetMessagesFromHistory = (history: Array<{ role: 'assistant' | 'user'; content: string }>) => {
+  messageState.messages = []
+  messageState.messageId = 0
+  messageState.activeAssistantId = null
+  focusedTurn.value = null
+  for (const item of history) {
+    const text = item.content.trim()
+    if (!text) continue
+    const message = item.role === 'user'
+      ? createProfileDialogueUserMessage(messageState, text)
+      : createProfileDialogueAssistantMessage(messageState, text, false)
+    messageState.messages.push(message)
+  }
+  void nextTick(() => {
+    if (flowRef.value) flowRef.value.scrollTop = flowRef.value.scrollHeight
+  })
+}
+
 watch(
   () => props.sessionId,
-  () => {
-    messageState.messages = []
-    messageState.messageId = 0
-    messageState.activeAssistantId = null
-    for (const item of props.chatHistory) {
-      const text = item.content.trim()
-      if (!text) continue
-      const message = item.role === 'user'
-        ? createProfileDialogueUserMessage(messageState, text)
-        : createProfileDialogueAssistantMessage(messageState, text, false)
-      messageState.messages.push(message)
-    }
-    void nextTick(() => {
-      if (flowRef.value) flowRef.value.scrollTop = flowRef.value.scrollHeight
-    })
-  },
+  () => resetMessagesFromHistory(props.chatHistory),
   { immediate: true },
+)
+
+/**
+ * 会话历史是异步到的：切到另一局时 `sessionId` 与 `chatHistory` 不一定在同
+ * 一次渲染里就位，只监听 id 会留下"开场白 + 空历史"。这里以后端历史为准补齐，
+ * 但正在流式输出时不动本地气泡——那时的文本还没有落库。
+ */
+watch(
+  () => props.chatHistory,
+  (history) => {
+    if (!history?.length) return
+    if (messageState.activeAssistantId !== null) return
+    const local = messageState.messages.filter((message) => message.text.trim())
+    const same = local.length === history.length
+      && local.every((message, index) => message.role === history[index].role && message.text.trim() === history[index].content.trim())
+    if (same) return
+    resetMessagesFromHistory(history)
+  },
+  { deep: true },
 )
 
 const isFlowNearBottom = () => {
@@ -445,6 +525,8 @@ const addAssistantPrompt = (prompt: string) => {
 }
 
 const addUserMessage = (text: string) => {
+  // 自己开口就回到最新：正在回看第 3 轮时发新消息，界面必须跟着新回答走。
+  focusedTurn.value = null
   addProfileDialogueUserMessage(messageState, text)
   void scrollFlow(true)
 }
@@ -464,14 +546,43 @@ const sendQuickReply = (quickReply: string) => {
   emit('answer', createAnswerPayload('quick_reply', quickReply))
 }
 
+/**
+ * 打字游标的兜底。
+ *
+ * 服务端正文一写完就发 `message_done`，正常情况下游标立刻消失。但只要事件
+ * 丢一次（断线重连、代理吞帧），`typing` 会永远停在最后一位——用户看到的就
+ * 是"字早就出完了，末尾还闪着一根竖线"。这里给正文设一个静默窗口：超过窗口
+ * 没有新字就打住。它只影响游标，不关闭气泡，后续 delta 仍能追加。
+ */
+const CARET_IDLE_MS = 900
+let caretIdleTimer: ReturnType<typeof window.setTimeout> | null = null
+const stopCaretIdleTimer = () => {
+  if (!caretIdleTimer) return
+  window.clearTimeout(caretIdleTimer)
+  caretIdleTimer = null
+}
+const scheduleCaretIdleStop = () => {
+  stopCaretIdleTimer()
+  caretIdleTimer = window.setTimeout(() => {
+    caretIdleTimer = null
+    markProfileDialogueVisibleMessageComplete(messageState)
+  }, CARET_IDLE_MS)
+}
+
 const applyQueuedStreamEvent = (event: ProfileDialogueStreamUiEvent) => {
   if (event.type === 'thinking' || event.type === 'message') {
     rememberFlowPin()
   }
   const result = applyProfileDialogueStreamEvent(messageState, event)
   if (event.type === 'reset') {
+    stopCaretIdleTimer()
     void scrollFlow(true)
     return
+  }
+  if (event.type === 'message') {
+    scheduleCaretIdleStop()
+  } else if (event.type === 'message_done' || event.type === 'done') {
+    stopCaretIdleTimer()
   }
   if (result === 'appended') {
     void scrollFlow()
@@ -825,6 +936,7 @@ watch(
 
 onBeforeUnmount(() => {
   if (flipTimer) window.clearTimeout(flipTimer)
+  stopCaretIdleTimer()
 })
 
 watch(
@@ -918,6 +1030,48 @@ h3 {
   border-color: var(--qh-line-strong);
   color: var(--qh-color-gold);
   background: var(--qh-line);
+}
+
+.turn-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 22px 10px;
+}
+.turn-nav__label {
+  color: var(--qh-text-muted);
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+.turn-chip {
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, var(--qh-color-jade-line) 60%, transparent);
+  border-radius: var(--qh-radius-pill);
+  color: var(--qh-text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  transition: color var(--qh-duration-fast) ease, border-color var(--qh-duration-fast) ease;
+}
+.turn-chip:hover,
+.turn-chip:focus-visible {
+  border-color: var(--qh-color-jade);
+  color: var(--qh-text);
+}
+.turn-chip.is-active {
+  border-color: var(--qh-color-gold);
+  color: var(--qh-color-gold);
+  background: color-mix(in srgb, var(--qh-color-gold) 10%, transparent);
+}
+.turn-chip.is-back {
+  margin-left: auto;
+  border-style: dashed;
+}
+.bubble-row.is-focused .chat-bubble {
+  border-color: var(--qh-color-gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--qh-color-gold) 24%, transparent);
 }
 
 .bubble-flow {

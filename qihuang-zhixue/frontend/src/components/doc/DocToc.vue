@@ -1,6 +1,10 @@
 <template>
   <nav v-if="items.length" class="doc-toc" aria-label="目录">
-    <p class="toc-caption">目录</p>
+    <p class="toc-caption">
+      <!-- 一个 11px 的小图标定住「这是导航」，比再加一行标题省地方 -->
+      <QhIcon name="fluent:list-24-regular" :size="13" />
+      目录
+    </p>
     <button
       v-for="item in items"
       :key="item.id"
@@ -15,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import QhIcon from '../ui/QhIcon.vue'
 import type { TocItem } from '../../types/doc'
 
 defineProps<{ items: TocItem[]; activeId: string }>()
@@ -35,6 +40,9 @@ const emit = defineEmits<{ (e: 'jump', id: string): void }>()
 }
 
 .toc-caption {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin: 0 0 4px;
   color: var(--qh-fg-faint);
   font-size: 11px;

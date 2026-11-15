@@ -17,7 +17,15 @@ export const useProfileStore = defineStore('profile', {
     narrativeLoaded: false,
     error: '',
     narrativeError: '',
-    usingMock: true,
+    /**
+     * `usingMock` 只表示"这一份是本地演示数据"，由 e2e 开关显式打开。
+     *
+     * 它过去在请求失败时也会被置真，于是后端的真实画像换成了七维全空的
+     * 占位数据——用户看到的是"画像空了、证据没了"，而不是"没加载出来"。
+     * 现在失败只记在 `loadFailed` 上，屏幕上的画像保持原样。
+     */
+    usingMock: false,
+    loadFailed: false,
     latestRadarChanges: [] as RadarChange[],
     latestDialogueSummary: '',
     radarHighlightActive: false,
@@ -52,6 +60,7 @@ export const useProfileStore = defineStore('profile', {
       this.syncCurrentUser()
       this.loading = true
       this.error = ''
+      this.loadFailed = false
 
       // E2E screenshots exercise the same local fallback used by offline users.
       // The flag is opt-in and never changes route-guard behavior in production.
@@ -73,11 +82,16 @@ export const useProfileStore = defineStore('profile', {
           this.resetNarrativeState(this.activeUserId)
         }
       } catch (error) {
-        this.profile = createMockProfile(this.activeUserId)
-        this.resetNarrativeState(this.activeUserId)
-        this.usingMock = true
+        // 失败时保留上一次读到的真实画像（同一个人），绝不替换成空白占位：
+        // 一次超时不该让用户以为自己的证据丢了。
+        this.usingMock = false
+        this.loadFailed = true
         this.loaded = true
-        this.error = error instanceof Error ? error.message : '画像加载失败，已切换为 mock 数据'
+        this.error = error instanceof Error ? error.message : '画像加载失败，请稍后重试'
+        if (this.profile.user_id !== this.activeUserId) {
+          this.profile = createMockProfile(this.activeUserId)
+          this.resetNarrativeState(this.activeUserId)
+        }
       } finally {
         this.loading = false
       }
@@ -85,7 +99,7 @@ export const useProfileStore = defineStore('profile', {
     async loadNarrative(force = false) {
       this.syncCurrentUser()
       const userId = this.activeUserId
-      if (!userId || this.usingMock) {
+      if (!userId || this.usingMock || this.loadFailed) {
         this.resetNarrativeState(userId)
         return
       }
@@ -107,7 +121,7 @@ export const useProfileStore = defineStore('profile', {
       }
     },
     async ensureNarrativeLoaded() {
-      if (!this.loaded || this.loading || this.usingMock) return
+      if (!this.loaded || this.loading || this.usingMock || this.loadFailed) return
       await this.loadNarrative()
     },
     setDialogueRadarChanges(changes: RadarChange[] = [], summary = '') {

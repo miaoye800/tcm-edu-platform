@@ -1,0 +1,1165 @@
+{
+  "items": [
+    {
+      "asset_id": "plate-birdpaint-01",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 1.png",
+      "file": "assets/pictorial/plate-birdpaint-01.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 57988,
+      "label": {
+        "subject": "古埃及彩绘鸟",
+        "alt": "一只长颈长腿的鸟，身披青绿与金黑条纹纹样",
+        "tags": [
+          "古埃及",
+          "壁画",
+          "鸟类",
+          "复古插画",
+          "纹样"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-birdpaint-02",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 2.png",
+      "file": "assets/pictorial/plate-birdpaint-02.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 55742,
+      "label": {
+        "subject": "彩绘鸳鸯",
+        "alt": "一只色彩斑斓的鸳鸯侧身浮游，羽毛纹样精细",
+        "tags": [
+          "鸳鸯",
+          "复古插画",
+          "水禽",
+          "纹样",
+          "中医药"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-birdpaint-03",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 3.png",
+      "file": "assets/pictorial/plate-birdpaint-03.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 99224,
+      "label": {
+        "subject": "蓝头长尾鸟",
+        "alt": "蓝头长尾鸟栖息在带黄果的枝叶上",
+        "tags": [
+          "复古插画",
+          "鸟类",
+          "枝叶",
+          "工笔风格",
+          "博物画"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-birdpaint-04",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 4.png",
+      "file": "assets/pictorial/plate-birdpaint-04.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 51876,
+      "label": {
+        "subject": "红嘴蓝尾鸟",
+        "alt": "一只红嘴红脚、棕背白腹、蓝尾的复古鸟类插画",
+        "tags": [
+          "复古插画",
+          "鸟类",
+          "博物画",
+          "红嘴",
+          "蓝尾"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-birdpaint-05",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 5.png",
+      "file": "assets/pictorial/plate-birdpaint-05.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 57680,
+      "label": {
+        "subject": "展翅斑鸠",
+        "alt": "一只米色斑鸠展翅飞翔，翅尖与尾羽为黑色。",
+        "tags": [
+          "复古插画",
+          "鸟类",
+          "斑鸠",
+          "展翅",
+          "线描"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-birdpaint-06",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 6.png",
+      "file": "assets/pictorial/plate-birdpaint-06.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 62442,
+      "label": {
+        "subject": "绿头黄身水鸟",
+        "alt": "一只绿头黄身、绿翅白尾的水鸟侧身站立",
+        "tags": [
+          "复古插画",
+          "水鸟",
+          "绿头鸭",
+          "博物画",
+          "线描"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-birdpaint-07",
+      "set": "Bird Paintings 02",
+      "origin": "HTC_Heritage Library_Bird Paintings 02Element 7.png",
+      "file": "assets/pictorial/plate-birdpaint-07.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 55258,
+      "label": {
+        "subject": "青绿雁形水禽",
+        "alt": "一只青绿身白腹的雁形水禽侧身站立，翅有金色条纹。",
+        "tags": [
+          "复古插画",
+          "水禽",
+          "青绿色",
+          "线描",
+          "动物"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "鸟类",
+        "装饰画"
+      ]
+    },
+    {
+      "asset_id": "plate-swallow-01",
+      "set": "Flying High",
+      "origin": "HTC_Heritage Library_Flying HighElement 1.png",
+      "file": "assets/pictorial/plate-swallow-01.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 37768,
+      "label": {
+        "subject": "展翅飞燕",
+        "alt": "水墨简笔勾勒一只展翅飞翔的燕子",
+        "tags": [
+          "水墨",
+          "简笔",
+          "飞燕",
+          "鸟类",
+          "复古插画"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "墨线",
+        "飞鸟",
+        "留白"
+      ]
+    },
+    {
+      "asset_id": "plate-swallow-02",
+      "set": "Flying High",
+      "origin": "HTC_Heritage Library_Flying HighElement 2.png",
+      "file": "assets/pictorial/plate-swallow-02.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 33480,
+      "label": {
+        "subject": "写意飞燕",
+        "alt": "水墨简笔勾勒的燕子展翅飞翔",
+        "tags": [
+          "水墨",
+          "飞燕",
+          "写意",
+          "简笔",
+          "鸟类"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "墨线",
+        "飞鸟",
+        "留白"
+      ]
+    },
+    {
+      "asset_id": "plate-swallow-03",
+      "set": "Flying High",
+      "origin": "HTC_Heritage Library_Flying HighElement 3.png",
+      "file": "assets/pictorial/plate-swallow-03.webp",
+      "w": 1100,
+      "h": 824,
+      "bytes": 34338,
+      "label": {
+        "subject": "展翅飞鸟",
+        "alt": "一只黑白简笔画风格的飞鸟展翅飞翔",
+        "tags": [
+          "简笔画",
+          "飞鸟",
+          "黑白",
+          "复古插画",
+          "线稿"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "墨线",
+        "飞鸟",
+        "留白"
+      ]
+    },
+    {
+      "asset_id": "plate-swallow-04",
+      "set": "Flying High",
+      "origin": "HTC_Heritage Library_Flying HighElement 4.png",
+      "file": "assets/pictorial/plate-swallow-04.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 41018,
+      "label": {
+        "subject": "俯冲飞燕",
+        "alt": "一只燕子展翅俯冲的简笔水墨画",
+        "tags": [
+          "水墨",
+          "简笔",
+          "燕子",
+          "飞鸟",
+          "复古"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "墨线",
+        "飞鸟",
+        "留白"
+      ]
+    },
+    {
+      "asset_id": "plate-swallow-05",
+      "set": "Flying High",
+      "origin": "HTC_Heritage Library_Flying HighElement 5.png",
+      "file": "assets/pictorial/plate-swallow-05.webp",
+      "w": 1100,
+      "h": 824,
+      "bytes": 29286,
+      "label": {
+        "subject": "展翅飞鸟",
+        "alt": "一只以粗黑线条勾勒的飞鸟展翅翱翔",
+        "tags": [
+          "飞鸟",
+          "水墨",
+          "简笔",
+          "复古",
+          "插画"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "墨线",
+        "飞鸟",
+        "留白"
+      ]
+    },
+    {
+      "asset_id": "plate-hasegawa-01",
+      "set": "Hasegawa Flowers 02",
+      "origin": "HTC_Heritage Library_Hasegawa Flowers 02Element 1.png",
+      "file": "assets/pictorial/plate-hasegawa-01.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 181492,
+      "label": {
+        "subject": "黄色菊花",
+        "alt": "一株盛开的黄色菊花，花瓣细长卷曲，叶片宽大。",
+        "tags": [
+          "菊花",
+          "植物插画",
+          "复古",
+          "花卉",
+          "本草"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花卉",
+        "浮世绘"
+      ]
+    },
+    {
+      "asset_id": "plate-hasegawa-02",
+      "set": "Hasegawa Flowers 02",
+      "origin": "HTC_Heritage Library_Hasegawa Flowers 02Element 2.png",
+      "file": "assets/pictorial/plate-hasegawa-02.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 188186,
+      "label": {
+        "subject": "粉红菊花",
+        "alt": "一株粉红菊花，花瓣细长卷曲，绿叶衬托",
+        "tags": [
+          "植物插画",
+          "菊花",
+          "复古",
+          "中医药",
+          "花卉"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花卉",
+        "浮世绘"
+      ]
+    },
+    {
+      "asset_id": "plate-hasegawa-03",
+      "set": "Hasegawa Flowers 02",
+      "origin": "HTC_Heritage Library_Hasegawa Flowers 02Element 3.png",
+      "file": "assets/pictorial/plate-hasegawa-03.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 183898,
+      "label": {
+        "subject": "粉色独本菊",
+        "alt": "一株粉色细瓣菊花，茎叶完整，呈植物图谱样式",
+        "tags": [
+          "菊花",
+          "植物插画",
+          "复古",
+          "本草图谱",
+          "线描"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花卉",
+        "浮世绘"
+      ]
+    },
+    {
+      "asset_id": "plate-hasegawa-04",
+      "set": "Hasegawa Flowers 02",
+      "origin": "HTC_Heritage Library_Hasegawa Flowers 02Element 4.png",
+      "file": "assets/pictorial/plate-hasegawa-04.webp",
+      "w": 825,
+      "h": 1100,
+      "bytes": 200420,
+      "label": {
+        "subject": "卷瓣红菊",
+        "alt": "一株红粉色卷瓣菊花，带茎叶的植物插画",
+        "tags": [
+          "菊花",
+          "植物插画",
+          "复古",
+          "水彩",
+          "中药材"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花卉",
+        "浮世绘"
+      ]
+    },
+    {
+      "asset_id": "plate-merian-01",
+      "set": "Nature by Merian 07",
+      "origin": "HTC_Heritage Library_Nature by Merian 07Element 1.png",
+      "file": "assets/pictorial/plate-merian-01.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 133110,
+      "label": {
+        "subject": "无花果与昆虫",
+        "alt": "复古插画绘无花果枝叶果实及多种昆虫",
+        "tags": [
+          "科学插画",
+          "复古博物画",
+          "无花果",
+          "昆虫",
+          "植物图谱"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "博物画",
+        "植物",
+        "图谱"
+      ]
+    },
+    {
+      "asset_id": "plate-merian-02",
+      "set": "Nature by Merian 07",
+      "origin": "HTC_Heritage Library_Nature by Merian 07Element 2.png",
+      "file": "assets/pictorial/plate-merian-02.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 188810,
+      "label": {
+        "subject": "盘蛇与飞蛾",
+        "alt": "复古博物画中蛇盘于花枝下，枝上有飞蛾与毛虫",
+        "tags": [
+          "博物画",
+          "复古插画",
+          "蛇",
+          "飞蛾",
+          "植物"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "博物画",
+        "植物",
+        "图谱"
+      ]
+    },
+    {
+      "asset_id": "plate-merian-03",
+      "set": "Nature by Merian 07",
+      "origin": "HTC_Heritage Library_Nature by Merian 07Element 3.png",
+      "file": "assets/pictorial/plate-merian-03.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 131916,
+      "label": {
+        "subject": "天蚕蛾与柑橘",
+        "alt": "一只天蚕蛾、一条毛毛虫和一颗柑橘果实及枝叶",
+        "tags": [
+          "博物画",
+          "天蚕蛾",
+          "柑橘",
+          "复古插画",
+          "昆虫"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "博物画",
+        "植物",
+        "图谱"
+      ]
+    },
+    {
+      "asset_id": "plate-symph15-01",
+      "set": "Nature Symphony 15",
+      "origin": "HTC_Heritage Library_Nature Symphony 15Element 1.png",
+      "file": "assets/pictorial/plate-symph15-01.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 192934,
+      "label": {
+        "subject": "松枝与交嘴雀",
+        "alt": "两只交嘴雀攀附在结满松果的松枝上觅食",
+        "tags": [
+          "科学插画",
+          "复古博物画",
+          "交嘴雀",
+          "松果",
+          "鸟类"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花鸟",
+        "自然"
+      ]
+    },
+    {
+      "asset_id": "plate-symph15-02",
+      "set": "Nature Symphony 15",
+      "origin": "HTC_Heritage Library_Nature Symphony 15Element 2.png",
+      "file": "assets/pictorial/plate-symph15-02.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 147770,
+      "label": {
+        "subject": "棕柳莺与粉花",
+        "alt": "两只棕柳莺栖息在开粉色小花的针叶枝条上",
+        "tags": [
+          "复古插画",
+          "鸟类",
+          "植物",
+          "博物画",
+          "粉花"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花鸟",
+        "自然"
+      ]
+    },
+    {
+      "asset_id": "plate-symph15-03",
+      "set": "Nature Symphony 15",
+      "origin": "HTC_Heritage Library_Nature Symphony 15Element 3.png",
+      "file": "assets/pictorial/plate-symph15-03.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 94720,
+      "label": {
+        "subject": "绣球花与黄林莺",
+        "alt": "黄林莺停歇在绣球花枝上，仰头望向花朵与飞虫。",
+        "tags": [
+          "博物插画",
+          "复古手绘",
+          "绣球花",
+          "黄林莺",
+          "自然观察"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花鸟",
+        "自然"
+      ]
+    },
+    {
+      "asset_id": "plate-symph17-01",
+      "set": "Nature Symphony 17",
+      "origin": "HTC_Heritage Library_Nature Symphony 17Element 1.png",
+      "file": "assets/pictorial/plate-symph17-01.webp",
+      "w": 822,
+      "h": 1100,
+      "bytes": 159050,
+      "label": {
+        "subject": "白花与小鸟",
+        "alt": "两只小鸟栖息在开白花的枝叶间",
+        "tags": [
+          "复古插画",
+          "植物",
+          "鸟类",
+          "博物画",
+          "花卉"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花鸟",
+        "自然"
+      ]
+    },
+    {
+      "asset_id": "plate-symph17-02",
+      "set": "Nature Symphony 17",
+      "origin": "HTC_Heritage Library_Nature Symphony 17Element 2.png",
+      "file": "assets/pictorial/plate-symph17-02.webp",
+      "w": 676,
+      "h": 902,
+      "bytes": 141598,
+      "label": {
+        "subject": "枝头鸽群",
+        "alt": "五只鸽子栖息在结有青果的枝叶间",
+        "tags": [
+          "复古插画",
+          "博物画",
+          "鸽子",
+          "果树",
+          "自然史"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花鸟",
+        "自然"
+      ]
+    },
+    {
+      "asset_id": "plate-symph17-03",
+      "set": "Nature Symphony 17",
+      "origin": "HTC_Heritage Library_Nature Symphony 17Element 3.png",
+      "file": "assets/pictorial/plate-symph17-03.webp",
+      "w": 824,
+      "h": 1100,
+      "bytes": 146654,
+      "label": {
+        "subject": "双鸟栖枝图",
+        "alt": "两只黑羽鸟栖息在枝叶间，一只低头衔食",
+        "tags": [
+          "复古插画",
+          "鸟类",
+          "植物",
+          "博物画",
+          "工笔"
+        ]
+      },
+      "aspect": "portrait",
+      "tags": [
+        "插画",
+        "复古",
+        "花鸟",
+        "自然"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-01",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 1.png",
+      "file": "assets/pictorial/plate-sealife-01.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 171084,
+      "label": {
+        "subject": "五角海星",
+        "alt": "黑白线描五角海星，表面布满颗粒纹理",
+        "tags": [
+          "海星",
+          "线描",
+          "复古插画",
+          "海洋生物",
+          "黑白"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-02",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 2.png",
+      "file": "assets/pictorial/plate-sealife-02.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 33082,
+      "label": {
+        "subject": "海螺线描图",
+        "alt": "黑白线条勾勒的螺旋形海螺外壳",
+        "tags": [
+          "线描",
+          "海螺",
+          "贝壳",
+          "复古插画",
+          "海洋生物"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-03",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 3.png",
+      "file": "assets/pictorial/plate-sealife-03.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 61660,
+      "label": {
+        "subject": "扇贝贝壳",
+        "alt": "一枚展开的扇贝贝壳线描图，表面有放射状肋纹",
+        "tags": [
+          "线描",
+          "贝壳",
+          "海洋生物",
+          "复古插画",
+          "中药材"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-04",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 4.png",
+      "file": "assets/pictorial/plate-sealife-04.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 166794,
+      "label": {
+        "subject": "扇贝贝壳",
+        "alt": "黑白线描的扇贝贝壳，表面有放射状纹理",
+        "tags": [
+          "线描",
+          "贝壳",
+          "海洋生物",
+          "复古插画",
+          "黑白"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-05",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 5.png",
+      "file": "assets/pictorial/plate-sealife-05.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 57694,
+      "label": {
+        "subject": "两条游动的鱼",
+        "alt": "黑白线描风格的两条鱼斜向游动，线条简洁",
+        "tags": [
+          "线描",
+          "鱼类",
+          "黑白插画",
+          "复古",
+          "水生动物"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-06",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 6.png",
+      "file": "assets/pictorial/plate-sealife-06.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 153720,
+      "label": {
+        "subject": "俯冲锦鲤",
+        "alt": "黑白线描锦鲤俯冲游动，鳞片鳍纹清晰",
+        "tags": [
+          "线描",
+          "锦鲤",
+          "黑白插画",
+          "鱼纹",
+          "复古"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-07",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 7.png",
+      "file": "assets/pictorial/plate-sealife-07.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 35298,
+      "label": {
+        "subject": "甲骨文龟字",
+        "alt": "一幅黑底白线的甲骨文龟形图案，呈螺旋状",
+        "tags": [
+          "甲骨文",
+          "龟字",
+          "象形文字",
+          "书法",
+          "复古"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-08",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 8.png",
+      "file": "assets/pictorial/plate-sealife-08.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 39966,
+      "label": {
+        "subject": "长须对虾",
+        "alt": "白描线条勾勒一只长须弯曲的对虾",
+        "tags": [
+          "白描",
+          "对虾",
+          "线稿",
+          "海洋生物",
+          "复古插画"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-sealife-09",
+      "set": "Under The Sea 04",
+      "origin": "HTC_Heritage Library_Under The Sea 04Element 9.png",
+      "file": "assets/pictorial/plate-sealife-09.webp",
+      "w": 1100,
+      "h": 1100,
+      "bytes": 108756,
+      "label": {
+        "subject": "多棘海鱼",
+        "alt": "黑白线描的多棘海鱼侧面图",
+        "tags": [
+          "线描",
+          "鱼类",
+          "复古插画",
+          "海洋生物",
+          "黑白"
+        ]
+      },
+      "aspect": "square",
+      "tags": [
+        "插画",
+        "线稿",
+        "海洋",
+        "装饰"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-01",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 1.png",
+      "file": "assets/pictorial/plate-vessel-01.webp",
+      "w": 1100,
+      "h": 824,
+      "bytes": 60184,
+      "label": {
+        "subject": "单耳彩陶杯",
+        "alt": "线描单耳陶杯，口沿饰竖条纹与圆圈纹",
+        "tags": [
+          "线描",
+          "陶器",
+          "彩陶纹样",
+          "考古",
+          "器物"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-02",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 2.png",
+      "file": "assets/pictorial/plate-vessel-02.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 55218,
+      "label": {
+        "subject": "单耳鱼鳞纹陶杯",
+        "alt": "线描单耳高足杯，杯身饰满鱼鳞纹",
+        "tags": [
+          "线描",
+          "陶器",
+          "鱼鳞纹",
+          "单耳杯",
+          "复古插画"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-03",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 3.png",
+      "file": "assets/pictorial/plate-vessel-03.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 56616,
+      "label": {
+        "subject": "双耳瓜棱陶罐",
+        "alt": "线描双耳陶罐，罐身有竖向瓜棱纹与卷草双耳。",
+        "tags": [
+          "线描",
+          "陶罐",
+          "双耳",
+          "瓜棱纹",
+          "复古插画"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-04",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 4.png",
+      "file": "assets/pictorial/plate-vessel-04.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 25176,
+      "label": {
+        "subject": "双耳尖底陶瓶",
+        "alt": "线描双耳尖底陶瓶，带盖，瓶身修长",
+        "tags": [
+          "线描",
+          "陶器",
+          "双耳瓶",
+          "尖底",
+          "复古插画"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-05",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 5.png",
+      "file": "assets/pictorial/plate-vessel-05.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 63268,
+      "label": {
+        "subject": "双耳扇纹陶瓶",
+        "alt": "线描双耳陶瓶，瓶腹饰扇形放射纹",
+        "tags": [
+          "线描",
+          "陶瓶",
+          "扇纹",
+          "双耳",
+          "复古"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-06",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 6.png",
+      "file": "assets/pictorial/plate-vessel-06.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 42996,
+      "label": {
+        "subject": "古埃及雪花石膏罐",
+        "alt": "线描古埃及敞口罐，腹绘鸟形与象形符号",
+        "tags": [
+          "线描",
+          "古埃及",
+          "象形文字",
+          "容器",
+          "复古插画"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-07",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 7.png",
+      "file": "assets/pictorial/plate-vessel-07.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 64610,
+      "label": {
+        "subject": "彩绘尖底陶瓶",
+        "alt": "线描尖底陶瓶，饰网格纹与三角纹，口部有系。",
+        "tags": [
+          "线描",
+          "陶器",
+          "几何纹",
+          "尖底瓶",
+          "考古"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-08",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 8.png",
+      "file": "assets/pictorial/plate-vessel-08.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 42284,
+      "label": {
+        "subject": "单耳螺旋纹陶瓶",
+        "alt": "线描单耳尖底陶瓶，瓶身布满横向螺旋纹饰",
+        "tags": [
+          "线描",
+          "陶器",
+          "螺旋纹",
+          "尖底瓶",
+          "考古"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    },
+    {
+      "asset_id": "plate-vessel-09",
+      "set": "Vases & Flower Pots 02",
+      "origin": "HTC_Heritage Library_Vases and Flower Pots 02Element 9.png",
+      "file": "assets/pictorial/plate-vessel-09.webp",
+      "w": 1100,
+      "h": 825,
+      "bytes": 41160,
+      "label": {
+        "subject": "拟人化药瓶",
+        "alt": "长着五官和四肢的圆肚药瓶，表情愤怒",
+        "tags": [
+          "拟人",
+          "药瓶",
+          "线稿",
+          "复古插画",
+          "中医药"
+        ]
+      },
+      "aspect": "landscape",
+      "tags": [
+        "插画",
+        "器物",
+        "花器",
+        "线稿"
+      ]
+    }
+  ]
+}

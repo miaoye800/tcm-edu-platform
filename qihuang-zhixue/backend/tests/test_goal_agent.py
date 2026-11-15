@@ -106,11 +106,8 @@ def test_confirm_persists_goal_change_and_learning_goal_evidence(tmp_path: Path,
         restatement="你准备考研，我会按考点导向安排。",
     )
 
-    async def no_jury(user_id: str, *, db_path: Path):
-        from app.profile.store import get_profile
-        return get_profile(user_id, db_path=db_path)
-
-    monkeypatch.setattr("app.api.profile.get_latest_profile", no_jury)
+    # 确认目标只写库（画像 + 目标证据 + 变迁录），不再在请求里跑三师评审；
+    # 读路径也不跑。所以这里不需要替身，也不该再出现模型调用。
     response = asyncio.run(confirm_goal(GoalConfirmRequest(candidate=candidate), current_user=user, db_path=db_path))
 
     assert response["goal"]["confirmed_by_user"] is True

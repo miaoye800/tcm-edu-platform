@@ -42,8 +42,30 @@ class ResourceWhitelist(TypedDict):
     formulas: set[str]
 
 
+#: 检索用的分隔符。用户说的是「解表药的性味、功效与配伍禁忌」，而向量检索
+#: 对这么长的一句话往往一条都召不回来——先按分隔符截到主体，再查一次。
+_TOPIC_SEPARATORS: tuple[str, ...] = ("的", "，", ",", "、", "与", "和", "；", ";")
+
+#: 截断后的主体长度上限。再长就退化成整句话，等于没截。
+_SHORT_TOPIC_LIMIT = 12
+
+
+def short_topic(topic: str) -> str:
+    """把一句话需求截到检索主体：「解表药的性味、功效…」→「解表药」。"""
+
+    cut = str(topic or "").strip()
+    for separator in _TOPIC_SEPARATORS:
+        if separator in cut:
+            cut = cut.split(separator)[0]
+    return cut.strip()[:_SHORT_TOPIC_LIMIT]
+
+
 async def retrieve_resource_docs(topic: str, top_k: int = 5) -> list[ResourceDoc]:
     """检索资源生成所需文档，优先保留题目中直接点名的药材。
+
+    整句查不到就退到主体再查一次。这一步不是优化，是正确性：方案与生成两处都
+    要拿到教材条目，谁先查到谁算数——两处各写一遍截短逻辑，迟早会一份说有依据、
+    另一份说没依据。
 
     流程是「向量召回 → 按图补一跳」两段，第二段就是 P5 的 GraphRAG：
 
@@ -60,7 +82,13 @@ async def retrieve_resource_docs(topic: str, top_k: int = 5) -> list[ResourceDoc
     hits = await search(topic, top_k=top_k)
     hits = _prioritize_exact_herb(topic, hits, limit=top_k)
     docs = _hits_to_docs(hits)
-    return docs + _expand_by_graph(docs, hits=hits)
+    found = docs + _expand_by_graph(docs, hits=hits)
+    if found:
+        return found
+    short = short_topic(topic)
+    if short and short != topic:
+        return await retrieve_resource_docs(short, top_k=top_k)
+    return []
 
 
 #: 扩展时的关系优先级。数字小的先补。

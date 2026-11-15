@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Script, createContext } from 'node:vm'
 import ts from 'typescript'
@@ -13,7 +13,6 @@ const profileTypesPath = join(root, 'src/types/profile.ts')
 const streamStatePath = join(root, 'src/components/profile/profileDialogueStreamState.ts')
 const onboardingStoragePath = join(root, 'src/services/onboardingStorage.ts')
 const radarPath = join(root, 'src/components/profile/RadarChart.vue')
-const developerAuditPath = join(root, 'src/components/profile/ProfileDeveloperAudit.vue')
 
 const compileModel = () => {
   const source = readFileSync(modelPath, 'utf8')
@@ -446,7 +445,8 @@ test('active profile session storage survives refresh and clears after finish', 
 
 test('dialogue component restores persisted chat history for the active session', () => {
   assert(component.includes('chatHistory?: Array<{ role: \'assistant\' | \'user\'; content: string }>'), 'dialogue component should accept server-owned chat history')
-  assert(component.includes('for (const item of props.chatHistory)'), 'dialogue component should rebuild visible messages after session restoration')
+  assert(component.includes('resetMessagesFromHistory(props.chatHistory)'), 'dialogue component should rebuild visible messages after session restoration')
+  assert(component.includes('for (const item of history)'), 'restored messages are rebuilt from the server-owned history list')
   assert(onboarding.includes(':chat-history="session.chat_history ?? []"'), 'Onboarding should pass restored chat history into the dialogue')
   assert(profileTypes.includes('chat_history?: Array<{ role: \'assistant\' | \'user\'; content: string }>'), 'session response type should expose restored chat history')
 })
@@ -664,54 +664,50 @@ test('refuted identity card replacement adds Xiaoqi discrepancy notice', () => {
   assert(messages.messages[0]?.text === '看来你的底子和你说的有些出入，师父重新看过了。', 'refuted replacement should show Xiaoqi discrepancy bubble')
 })
 
-test('developer audit exposes the explainable pipeline and low-confidence radar is gold dashed', () => {
+test('low-confidence radar uses a gold dashed endpoint', () => {
   const radar = readFileSync(radarPath, 'utf8')
-  const audit = readFileSync(developerAuditPath, 'utf8')
 
-  assert(audit.includes('user-quote'), 'audit should show the exact user answer')
-  assert(audit.includes('确认：'), 'audit should show model-confirmed aspects')
-  assert(audit.includes('待确认：'), 'audit should show remaining unknown aspects')
-  assert(audit.includes('确认度怎么算'), 'audit should expose calculation details')
-  assert(audit.includes('隐藏思维链'), 'audit should state the boundary for private reasoning')
   assert(radar.includes("dark: axisStatus(axis) === 'dark' && axisStatus(props.axes[nextIndex]) === 'dark'"), 'a dashed endpoint must not be overwritten by a dark segment')
   assert(radar.includes('stroke: var(--qh-color-gold);'), 'low-confidence segments should use the gold stroke')
 })
 
-test('component collection, source groups, and observed distribution scope stay visible in contracts', () => {
+test('developer audit stream is gone from both ends', () => {
+  // 审计面板只在开发期用来观察抽取/评分过程，已确认下线：组件、挂载点、
+  // 类型、SSE 事件都不能留下来，否则后端还得为它多算一份上万字符的记录。
+  assert(!existsSync(join(root, 'src/components/profile/ProfileDeveloperAudit.vue')), 'audit component file must be deleted')
+  assert(!readFileSync(componentPath, 'utf8').includes('ProfileDeveloperAudit'), 'dialogue must not mount the audit panel')
+  assert(!readFileSync(onboardingPath, 'utf8').includes('developer-audit'), 'onboarding must not pass audit records')
+  assert(!readFileSync(profileApiPath, 'utf8').includes("event: 'audit'"), 'stream contract must not declare an audit event')
+  assert(!readFileSync(profileTypesPath, 'utf8').includes('developer_audit'), 'session type must not carry audit records')
+})
+
+test('component collection and observed distribution scope stay visible in contracts', () => {
   const types = readFileSync(profileTypesPath, 'utf8')
   const dialogue = readFileSync(componentPath, 'utf8')
-  const audit = readFileSync(developerAuditPath, 'utf8')
   assert(types.includes('scoring_phase'), 'frontend types should carry the collecting/scored phase')
-  assert(types.includes('evidence_group_id'), 'frontend audit types should carry source groups')
+  assert(types.includes('evidence_group_id'), 'evidence cards should carry source groups')
   assert(dialogue.includes('distribution_scope'), 'distribution cards should disclose observed scope')
-  assert(audit.includes('评分暂缓'), 'audit should expose the score gate before final scoring')
-  assert(audit.includes('evidence_group_id'), 'audit should render source relation details')
 })
 
-test('audit is a compact nine-part turn ledger rather than generic process chatter', () => {
-  const audit = readFileSync(developerAuditPath, 'utf8')
-  for (const section of ['全维扫描', 'failure_reason', '原子证据', '七维组件与评分', '评分暂缓', '送评证据包', '三师会诊', '统分', '确认度怎么算', 'excluded_candidates', 'matrix_before', 'matrix_after']) {
-    assert(audit.includes(section), `audit should expose ${section}`)
-  }
-  assert(audit.includes('本轮处理流程'), 'audit should expose the ordered per-turn workflow')
-  assert(audit.includes('class="developer-audit" aria-label="画像开发审计记录" open'), 'audit should open automatically so the current turn is visible')
-  assert(audit.includes('查看轮次') && audit.includes('currentRecord'), 'audit should show one selected turn and keep older turns switchable')
-  assert(audit.includes('收集中，仍会变'), 'audit should mark an unpublished confidence as still moving instead of presenting it as final')
-  assert(!audit.includes('正在融合证据，校准画像维度'), 'audit should not echo transient process chatter')
+test('a past turn is addressable: 第 N 轮 returns to that round of the conversation', () => {
+  const dialogue = readFileSync(componentPath, 'utf8')
+
+  // 退出重进后消息本身没有 turn 字段，轮次由"第几条用户发言"推导，才能和后端 turn_index 对齐。
+  assert(dialogue.includes('const turnAnchors = computed'), 'dialogue should derive one anchor per user turn')
+  assert(dialogue.includes('turn-of-message') || dialogue.includes('turnOfMessage'), 'messages should resolve to a backend turn index')
+  assert(dialogue.includes(':data-turn="turnOfMessage(message.id)"'), 'each bubble should carry its turn index for scrolling')
+  assert(dialogue.includes('focusTurnById'), 'clicking an anchor should focus that turn')
+  assert(dialogue.includes('scrollToTurn'), 'focusing a turn should scroll the flow to it, not the page')
+  assert(dialogue.includes("flow.querySelector<HTMLElement>(`[data-turn=\"${turn}\"]`)"), 'scroll should target the turn row inside the flow')
+  // 继续说话就回到最新，否则新消息会被锁在某条旧轮次上。
+  assert(dialogue.includes('focusedTurn.value = null'), 'a new answer should drop the focused turn')
 })
 
-test('every component shows its own three-teacher scores and its own quality math', () => {
-  const audit = readFileSync(developerAuditPath, 'utf8')
-  const types = readFileSync(profileTypesPath, 'utf8')
-  // 三师必须落到组件：只给维度一个整体分时，"严师 42、宽师 68"的分歧就消失了。
-  assert(audit.includes('componentJuryRows'), 'audit should render per-component jury rows')
-  assert(audit.includes('组件分 = 三师平均'), 'audit should show the component score as the mean of three teachers')
-  assert(audit.includes('teacherSummary'), 'audit should show each teacher own weighted dimension score')
-  assert(audit.includes('jury_derivation'), 'audit should state that the dimension-level jury is derived')
-  assert(types.includes('jury?: Array<{ teacher: string'), 'audit types should carry per-component teacher scores')
-  assert(types.includes('teacher_dimension_scores'), 'audit types should carry per-teacher dimension scores')
-  // 质量分要能追到五项和依据，而不是只出现一个数字。
-  assert(audit.includes('quality_audit'), 'audit should render the per-evidence quality breakdown')
-  assert(audit.includes('规则算'), 'audit should mark the two rule-computed quality factors')
-  assert(types.includes('rule_computed'), 'audit types should say which quality factors are rule-computed')
+test('evidence a turn refused to accept stays out of the visible evidence list', () => {
+  const dialogue = readFileSync(componentPath, 'utf8')
+
+  // 审计面板下线后，"这句话为什么没被采纳"只体现在证据清单本身：
+  // 被拒的卡不得混进当前轮证据，否则用户会看到自己没被算数的原话被当成依据。
+  assert(dialogue.includes('evidencePanel'), 'dialogue should render only the accepted evidence panel')
+  assert(!dialogue.includes('rejected_evidence'), 'rejected evidence belongs to the removed audit trail')
 })

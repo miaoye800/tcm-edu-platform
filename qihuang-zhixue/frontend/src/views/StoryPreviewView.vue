@@ -4,9 +4,20 @@
     <StoryChapterBar :chapter="scene.chapter" :meta="progressLabel" @exit="noop" />
 
     <div class="story-preview__layer">
+      <!-- 追问轮和主问题用同一套排版：舞台不换，答案竖排在右，题干在底部对话框。
+           预览里把这一步也拍出来，才能看出"换题"和"换界面"的区别。 -->
       <div class="story-preview__stage">
+        <ExtraQuestionScene
+          v-if="extraQuestion"
+          :question="extraQuestion"
+          :committing="extraAnswer"
+          :bubble-open="extraBubbleOpen"
+          @choose="extraAnswer = $event"
+          @toggle-bubble="extraBubbleOpen = !extraBubbleOpen"
+          @submit-note="extraAnswer = $event"
+        />
         <IdentityScene
-          v-if="screen === 'identity'"
+          v-else-if="screen === 'identity'"
           :cards="identityCards"
           :selected="identityCard"
           :bubble-open="bubbleOpen"
@@ -66,13 +77,14 @@ import { useRoute } from 'vue-router'
 import StoryStageFrame from '../components/story/StoryStageFrame.vue'
 import StoryChapterBar from '../components/story/StoryChapterBar.vue'
 import StoryDialogueBox from '../components/story/StoryDialogueBox.vue'
+import ExtraQuestionScene from './apprentice/ExtraQuestionScene.vue'
 import IdentityScene from './apprentice/IdentityScene.vue'
 import QuizScene from './apprentice/QuizScene.vue'
 import PrescriptionScene from './apprentice/PrescriptionScene.vue'
 import RuleScene from './apprentice/RuleScene.vue'
 import { apprenticeQuizPrompt, apprenticeScenes } from '../config/apprenticeStory'
 import { apprenticeStoryNarration } from '../config/apprenticeStoryCues'
-import type { ProfileSessionQuestion } from '../types/profile'
+import type { ProfileSessionQuestion, ProfileSessionStoryQuestion } from '../types/profile'
 
 const route = useRoute()
 const screen = computed(() => {
@@ -103,17 +115,56 @@ const question: ProfileSessionQuestion = {
   herb_hint: '平 · 甘、微苦 · 益气健脾',
 }
 
+// 追问栏也进视觉预览：它是新加的"一次只问一道"的对话栏，只能靠实拍看位置对不对。
+// `?extra=choice` 换成带选项的那一道，免得只验证了自述输入框。
+const EXTRA_PREVIEW: Record<string, ProfileSessionStoryQuestion> = {
+  text: {
+    id: 'extra_goal_scene',
+    kind: 'text',
+    prompt: '这次学中医，你主要是为了什么场景？大概什么时候要用上？',
+    options: [],
+  },
+  choice: {
+    id: 'extra_goal_priority',
+    kind: 'choice',
+    prompt: '如果这一个月只能先攻一块，你最想先拿下哪块？',
+    options: ['药性功效', '配伍剂量', '辨证思路', '背诵记忆'],
+  },
+}
+const quizExtra: ProfileSessionStoryQuestion = {
+  id: 'extra_weak_cross_context',
+  kind: 'text',
+  prompt: '刚认过的这几味药，换到病例里换个说法，你还认得出来吗？举个你会犹豫的例子。',
+  options: [],
+}
+const extraQuestion = computed(() => {
+  const kind = route.query.extra
+  if (typeof kind !== 'string') return null
+  // 识药一幕的追问是"换到病例里还认不认得出"，不是序幕那句。
+  if (screen.value === 'quiz') return quizExtra
+  return EXTRA_PREVIEW[kind] ?? EXTRA_PREVIEW.text
+})
+const extraAnswer = ref(typeof route.query.answer === 'string' ? route.query.answer : '')
+// 没有预设选项的追问，输入框默认展开——和线上一致，预览不能比真实多一步点击。
+const extraBubbleOpen = ref(!extraQuestion.value?.options.length && route.query.bubble !== '0')
+
 const scene = computed(() => {
   const sceneId = screen.value === 'quiz' ? 'herb-dialogue' : screen.value === 'prescription' ? 'prescription-counter' : screen.value === 'rule' ? 'make-rule' : 'master-offer'
   return apprenticeScenes.find((item) => item.sceneId === sceneId) ?? apprenticeScenes[0]
 })
 const dialogue = computed(() => {
+  // 追问轮里，对话框说的就是这一轮的问题——题干在下方，答案在右侧。
+  if (extraQuestion.value) return extraQuestion.value.prompt
   if (screen.value === 'quiz') return apprenticeQuizPrompt
   if (screen.value === 'prescription') return apprenticeStoryNarration['prescription-counter']
   if (screen.value === 'rule') return apprenticeStoryNarration['make-rule']
-  return scene.value.dialogue
+  // 主问题由旁白报题，线上就是这样（线上没有"师父先念一遍题干"这一段）。
+  return apprenticeStoryNarration[scene.value.sceneId] ?? scene.value.dialogue
 })
-const dialogueSpeaker = computed(() => (screen.value === 'identity' ? (scene.value.speaker ?? '药庐师尊') : '旁白'))
+const dialogueSpeaker = computed(() => {
+  if (extraQuestion.value) return '老中医'
+  return '旁白'
+})
 const dialogueTone = computed<'master' | 'narration'>(() => (dialogueSpeaker.value === '旁白' ? 'narration' : 'master'))
 const progressLabel = computed(() => (screen.value === 'quiz' ? '药圃图鉴 01 / 05' : ''))
 

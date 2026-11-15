@@ -1,0 +1,51 @@
+{
+  "note": "Heritage Library 免费套组的登记元数据。许可为 CC0，但附加条款明文禁止把素材文件本身再配布、转售或打包分发（见套组内 License_HeritageLibrary.pdf）。因此本仓库只保留归一化后的产物用于生成课件，不在任何界面上提供素材下载入口。",
+  "license": "Heritage-Free",
+  "attribution": "Heritage Library · HTC Heritage Type GmbH",
+  "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+  "treatment": "vintage-keep",
+  "long_edge": 1100,
+  "quality": 80,
+  "sets": {
+    "Bird Paintings 02": {
+      "slug": "birdpaint",
+      "aspect": "portrait",
+      "tags": ["插画", "复古", "鸟类", "装饰画"]
+    },
+    "Flying High": {
+      "slug": "swallow",
+      "aspect": "landscape",
+      "tags": ["插画", "墨线", "飞鸟", "留白"]
+    },
+    "Hasegawa Flowers 02": {
+      "slug": "hasegawa",
+      "aspect": "portrait",
+      "tags": ["插画", "复古", "花卉", "浮世绘"]
+    },
+    "Nature by Merian 07": {
+      "slug": "merian",
+      "aspect": "portrait",
+      "tags": ["插画", "博物画", "植物", "图谱"]
+    },
+    "Nature Symphony 15": {
+      "slug": "symph15",
+      "aspect": "portrait",
+      "tags": ["插画", "复古", "花鸟", "自然"]
+    },
+    "Nature Symphony 17": {
+      "slug": "symph17",
+      "aspect": "portrait",
+      "tags": ["插画", "复古", "花鸟", "自然"]
+    },
+    "Under The Sea 04": {
+      "slug": "sealife",
+      "aspect": "square",
+      "tags": ["插画", "线稿", "海洋", "装饰"]
+    },
+    "Vases & Flower Pots 02": {
+      "slug": "vessel",
+      "aspect": "landscape",
+      "tags": ["插画", "器物", "花器", "线稿"]
+    }
+  }
+}

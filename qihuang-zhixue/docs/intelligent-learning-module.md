@@ -39,8 +39,8 @@
 
 | 路由 | 组件 | 模块含义 |
 | --- | --- | --- |
-| `/learn` | `LearnView.vue` | 智能学习主页面，生成并展示资源包 |
-| `/path` | `PathView.vue` | 闯关地图/学习路径/技能树 |
+| `/learn` | —（重定向到 `/path`） | 沉浸学习已改为从地图节点进入，旧页面已移除 |
+| `/path` | `MeridianMapView.vue` | 经脉闯关地图：穴位 → 知识点刻度 → 详情抽屉 |
 | `/quiz` | `QuizView.vue` | 题库测评 |
 | `/review` | `ReviewView.vue` | 到期复习计划 |
 | `/profile`、`/onboarding` | 画像模块 | 智能学习依赖画像数据 |
@@ -162,7 +162,11 @@ type ResourceEnvelope<T extends ResourceType = ResourceType> = {
 
 ### 3.2 闯关地图/学习路径
 
-文件：`frontend/src/views/PathView.vue`
+文件：`frontend/src/views/MeridianMapView.vue` + `components/meridian/`
+
+> 本节以下内容记录的是初版 `PathView.vue` 的实现（技能树卡片式路径），该文件已删除。
+> 现行页面是 3D 经脉图：穴位对应关卡、穴位内的刻度对应该穴位下的知识点，
+> 交互与验收见 `docs/proto/P6-验收记录.md`、`P8-验收记录.md`。保留旧描述仅为对照设计演进。
 
 职责：
 

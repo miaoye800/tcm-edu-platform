@@ -126,3 +126,48 @@ def test_deepseek_keeps_native_thinking_fields() -> None:
     assert payload["thinking"] == {"type": "disabled"}
     assert payload["reasoning_effort"] == "low"
     assert payload["max_tokens"] == 100
+
+
+def test_tool_turn_round_trips_without_text(tmp_path) -> None:  # noqa: ANN001
+    """只有工具调用、没有正文的一轮也必须能存能取。
+
+    升级前 ``save()`` 开头就 ``if not response_text: return``，这类轮次全被丢掉，
+    回放时循环第一轮就跑不下去。
+    """
+
+    from app.llm import replay
+
+    db = tmp_path / "replay.db"
+    message = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [{"id": "c1", "function": {"name": "finish", "arguments": "{}"}}],
+    }
+    fp = replay.fingerprint(
+        task_type="ppt_assets",
+        model="deepseek-flash",
+        messages=[{"role": "user", "content": "找图"}],
+        params={},
+    )
+    replay.save(
+        fingerprint_value=fp,
+        task_type="ppt_assets",
+        provider="deepseek",
+        model="deepseek-flash",
+        messages=[{"role": "user", "content": "找图"}],
+        params={},
+        response_text="",
+        response_message=message,
+        db_path=db,
+    )
+    assert not replay.load(fp, db), "正文为空：老接口拿不到东西，新接口必须拿得到"
+    assert replay.load_message(fp, db) == message
+
+
+def test_fingerprint_separates_different_tool_sets(tmp_path) -> None:  # noqa: ANN001
+    from app.llm import replay
+
+    base = dict(task_type="ppt_assets", model="deepseek-flash", messages=[{"role": "user", "content": "x"}])
+    with_tools = replay.fingerprint(**base, params={"tools": [{"type": "function"}]})
+    without = replay.fingerprint(**base, params={})
+    assert with_tools != without

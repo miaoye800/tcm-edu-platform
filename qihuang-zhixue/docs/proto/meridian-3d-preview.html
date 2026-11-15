@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>经脉图 · P0 技术验证（解剖写实）</title>
+<style>
+  :root{
+    --bg:#0a1416;
+    --jade:#3fbfa0;
+    --gold:#e8b55a;
+    --cinnabar:#e0503a;
+    --paper:#e8e2d4;
+    --dim:#7d9498;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--paper);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    overflow:hidden;}
+  #app{position:fixed;inset:0;}
+  canvas{display:block;}
+  #labels{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+
+  .lbl{
+    position:absolute;transform:translate(-50%,-50%);
+    font-size:10px;letter-spacing:.04em;color:rgba(226,222,210,.72);
+    padding:1px 5px;border-radius:3px;white-space:nowrap;
+    background:rgba(8,18,20,.42);border:1px solid rgba(63,191,160,.16);
+    text-shadow:0 1px 3px rgba(0,0,0,.9);
+    transition:opacity .2s;
+  }
+  .lbl.lit{color:#ffd9a0;border-color:rgba(232,181,90,.5);background:rgba(38,20,8,.62);}
+  .lbl small{opacity:.55;font-size:9px;margin-left:3px;}
+
+  .panel{
+    position:fixed;background:rgba(9,20,22,.82);
+    border:1px solid rgba(63,191,160,.16);border-radius:10px;
+    backdrop-filter:blur(10px);
+  }
+
+  #hud-tl{top:16px;left:16px;padding:12px 14px;max-width:290px;}
+  #hud-tl h1{margin:0 0 2px;font-size:14px;font-weight:600;letter-spacing:.08em;}
+  #hud-tl .sub{font-size:10.5px;color:var(--dim);letter-spacing:.04em;margin-bottom:10px;}
+  .legend{display:grid;gap:5px;font-size:11px;color:rgba(232,226,212,.76);}
+  .legend div{display:flex;align-items:center;gap:7px;}
+  .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .dot.unlit{background:transparent;border:1px solid rgba(140,166,170,.7);}
+  .dot.lit{background:var(--cinnabar);box-shadow:0 0 7px rgba(224,80,58,.85);}
+  .dot.chan{width:14px;height:2px;border-radius:1px;background:var(--jade);}
+  .dot.chanlit{width:14px;height:2px;border-radius:1px;background:var(--gold);box-shadow:0 0 6px rgba(232,181,90,.7);}
+
+  #hud-tl .hints{margin-top:10px;padding-top:9px;border-top:1px solid rgba(63,191,160,.14);
+    font-size:10.5px;line-height:1.9;color:rgba(125,148,152,.9);letter-spacing:.02em;}
+  #hud-tl .hints b{font-weight:500;color:rgba(232,226,212,.72);}
+  kbd{display:inline-block;min-width:15px;padding:0 4px;margin:0 1px;
+    font:inherit;font-size:9.5px;text-align:center;line-height:15px;
+    color:rgba(232,226,212,.86);background:rgba(255,255,255,.06);
+    border:1px solid rgba(63,191,160,.24);border-radius:4px;}
+
+  #hud-tr{top:16px;right:16px;padding:10px 12px;width:186px;}
+  #hud-tr .t{font-size:10px;color:var(--dim);letter-spacing:.14em;margin-bottom:8px;}
+  .row{display:flex;align-items:center;justify-content:space-between;
+    font-size:11.5px;padding:4px 0;color:rgba(232,226,212,.84);}
+  .row label{cursor:pointer;display:flex;align-items:center;gap:7px;}
+  input[type=checkbox]{accent-color:#3fbfa0;width:13px;height:13px;}
+
+  #hud-b{left:50%;transform:translateX(-50%);bottom:16px;padding:8px 10px;
+    display:flex;align-items:center;gap:6px;}
+  button{
+    font:inherit;font-size:11.5px;color:rgba(232,226,212,.8);
+    background:rgba(255,255,255,.04);border:1px solid rgba(63,191,160,.2);
+    border-radius:6px;padding:5px 11px;cursor:pointer;transition:.16s;
+    letter-spacing:.04em;
+  }
+  button:hover{background:rgba(63,191,160,.14);color:#fff;}
+  button.on{background:rgba(63,191,160,.22);border-color:rgba(63,191,160,.55);color:#c9f0e4;}
+  .sep{width:1px;height:18px;background:rgba(63,191,160,.18);margin:0 3px;}
+
+  #disclaimer{
+    position:fixed;bottom:16px;left:16px;font-size:10px;color:rgba(125,148,152,.72);
+    letter-spacing:.02em;line-height:1.5;max-width:330px;
+  }
+  #disclaimer b{color:rgba(232,181,90,.8);font-weight:500;}
+
+  #sheet{
+    position:fixed;right:16px;bottom:74px;width:236px;padding:12px 14px;
+    opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s;
+  }
+  #sheet.show{opacity:1;transform:none;pointer-events:auto;}
+  #sheet .code{font-size:10px;color:var(--jade);letter-spacing:.16em;}
+  #sheet .nm{font-size:17px;margin:2px 0 1px;letter-spacing:.06em;}
+  #sheet .py{font-size:10px;color:var(--dim);letter-spacing:.06em;}
+  #sheet .mg{font-size:11px;color:rgba(232,226,212,.7);margin-top:8px;
+    padding-top:8px;border-top:1px solid rgba(63,191,160,.14);}
+  #sheet .tag{display:inline-block;font-size:9.5px;padding:1px 6px;border-radius:3px;
+    margin-top:7px;letter-spacing:.06em;}
+  .tag.nc{border:1px dashed rgba(224,80,58,.5);color:rgba(224,120,100,.9);}
+  .tag.vf{border:1px solid rgba(63,191,160,.6);color:rgba(120,220,196,.95);}
+
+  #load{
+    position:fixed;inset:0;background:var(--bg);display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    z-index:99;transition:opacity .5s;
+  }
+  #load .bar{width:210px;height:1px;background:rgba(63,191,160,.18);overflow:hidden;}
+  #load .bar i{display:block;height:100%;width:0;background:var(--jade);
+    transition:width .25s;box-shadow:0 0 8px rgba(63,191,160,.8);}
+  #load .txt{font-size:11px;color:var(--dim);letter-spacing:.16em;}
+  #load .big{font-size:15px;letter-spacing:.3em;color:rgba(232,226,212,.7);}
+  #fps{position:fixed;top:16px;left:50%;transform:translateX(-50%);
+    font-size:10px;color:rgba(125,148,152,.6);letter-spacing:.1em;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="labels"></div>
+
+<div class="panel" id="hud-tl">
+  <h1>人体经脉图</h1>
+  <div class="sub">P0 技术验证 · BodyParts3D 4.0 解剖写实</div>
+  <div class="legend">
+    <div><span class="dot unlit"></span><span>未学（空心环 · 未校核）</span></div>
+    <div><span class="dot lit"></span><span>已学（朱砂点亮）</span></div>
+    <div><span class="dot chan"></span><span>经脉通路</span></div>
+    <div><span class="dot chanlit"></span><span>已通段（气血流光）</span></div>
+  </div>
+  <div class="hints">
+    <b>左键拖动</b> 转视角 · <b>滚轮</b> 缩放<br>
+    <b>右键 / Shift+左键</b> 拖动画面 · <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 移动
+  </div>
+</div>
+
+<div class="panel" id="hud-tr">
+  <div class="t">显示层</div>
+  <div class="row"><label><input type="checkbox" id="cb-muscle" checked>肌肉（肌理）</label></div>
+  <div class="row"><label><input type="checkbox" id="cb-bone">骨骼</label></div>
+  <div class="row"><label><input type="checkbox" id="cb-skin" checked>体表膜</label></div>
+  <div class="row"><label><input type="checkbox" id="cb-chan" checked>经脉</label></div>
+  <div class="row"><label><input type="checkbox" id="cb-lbl" checked>穴名</label></div>
+</div>
+
+<div class="panel" id="hud-b">
+  <button id="v-front" class="on">正面</button>
+  <button id="v-back">背面</button>
+  <button id="v-side">侧面</button>
+  <span class="sep"></span>
+  <button id="chan-lu" class="on">肺经</button>
+  <button id="chan-all">全部经脉</button>
+  <span class="sep"></span>
+  <button id="play">通经演示</button>
+</div>
+
+<div id="disclaimer">
+  定位依据 <b>GB/T 12346-2021</b> · 坐标为几何吸附，
+  <b>未经临床校核</b>（362 穴 <code>reviewed=false</code>）。
+  <br>本图为教学示意，不作取穴依据。
+</div>
+
+<div class="panel" id="sheet">
+  <div class="code" id="s-code"></div>
+  <div class="nm" id="s-name"></div>
+  <div class="py" id="s-py"></div>
+  <div class="mg" id="s-mer"></div>
+  <span class="tag nc" id="s-tag">未校核 · 几何吸附</span>
+</div>
+
+<div id="fps"></div>
+
+<div id="load">
+  <div class="big">脉</div>
+  <div class="bar"><i id="load-bar"></i></div>
+  <div class="txt" id="load-txt">载入解剖模型…</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/frontend/node_modules/three/build/three.module.js",
+    "three/addons/": "/frontend/node_modules/three/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as T from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* ---------------------------------------------------------------- 配置 */
+const ASSETS = './assets/';
+const C = {
+  bg:        0x0a1416,
+  muscle:    0x7a5148,   // 低饱和砖红（#7d3c33 去饱和 40%）
+  muscleHi:  0x8a5f56,
+  bone:      0xd8cfb8,
+  skin:      0x8fa5a8,
+  jade:      0x3fbfa0,
+  jadeDim:   0x1e5a50,
+  gold:      0xe8b55a,
+  cinnabar:  0xe0503a,
+};
+
+// 已学演示数据（真实规则由 P1 的 assign.py 产出；P0 用肺经前 4 穴）
+const LEARNED = new Set(['LU1', 'LU2', 'LU3', 'LU4']);
+
+/* ---------------------------------------------------------------- 渲染器 */
+const app = document.getElementById('app');
+const renderer = new T.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = T.SRGBColorSpace;
+renderer.toneMapping = T.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.20;
+renderer.info.autoReset = false;   // 手动 reset，否则读到的永远是最后一个全屏 pass
+app.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = makeBackdrop();
+scene.fog = new T.FogExp2(C.bg, 0.055);
+
+const camera = new T.PerspectiveCamera(34, innerWidth / innerHeight, 0.05, 40);
+camera.position.set(0, 0.92, 3.10);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.87, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.075;
+controls.minDistance = 0.42;
+controls.maxDistance = 5.2;
+
+/* 平移（pan）：朝向与距离都不变，整幅画面上下/左右挪。
+   只给旋转+缩放时，从头顶想看脚只有"缩小→重新找到脚→点进去"这一条路，
+   那是换了个观察角度，不是挪画面；临床看经脉是沿一条线上下读的，必须能顺着身体滑。
+   screenSpacePanning：上下拖就是画面上下，不被俯仰角带偏。 */
+controls.enablePan = true;
+controls.screenSpacePanning = true;
+controls.panSpeed = 1.25;
+controls.zoomToCursor = true;          // 缩放中心跟光标走，想放大脚就直接对着脚滚
+controls.mouseButtons = { LEFT: T.MOUSE.ROTATE, MIDDLE: T.MOUSE.DOLLY, RIGHT: T.MOUSE.PAN };
+
+/* 可平移范围＝人体包络 + 一点余量。不设边界，拖两下人就滑出屏幕，
+   用户会以为模型崩了；设太紧，脚和头顶又够不到。 */
+const PAN_BOX = { x: 0.52, yMin: 0.02, yMax: 1.72, z: 0.46 };
+
+/* Shift + 左键 = 平移（Blender / PS 的惯用手势，省得非要记右键）。
+   注意不能"把 mouseButtons.LEFT 临时改成 PAN"：OrbitControls 内部把
+   「PAN + 按着 shift」直接当成切换成旋转，改那个常数等于没改。
+   所以把这个手势整个接过来自己算。 */
+const canvasEl = renderer.domElement;
+canvasEl.addEventListener('contextmenu', (e) => e.preventDefault());   // 否则右键一按就弹菜单，平移没法用
+
+let shiftDrag = null;
+canvasEl.addEventListener('pointerdown', (e) => {
+  camTween = null;                     // 手一碰画布就交出控制权，别被上一段动画拽回去
+  if (e.button !== 0 || !e.shiftKey) return;
+  e.stopImmediatePropagation();        // 别让 OrbitControls 抢去当成旋转
+  shiftDrag = { x: e.clientX, y: e.clientY };
+  canvasEl.setPointerCapture(e.pointerId);
+  canvasEl.style.cursor = 'grabbing';
+}, true);
+
+canvasEl.addEventListener('pointermove', (e) => {
+  if (!shiftDrag) return;
+  panCamera(e.clientX - shiftDrag.x, e.clientY - shiftDrag.y);
+  shiftDrag.x = e.clientX; shiftDrag.y = e.clientY;
+});
+const endShiftDrag = () => { if (shiftDrag) { shiftDrag = null; canvasEl.style.cursor = ''; } };
+canvasEl.addEventListener('pointerup', endShiftDrag);
+canvasEl.addEventListener('pointercancel', endShiftDrag);
+addEventListener('keydown', (e) => { if (e.key === 'Shift' && !shiftDrag) canvasEl.style.cursor = 'grab'; });
+addEventListener('keyup', (e) => { if (e.key === 'Shift' && !shiftDrag) canvasEl.style.cursor = ''; });
+
+const labelRenderer = new CSS2DRenderer({ element: document.getElementById('labels') });
+labelRenderer.setSize(innerWidth, innerHeight);
+
+/* 后处理：只有高亮物（穴位/经脉）过阈值，肌肉因为低饱和不会溢光。
+   阈值 0.62 是实测出来的——再低肌肉高光就会一起发光，整张图糊掉。 */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new T.Vector2(innerWidth, innerHeight), 0.54, 0.55, 0.62);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* ---------------------------------------------------------------- 光照
+   三点光 + 底部补光：让低饱和肌肉有体积，同时不出现"塑料高光" */
+scene.add(new T.HemisphereLight(0xd2d8d2, 0x2a1c14, 0.62));
+
+const keyLight = new T.DirectionalLight(0xfff0e0, 2.05);
+keyLight.position.set(1.6, 2.4, 2.4);
+scene.add(keyLight);
+
+const fillLight = new T.DirectionalLight(0xa8c4c8, 0.95);
+fillLight.position.set(-2.2, 1.0, 1.4);
+scene.add(fillLight);
+
+const rimLight = new T.DirectionalLight(0x9fe0d0, 0.85);
+rimLight.position.set(-0.8, 1.4, -2.6);
+scene.add(rimLight);
+
+const upLight = new T.DirectionalLight(0xffd9b0, 0.42);
+upLight.position.set(0, -2.2, 0.6);
+scene.add(upLight);
+
+// 跟随相机的柔和补光：否则转到背面/侧面，key 光被身体挡住，整块是黑的。
+// 强度压得低，只负责"看得见"，不负责造型（造型仍归固定的三点光）。
+const camLight = new T.DirectionalLight(0xcfe4e8, 0.52);
+scene.add(camLight);
+scene.add(camLight.target);
+
+/* ---------------------------------------------------------------- 背景
+   中医气质靠"场"：深青中心微亮、四周沉下去，而不是一块死黑 */
+function makeBackdrop() {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 512;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(256, 300, 40, 256, 300, 330);
+  g.addColorStop(0.00, '#163034');
+  g.addColorStop(0.42, '#0e2226');
+  g.addColorStop(1.00, '#060e10');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 512, 512);
+  const tex = new T.CanvasTexture(cv);
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+/* ---------------------------------------------------------------- 载荷 */
+const state = {
+  atlas: null, points: [], paths: [], meridians: [],
+  muscle: null, bone: null, skin: null,
+  chanGroup: null, ringGroup: null, litGroup: null, flow: null,
+  acuMesh: null, litMesh: null, haloMesh: null, labels: [],
+  focusPath: 'LU', learnedSegments: [],
+  playing: false,
+};
+
+const loadEl = document.getElementById('load');
+const loadBar = document.getElementById('load-bar');
+const loadTxt = document.getElementById('load-txt');
+const setProgress = (p, t) => {
+  loadBar.style.width = (p * 100).toFixed(0) + '%';
+  if (t) loadTxt.textContent = t;
+};
+
+async function boot() {
+  setProgress(0.04, '读取解剖索引…');
+  const [atlas, pts, surf, mers] = await Promise.all([
+    fetch(ASSETS + 'atlas.json').then(r => r.json()),
+    fetch(ASSETS + 'teaching-points.json').then(r => r.json()),
+    fetch(ASSETS + 'meridian-surface.json').then(r => r.json()),
+    fetch(ASSETS + 'meridians.json').then(r => r.json()),
+  ]);
+  state.atlas = atlas; state.points = pts; state.paths = surf.paths; state.meridians = mers;
+
+  // 只下当前需要的系统所在的 chunk（解剖数据是打包的，按 chunk 取整块）
+  const need = new Set(['muscular', 'skeletal', 'integumentary']);
+  const chunks = [...new Set(atlas.parts.filter(p => need.has(p.system)).map(p => p.chunk))].sort((a, b) => a - b);
+
+  const buffers = {};
+  let done = 0;
+  await Promise.all(chunks.map(async (i) => {
+    const buf = await fetch(ASSETS + `body-${i}.bin`).then(r => r.arrayBuffer());
+    buffers[i] = buf;
+    done++;
+    setProgress(0.08 + 0.72 * (done / chunks.length), `载入解剖分块 ${done}/${chunks.length}`);
+  }));
+
+  setProgress(0.82, '构建肌理网格…');
+  buildAnatomy(atlas, buffers, chunks);
+  setProgress(0.9, '铺设经脉与穴位…');
+  buildMeridians(surf, mers);
+  buildAcupoints(surf.points);
+  if (state.acuByMer) {
+    state.acuByMer.forEach((mesh, mid) => { mesh.material.opacity = mid === 'LU' ? 0.22 : 0.055; });
+  }
+  buildLabels(surf, mers);
+
+  setProgress(1, '完成');
+  setTimeout(() => {
+    loadEl.style.opacity = '0';
+    setTimeout(() => loadEl.remove(), 520);
+  }, 220);
+
+  animate();
+}
+
+/* ---------------------------------------------------------------- 几何构建
+   atlas 里每个 part 带 system / chunk / 字节偏移。
+   二进制布局（读 tcm-3d 源码确认）：
+     position : Float32 × 3 / 顶点
+     normal   : Int16   × 3 / 顶点（normalized）
+     index    : Uint32  × 1
+   注意：**没有 UV**。所以肌理只能程序化生成（triplanar），不能贴图。
+*/
+function buildAnatomy(atlas, buffers, chunks) {
+  const bySystem = new Map();
+
+  for (const p of atlas.parts) {
+    if (!buffers[p.chunk]) continue;           // 未下载的 chunk 直接跳过
+    const buf = buffers[p.chunk];
+
+    const pos = new Float32Array(buf, p.positions, p.vertexCount * 3);
+    const nrm = new Int16Array(buf, p.normals, p.vertexCount * 3);
+    const idx = new Uint32Array(buf, p.indices, p.indexCount);
+
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new T.BufferAttribute(nrm, 3, true));
+
+    // 分块标识：merge 之后靠它给每块肌肉不同的明度，
+    // 这是"一条条肌肉"的观感来源——绝不能丢（丢了就变成一坨肉色）
+    const partId = new Float32Array(p.vertexCount).fill(partIdOf(p));
+    g.setAttribute('aPart', new T.BufferAttribute(partId, 1));
+
+    // 顶点色：每块随机微扰，保留分块边界
+    const col = new Float32Array(p.vertexCount * 3);
+    const base = new T.Color(C.muscle);
+    const h = hashStr(p.id);
+    const c = base.clone().offsetHSL((h - 0.5) * 0.035, (h - 0.5) * 0.09, (h - 0.5) * 0.11);
+    for (let i = 0; i < p.vertexCount; i++) {
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    }
+    g.setAttribute('color', new T.BufferAttribute(col, 3));
+
+    g.setIndex(new T.BufferAttribute(idx, 1));
+
+    if (!bySystem.has(p.system)) bySystem.set(p.system, []);
+    bySystem.get(p.system).push(g);
+  }
+
+  for (const [system, geos] of bySystem) {
+    const merged = mergeGeometries(geos, false);
+    if (!merged) { console.warn('merge failed', system); continue; }
+    geos.forEach(g => g.dispose());
+    merged.computeBoundingSphere();
+
+    if (system === 'muscular') {
+      const m = makeMuscleMaterial();
+      const mesh = new T.Mesh(merged, m);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 2;
+      scene.add(mesh); state.muscle = mesh;
+    } else if (system === 'skeletal') {
+      const m = new T.MeshStandardMaterial({
+        color: C.bone, roughness: 0.62, metalness: 0.0,
+        transparent: true, opacity: 0.9,
+      });
+      const mesh = new T.Mesh(merged, m);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 1;
+      mesh.visible = false;          // 骨骼默认关，开关打开才看
+      scene.add(mesh); state.bone = mesh;
+    } else if (system === 'integumentary') {
+      // 体表膜：不用 transmission（会额外渲一遍场景，移动端直接废）
+      const m = new T.MeshBasicMaterial({
+        color: C.skin, transparent: true, opacity: 0.028,
+        depthWrite: false, side: T.FrontSide,
+        blending: T.NormalBlending,
+      });
+      const mesh = new T.Mesh(merged, m);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 6;          // 最后画，像一层薄雾裹在外面
+      scene.add(mesh); state.skin = mesh;
+    } else {
+      merged.dispose();
+    }
+  }
+}
+
+// part 序号：用 id 的哈希映射到 [0,1)，供着色器做逐块明度抖动
+const partIdCache = new Map();
+let partSeq = 0;
+function partIdOf(p) {
+  if (!partIdCache.has(p.id)) partIdCache.set(p.id, (partIdCache.size * 0.6180339887) % 1);
+  return partIdCache.get(p.id);
+}
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 1000) / 1000;
+}
+
+/* ---------------------------------------------------------------- 肌理材质
+   没有 UV，只能用世界坐标做三平面采样。
+   纤维感的两个来源：
+     ① aPart 分块 —— 块与块的接缝就是肌束分界（最稳的一层）
+     ② 各向异性噪声 —— 沿身体长轴拉伸 9 倍，才像纤维而不是噪点
+*/
+function makeMuscleMaterial() {
+  const mat = new T.MeshStandardMaterial({
+    color: 0xffffff,          // 真色走顶点色
+    vertexColors: true,
+    roughness: 0.74,
+    metalness: 0.0,
+    flatShading: false,
+  });
+
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uScale = { value: 58.0 };
+    shader.uniforms.uAniso = { value: 7.0 };
+    shader.uniforms.uBump = { value: 0.62 };
+    shader.uniforms.uTint = { value: 0.20 };
+
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        varying vec3 vWPos;
+        varying vec3 vWNrm;
+        attribute float aPart;
+        varying float vPart;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        vWNrm = normalize(mat3(modelMatrix) * objectNormal);
+        vPart = aPart;`);
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying vec3 vWPos;
+        varying vec3 vWNrm;
+        varying float vPart;
+        uniform float uScale, uAniso, uBump, uTint;
+
+        float h31(vec3 p){
+          p = fract(p * 0.3183099 + vec3(0.11, 0.17, 0.13));
+          p *= 17.0;
+          return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+        }
+        // 三线性值噪声：够用且比 simplex 便宜，移动端友好
+        float vn(vec3 x){
+          vec3 i = floor(x), f = fract(x);
+          f = f * f * (3.0 - 2.0 * f);
+          float n000 = h31(i);
+          float n100 = h31(i + vec3(1,0,0));
+          float n010 = h31(i + vec3(0,1,0));
+          float n110 = h31(i + vec3(1,1,0));
+          float n001 = h31(i + vec3(0,0,1));
+          float n101 = h31(i + vec3(1,0,1));
+          float n011 = h31(i + vec3(0,1,1));
+          float n111 = h31(i + vec3(1,1,1));
+          return mix(mix(mix(n000,n100,f.x), mix(n010,n110,f.x), f.y),
+                     mix(mix(n001,n101,f.x), mix(n011,n111,f.x), f.y), f.z);
+        }
+        // 沿身体长轴（y）拉伸的噪声场 → 肌束走向
+        vec3 fiberQ(vec3 p, float k){
+          return vec3(p.x * k, p.y * k / uAniso, p.z * k) + vPart * 6.2831;
+        }`)
+
+      // 颜色：肌束条纹 + 逐块明度，让"一条条肌肉"看得出来
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        {
+          vec3 q = fiberQ(vWPos, 21.0);
+          float f1 = vn(q);
+          float f2 = vn(q * 2.9 + 11.0);
+          float fiber = f1 * 0.68 + f2 * 0.32;
+          // 细密的束间暗线
+          float groove = smoothstep(0.44, 0.56, vn(fiberQ(vWPos, 64.0)));
+          float shade = mix(0.80, 1.16, fiber) * mix(0.90, 1.0, groove);
+          // 逐块微差（0.94 ~ 1.06）
+          shade *= mix(1.0 - uTint * 0.5, 1.0 + uTint * 0.5, vPart);
+          diffuseColor.rgb *= shade;
+        }`)
+
+      // 法线：噪声梯度投影到切平面，做出肌束起伏
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          vec3 p = fiberQ(vWPos, 34.0);
+          float e = 0.06;
+          float f0 = vn(p);
+          vec3 g = vec3(vn(p + vec3(e,0,0)) - f0,
+                        vn(p + vec3(0,e,0)) - f0,
+                        vn(p + vec3(0,0,e)) - f0);
+          vec3 tangential = g - normal * dot(g, normal);
+          normal = normalize(normal - tangential * uBump * 6.0);
+        }`);
+  };
+
+  return mat;
+}
+
+/* ---------------------------------------------------------------- 经脉 */
+function buildMeridians(surf, mers) {
+  const g = new T.Group();
+  scene.add(g);
+  state.chanGroup = g;
+
+  const nodes = new Map();  // meridianId -> {mesh, mat}
+
+  surf.paths.forEach((p) => {
+    const pts = [];
+    for (let i = 0; i < p.vertices.length; i += 3) {
+      pts.push(p.vertices[i], p.vertices[i + 1], p.vertices[i + 2]);
+    }
+    const geo = new LineGeometry();
+    geo.setPositions(pts);
+
+    const isFocus = p.id === state.focusPath;
+    const mat = new LineMaterial({
+      color: isFocus ? C.jade : 0x2a6a60,
+      linewidth: isFocus ? 2.1 : 1.15,
+      transparent: true,
+      opacity: isFocus ? 0.92 : 0.5,
+      worldUnits: false,
+      dashed: false,
+      alphaToCoverage: true,
+    });
+    mat.resolution.set(innerWidth, innerHeight);
+
+    const matGlow = new LineMaterial({
+      color: isFocus ? 0x62e8c4 : 0x2f8072,
+      linewidth: isFocus ? 6.0 : 3.5,
+      transparent: true,
+      opacity: isFocus ? 0.07 : 0.028,
+      worldUnits: false,
+      depthWrite: false,
+    });
+    matGlow.resolution.set(innerWidth, innerHeight);
+
+    const glow = new Line2(geo, matGlow);
+    glow.computeLineDistances();
+    glow.frustumCulled = false;
+    glow.renderOrder = 7;
+    g.add(glow);
+
+    const line = new Line2(geo, mat);
+    line.computeLineDistances();
+    line.frustumCulled = false;
+    line.renderOrder = 8;
+    line.userData.pid = p.id;
+    line.userData.glow = glow;
+    g.add(line);
+    if (!nodes.has(p.id)) nodes.set(p.id, []);
+    nodes.get(p.id).push({ line, mat, verts: p.vertices, geo });
+  });
+
+  // 已通段：把相邻两个已学穴之间的点切出来，单独画成金色
+  buildLearnedSegments(surf);
+}
+
+function buildLearnedSegments(surf) {
+  const g = new T.Group();
+  scene.add(g);
+  state.litGroup = g;
+
+  // 右侧(+1)/左侧(-1) 的穴位坐标表
+  const byKey = new Map();
+  surf.points.forEach(pt => {
+    const [code, sideStr] = pt.key.split(':');
+    const side = Number(sideStr);
+    if (!byKey.has(code)) byKey.set(code, {});
+    byKey.get(code)[side] = pt.target.position;
+  });
+
+  surf.paths.forEach(pth => {
+    const v = pth.vertices;
+    const n = v.length / 3;
+    const side = v[0] >= 0 ? 1 : -1;
+
+    // ① 把该经**所有**穴位映到路径索引上，按索引排序 —— 得到"穴序列"
+    //    关键：不能拿"路径采样点索引差"判连续。相邻两穴之间可能隔几十个采样点，
+    //    早期用 idx 差 <= 3 判断，导致每段都只剩 1 个点，整条通路画不出来。
+    const seq = [];
+    [...byKey.keys()].filter(c => c === pth.id || c.startsWith(pth.id + '') && /^[A-Z]+\d+$/.test(c))
+      .filter(c => c.startsWith(pth.id))
+      .forEach(code => {
+        const t = byKey.get(code)?.[side];
+        if (!t) return;
+        let best = -1, bestD = 1e9;
+        for (let i = 0; i < n; i++) {
+          const dx = v[i * 3] - t[0], dy = v[i * 3 + 1] - t[1], dz = v[i * 3 + 2] - t[2];
+          const d = dx * dx + dy * dy + dz * dz;
+          if (d < bestD) { bestD = d; best = i; }
+        }
+        if (best >= 0 && bestD < 0.006) seq.push({ code, idx: best });
+      });
+    if (seq.length < 2) return;
+    seq.sort((a, b) => a.idx - b.idx);
+
+    // ② 穴序列里相邻两穴都已学 → 切出它们之间的路径
+    for (let i = 0; i + 1 < seq.length; i++) {
+      const a = seq[i], b = seq[i + 1];
+      if (!LEARNED.has(a.code) || !LEARNED.has(b.code)) continue;
+
+      const seg = [];
+      for (let k = a.idx; k <= b.idx; k++) {
+        seg.push(v[k * 3], v[k * 3 + 1], v[k * 3 + 2]);
+      }
+      if (seg.length < 6) continue;
+
+      const geo = new LineGeometry();
+      geo.setPositions(seg);
+
+      // 外晕：让"通了"这一段压过未学的青线。但它是叠在 bloom 上的，
+      // 0.20/8px 那版实际溢成一根发光棒，把穴位名都糊掉了——收到 0.10/6.5px。
+      const mg = new LineMaterial({
+        color: 0xd9a25c, linewidth: 6.5, transparent: true,
+        opacity: 0.10, worldUnits: false, depthWrite: false,
+      });
+      mg.resolution.set(innerWidth, innerHeight);
+      const glow = new Line2(geo, mg);
+      glow.computeLineDistances();
+      glow.frustumCulled = false;
+      glow.renderOrder = 9;
+      g.add(glow);
+
+      const mat = new LineMaterial({
+        color: 0xe8b76e, linewidth: 2.6, transparent: true, opacity: 0.80,
+        worldUnits: false,
+      });
+      mat.resolution.set(innerWidth, innerHeight);
+      const line = new Line2(geo, mat);
+      line.computeLineDistances();
+      line.frustumCulled = false;
+      line.renderOrder = 10;
+      g.add(line);
+
+      state.learnedSegments.push({ geo, mat, line, glow, verts: seg });
+    }
+  });
+}
+
+/* ---------------------------------------------------------------- 穴位 */
+function buildAcupoints(points) {
+  const R = 0.0022;
+  const geo = new T.SphereGeometry(R, 8, 6);
+  const dummy = new T.Object3D();
+
+  // 未学点按**经脉分组**：26 条经的 662 个点全亮，头顶和脚踝会糊成噪点。
+  // 分组后只让"当前经"清晰，其余压到几乎不可见——既保留"穴位都在"的事实，
+  // 又不让它们抢走注意力。切经时只改材质透明度，不重建几何。
+  const byMer = new Map();
+  const lit = [];
+  points.forEach((pt) => {
+    const code = pt.key.split(':')[0];
+    if (LEARNED.has(code)) { lit.push(pt); return; }
+    const mid = code.replace(/\d+$/, '');
+    if (!byMer.has(mid)) byMer.set(mid, []);
+    byMer.get(mid).push(pt);
+  });
+
+  state.acuByMer = new Map();
+  for (const [mid, arr] of byMer) {
+    const mat = new T.MeshBasicMaterial({
+      color: 0x7fa3a9, transparent: true, opacity: 0.22, depthWrite: false,
+    });
+    const mesh = new T.InstancedMesh(geo, mat, arr.length);
+    arr.forEach((pt, i) => {
+      dummy.position.fromArray(pt.target.position);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 10;
+    mesh.userData.mid = mid;
+    scene.add(mesh);
+    state.acuByMer.set(mid, mesh);
+  }
+
+  // 已学：朱砂实心 + 外圈光晕
+  if (lit.length) {
+    const mLit = new T.MeshBasicMaterial({ color: 0xff6a4a });
+    const meshL = new T.InstancedMesh(geo, mLit, lit.length);
+    lit.forEach((pt, i) => {
+      dummy.position.fromArray(pt.target.position);
+      dummy.scale.setScalar(1.6);
+      dummy.updateMatrix();
+      meshL.setMatrixAt(i, dummy.matrix);
+    });
+    dummy.scale.setScalar(1);
+    meshL.instanceMatrix.needsUpdate = true;
+    meshL.frustumCulled = false;
+    meshL.renderOrder = 11;
+    scene.add(meshL);
+    state.litMesh = meshL;
+
+    const mHalo = new T.MeshBasicMaterial({
+      color: 0xff8a5c, transparent: true, opacity: 0.42,
+      blending: T.AdditiveBlending, depthWrite: false,
+    });
+    const halos = new T.InstancedMesh(new T.SphereGeometry(R * 3.4, 10, 8), mHalo, lit.length);
+    lit.forEach((pt, i) => {
+      dummy.position.fromArray(pt.target.position);
+      dummy.updateMatrix();
+      halos.setMatrixAt(i, dummy.matrix);
+    });
+    halos.instanceMatrix.needsUpdate = true;
+    halos.frustumCulled = false;
+    halos.renderOrder = 12;
+    scene.add(halos);
+    state.haloMesh = halos;
+  }
+  state.litList = lit;
+  state.acuList = points.filter(p => !LEARNED.has(p.key.split(':')[0]));
+}
+
+/* ---------------------------------------------------------------- 标签 */
+function buildLabels(surf, mers) {
+  const nameOf = new Map();
+  state.points.forEach(p => nameOf.set(p.code, p));
+
+  // 默认只给当前经挂名（670 个全挂必然糊成一团）
+  state.allPoints = surf.points;
+  state.nameOf = nameOf;
+  refreshLabels('LU');
+}
+
+function refreshLabels(meridianId) {
+  // 清旧
+  state.labels.forEach(l => { l.parent && l.parent.remove(l); l.el && l.el.remove(); });
+  state.labels = [];
+
+  state.allPoints.forEach((pt) => {
+    const code = pt.key.split(':')[0];
+    if (!code.startsWith(meridianId)) return;
+    if (pt.key.endsWith('-1')) return;     // 左右只挂一侧，避免重名
+
+    const info = state.nameOf.get(code);
+    const el = document.createElement('div');
+    el.className = 'lbl' + (LEARNED.has(code) ? ' lit' : '');
+    el.innerHTML = `${info?.name ?? code}<small>${code}</small>`;
+
+    const o = new CSS2DObject(el);
+    o.position.fromArray(pt.target.position);
+    o.position.y += 0.012;
+    o.userData.n = new T.Vector3().fromArray(pt.target.normal || [0, 0, 1]);
+    scene.add(o);
+    o.el = el;
+    state.labels.push(o);
+  });
+}
+
+/* 标签避让：670 个穴名不可能全挂，只挂当前经，再按屏幕纵向推开。
+   这是 3D 特有的问题——2D 里靠布局就能排开，3D 里只能屏幕空间解。 */
+const _v = new T.Vector3();
+const _camDir = new T.Vector3();
+function avoidLabels() {
+  const live = [];
+  // CSS2DObject 不参与深度测试，不做法线剔除的话，
+  // 转到背面会"透过身体"看到正面穴名——比不显示更糟。
+  _camDir.subVectors(camera.position, controls.target).normalize();
+  for (const o of state.labels) {
+    if (!o.visible || !o.el) continue;
+    if (o.userData.n && o.userData.n.dot(_camDir) < 0.06) {
+      o.el.style.opacity = '0';
+      continue;
+    }
+    _v.setFromMatrixPosition(o.matrixWorld).project(camera);
+    if (_v.z > 1) { o.el.style.opacity = '0'; continue; }
+    live.push({ o, x: (_v.x * 0.5 + 0.5) * innerWidth, y: (-_v.y * 0.5 + 0.5) * innerHeight });
+  }
+  live.sort((a, b) => a.y - b.y);
+
+  const placed = [];
+  for (const it of live) {
+    let y = it.y;
+    for (let guard = 0; guard < 6; guard++) {
+      const hit = placed.find(p => Math.abs(p.x - it.x) < 74 && Math.abs(p.y - y) < 19.0);
+      if (!hit) break;
+      y = hit.y + 19.0;
+    }
+    placed.push({ x: it.x, y });
+    it.o.el.style.opacity = '';
+    it.o.el.style.transform = `translate(-50%,-50%) translate(${it.x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+  }
+}
+
+/* ---------------------------------------------------------------- 通经流光 */
+function makeFlow() {
+  // 核心 + 光晕两层：单独一颗小球会被 2.6px 金线完全吃掉，等于看不见。
+  // 但光晕是 additive + bloom 双重放大，尺寸和浓度都压着来，不然会烫出个白团。
+  const g = new T.Group();
+  const core = new T.Mesh(
+    new T.SphereGeometry(0.0070, 12, 10),
+    new T.MeshBasicMaterial({ color: 0xffeec2 })
+  );
+  const halo = new T.Mesh(
+    new T.SphereGeometry(0.022, 12, 10),
+    new T.MeshBasicMaterial({
+      color: 0xe8a94e, transparent: true, opacity: 0.20,
+      blending: T.AdditiveBlending, depthWrite: false,
+    })
+  );
+  core.renderOrder = 14; halo.renderOrder = 13;
+  g.add(core, halo);
+  g.visible = false;
+  scene.add(g);
+  return g;
+}
+
+/* ---------------------------------------------------------------- 相机 */
+const VIEWS = {
+  front: { pos: [0, 0.92, 3.10], target: [0, 0.87, 0] },
+  back:  { pos: [0, 0.92, -3.10], target: [0, 0.87, 0] },
+  side:  { pos: [3.10, 0.92, 0.02], target: [0, 0.87, 0] },
+};
+let camTween = null;
+
+/* ------------------------------------------------------------ 平移 / 边界
+   沿相机自身的右轴、上轴同时挪 camera 与 target：朝向、距离、透视全不变，
+   只有画面在动——这才是"上下滑动"。 */
+const _right = new T.Vector3(), _up = new T.Vector3();
+
+function panCamera(dxPx, dyPx) {        // dxPx>0 画面右移，dyPx>0 画面下移
+  const dist = camera.position.distanceTo(controls.target);
+  const k = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * dist / innerHeight;  // 每像素的世界位移
+  _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
+  _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
+  const mx = (-dxPx * _right.x + dyPx * _up.x) * k;
+  const my = (-dxPx * _right.y + dyPx * _up.y) * k;
+  const mz = (-dxPx * _right.z + dyPx * _up.z) * k;
+  camera.position.x += mx; camera.position.y += my; camera.position.z += mz;
+  controls.target.x += mx; controls.target.y += my; controls.target.z += mz;
+  clampPan();
+}
+
+/* damping 的残余惯性、zoomToCursor 的偏移都可能把画面推出人体范围，
+   所以每帧收尾再夹一次。夹的是 target，camera 同步平移，画面不会被"拉回去"。 */
+function clampPan() {
+  const t = controls.target;
+  const cx = Math.max(-PAN_BOX.x, Math.min(PAN_BOX.x, t.x));
+  const cy = Math.max(PAN_BOX.yMin, Math.min(PAN_BOX.yMax, t.y));
+  const cz = Math.max(-PAN_BOX.z, Math.min(PAN_BOX.z, t.z));
+  if (cx === t.x && cy === t.y && cz === t.z) return;
+  camera.position.x += cx - t.x;
+  camera.position.y += cy - t.y;
+  camera.position.z += cz - t.z;
+  t.set(cx, cy, cz);
+}
+
+/* 键盘：长距离移动比拖动省力（头顶→脚要跨 1.7m）。Shift 加速。 */
+const keys = new Set();
+let shiftDown = false;
+addEventListener('keydown', (e) => {
+  shiftDown = e.shiftKey;
+  if (!e.key.startsWith('Arrow')) return;
+  keys.add(e.key);
+  camTween = null;
+  e.preventDefault();
+});
+addEventListener('keyup', (e) => { keys.delete(e.key); shiftDown = e.shiftKey; });
+addEventListener('blur', () => { keys.clear(); shiftDown = false; });
+
+function goView(name, dur = 1.15) {
+  const v = VIEWS[name];
+  if (!v) return;
+  camTween = {
+    t0: performance.now(), dur,
+    from: { p: camera.position.clone(), g: controls.target.clone() },
+    to: { p: new T.Vector3(...v.pos), g: new T.Vector3(...v.target) },
+  };
+}
+
+/* ---------------------------------------------------------------- 拾取
+   穴位在屏幕上极小，必须靠屏幕空间容差吸附，否则点不准。
+   同时做法线剔除：转到背面时不该点到正面的穴。 */
+const _p = new T.Vector3();
+const _cd = new T.Vector3();
+function pickAcupoint(px, py, tolPx = 24) {
+  _cd.subVectors(camera.position, controls.target).normalize();
+  let best = null, bestD = tolPx, bestZ = Infinity;
+
+  const all = [...(state.acuList || []), ...(state.litList || [])];
+  for (const ptn of all) {
+    const n = ptn.target.normal;
+    if (n && (n[0] * _cd.x + n[1] * _cd.y + n[2] * _cd.z) < 0.02) continue;
+
+    _p.fromArray(ptn.target.position).project(camera);
+    if (_p.z > 1) continue;
+    const sx = (_p.x * 0.5 + 0.5) * innerWidth;
+    const sy = (-_p.y * 0.5 + 0.5) * innerHeight;
+    const d = Math.hypot(sx - px, sy - py);
+    if (d < bestD - 0.5 || (Math.abs(d - bestD) <= 0.5 && _p.z < bestZ)) {
+      bestD = d; bestZ = _p.z; best = ptn;
+    }
+  }
+  return best;
+}
+
+/* ---------------------------------------------------------------- 交互 */
+const sheet = document.getElementById('sheet');
+const sCode = document.getElementById('s-code');
+const sName = document.getElementById('s-name');
+const sPy = document.getElementById('s-py');
+const sMer = document.getElementById('s-mer');
+
+const ray = new T.Raycaster();
+ray.params.Points = { threshold: 0.01 };
+const ndc = new T.Vector2();
+let downAt = null;
+
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY, b: e.button }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt) return;
+  const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+  const btn = downAt.b;
+  downAt = null;
+  if (btn !== 0 || e.button !== 0) return;   // 右键平移、中键缩放松手不算点击
+  if (moved > 6) return;                 // 拖动（旋转/平移）不算点击
+
+  // 屏幕空间吸附，不用 raycast。
+  // 原因：3m 视距下穴位球只有 2~3 个像素，射线几乎打不中，
+  // 而且容易命中"更靠前但屏幕位置不同"的邻经穴位（实测点天府选中了消泺）。
+  // 改成：把候选穴位投影到屏幕，取 24px 内最近的、且朝向相机的。
+  const pt = pickAcupoint(e.clientX, e.clientY);
+  if (!pt) { sheet.classList.remove('show'); return; }
+
+  const code = pt.key.split(':')[0];
+  const info = state.nameOf.get(code);
+  sCode.textContent = code;
+  sName.textContent = info?.name ?? '';
+  sPy.textContent = info?.pinyin ?? '';
+  sMer.textContent = info?.meridian ?? '';
+  sheet.classList.add('show');
+
+  // 推近镜头
+  const p = new T.Vector3().fromArray(pt.target.position);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camTween = {
+    t0: performance.now(), dur: 0.9,
+    from: { p: camera.position.clone(), g: controls.target.clone() },
+    to: { p: p.clone().add(dir.multiplyScalar(0.95)), g: p.clone() },
+  };
+});
+
+/* ---------------------------------------------------------------- 控件 */
+document.getElementById('cb-muscle').onchange = (e) => { if (state.muscle) state.muscle.visible = e.target.checked; };
+document.getElementById('cb-bone').onchange = (e) => { if (state.bone) state.bone.visible = e.target.checked; };
+document.getElementById('cb-skin').onchange = (e) => { if (state.skin) state.skin.visible = e.target.checked; };
+document.getElementById('cb-chan').onchange = (e) => { if (state.chanGroup) state.chanGroup.visible = e.target.checked; };
+document.getElementById('cb-lbl').onchange = (e) => {
+  state.labels.forEach(l => { l.visible = e.target.checked; });
+  state.labelOn = e.target.checked;
+};
+
+['front', 'back', 'side'].forEach(v => {
+  document.getElementById('v-' + v).onclick = () => {
+    goView(v);
+    document.querySelectorAll('#hud-b button').forEach(b => b.classList.remove('on'));
+    document.getElementById('v-' + v).classList.add('on');
+  };
+});
+
+document.getElementById('chan-lu').onclick = () => {
+  setFocus('LU');
+  document.getElementById('chan-lu').classList.add('on');
+  document.getElementById('chan-all').classList.remove('on');
+};
+document.getElementById('chan-all').onclick = () => {
+  setFocus(null);
+  document.getElementById('chan-all').classList.add('on');
+  document.getElementById('chan-lu').classList.remove('on');
+};
+
+function setFocus(id) {
+  state.focusPath = id;
+  if (!state.chanGroup) return;
+  state.chanGroup.children.forEach((line) => {
+    const pid = line.userData.pid;
+    if (!pid) {   // 底晕那一条
+      const host = state.chanGroup.children.find(l => l.userData.glow === line);
+      if (host) {
+        const on = state.focusPath == null || host.userData.pid === state.focusPath;
+        line.material.opacity = on ? 0.07 : 0.018;
+        line.material.linewidth = on ? 6.0 : 3.5;
+      }
+      return;
+    }
+    const isF = id == null || pid === id;
+    line.material.color.setHex(id == null ? 0x24625a : (pid === id ? C.jade : 0x2a6a60));
+    line.material.linewidth = id == null ? 1.05 : (pid === id ? 2.3 : 0.9);
+    line.material.opacity = isF ? 0.95 : 0.26;
+  });
+  if (state.acuByMer) {
+    state.acuByMer.forEach((mesh, mid) => {
+      mesh.material.opacity = (id == null || mid === id) ? 0.22 : 0.055;
+    });
+  }
+  refreshLabels(id || 'LU');
+  state.labels.forEach(l => { l.visible = state.labelOn !== false; });
+}
+
+document.getElementById('play').onclick = () => { state.playing = true; state.flowT = 0; };
+
+/* ---------------------------------------------------------------- 循环 */
+let frames = 0, lastFrame = performance.now(), fpsStart = performance.now();
+let worstMs = 0;      // 统计窗口内最长的一帧——平均值看不出卡顿，这一个数能看出
+const fpsEl = document.getElementById('fps');
+if (!state.flow) state.flow = makeFlow();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const rawMs = now - lastFrame;
+  const dt = Math.min(rawMs / 1000, 0.06);
+  lastFrame = now;
+  if (rawMs < 2000) worstMs = Math.max(worstMs, rawMs);   // 掉出 2s 的大停顿是切页面，不算
+  renderer.info.reset();
+
+  // 相机 tween
+  if (camTween) {
+    const k = Math.min((performance.now() - camTween.t0) / (camTween.dur * 1000), 1);
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; // easeInOutCubic
+    camera.position.lerpVectors(camTween.from.p, camTween.to.p, e);
+    controls.target.lerpVectors(camTween.from.g, camTween.to.g, e);
+    if (k >= 1) camTween = null;
+  }
+  // 键盘平移：按"像素/秒"走，不是按帧——帧率低的机器上按帧算会慢到挪不动
+  if (keys.size) {
+    const s = (shiftDown ? 900 : 450) * dt;
+    let dx = 0, dy = 0;
+    if (keys.has('ArrowLeft')) dx += s;
+    if (keys.has('ArrowRight')) dx -= s;
+    if (keys.has('ArrowUp')) dy += s;       // 画面下移 = 看到更上面
+    if (keys.has('ArrowDown')) dy -= s;
+    if (dx || dy) panCamera(dx, dy);
+  }
+
+  controls.update();
+  clampPan();
+
+  camLight.position.copy(camera.position);
+  camLight.target.position.copy(controls.target);
+
+  // 通经流光
+  if (state.playing && state.learnedSegments.length) {
+    state.flowT = (state.flowT || 0) + dt * 0.5;
+    const total = state.learnedSegments.length;
+    const idx = Math.floor(state.flowT * total) % total;
+    const seg = state.learnedSegments[idx];
+    const local = (state.flowT * total) % 1;
+    const v = seg.verts;
+
+    // 在折线上按弧长取点
+    const n = v.length / 3;
+    const fi = local * (n - 1);
+    const i0 = Math.floor(fi), i1 = Math.min(i0 + 1, n - 1);
+    const f = fi - i0;
+    state.flow.position.set(
+      v[i0 * 3] + (v[i1 * 3] - v[i0 * 3]) * f,
+      v[i0 * 3 + 1] + (v[i1 * 3 + 1] - v[i0 * 3 + 1]) * f,
+      v[i0 * 3 + 2] + (v[i1 * 3 + 2] - v[i0 * 3 + 2]) * f
+    );
+    state.flow.visible = true;
+    const pulse = 1.0 + Math.sin(state.flowT * 22) * 0.18;
+    state.flow.scale.setScalar(pulse);
+  } else if (state.flow) {
+    state.flow.visible = false;
+  }
+
+  composer.render();
+  labelRenderer.render(scene, camera);
+  avoidLabels();
+
+  // 帧率：必须用真实经过时间。早期用累加 dt 算，结果 headless 被节流时
+  // 反而显示"22 fps"——那是每帧的瞬时值，不是吞吐。
+  frames++;
+  const elapsed = (now - fpsStart) / 1000;
+  if (elapsed > 0.6) {
+    // 平均值会被 vsync 封顶在 60，看不出余量；最差帧才反映"拖动时会不会一顿"。
+    const worst = worstMs > 0 ? (1000 / worstMs).toFixed(0) : '—';
+    fpsEl.textContent =
+      `${(frames / elapsed).toFixed(0)} fps · 最差帧 ${worst} fps · ${renderer.info.render.calls} draw calls · 几何 835.6k 面`;
+    frames = 0; fpsStart = now; worstMs = 0;
+  }
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  bloom.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+  if (state.chanGroup) {
+    const w = innerWidth, h = innerHeight;
+    state.chanGroup.children.forEach(l => { if (l.material?.resolution) l.material.resolution.set(w, h); });
+    state.litGroup?.children.forEach(l => { if (l.material?.resolution) l.material.resolution.set(w, h); });
+  }
+});
+
+// Line2 需要在路径上带 pid，便于聚焦切换
+const _origBuild = buildMeridians;
+buildMeridians = function (surf, mers) {
+  _origBuild(surf, mers);
+  const groups = state.chanGroup.children;
+  let i = 0;
+  surf.paths.forEach((p) => {
+    // 每条 path 对应一个 Line2（顺序一致）
+    const line = groups[i++];
+    if (line) line.userData.pid = p.id;
+  });
+};
+
+window.__p0 = { camera, controls, state, goView, renderer, scene, panCamera, clampPan, keys };
+
+boot().catch(err => {
+  console.error(err);
+  loadTxt.textContent = '加载失败：' + err.message;
+});
+</script>
+</body>
+</html>

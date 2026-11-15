@@ -201,6 +201,15 @@ def find_cycle(edges: Iterable[Mapping[str, Any]]) -> list[str] | None:
     return None
 
 
+class _FreeHintConflict(Exception):
+    """自由边与严格边打架：两条边各自成立，合起来不成立。
+
+    例如 A→C 是 strict、B 与 A、B 与 C 都是 free：free 想把这个域并成一组
+    「可以并行」，strict 又要求 C 必须排在 A 之后。这不是数据错误，是提示与
+    硬约束撞车——此时该丢的是**提示**，不是顺序。
+    """
+
+
 def topo_sort(nodes: Iterable[Mapping[str, Any] | str], edges: Iterable[Mapping[str, Any]]) -> list[list[str]]:
     """Return strict-order layers; IDs in one layer can run in parallel (including free-linked nodes)."""
 
@@ -213,6 +222,24 @@ def topo_sort(nodes: Iterable[Mapping[str, Any] | str], edges: Iterable[Mapping[
     strict_edges = [edge for edge in edge_list if edge.get("order_sensitivity") == "strict"]
     if cycle := find_cycle(strict_edges):
         raise PrerequisiteCycleError(cycle)
+
+    # 先按「自由边可以并成一组」排；并组与严格边冲突时退回纯严格序。
+    # 以前这里直接抛 ValueError，后果是随便一条矛盾的自由边就能让整份明细草稿
+    # 500——而 free 边的语义只是「这几个可以并行」，它没有资格否掉顺序。
+    try:
+        return _layer_groups(unique_ids, edge_list, strict_edges)
+    except _FreeHintConflict:
+        return _layer_groups(unique_ids, edge_list, strict_edges, merge_free=False)
+
+
+def _layer_groups(
+    unique_ids: list[str],
+    edge_list: list[Mapping[str, Any]],
+    strict_edges: list[Mapping[str, Any]],
+    *,
+    merge_free: bool = True,
+) -> list[list[str]]:
+    """并查集分层。``merge_free=False`` 时无视自由边，只按严格边分层。"""
 
     # A free edge is a planning hint: its connected nodes should be offered in
     # the same parallel batch once every strict predecessor of the batch is done.
@@ -229,7 +256,7 @@ def topo_sort(nodes: Iterable[Mapping[str, Any] | str], edges: Iterable[Mapping[
         if left_root != right_root:
             parent[right_root] = left_root
 
-    for edge in edge_list:
+    for edge in edge_list if merge_free else ():
         start, end = str(edge["from_node_id"]), str(edge["to_node_id"])
         if edge.get("order_sensitivity") == "free" and start in parent and end in parent:
             union(start, end)
@@ -243,7 +270,7 @@ def topo_sort(nodes: Iterable[Mapping[str, Any] | str], edges: Iterable[Mapping[
         if start in parent and end in parent:
             source, target = find(start), find(end)
             if source == target:
-                raise ValueError("a strict prerequisite cannot be inside one free parallel group")
+                raise _FreeHintConflict(f"{start} -> {end}")
             if target not in children[source]:
                 children[source].append(target)
                 indegree[target] += 1

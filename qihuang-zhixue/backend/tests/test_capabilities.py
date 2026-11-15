@@ -79,11 +79,20 @@ def test_generated_docs_match_the_registry() -> None:
 
 
 def test_placeholder_capabilities_say_so() -> None:
+    """仍然只声明不转发的，必须把 501 写在契约里。
+
+    ``kb.search`` 已经接上真实检索（原来在这里），所以它不该再有 501——
+    能力实装了却还挂着一行「本期只占位」，调用方会按占位处理，等于白实装。
+    """
+
     install()
-    for name in ("resource.generate", "kb.search"):
+    for name in ("resource.generate",):
         entry = registry.get(name)
         assert entry is not None
         assert any(item.http_status == 501 for item in entry.spec.errors), f"{name} 没声明 501"
+    kb = registry.get("kb.search")
+    assert kb is not None
+    assert not any(item.http_status == 501 for item in kb.spec.errors), "kb.search 已实装，不该再声明 501"
 
 
 # --------------------------------------------------------------------------- #
@@ -399,6 +408,17 @@ def test_replay_after_completion_points_at_the_artifact(tmp_path: Path) -> None:
     ).json()
 
     from app.resources import service as resource_service
+
+    # 新流程：先出方案、停下来等确认；确认之后才真正生成。
+    first = asyncio.run(_collect(resource_service.stream_task(accepted["task_id"], _user_id(headers, db_path), db_path)))
+    assert first[-1]["event"] == "pause"
+    plan = next(event for event in first if event["event"] == "plan")["payload"]["plan"]
+    confirmed = client.post(
+        f"/api/resource/tasks/{accepted['task_id']}/plan/confirm",
+        json={"plan": plan},
+        headers=headers,
+    )
+    assert confirmed.status_code == 200, confirmed.text
 
     events = asyncio.run(_collect(resource_service.stream_task(accepted["task_id"], _user_id(headers, db_path), db_path)))
     assert events[-1]["event"] == "done"

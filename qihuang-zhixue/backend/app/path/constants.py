@@ -37,3 +37,10 @@ TARGET_BY_DEPTH: Final[dict[str, float]] = {"浅": 0.75, "中": 0.82, "深": 0.9
 STRICTNESS_ADJUSTMENT: Final[dict[str, float]] = {"宽松": -0.05, "标准": 0.0, "严格": 0.05}
 PACE_DURATION_FACTOR: Final[dict[str, float]] = {"松": 1.15, "中": 1.0, "紧": 0.85}
 DEFAULT_RESOURCE_HINT: Final[str] = "图文讲解+随堂测验"
+
+# 取舍提案的硬边界（计划 §2.2 校验规则表）。模型可以决定“学哪些”，但不许把课删光：
+# 上限裁剪保护 = 最少保留 max(6, 60% 域总数) 个方向，且总论必学。
+MIN_INCLUDE_DOMAINS: Final[int] = 6
+OVER_PRUNE_RATIO: Final[float] = 0.6
+# 提案被整单拒时最多再问模型几次（不含首次）。
+MAX_PROPOSAL_RETRIES: Final[int] = 2

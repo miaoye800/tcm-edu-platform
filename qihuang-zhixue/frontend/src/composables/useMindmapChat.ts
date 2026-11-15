@@ -161,6 +161,17 @@ export const useMindmapChat = (studio: Studio) => {
         note: studio.intentNote.value,
         degraded: studio.degraded.value,
       }).id
+    } else if (next === 'awaiting-plan') {
+      // 方案在等人确认：既不是「还在铺枝」，也不是「已经出图」。
+      // 保持 streaming（任务确实还在进行），只换掉进度行这句话。
+      messages.value = messages.value.map(message =>
+        message.id === progressId ? { ...message, text: '方案拟好了，等你确认后开始铺枝。' } : message,
+      )
+    } else if (next === 'idle') {
+      // 用户主动退出协商：任务停下，进度行不能挂着。
+      messages.value = messages.value.filter(message => message.id !== progressId)
+      progressId = ''
+      chatPhase.value = 'idle'
     } else if (next === 'failed') {
       messages.value = messages.value.filter(message => message.id !== progressId)
       progressId = ''

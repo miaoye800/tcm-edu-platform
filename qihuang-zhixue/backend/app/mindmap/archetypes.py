@@ -10,7 +10,7 @@
    三档占比都数它。
 
 九种原型：monograph / taxonomy / comparison / reverse / filter / relation /
-syndrome / exam / concept。
+syndrome / exam / concept。另有 ``overview``——整门课或整章，骨架直接取教材目录。
 """
 
 from __future__ import annotations
@@ -345,6 +345,46 @@ def _exam(pack: EvidencePack) -> list[MindmapNode]:
     return branches
 
 
+def _overview(pack: EvidencePack) -> list[MindmapNode]:
+    """整门课 / 整章：一级分支就是教材目录里的篇或节。
+
+    这个原型存在的理由是「库里明明有」。以前这类题落到 ``_concept``，长出
+    「概念界定 / 核心内容 / 与中药学的联系 / 学习建议」四支——那是没有资料时
+    的写法，不是《中药学》的样子。《中药学》的样子是总论七章 + 各论二十一类。
+
+    所以这里不造任何分支：槽位由 ``catalog.branch_slots`` 给（真实的篇名或节名），
+    叶子由 ``catalog.groups`` 给（真实的章名或条目名）。目录里没有的一律不编。
+    """
+
+    slots = [slot for slot in pack.branch_slots if slot][:MAX_BRANCHES]
+    if not slots:
+        return _concept(pack)
+    branches: list[MindmapNode] = []
+    for index, label in enumerate(slots):
+        names = pack.groups.get(label) or _chapters_under(pack, label)
+        # 装不下的部分**说出来**，不要空着也不要悄悄丢：各论 21 类药，
+        # 一屏只放得下 10 个，读者得知道「还有 11 类在书上，只是这张图没画」。
+        # 那句说明要占一格，所以要给它留位置——否则会被 ``_branch`` 的
+        # children[:MAX_LEAVES] 截掉，等于什么都没说。
+        rest = max(len(names) - MAX_LEAVES, 0)
+        room = MAX_LEAVES - 1 if rest else MAX_LEAVES
+        leaves = _leaves(names[:room], index, EVIDENCE_TEXTBOOK)
+        if rest:
+            leaves.append(MindmapNode(id=f"b{index}-rest", topic=f"另 {rest} 类见教材", meta=MindmapMeta(evidence=EVIDENCE_MODEL)))
+        branches.append(_branch(label, index, leaves, evidence=EVIDENCE_TEXTBOOK))
+    return branches
+
+
+def _chapters_under(pack: EvidencePack, part: str) -> list[str]:
+    """某一篇下面有哪些章。``pack.nodes`` 里章的 ``parent_id`` 就是篇。"""
+
+    return [
+        str(row.get("name") or "")
+        for row in pack.nodes
+        if row.get("level") == "domain" and str(row.get("parent_id") or "").endswith(part)
+    ]
+
+
 def _concept(pack: EvidencePack) -> list[MindmapNode]:
     """域外兜底：给的是**怎么学**，不是编内容。
 
@@ -371,6 +411,8 @@ _BUILDERS: dict[str, Any] = {
     "syndrome": _syndrome,
     "exam": _exam,
     "concept": _concept,
+    # 整门课 / 整章：不是「一类题」，是同一句话落在库里某门课时的形态。
+    "overview": _overview,
 }
 
 

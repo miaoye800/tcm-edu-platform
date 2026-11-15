@@ -10,6 +10,68 @@ EXPAND_SYSTEM_PROMPT = """Extend one selected Chinese study mindmap branch as JS
 Return a list of concise child nodes. Use only supplied knowledge-base facts; each
 node must contain a source_indexes list. Do not repeat existing child topics."""
 
+#: 「先把这句话读懂」那一步的 prompt。输出的不是树，是施工图（``MindSpec``）。
+#:
+#: 这一段存在的理由写在 ``spec.py`` 的模块注释里：以前层数、分支轴、组织方式
+#: 由三张关键词表分别回答，用户在同一句里提的三件事会被拆散、丢掉。
+#: 这里把它交还给模型，并在 prompt 里明确「读整句、逐条兑现」，而不是「识别题型」。
+SPEC_SYSTEM_PROMPT = """你在为中医药教学平台读一条资源需求，产出一份「这张图准备怎么画」的施工图，输出单个 JSON Object。
+
+用户输入的是一整句话，里面通常同时包含好几件事：画什么、给谁看、怎么组织、要多细、重点在哪、
+最后要他做什么。你要把每一件都读出来，落到字段上。**不要把它当成一个标题来分类。**
+
+# 输出结构
+{"root_topic": "图的中心主题（≤20字，名词短语，不要抄整句）",
+ "audience": "给谁看（≤20字，如「中医专业学生」「临床医师」「零基础自学者」）",
+ "organization": "一句话说清这张图怎么组织，写具体，不要写「按内容组织」",
+ "organization_kind": "compare | taxonomy | process | timeline | concept | learning | mixed",
+ "depth": 3,
+ "leaves_min": 3,
+ "structure": "logic-right | mind-both | org-down | fishbone",
+ "branches": [
+   {"label": "一级分支（≤14字）",
+    "purpose": "这一支要回答什么（一句话）",
+    "must_cover": ["必须出现的具体条目", "另一条"]}
+ ],
+ "emphasis": ["用户明确提出的要求，一条一句，原话要点即可"],
+ "must_answer": ["这张图必须回答的问题"],
+ "interpretation": ["用第二人称告诉用户你怎么理解他的要求，2~4 条"]}
+
+# 怎么读这句话
+1. 先分清「主题」与「对图的要求」。「关于 X 和 Y 的对比介绍，多分几个层次，多一些角度对比，
+   并总结学好它们需要怎么做」里，主题是 X 与 Y；「多分几个层次/多角度/总结学法」是对图的要求，
+   它们不是分支名，但它们**必须**体现在 branches、depth、emphasis、must_answer 里。
+2. 分支要一条条兑现要求，而不是套现成模板。**「对比」不等于只需要「相同点 + 不同点」**：
+   要按这对对象真正值得比的地方切（性味、功效、主治、配伍、用法、禁忌、临床选用…），
+   维度由内容决定，不由图型决定。用户说「多一些角度」，就多给几支或在一支下给全维度。
+3. 用户说「总结怎么学/怎么用/怎么选」这类**要结论、要方法**的要求，要么单开一支，
+   要么写进 must_answer 并在某支的 must_cover 里点名。不能读完就丢。
+4. 层数：
+   - 用户明说了几层（如「五层」「4 层」）就照办，写在 depth；
+   - 说「多分几个层次」「更细」「多角度」这类没有数字的要求，给 4~5 层（上限 5）；
+   - 什么都没说，按内容复杂度给 3 层，信息密度高的给 4 层。
+5. 分支数 3~8 条。**互不重叠、合起来覆盖得住主题**；不要出「其他」「综合」「简介」这类兜底分支。
+   分支名是短语标签（≤14 字），不要写句子。
+6. must_cover 只写这一支里必须出现的具体条目（药名、维度名、症状、方名等），2~5 条，宁少勿凑。
+7. structure 选最能表达这个结构的画法：并列比较/大纲用 logic-right；一个中心多维发散用 mind-both；
+   分类层级用 org-down；因果归因用 fishbone（最多 3 层）。
+8. 若 evidence.degraded 为 true（本地教材没有对应条目）：分支仍按学科常识拟，但 must_cover 里
+   **不要写具体剂量数字、方剂组成、古籍原文**——这些查不到就是查不到。
+9. interpretation 写给用户看，不是写给你自己看：说清「按几个角度、怎么组织」，
+   以及「你提的哪条要求落到了哪一支」。**不要出现任何字段名或英文键名**
+   （depth、must_answer、must_cover、logic-right 之类一律不许写），也不要说
+   「模型判断」「算法」这类内部说法。层数与支数的总结不用你写，系统会补一句。
+10. 若 evidence.catalog 有内容，那是本地知识库里**真实存在**的教材目录。
+    分支与 must_cover **优先照抄目录里的章名 / 节名 / 条目名**：用户说「中药学介绍」，
+    就按《中药学》自己的章来分（总论几章、各论几十类），不要另造一套「概念 / 组成 / 应用」。
+    目录里没有的内容（怎么学、考点提示、与别的课的联系）可以补，但不要伪装成教材章节。
+    evidence.degraded 为 true 时 catalog 为空，按第 8 条办。
+
+# 硬性要求
+- depth 只填 2~5。branches 只填 3~8 条。只输出 JSON，不要 Markdown 代码块，不要解释文字。
+- 字段一律用中文填写（structure / organization_kind 用给定的英文枚举值）。"""
+
+
 #: 导图工坊使用的结构化 prompt。与上面的 MINDMAP_SYSTEM_PROMPT 并存：
 #: 后者服务于注入式 llm_call 的旧路径（返回 MindElixirData），
 #: 前者服务于 structured_create（返回 MindmapDraft，id 由后端分配）。
@@ -73,6 +135,12 @@ ARCHETYPE_GUIDE: dict[str, str] = {
 有哪些分类或流派、用在哪里、有什么局限。**不要硬扯中医或中药学**——
 「智能体」和中药学没有关系，硬加一条「与中药学的联系」只会显得不懂装懂。
 只在确实相关时才提中药学（例如「阴阳学说」这类本来就是中医基础的概念）。""",
+    "overview": """题型：整门课（或一整章）的概览。读者想知道这门课由哪些部分组成、按什么顺序学。
+一级分支**优先用资料里给出的教材目录**：篇名（总论/各论）或章名，顺序照目录。
+目录里的章名、节名、药名一个字都别改——那是这本书真实的结构，改了读者就对不上书。
+目录之外你确实要补的（怎么学、哪里最容易考、与邻课的关系），可以补，但 evidence 标 model，
+并且命名上不要伪装成教材章节。**不要另造「概念界定 / 核心内容 / 应用场景」这种与这本书无关的三段式**：
+那是没有资料时的写法，不是《中药学》的样子。""",
 }
 
 
@@ -83,15 +151,22 @@ def build_draft_prompt(
     degraded: bool = False,
     depth: int = 3,
     brief_lines: list[str] | None = None,
+    spec: dict | None = None,
+    branch_covers: dict[str, list[str]] | None = None,
+    catalog: str = "",
 ) -> str:
     """按原型拼 prompt。
 
-    骨架（一级分支）由后端定好再交给模型，理由写在 ``archetypes.py``：
+    骨架（一级分支）由用户确认过的方案定好再交给模型，理由写在 ``archetypes.py``：
     分类题的骨架等于教材目录，让模型编只会编错；辨别题的骨架等于对比维度，
     也是确定的。模型真正擅长的是「在每个分支下把叶子写准」。
 
     ``depth`` 决定能不能再往下分一层。以前这里写死「最多 3 层」，
     用户说「必须包含四层」也只好三层——那不是模型不听话，是提示词没允许。
+
+    ``spec`` 是用户在方案面板里确认过的那一份（受众、组织方式、重点、必答项）。
+    它必须进提示词，否则「受众改成临床医师」「组织方式改成按学习路径」这类
+    手改就只改了面板上的字。
     """
 
     guide = ARCHETYPE_GUIDE.get(archetype, ARCHETYPE_GUIDE["monograph"])
@@ -102,12 +177,14 @@ def build_draft_prompt(
         slot_line = "（本图没有给定骨架：由你按上面这个题型的真实结构拟 4~6 个一级分支）"
         slot_rule = "一级分支由你决定，但要**互不重叠、合起来覆盖得住主题**，不要出现「其他」这类兜底分支。"
     brief_lines = brief_lines or []
+    spec = spec if isinstance(spec, dict) else {}
     # 层数决定「叶子之上还能不能再分组」。根=第 1 层，一级分支=第 2 层。
     if depth >= 4:
-        depth_block = f"""# 层数：{depth} 层（这次是硬要求）
+        depth_block = f"""# 层数：{depth} 层（这次是硬要求，每一支都要到）
 一级分支下**先分 2~4 个「分组」，再在分组下写条目**，分组本身要短（≤8 字，例如「分类」「代表药」「用法」）。
 分组同样需要 ``source_indexes`` 与 ``evidence``。分不出组的分支（本来就只有两三条）保持直接挂叶子即可，
-**不要为了凑层数硬造分组**。深度上限 {depth} 层，不要再往下分。"""
+**不要为了凑层数硬造分组**。深度上限 {depth} 层，不要再往下分。
+只要有一支没到 {depth} 层，这张图就与用户确认的方案不一致。"""
         shape = '{"topic": "分组（≤8字）", "source_indexes": [0], "evidence": "textbook", "children": [{"topic": "条目", "source_indexes": [0], "evidence": "textbook"}]}'
     elif depth == 2:
         depth_block = "# 层数：2 层\n只写一级分支，children 一律留空数组。"
@@ -122,6 +199,52 @@ def build_draft_prompt(
 # 本次额外要求（优先级高于下面的通用规则）
 {numbered}
 """
+    # 用户在方案面板里确认过的那一份：受众与组织方式决定「怎么写」，不是装饰。
+    intent_block = ""
+    audience = " ".join(str(spec.get("audience") or "").split())
+    organization = " ".join(str(spec.get("organization") or "").split())
+    emphasis = [str(item) for item in (spec.get("emphasis") or []) if str(item).strip()][:6]
+    must_answer = [str(item) for item in (spec.get("must_answer") or []) if str(item).strip()][:6]
+    leaves_min = 0
+    try:
+        leaves_min = int(spec.get("leaves_min") or 0)
+    except (TypeError, ValueError):
+        leaves_min = 0
+    cover_lines = [
+        f"「{label}」必须覆盖：{'、'.join(items)}"
+        for label, items in (branch_covers or {}).items()
+        if items
+    ]
+    if audience or organization or emphasis or must_answer or leaves_min or cover_lines:
+        parts = [
+            "# 这次是给谁看的、按什么方式组织（已由用户确认，必须照办）",
+            "上面的题型说明只讲「读者要什么」；它说的是常规结构，如果与下面这组要求冲突，**以下面为准**。",
+        ]
+        if audience:
+            parts.append(f"- 受众：{audience}。用词深度、例子与结论方式都要照这个受众来。")
+        if organization:
+            parts.append(f"- 组织方式：{organization}")
+        if leaves_min:
+            parts.append(f"- 每个一级分支下至少 {leaves_min} 条内容；给不出就合并，不要重复凑数。")
+        if emphasis:
+            parts.append("- 用户明确提的要求（逐条兑现，不许漏）：" + "；".join(emphasis))
+        if must_answer:
+            parts.append("- 这张图必须回答：" + "；".join(must_answer))
+        if cover_lines:
+            parts.extend(f"- {line}" for line in cover_lines)
+        intent_block = "\n".join(parts) + "\n"
+    # 「库里有什么」必须进提示词：不给它这张清单，它只能凭常识编，而编出来的
+    # 东西没法标成教材（也不该标）。给了清单，它就能把真实章名照抄进来，
+    # 只有清单之外的部分才落回推断——这正是把「推断率」降下来的正路。
+    catalog_block = ""
+    if catalog.strip():
+        catalog_block = f"""
+# 本库有什么（真实存在，不是示意）
+{catalog.strip()}
+上面这些是本地知识库里**确实有**的内容。需要时就用它，名字照抄，不要改写；
+库里没有的部分再按你的常识补，并把这些节点的 evidence 标 model。
+**不要绕过给出的目录另编一套结构**——用户很可能正拿着同一本教材对照。
+"""
     return f"""你在为中医药教学平台把一张学习思维导图的**枝叶**写准，输出单个 JSON Object。
 
 {guide}
@@ -131,7 +254,7 @@ def build_draft_prompt(
 {slot_rule}
 
 {depth_block}
-{brief_block}
+{brief_block}{intent_block}{catalog_block}
 # 输出结构
 {{"root_topic": "这张图的标题（≤12字，名词短语，不要抄提问原句）",
  "branches": [

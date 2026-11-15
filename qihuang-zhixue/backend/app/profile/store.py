@@ -777,6 +777,80 @@ def get_profile_session_row(session_id: str, user_id: str, db_path: Path = DB_PA
     }
 
 
+def list_profile_sessions(
+    user_id: str,
+    *,
+    mode: str | None = None,
+    limit: int = 20,
+    db_path: Path = DB_PATH,
+) -> list[dict[str, Any]]:
+    """List a user's collection sessions, newest activity first.
+
+    画像页与入口都需要"我上次聊到哪儿了"。会话 id 只存在前端时，换个浏览器、
+    清一次站点数据就再也找不回来——所以列表必须由后端按 user_id 给出，前端只
+    负责展示与跳转。
+    """
+
+    init_db(db_path)
+    clauses = ["user_id = ?"]
+    params: list[Any] = [user_id]
+    if mode:
+        clauses.append("mode = ?")
+        params.append(mode)
+    params.append(max(1, min(100, limit)))
+    with closing(connect(db_path)) as conn:
+        rows = conn.execute(
+            f"""
+            SELECT
+                session_id,
+                mode,
+                finished,
+                step_index,
+                created_at,
+                updated_at,
+                evidence_cards_json,
+                (
+                    SELECT COUNT(*) FROM chat_sessions c
+                    WHERE c.user_id = profile_sessions.user_id
+                      AND c.session_id = profile_sessions.session_id
+                ),
+                (
+                    SELECT c.content FROM chat_sessions c
+                    WHERE c.user_id = profile_sessions.user_id
+                      AND c.session_id = profile_sessions.session_id
+                      AND c.role = 'user'
+                    ORDER BY c.id DESC LIMIT 1
+                )
+            FROM profile_sessions
+            WHERE {" AND ".join(clauses)}
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            params,
+        ).fetchall()
+
+    items: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            evidence_count = len(json.loads(str(row[6] or "[]")))
+        except (TypeError, ValueError):
+            evidence_count = 0
+        items.append(
+            {
+                "session_id": row[0],
+                "mode": row[1],
+                "finished": bool(row[2]),
+                "turn_index": int(row[3] or 0),
+                "created_at": row[4],
+                "updated_at": row[5],
+                "evidence_count": evidence_count,
+                "message_count": int(row[7] or 0),
+                "last_user_message": str(row[8] or ""),
+            }
+        )
+    return items
+
+
 def _execute_profile_session_upsert(conn: sqlite3.Connection, row: dict[str, Any]) -> None:
     conn.execute(
         """

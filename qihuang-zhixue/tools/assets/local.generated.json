@@ -1,0 +1,1317 @@
+{
+  "entries": [
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-01.webp",
+      "id": "plate-birdpaint-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "古埃及彩绘鸟"
+      ],
+      "tags": [
+        "古埃及",
+        "壁画",
+        "复古",
+        "复古插画",
+        "插画",
+        "纹样",
+        "装饰画",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只长颈长腿的鸟，身披青绿与金黑条纹纹样",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-02.webp",
+      "id": "plate-birdpaint-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "彩绘鸳鸯"
+      ],
+      "tags": [
+        "中医药",
+        "复古",
+        "复古插画",
+        "插画",
+        "水禽",
+        "纹样",
+        "装饰画",
+        "鸟类",
+        "鸳鸯"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只色彩斑斓的鸳鸯侧身浮游，羽毛纹样精细",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-03.webp",
+      "id": "plate-birdpaint-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "蓝头长尾鸟"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "工笔风格",
+        "插画",
+        "枝叶",
+        "装饰画",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "蓝头长尾鸟栖息在带黄果的枝叶上",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-04.webp",
+      "id": "plate-birdpaint-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "红嘴蓝尾鸟"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "红嘴",
+        "蓝尾",
+        "装饰画",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只红嘴红脚、棕背白腹、蓝尾的复古鸟类插画",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-05.webp",
+      "id": "plate-birdpaint-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅斑鸠"
+      ],
+      "tags": [
+        "复古",
+        "复古插画",
+        "展翅",
+        "插画",
+        "斑鸠",
+        "线描",
+        "装饰画",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只米色斑鸠展翅飞翔，翅尖与尾羽为黑色。",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-06.webp",
+      "id": "plate-birdpaint-06",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "绿头黄身水鸟"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "水鸟",
+        "线描",
+        "绿头鸭",
+        "装饰画",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只绿头黄身、绿翅白尾的水鸟侧身站立",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-birdpaint-07.webp",
+      "id": "plate-birdpaint-07",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "青绿雁形水禽"
+      ],
+      "tags": [
+        "动物",
+        "复古",
+        "复古插画",
+        "插画",
+        "水禽",
+        "线描",
+        "装饰画",
+        "青绿色",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只青绿身白腹的雁形水禽侧身站立，翅有金色条纹。",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Bird Paintings 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-swallow-01.webp",
+      "id": "plate-swallow-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅飞燕"
+      ],
+      "tags": [
+        "墨线",
+        "复古插画",
+        "插画",
+        "水墨",
+        "留白",
+        "简笔",
+        "飞燕",
+        "飞鸟",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "水墨简笔勾勒一只展翅飞翔的燕子",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-swallow-02.webp",
+      "id": "plate-swallow-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "写意飞燕"
+      ],
+      "tags": [
+        "写意",
+        "墨线",
+        "插画",
+        "水墨",
+        "留白",
+        "简笔",
+        "飞燕",
+        "飞鸟",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "水墨简笔勾勒的燕子展翅飞翔",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-swallow-03.webp",
+      "id": "plate-swallow-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅飞鸟"
+      ],
+      "tags": [
+        "墨线",
+        "复古插画",
+        "插画",
+        "留白",
+        "简笔画",
+        "线稿",
+        "飞鸟",
+        "黑白"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只黑白简笔画风格的飞鸟展翅飞翔",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-swallow-04.webp",
+      "id": "plate-swallow-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "俯冲飞燕"
+      ],
+      "tags": [
+        "墨线",
+        "复古",
+        "插画",
+        "水墨",
+        "燕子",
+        "留白",
+        "简笔",
+        "飞鸟"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只燕子展翅俯冲的简笔水墨画",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-swallow-05.webp",
+      "id": "plate-swallow-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "展翅飞鸟"
+      ],
+      "tags": [
+        "墨线",
+        "复古",
+        "插画",
+        "水墨",
+        "留白",
+        "简笔",
+        "飞鸟"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只以粗黑线条勾勒的飞鸟展翅翱翔",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Flying High」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-hasegawa-01.webp",
+      "id": "plate-hasegawa-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "黄色菊花"
+      ],
+      "tags": [
+        "复古",
+        "插画",
+        "本草",
+        "植物插画",
+        "浮世绘",
+        "花卉",
+        "菊花"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一株盛开的黄色菊花，花瓣细长卷曲，叶片宽大。",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-hasegawa-02.webp",
+      "id": "plate-hasegawa-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "粉红菊花"
+      ],
+      "tags": [
+        "中医药",
+        "复古",
+        "插画",
+        "植物插画",
+        "浮世绘",
+        "花卉",
+        "菊花"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一株粉红菊花，花瓣细长卷曲，绿叶衬托",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-hasegawa-03.webp",
+      "id": "plate-hasegawa-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "粉色独本菊"
+      ],
+      "tags": [
+        "复古",
+        "插画",
+        "本草图谱",
+        "植物插画",
+        "浮世绘",
+        "线描",
+        "花卉",
+        "菊花"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一株粉色细瓣菊花，茎叶完整，呈植物图谱样式",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-hasegawa-04.webp",
+      "id": "plate-hasegawa-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "卷瓣红菊"
+      ],
+      "tags": [
+        "中药材",
+        "复古",
+        "插画",
+        "植物插画",
+        "水彩",
+        "浮世绘",
+        "花卉",
+        "菊花"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一株红粉色卷瓣菊花，带茎叶的植物插画",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Hasegawa Flowers 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-merian-01.webp",
+      "id": "plate-merian-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "无花果与昆虫"
+      ],
+      "tags": [
+        "博物画",
+        "图谱",
+        "复古博物画",
+        "插画",
+        "无花果",
+        "昆虫",
+        "植物",
+        "植物图谱",
+        "科学插画"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "复古插画绘无花果枝叶果实及多种昆虫",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature by Merian 07」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-merian-02.webp",
+      "id": "plate-merian-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "盘蛇与飞蛾"
+      ],
+      "tags": [
+        "博物画",
+        "图谱",
+        "复古插画",
+        "插画",
+        "植物",
+        "蛇",
+        "飞蛾"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "复古博物画中蛇盘于花枝下，枝上有飞蛾与毛虫",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature by Merian 07」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-merian-03.webp",
+      "id": "plate-merian-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "天蚕蛾与柑橘"
+      ],
+      "tags": [
+        "博物画",
+        "图谱",
+        "复古插画",
+        "天蚕蛾",
+        "插画",
+        "昆虫",
+        "柑橘",
+        "植物"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一只天蚕蛾、一条毛毛虫和一颗柑橘果实及枝叶",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature by Merian 07」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-symph15-01.webp",
+      "id": "plate-symph15-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "松枝与交嘴雀"
+      ],
+      "tags": [
+        "交嘴雀",
+        "复古",
+        "复古博物画",
+        "插画",
+        "松果",
+        "科学插画",
+        "自然",
+        "花鸟",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "两只交嘴雀攀附在结满松果的松枝上觅食",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 15」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-symph15-02.webp",
+      "id": "plate-symph15-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "棕柳莺与粉花"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "植物",
+        "粉花",
+        "自然",
+        "花鸟",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "两只棕柳莺栖息在开粉色小花的针叶枝条上",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 15」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-symph15-03.webp",
+      "id": "plate-symph15-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "绣球花与黄林莺"
+      ],
+      "tags": [
+        "博物插画",
+        "复古",
+        "复古手绘",
+        "插画",
+        "绣球花",
+        "自然",
+        "自然观察",
+        "花鸟",
+        "黄林莺"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黄林莺停歇在绣球花枝上，仰头望向花朵与飞虫。",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 15」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-symph17-01.webp",
+      "id": "plate-symph17-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "白花与小鸟"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "植物",
+        "自然",
+        "花卉",
+        "花鸟",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "两只小鸟栖息在开白花的枝叶间",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 17」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-symph17-02.webp",
+      "id": "plate-symph17-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "枝头鸽群"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "插画",
+        "果树",
+        "自然",
+        "自然史",
+        "花鸟",
+        "鸽子"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "五只鸽子栖息在结有青果的枝叶间",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 17」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-symph17-03.webp",
+      "id": "plate-symph17-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双鸟栖枝图"
+      ],
+      "tags": [
+        "博物画",
+        "复古",
+        "复古插画",
+        "工笔",
+        "插画",
+        "植物",
+        "自然",
+        "花鸟",
+        "鸟类"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "portrait",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "两只黑羽鸟栖息在枝叶间，一只低头衔食",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Nature Symphony 17」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-01.webp",
+      "id": "plate-sealife-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "五角海星"
+      ],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海星",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "黑白"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黑白线描五角海星，表面布满颗粒纹理",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-02.webp",
+      "id": "plate-sealife-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "海螺线描图"
+      ],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "海螺",
+        "线描",
+        "线稿",
+        "装饰",
+        "贝壳"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黑白线条勾勒的螺旋形海螺外壳",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-03.webp",
+      "id": "plate-sealife-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "扇贝贝壳"
+      ],
+      "tags": [
+        "中药材",
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "贝壳"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一枚展开的扇贝贝壳线描图，表面有放射状肋纹",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-04.webp",
+      "id": "plate-sealife-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "扇贝贝壳"
+      ],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "贝壳",
+        "黑白"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黑白线描的扇贝贝壳，表面有放射状纹理",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-05.webp",
+      "id": "plate-sealife-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "两条游动的鱼"
+      ],
+      "tags": [
+        "复古",
+        "插画",
+        "水生动物",
+        "海洋",
+        "线描",
+        "线稿",
+        "装饰",
+        "鱼类",
+        "黑白插画"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黑白线描风格的两条鱼斜向游动，线条简洁",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-06.webp",
+      "id": "plate-sealife-06",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "俯冲锦鲤"
+      ],
+      "tags": [
+        "复古",
+        "插画",
+        "海洋",
+        "线描",
+        "线稿",
+        "装饰",
+        "锦鲤",
+        "鱼纹",
+        "黑白插画"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黑白线描锦鲤俯冲游动，鳞片鳍纹清晰",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-07.webp",
+      "id": "plate-sealife-07",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "甲骨文龟字"
+      ],
+      "tags": [
+        "书法",
+        "复古",
+        "插画",
+        "海洋",
+        "甲骨文",
+        "线稿",
+        "装饰",
+        "象形文字",
+        "龟字"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "一幅黑底白线的甲骨文龟形图案，呈螺旋状",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-08.webp",
+      "id": "plate-sealife-08",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "长须对虾"
+      ],
+      "tags": [
+        "复古插画",
+        "对虾",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "白描",
+        "线稿",
+        "装饰"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "白描线条勾勒一只长须弯曲的对虾",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-sealife-09.webp",
+      "id": "plate-sealife-09",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "多棘海鱼"
+      ],
+      "tags": [
+        "复古插画",
+        "插画",
+        "海洋",
+        "海洋生物",
+        "线描",
+        "线稿",
+        "装饰",
+        "鱼类",
+        "黑白"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "square",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "黑白线描的多棘海鱼侧面图",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Under The Sea 04」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-01.webp",
+      "id": "plate-vessel-01",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "单耳彩陶杯"
+      ],
+      "tags": [
+        "器物",
+        "彩陶纹样",
+        "插画",
+        "线描",
+        "线稿",
+        "考古",
+        "花器",
+        "陶器"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描单耳陶杯，口沿饰竖条纹与圆圈纹",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-02.webp",
+      "id": "plate-vessel-02",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "单耳鱼鳞纹陶杯"
+      ],
+      "tags": [
+        "单耳杯",
+        "器物",
+        "复古插画",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "陶器",
+        "鱼鳞纹"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描单耳高足杯，杯身饰满鱼鳞纹",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-03.webp",
+      "id": "plate-vessel-03",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双耳瓜棱陶罐"
+      ],
+      "tags": [
+        "双耳",
+        "器物",
+        "复古插画",
+        "插画",
+        "瓜棱纹",
+        "线描",
+        "线稿",
+        "花器",
+        "陶罐"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描双耳陶罐，罐身有竖向瓜棱纹与卷草双耳。",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-04.webp",
+      "id": "plate-vessel-04",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双耳尖底陶瓶"
+      ],
+      "tags": [
+        "双耳瓶",
+        "器物",
+        "复古插画",
+        "尖底",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "陶器"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描双耳尖底陶瓶，带盖，瓶身修长",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-05.webp",
+      "id": "plate-vessel-05",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "双耳扇纹陶瓶"
+      ],
+      "tags": [
+        "双耳",
+        "器物",
+        "复古",
+        "扇纹",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "陶瓶"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描双耳陶瓶，瓶腹饰扇形放射纹",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-06.webp",
+      "id": "plate-vessel-06",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "古埃及雪花石膏罐"
+      ],
+      "tags": [
+        "古埃及",
+        "器物",
+        "复古插画",
+        "容器",
+        "插画",
+        "线描",
+        "线稿",
+        "花器",
+        "象形文字"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描古埃及敞口罐，腹绘鸟形与象形符号",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-07.webp",
+      "id": "plate-vessel-07",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "彩绘尖底陶瓶"
+      ],
+      "tags": [
+        "几何纹",
+        "器物",
+        "尖底瓶",
+        "插画",
+        "线描",
+        "线稿",
+        "考古",
+        "花器",
+        "陶器"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描尖底陶瓶，饰网格纹与三角纹，口部有系。",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-08.webp",
+      "id": "plate-vessel-08",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "单耳螺旋纹陶瓶"
+      ],
+      "tags": [
+        "器物",
+        "尖底瓶",
+        "插画",
+        "线描",
+        "线稿",
+        "考古",
+        "花器",
+        "螺旋纹",
+        "陶器"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "线描单耳尖底陶瓶，瓶身布满横向螺旋纹饰",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    },
+    {
+      "source": "frontend/public/assets/pictorial/plate-vessel-09.webp",
+      "id": "plate-vessel-09",
+      "kind": "plate",
+      "slot_class": "decorative",
+      "subjects": [
+        "拟人化药瓶"
+      ],
+      "tags": [
+        "中医药",
+        "器物",
+        "复古插画",
+        "拟人",
+        "插画",
+        "线稿",
+        "花器",
+        "药瓶"
+      ],
+      "recipe": "vintage-keep",
+      "aspect": "landscape",
+      "license": "Heritage-Free",
+      "attribution": "Heritage Library · HTC Heritage Type GmbH",
+      "source_url": "https://www.heritagetype.com/pages/free-vintage-illustrations",
+      "alt": "长着五官和四肢的圆肚药瓶，表情愤怒",
+      "review": {
+        "reviewer": "agent-review",
+        "date": "2026-11-09",
+        "note": "Heritage 套组「Vases & Flower Pots 02」自动归一化入库；主体名由图生模型看图给出，待人眼复核。套组许可为 CC0，但附加条款禁止把素材文件再配布，因此不提供素材下载入口。"
+      }
+    }
+  ]
+}

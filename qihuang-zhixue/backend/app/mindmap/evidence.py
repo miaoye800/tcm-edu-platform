@@ -32,6 +32,7 @@ from app.agents.resource_context import ResourceDoc, ResourceWhitelist, build_wh
 from app.config import get_settings
 from app.kb.ingest import load_herbs, load_syndromes
 from app.kb.models import Herb
+from app.mindmap import catalog
 from app.mindmap.intents import Anchors, MapIntent, compare_pair
 
 #: 每条素材的来源等级。前端底栏三档占比就是数这三种。
@@ -76,6 +77,12 @@ class EvidencePack:
     whitelist: ResourceWhitelist = field(default_factory=lambda: {"herbs": set(), "herb_ids": set(), "syndromes": set(), "formulas": set()})
     #: 覆盖不到的说明，会原样出现在对话栏与状态条。
     notes: list[str] = field(default_factory=list)
+    #: 「库里有什么」的一段话。进提示词，让模型知道哪些能用库里的、哪些得靠自己。
+    catalog: str = ""
+    #: 命中的学科 key（``herb`` / ``formula``…）。空 = 这个主题不在库里。
+    catalog_subjects: tuple[str, ...] = ()
+    #: 教材目录作为一条可引用的出处。整门课的概览里，目录就是依据。
+    catalog_ref: dict[str, str] | None = None
 
     @property
     def degraded(self) -> bool:
@@ -88,6 +95,11 @@ class EvidencePack:
     def sources(self) -> list[dict[str, str]]:
         refs: list[dict[str, str]] = []
         seen: set[tuple[str, str]] = set()
+        # 教材目录排第一：整门课的概览里，唯一能引的就是这本书的目录，
+        # 它必须是下标 0，否则节点的 source_indexes=[0] 会指到别处。
+        if self.catalog_ref:
+            refs.append(dict(self.catalog_ref))
+            seen.add((str(self.catalog_ref.get("ref", "")), str(self.catalog_ref.get("quote", ""))))
         for doc in self.herbs:
             for source in doc["sources"]:
                 key = (str(source.get("ref", "")), str(source.get("quote", "")))
@@ -142,7 +154,9 @@ async def build_evidence_pack(intent: MapIntent, *, docs: list[ResourceDoc] | No
     kind = intent.kind
 
     if kind == "concept":
-        pack.notes.append("主题不在中药学教材语料内，以下内容由模型整理")
+        # 以前这里无条件 return 一句「主题不在教材语料内」——没查过就下的结论。
+        # 「中药学介绍」于是被判域外，24 个节点全标推断，而库里就有这门课。
+        _fill_catalog(pack)
         return pack
 
     if kind == "taxonomy":
@@ -317,7 +331,20 @@ def _fill_comparison(pack: EvidencePack, *, docs: list[ResourceDoc] | None) -> N
     pair = compare_pair(pack.intent)
     if pair is None:
         pack.herbs = list(docs or [])
-        pack.notes.append("只有一味药，找不到可比的对象")
+        # 比的是两门课（「中药和方剂学的对比」）：药材主表里当然没有这对东西，
+        # 但教材目录里有这两门课。以前这里直接说「教材里没有找到可对比的条目」，
+        # 于是整棵对比图全靠模型编——其实两边的章节结构都查得到。
+        coverage = catalog.match(pack.intent.topic)
+        if not pack.herbs and coverage is not None and len(coverage.subjects) >= 2:
+            pack.catalog_subjects = coverage.keys
+            pack.catalog = catalog.digest(coverage)
+            pack.catalog_ref = catalog.source_ref(coverage)
+            pack.nodes = catalog.toc_rows(coverage, limit=MAX_TREE_NODES)
+            pack.groups = catalog.groups(coverage, limit=MAX_LEAVES)
+            titles = "／".join(f"《{subject.title}》" for subject in coverage.subjects)
+            pack.notes.append(f"{titles} 的目录都在库里，对比维度按两边的章节结构提，不要泛泛而谈")
+        else:
+            pack.notes.append("教材里没有找到可对比的条目，对比维度由模型按学科结构提出" if not pack.herbs else "只找到一味药，缺少可比对象")
         pack.branch_slots = ["性味归经", "功效", "主治", "用量"]
         return
     pack.herbs = _docs_for(pair)[:2]
@@ -333,6 +360,54 @@ def _fill_exam(pack: EvidencePack) -> None:
     pack.branch_slots = ["高频考点", "易混药对", "鉴别要点", "记忆线索"]
     if not herbs:
         pack.notes.append("没找到这一类的高频考点")
+
+
+def _fill_catalog(pack: EvidencePack) -> None:
+    """整门课 / 整章：骨架就是教材目录本身。
+
+    这是「模型从不知道库里有什么」的修法落点。以前 concept 一进来就返回空包，
+    下游 ``source_count == 0``，``evidence_of`` 于是把每个节点都判成推断——
+    24/24 推断不是判断，是机械结果。
+
+    现在的顺序是：**先问库**。库里这门课/这一章存在，就把它的目录（章、节、
+    条目名）作为材料交出去，并把目录本身列成一条可引用的出处；确实不在库里，
+    才降级，而且降级说明必须写清本库覆盖哪些课，不能再说「不在中药学语料内」
+    这种既笼统又常常是假话的结论。
+    """
+
+    coverage = catalog.match(pack.intent.topic)
+    if coverage is None:
+        pack.notes.append(f"这个主题不在本地教材里（本库有 {catalog.titles_line()}），内容由模型整理")
+        return
+
+    pack.catalog_subjects = coverage.keys
+    pack.catalog = catalog.digest(coverage)
+    pack.catalog_ref = catalog.source_ref(coverage)
+    pack.nodes = catalog.toc_rows(coverage, limit=MAX_TREE_NODES)
+    pack.groups = catalog.groups(coverage, limit=MAX_LEAVES)
+    pack.branch_slots = catalog.branch_slots(coverage)
+
+    subject = coverage.chapter_subject or coverage.subjects[0]
+    chapter = coverage.chapter_info
+    if chapter is not None:
+        pack.notes.append(
+            f"《{subject.title}》第{chapter.no}章「{chapter.title}」在库里，"
+            f"按这一章的 {chapter.section_count} 节组织，节名照用"
+        )
+    else:
+        pack.notes.append(
+            f"《{subject.title}》{subject.edition} 在库里（{len(subject.chapters)} 章 "
+            f"{subject.section_count} 节 {subject.entry_count} 条），按教材目录组织"
+        )
+        # 各论动辄 20 章，一屏放不下也不该悄悄砍掉一半：把这件事说出来，
+        # 由方案里的分支去分组（用户与模型都看得见）。
+        over = [
+            f"{part} {len(subject.chapters_of(part))} 章"
+            for part in subject.parts()
+            if len(subject.chapters_of(part)) > MAX_LEAVES
+        ]
+        if over:
+            pack.notes.append(f"{'、'.join(over)}，一张图放不下全部章节名，按药类分组展开")
 
 
 def _default_slots(pack: EvidencePack) -> list[str]:

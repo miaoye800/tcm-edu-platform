@@ -605,25 +605,18 @@ def test_dialogue_chat_sse_event_order_and_dark_axes(monkeypatch, tmp_path: Path
     assert "message" in event_names
     assert event_names.index("message") < event_names.index("evidence")
     assert event_names.index("message_done") < event_names.index("evidence")
-    assert event_names[-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
+    assert event_names[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
 
     radar = next(data for event, data in events if event == "radar")
-    audit = next(data for event, data in events if event == "audit")
+    evidence = next(data for event, data in events if event == "evidence")
     identity_cards = next(data for event, data in events if event == "identity_cards")
+    assert evidence["cards"] == [], "没有可用原话时不应产生证据"
     assert len(identity_cards["items"]) == 7
     assert {item["key"] for item in identity_cards["items"]} == set(modes_module.DIMENSION_LABELS)
     axes = {axis["key"]: axis for axis in radar["axes"]}
     for key in modes_module.DIMENSION_LABELS:
         assert axes[key]["status"] == "dark"
-    assert audit["turn_index"] == 1
-    assert audit["user_input"] == "我完全不知道，没接触过中药"
-    assert audit["model_result"]["method"] == "no_key_rule_fallback"
-    assert audit["model_result"]["scan_available"] is False
-    assert audit["model_result"]["scan_complete"] is False
-    assert audit["model_result"]["evidence"] == []
-    assert {stage["actor"] for stage in audit["stages"]} == {"模型", "系统"}
-    assert len(audit["system_result"]["dimensions"]) == 7
-    assert all(item["status"] == "本轮未收集" for item in audit["system_result"]["dimensions"])
+        assert axes[key]["scoring_phase"] == "collecting"
 
     restored = client.get(f"/api/profile/session/{first['session_id']}")
     assert restored.status_code == 200, restored.text
@@ -685,7 +678,7 @@ def test_dialogue_no_key_visible_stream_uses_rule_question_without_mock_marker(t
     assert "[MOCK:" not in message_text
     assert "FallbackReason" not in message_text
     assert thinking_text
-    assert [event for event, _ in events][-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
+    assert [event for event, _ in events][-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
 
 
 def test_dialogue_session_restore_rejects_another_user(tmp_path: Path) -> None:
@@ -739,10 +732,8 @@ def test_dialogue_chat_extraction_error_still_emits_visible_done(monkeypatch, tm
     event_names = [event for event, _ in events]
     assert "message_done" in event_names
     assert "error" not in event_names
-    assert "audit" in event_names
-    audit = next(data for event, data in events if event == "audit")
-    assert audit["model_result"]["failure_reason"] == "extraction_pipeline_error:RuntimeError"
-    assert audit["model_result"]["collected_count"] == 0
+    evidence = next(data for event, data in events if event == "evidence")
+    assert evidence["cards"] == []
     assert event_names[-1] == "done"
     state = next(data for event, data in events if event == "state")
     assert state["finished"] is False
@@ -791,8 +782,8 @@ def test_dialogue_finish_radar_changes_from_blank_baseline(monkeypatch, tmp_path
     monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
     monkeypatch.setattr(modes_module, "ModelRouter", _streaming_router_factory())
 
-    async def final_profile(user_id: str, evidence_cards: list[EvidenceCard]):
-        profile = create_blank_profile(user_id)
+    async def final_profile(user_id: str, evidence_cards: list[EvidenceCard], *, base=None):
+        profile = base.model_copy(deep=True) if base is not None else create_blank_profile(user_id)
         profile.knowledge_base.score = 30
         profile.knowledge_base.confidence = 0.8
         profile.knowledge_base.evidence = [card for card in evidence_cards if card.dimension == "knowledge_base"]
@@ -826,8 +817,8 @@ def test_dialogue_finish_radar_changes_from_existing_baseline(monkeypatch, tmp_p
     monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
     monkeypatch.setattr(modes_module, "ModelRouter", _streaming_router_factory())
 
-    async def final_profile(user_id: str, evidence_cards: list[EvidenceCard]):
-        profile = create_blank_profile(user_id)
+    async def final_profile(user_id: str, evidence_cards: list[EvidenceCard], *, base=None):
+        profile = base.model_copy(deep=True) if base is not None else create_blank_profile(user_id)
         profile.knowledge_base.score = 45
         profile.knowledge_base.confidence = 0.8
         profile.knowledge_base.evidence = [card for card in evidence_cards if card.dimension == "knowledge_base"]
@@ -982,47 +973,7 @@ def test_dialogue_extraction_adapter_preserves_common_model_shapes() -> None:
     assert extraction.component_collection[0].status == "scorable"
 
 
-def test_dialogue_sse_extraction_keeps_atomic_scan_in_audit_contract(monkeypatch, tmp_path: Path) -> None:
-    from app.profile.component_model import QualityFactors
-    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
-
-    session = modes_module.start_profile_session("dialogue-audit-target", "dialogue", db_path=tmp_path / "audit-target.db")
-    extraction = DialogueExtraction(
-        turn_id=1,
-        dimension_scan=[
-            DimensionScan(dimension="learning_goal", status="evidence_found", reason="明确表达了希望学医并帮助患者的目标。", components=["expression_certainty", "goal_specificity"]),
-            DimensionScan(dimension="motivation", status="evidence_found", reason="表达了帮助他人的价值取向。", components=["intrinsic_value"]),
-        ],
-        atomic_evidence=[
-            AtomicEvidence(
-                evidence_id="ev-goal-1", dimension="learning_goal", component="expression_certainty",
-                evidence_group_id="turn-1-intent", source_turn_ids=[1], quote="我想学医救疾病折磨的人",
-                normalized_claim="用户希望学习医学并帮助受疾病困扰的人", evidence_type="self_report",
-                supports=["expression_certainty", "goal_specificity"], collection_status="scorable",
-                assessment="明确愿望，但尚无行动路径或期限", confirmed_aspects=["存在学医并帮助患者的意向"],
-                pending_aspects=["行动计划和期限"], semantic_relation="new",
-                quality_factors=QualityFactors(source_reliability=.8, expression_clarity=.9, content_specificity=.7, freshness=1, consistency=.8, independence_note="本轮原话"),
-            ),
-        ],
-    )
-
-    async def mocked_extract(**kwargs):
-        return extraction, ""
-
-    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
-    cards = asyncio.run(modes_module._dialogue_extract_cards_for_chat(
-        session=session, utterance="我想学医救疾病折磨的人", assistant_text="", history_messages=[],
-        target="learning_goal", turn_index=1, response_time_ms=100, current_prompt="你为什么想学？",
-    ))
-
-    contract = session.step_data["_last_component_contract"]
-    assert contract["dimension_scan"][0]["reason"].startswith("明确表达")
-    assert contract["dimension_scan"][1]["dimension"] == "motivation"
-    assert contract["atomic_evidence"][0]["quote"] == "我想学医救疾病折磨的人"
-    assert cards[0].quote == "我想学医救疾病折磨的人"
-
-
-def test_dialogue_chat_sse_audit_exposes_full_scan_for_healing_goal(monkeypatch, tmp_path: Path) -> None:
+def test_dialogue_chat_sse_keeps_one_response_as_one_source_group(monkeypatch, tmp_path: Path) -> None:
     from app.profile.component_model import QualityFactors
     from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
 
@@ -1087,21 +1038,17 @@ def test_dialogue_chat_sse_audit_exposes_full_scan_for_healing_goal(monkeypatch,
 
     assert response.status_code == 200, response.text
     events = _parse_sse(response.text)
-    audit = next(data for event, data in events if event == "audit")
-    goal_scan = next(item for item in audit["model_result"]["dimension_scan"] if item["dimension"] == "learning_goal")
-    motivation_scan = next(item for item in audit["model_result"]["dimension_scan"] if item["dimension"] == "motivation")
-    assert audit["model_result"]["scan_available"] is True
-    assert audit["model_result"]["scan_complete"] is True
-    assert goal_scan["status"] == "evidence_found"
-    assert motivation_scan["status"] == "evidence_found"
-    assert [item["quotes"] for item in audit["model_result"]["evidence"]] == [[quote], [quote], [quote]]
-    assert {item["evidence_group_id"] for item in audit["model_result"]["evidence"]} == {"turn-1-intent"}
-    learning_goal = next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
-    assert learning_goal["scoring_phase"] == "collecting"
-    assert learning_goal["radar_score"] is None
-    assert learning_goal["matrix_after"]["expression_certainty"] is True
-    assert learning_goal["matrix_after"]["goal_specificity"] is True
-    assert learning_goal["matrix_after"]["action_orientation"] is False
+    evidence = next(data for event, data in events if event == "evidence")
+    cards = evidence["cards"]
+    # 一句话里的多个方面必须各自成卡、共用同一个来源组；它们不是三次独立确认。
+    assert [card["quote"] for card in cards] == [quote, quote, quote]
+    assert {card["evidence_group_id"] for card in cards} == {"turn-1-intent"}
+    radar = next(data for event, data in events if event == "radar")
+    goal_axis = next(axis for axis in radar["axes"] if axis["key"] == "learning_goal")
+    assert goal_axis["scoring_phase"] == "collecting"
+    assert goal_axis["lit"] is False
+    # 表达确定 + 目标具体已收集，动作指向还缺。
+    assert goal_axis["component_collected"] == 2
     assert pipeline_order == ["scan", "answer"]
     steering = json.loads(answer_payloads[0][1]["content"].removeprefix("profile_steering="))
     assert steering["target_dimension"] == "learning_goal"
@@ -1118,9 +1065,6 @@ def test_dialogue_chat_sse_audit_exposes_full_scan_for_healing_goal(monkeypatch,
     assert visible_answer.count("？") == 1
     # 首字不能重复：前缀探测释放时曾把第一个分片写两遍（"我我听到了…"）。
     assert visible_answer.startswith("我听到了")
-    assert [stage["label"] for stage in audit["stages"]] == [
-        "七维扫描", "原话与来源校验", "组件矩阵更新", "组件评分门禁", "分数与确认度", "补问规划", "回答组织"
-    ]
 
 
 def test_dialogue_complete_component_set_is_scored_and_revealed(monkeypatch, tmp_path: Path) -> None:
@@ -1186,19 +1130,16 @@ def test_dialogue_complete_component_set_is_scored_and_revealed(monkeypatch, tmp
     response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": quote})
     assert response.status_code == 200, response.text
     events = _parse_sse(response.text)
-    audit = next(data for event, data in events if event == "audit")
-    goal = next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
     radar = next(data for event, data in events if event == "radar")
+    goal_axis = next(axis for axis in radar["axes"] if axis["key"] == "learning_goal")
 
-    assert goal["component_collection"]["collected"] == 5
-    assert goal["scoring_phase"] == "scored"
-    assert goal["scoring_provenance"] == "test_scoring_model"
-    assert goal["scoring_attempts"] == 2
+    # 审计流下线后，评分结果只看对外契约：两次送评（首评 + 补齐漏评组件）、
+    # 雷达轴亮起、相位是 scored、五项组件都已被记为 collected。
     assert score_call_count == 2
-    assert goal["radar_score"] is not None
-    assert goal["scoring_output"] and len(goal["scoring_output"]) == 5
-    assert goal["confidence_audit"]["combination_type"] == "single_clear_self_report"
-    assert radar["axes"][1]["scoring_phase"] == "scored"
+    assert goal_axis["scoring_phase"] == "scored"
+    assert goal_axis["lit"] is True
+    assert goal_axis["value"] not in (None, 0)
+    assert goal_axis["component_collected"] == goal_axis["component_total"] == 5
 
 
 def test_dialogue_partial_component_set_still_scores_and_lights_the_radar(monkeypatch, tmp_path: Path) -> None:
@@ -1284,23 +1225,12 @@ def test_dialogue_partial_component_set_still_scores_and_lights_the_radar(monkey
     response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": quote})
     assert response.status_code == 200, response.text
     events = _parse_sse(response.text)
-    audit = next(data for event, data in events if event == "audit")
-    goal = next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
     radar = next(data for event, data in events if event == "radar")
     goal_axis = next(axis for axis in radar["axes"] if axis["key"] == "learning_goal")
 
-    assert goal["component_collection"]["collected"] == 4
-    assert goal["scoring_phase"] == "scored"
-    assert goal["radar_score"] is not None
-    assert goal["component_collection"]["coverage"] == 0.8
-    assert goal["scoring_deferred_reason"] is None
-    assert goal["scoring_provenance"] == "test_partial_scoring"
-    # 审计要能回答"模型怎么打分的"：三师的分数、逐条比对摘要、评语都要透出，
-    # 否则页面上只剩一个结论分，用户没法判断这个分是怎么来的。
-    assert [item["teacher"] for item in goal["jury_panel"]] == ["严师", "宽师", "中立"]
-    assert goal["jury_panel"][0]["reasoning_chain"] == ["目标有具体院校和时间"]
-    assert goal["jury_panel"][0]["comment"] == "方向明确"
-    assert goal["jury_mean"] == 76.0
+    assert goal_axis["component_collected"] == 4
+    assert goal_axis["scoring_phase"] == "scored"
+    assert goal_axis["coverage"] == 0.8
     assert goal_axis["lit"] is True
     assert goal_axis["status"] == "solid"
     assert goal_axis["value"] > 0
@@ -1326,14 +1256,26 @@ def test_dialogue_rerun_waits_for_three_more_evidence(monkeypatch, tmp_path: Pat
 
     keys = COMPONENTS["learning_goal"][:3]
     quote = "我想考研，目标定在北中医，每天先背方剂"
+    # 每一条证据都要有自己的原话：同组件、同原话的第二条会被「同一表达只认定
+    # 一次」的去重挡掉，水位线就不会涨，测出来的重评节奏是假的。
+    later_utterances = {2: "我每周三晚上复习两小时，周末还会整理错题本", 3: "我还想把方剂歌诀背下来"}
+    later_quotes = {
+        (2, 1): "我每周三晚上复习两小时",
+        (2, 2): "周末还会整理错题本",
+        (3, 3): "我还想把方剂歌诀背下来",
+    }
     score_calls: list[int] = []
 
     def evidence(turn_id: int, component: str, slot: int) -> AtomicEvidence:
         return AtomicEvidence(
             evidence_id=f"ev-rerun-{turn_id}-{slot}", dimension="learning_goal", component=component,
             # 每次新增都换来源组，否则会被当成同源重复，水位线永远不涨。
-            evidence_group_id=f"turn-{turn_id}-slot-{slot}", source_turn_ids=[turn_id], quote=quote,
-            normalized_claim=f"目标组件证据：{COMPONENT_RUBRICS['learning_goal'][component]['label']}",
+            evidence_group_id=f"turn-{turn_id}-slot-{slot}", source_turn_ids=[turn_id],
+            # 引文必须落在本轮发言里：跨轮重提同一句话属于历史重放，不该再涨水位线。
+            quote=later_quotes.get((turn_id, slot), quote),
+            # 同一组件的两条证据是两次不同认定，claim 必须可区分，否则会被
+            # 「同维度+同组件+同 claim」判成重复认定而不计入水位线。
+            normalized_claim=f"目标组件证据：{COMPONENT_RUBRICS['learning_goal'][component]['label']}#T{turn_id}-{slot}",
             evidence_type="self_report", supports=[component], collection_status="scorable",
             assessment="与组件直接相关", confirmed_aspects=["存在相关线索"], pending_aspects=[],
             semantic_relation="new",
@@ -1398,70 +1340,21 @@ def test_dialogue_rerun_waits_for_three_more_evidence(monkeypatch, tmp_path: Pat
     monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
     started = _start("dialogue", user_id="dialogue-rerun-pacing")
 
-    def chat(utterance: str) -> dict[str, object]:
+    def chat(utterance: str) -> None:
         response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": utterance})
         assert response.status_code == 200, response.text
-        events = _parse_sse(response.text)
-        audit = next(data for event, data in events if event == "audit")
-        return next(item for item in audit["system_result"]["dimensions"] if item["key"] == "learning_goal")
 
-    first = chat(quote)
+    # 首评：组件够 3 个就评一次。
+    chat(quote)
     assert len(score_calls) == 1
-    assert first["scoring_watermark"] == 3
-    assert first["next_scoring_watermark"] == 6
-    assert "首评" in str(first["scoring_trigger"])
 
     # +2 条：水位线 3 → 5，差 2 条不到步长，不重评。
-    second = chat("我每周三晚上复习两小时")
+    chat(later_utterances[2])
     assert len(score_calls) == 1
-    assert second["current_watermark"] == 5
-    assert second["scoring_watermark"] == 3
 
     # +1 条：水位线 6，刚好涨 3 条，重评一次。
-    third = chat("我还会整理错题本")
+    chat(later_utterances[3])
     assert len(score_calls) == 2
-    assert third["scoring_watermark"] == 6
-    assert "重评" in str(third["scoring_trigger"])
-    assert "3" in str(third["scoring_trigger"])
-
-    # 逐轮时间线：置信度每轮都记一行，评分轮打标记。审计里要回答的"这个分是
-    # 在多少置信度下评的"，直接读评分轮那一行，不必再单独存一份快照。
-    timeline = third["confidence_timeline"]
-    assert [row["turn"] for row in timeline] == [1, 2, 3]
-    assert [row["scored_this_turn"] for row in timeline] == [True, False, True]
-    assert [row["evidence"] for row in timeline] == [3, 5, 6]
-    assert all(row["quality_new"] is not None for row in timeline)
-    assert all(0.0 <= row["confidence"] <= 1.0 for row in timeline)
-
-
-def test_dimension_timeline_overwrites_instead_of_duplicating_a_turn() -> None:
-    """同一轮重试/重放只留一行，否则时间线里会出现两条"第 2 轮"。"""
-
-    from app.profile.component_model import QualityFactors
-    from app.profile.schema import EvidenceCard, EvidenceTier
-
-    cards = [
-        EvidenceCard(
-            dimension="learning_goal", source="dialogue", tier=EvidenceTier.SELF_REPORT,
-            fact="我想考研", quote="我想考研", objective_signal={}, weight=1,
-            component="goal_specificity", collection_status="scorable",
-            quality_factors=QualityFactors(
-                source_reliability=.9, expression_clarity=.8, content_specificity=.75,
-                freshness=1, consistency=.85, independence_note="时间线覆盖样例",
-            ).model_dump(),
-        )
-    ]
-    step_data: dict[str, object] = {}
-    fusion = modes_module._dialogue_fusion(cards)
-    for _ in range(3):
-        modes_module._append_dimension_timeline(
-            step_data, turn_index=2, fusion=fusion, cards=cards, all_cards=cards
-        )
-    rows = step_data["dimension_timeline"]["learning_goal"]  # type: ignore[index]
-    assert len(rows) == 1
-    assert rows[0]["turn"] == 2
-    assert rows[0]["quality_new"] is not None
-    assert rows[0]["quality_avg"] is not None
 
 
 def test_dialogue_restore_recovers_a_complete_but_unscored_dimension(monkeypatch, tmp_path: Path) -> None:
@@ -2348,8 +2241,8 @@ def test_dialogue_client_turn_id_scopes_replay_and_allows_same_text_next_turn(tm
             )
         ]
 
-    assert asyncio.run(submit(first.session_id, user_id, "turn-a"))[-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
-    assert asyncio.run(submit(first.session_id, user_id, "turn-b"))[-6:] == ["evidence", "audit", "identity_cards", "radar", "state", "done"]
+    assert asyncio.run(submit(first.session_id, user_id, "turn-a"))[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
+    assert asyncio.run(submit(first.session_id, user_id, "turn-b"))[-5:] == ["evidence", "identity_cards", "radar", "state", "done"]
     assert modes_module.get_profile_session(first.session_id, user_id=user_id, db_path=db_path).step_index == 2
     assert len(list_chat_messages(user_id, first.session_id, db_path=db_path)) == 4
 
@@ -2509,3 +2402,152 @@ def test_lenient_dialogue_validation_keeps_the_good_evidence() -> None:
     assert [item.dimension for item in extraction.dimension_scan] == ["knowledge_base"]
     assert extraction.turn_id is None
     assert extraction.extraction_error
+
+
+def test_replayed_history_never_becomes_second_evidence(monkeypatch) -> None:
+    """同一句历史被再抽一遍，不能变成第二条证据。
+
+    抽取器每轮都看整段 transcript（要解析代词），于是"明年考执业药师"会在
+    第 2、3、4 轮反复被抽出来。旧实现照单全收，画像被同一句话反复投票；
+    用户看到的是"我说了两句差不多的，B 站那条却丢了"。
+    """
+
+    from app.profile.component_model import COMPONENTS, COMPONENT_RUBRICS, QualityFactors
+    from app.profile.nodes import AtomicEvidence, DialogueExtraction, DimensionScan
+
+    quote = "明年考执业药师，先把药性补上"
+    component = COMPONENTS["learning_goal"][0]
+    extractions: list[str] = []
+
+    def build_extraction(turn_id: int) -> DialogueExtraction:
+        return DialogueExtraction(
+            turn_id=turn_id,
+            dimension_scan=[
+                DimensionScan(
+                    dimension=dimension,
+                    status="evidence_found" if dimension == "learning_goal" else "no_usable_evidence",
+                    reason="原话提供了目标信息。" if dimension == "learning_goal" else "本句没有该维度的可追溯内容。",
+                    components=[component] if dimension == "learning_goal" else [],
+                )
+                for dimension in modes_module.DIMENSION_LABELS
+            ],
+            atomic_evidence=[
+                AtomicEvidence(
+                    evidence_id=f"ev-replay-{turn_id}",
+                    dimension="learning_goal",
+                    component=component,
+                    evidence_group_id=f"turn-{turn_id}-goal",
+                    source_turn_ids=[turn_id],
+                    quote=quote,
+                    normalized_claim=f"目标是考执业药师（{COMPONENT_RUBRICS['learning_goal'][component]['label']}）",
+                    evidence_type="self_report",
+                    supports=[component],
+                    collection_status="scorable",
+                    assessment="与组件直接相关",
+                    confirmed_aspects=["存在目标线索"],
+                    pending_aspects=[],
+                    semantic_relation="new",
+                    quality_factors=QualityFactors(
+                        source_reliability=.9, expression_clarity=.8, content_specificity=.8,
+                        freshness=1, consistency=.9, independence_note="重放回归样例",
+                    ),
+                )
+            ],
+        )
+
+    async def mocked_extract(**_kwargs):
+        # 每轮都把第 1 轮那句话再抽一次——正是"整段历史送检"的后果。
+        extractions.append("called")
+        return build_extraction(len(extractions)), ""
+
+    class AnswerRouter:
+        async def chat_stream(self, _task, _messages, **_kwargs):
+            yield "message", "你的目标是明年考执业药师。你平时用什么材料复习？"
+
+    monkeypatch.setattr(modes_module, "_dialogue_extract_and_question", mocked_extract)
+    monkeypatch.setattr(modes_module, "ModelRouter", AnswerRouter)
+    monkeypatch.setattr(modes_module, "_has_profile_extract_key", lambda: False)
+    started = _start("dialogue", user_id="dialogue-replay-guard")
+
+    def chat(utterance: str) -> tuple[list[dict[str, object]], list[tuple[str, dict[str, object]]]]:
+        response = client.post("/api/profile/dialogue/chat", json={"session_id": started["session_id"], "utterance": utterance})
+        assert response.status_code == 200, response.text
+        events = _parse_sse(response.text)
+        # 审计流下线后，"这一轮到底收没收到证据"看 evidence 事件本身。
+        cards = next((data.get("cards") or [] for event, data in events if event == "evidence"), [])
+        return cards, events
+
+    first_cards, _ = chat(quote)
+    assert len(first_cards) == 1
+
+    second_cards, events = chat("我每周三晚上复习两小时")
+    assert second_cards == [], "历史重放不能再算一条证据"
+
+    # 回复始终是"对用户的总结 + 一句问话"，不会先写完再删掉重写。
+    visible = ""
+    replaces = 0
+    for event, data in events:
+        if event == "message":
+            visible += str(data.get("delta", ""))
+        elif event == "replace":
+            replaces += 1
+            visible = str(data.get("text", ""))
+    assert replaces == 0, "服务端不再用 replace 事后改写已流出的正文"
+    assert visible.count("？") == 1
+
+
+def test_saved_session_drops_legacy_audit_payload_but_keeps_scoring_state() -> None:
+    """审计流下线后，老会话里的审计记录读出即丢，评分节奏状态必须留下。
+
+    审计记录每轮一条、单条上万字符；丢掉不影响任何界面。但同一份
+    step_data 里还存着重评水位线——那是业务状态，丢了就会每轮重复送评。
+    """
+
+    loaded = modes_module._load_step_data(
+        json.dumps(
+            {
+                "dialogue_target": "learning_goal",
+                "developer_audit": [{"turn_index": 1, "system_result": {"dimensions": []}}],
+                "dimension_timeline": {"learning_goal": [{"turn": 1}]},
+                "dialogue_evidence_rejected": [{"reason": "history_replay"}],
+                "component_scoring_audit": {"learning_goal": {"evidence_watermark": 3, "component_scores": {"goal_specificity": 62}}},
+            },
+            ensure_ascii=False,
+        )
+    )
+
+    assert "developer_audit" not in loaded
+    assert "dimension_timeline" not in loaded
+    assert "dialogue_evidence_rejected" not in loaded
+    assert loaded["dialogue_target"] == "learning_goal"
+    assert loaded["component_scoring_audit"]["learning_goal"]["evidence_watermark"] == 3
+
+
+def test_persisting_migrates_legacy_scoring_audit_to_slim_state() -> None:
+    """保存时把旧评分审计压成四个业务字段，别让三师明细一直跟着落盘。"""
+
+    persisted = modes_module._persistable_step_data(
+        {
+            "_last_component_contract": {"dimension_scan": []},
+            "component_scoring_audit": {
+                "learning_goal": {
+                    "evidence_watermark": 3,
+                    "attempted_watermark": 3,
+                    "attempts_at_watermark": 1,
+                    "component_scores": {"goal_specificity": 62},
+                    "jury": {"严师": {"score": 60, "reasoning_chain": ["目标有对象"]}},
+                    "component_jury": {"goal_specificity": {"严师": {"score": 60}}},
+                    "warnings": [{"reason": "clamped"}],
+                }
+            },
+        }
+    )
+
+    assert "component_scoring_audit" not in persisted
+    assert persisted["component_scoring_state"]["learning_goal"] == {
+        "component_scores": {"goal_specificity": 62},
+        "evidence_watermark": 3,
+        "attempted_watermark": 3,
+        "attempts_at_watermark": 1,
+    }
+    assert "_last_component_contract" not in persisted

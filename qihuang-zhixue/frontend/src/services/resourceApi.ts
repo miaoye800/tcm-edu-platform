@@ -1,10 +1,24 @@
 import { authHeaders, handleUnauthorized, requestJson, requestResponse } from './request'
-import type { ResourceFilters, ResourceItem, ResourceListResponse, ResourceTaskEvent, ResourceType } from '../types/resource'
+import type { ResourceFilters, ResourceItem, ResourceListResponse, ResourcePlan, ResourceTaskEvent, ResourceTaskSnapshot, ResourceType } from '../types/resource'
 
 export const listResources = (filters: ResourceFilters = {}) => { const params = new URLSearchParams(); if (filters.type) params.set('type', filters.type); if (filters.nodeId) params.set('node_id', filters.nodeId); if (filters.favorited) params.set('favorited', 'true'); if (filters.q) params.set('q', filters.q); if (filters.offset) params.set('offset', String(filters.offset)); if (filters.limit) params.set('limit', String(filters.limit)); return requestJson<ResourceListResponse>(`/api/resources?${params}`) }
 export const getResource = (id: string) => requestJson<ResourceItem>(`/api/resources/${id}`)
 /** `params` 目前只被 graph 与 mindmap 消费；doc/quiz/story 传了也只会原样存进 meta。 */
 export const createResourceTask = (nodeId: string, resourceType: ResourceType, params: Record<string, unknown> = {}) => requestJson<{ task_id: string }>('/api/resource/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ node_id: nodeId, resource_type: resourceType, params }) })
+/** 任务快照：刷新后恢复「已确认的方案」，不必重新提案。 */
+export const getResourceTask = (taskId: string) => requestJson<ResourceTaskSnapshot>(`/api/resource/tasks/${taskId}`)
+/**
+ * 修订方案。`plan` 是用户在面板里已经改过的那一版（不能一按修订就丢手改）；
+ * `goal` 非空表示推翻重提，后端按新目标整份重拟。
+ */
+export const reviseResourcePlan = (taskId: string, feedback: string, options: { plan?: ResourcePlan; goal?: string } = {}) => requestJson<{ plan: ResourcePlan }>(`/api/resource/tasks/${taskId}/plan/revise`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback, plan: options.plan, goal: options.goal || '' }) })
+/** 确认方案。服务端会强校验（空方案、超长单元）后才推进到生成步。 */
+/** 确认方案与设计单。两者必须同批提交——只交方案，服务端只能自己再猜一遍版式。 */
+export const confirmResourcePlan = (taskId: string, plan: ResourcePlan, design?: unknown) =>
+  requestJson<{ ok: boolean; current_step: number; plan: ResourcePlan; design?: unknown }>(
+    `/api/resource/tasks/${taskId}/plan/confirm`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, design: design ?? null }) },
+  )
 export const toggleResourceFavorite = (id: string) => requestJson<ResourceItem>(`/api/resources/${id}/favorite`, { method: 'POST' })
 export const patchMindmapTemplate = (id: string, templateId: string) => requestJson<ResourceItem>(`/api/resources/${id}/mindmap`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ template_id: templateId }) })
 export const expandMindmap = (id: string, nodePath: string[]) => requestJson<{ node_path: string[]; added_nodes: unknown[]; mindmap_data: unknown; idempotent: boolean }>(`/api/mindmap/${id}/expand`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ node_path: nodePath }) })

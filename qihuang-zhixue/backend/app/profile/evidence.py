@@ -147,6 +147,44 @@ class EvidenceCard(BaseModel):
         return value
 
 
+#: 能证明"这一块我不会"的答题形态。行为埋点（跳过/重看）不在其中：
+#: 它说明的是注意力投向，不是知识点掌握。
+_WEAK_POINT_ANSWER_KINDS = frozenset({"选择", "数字", "自述"})
+
+
+def weak_point_label_of(card: EvidenceCard) -> str | None:
+    """把一条证据读成"薄弱点标签"，读不出来就返回 None。
+
+    以前任何 weak_points 卡都会贡献标签，连"跳过画像引导页"这种页面级埋点
+    都会被当成一个知识点：牌面上因此出现"画像引导 29%"——用户看不懂，也不
+    是真话。薄弱点必须来自做到题、说过这块不行、或被校准验证过的证据。
+    """
+
+    if card.dimension != "weak_points":
+        return None
+    signal = card.objective_signal if isinstance(card.objective_signal, dict) else {}
+    measured = (
+        card.claim_status == "verified"
+        or signal.get("correct") is False
+        or signal.get("is_correct") is False
+        or bool(signal.get("question_id"))
+        or bool(signal.get("gave_up"))
+        or str(signal.get("question_type") or "") in _WEAK_POINT_ANSWER_KINDS
+    )
+    if not measured:
+        return None
+    for key in ("label", "topic", "knowledge_point"):
+        value = str(signal.get(key) or "").strip()
+        if value:
+            return value
+    labels = signal.get("weak_labels")
+    if isinstance(labels, list):
+        for label in labels:
+            if isinstance(label, str) and label.strip():
+                return label.strip()
+    return None
+
+
 def infer_evidence_tier(source: str, *, fact: str = "") -> EvidenceTier:
     """Infer a tier for legacy cards that predate the explicit field."""
 
@@ -173,4 +211,5 @@ __all__ = [
     "ExtractionMethod",
     "StructuredEvidence",
     "infer_evidence_tier",
+    "weak_point_label_of",
 ]

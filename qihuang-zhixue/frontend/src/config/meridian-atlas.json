@@ -1,0 +1,182 @@
+{
+  "geometry_version": "bodyparts3d4@tcm3d-e8b9ad1c-skin1",
+  "height_m": 1.716,
+  "camera": {
+    "fov": {
+      "overview": 34,
+      "chapter": 30,
+      "acupoint": 24
+    },
+    "views": {
+      "front": {
+        "position": [
+          0,
+          0.92,
+          3.1
+        ],
+        "target": [
+          0,
+          0.87,
+          0
+        ]
+      },
+      "back": {
+        "position": [
+          0,
+          0.92,
+          -3.1
+        ],
+        "target": [
+          0,
+          0.87,
+          0
+        ]
+      },
+      "side": {
+        "position": [
+          3.1,
+          0.92,
+          0.02
+        ],
+        "target": [
+          0,
+          0.87,
+          0
+        ]
+      }
+    },
+    "distance": {
+      "overview": 3.1,
+      "chapter": 1.25,
+      "acupoint": 0.62
+    },
+    "tween_ms": 900,
+    "pan_box": {
+      "x": 0.52,
+      "y_min": 0.02,
+      "y_max": 1.72,
+      "z": 0.46
+    },
+    "note": "overview 距离取 3.10 m（≈1.8× 身高）。计划里写的 2.4× 会把人缩成一根柱、四周全是空场，P0 实拍后收到 3.10。chapter 1.25 m / acupoint 0.62 m 是 P3 实拍定的：原来写 0.62 / 0.34，视高分别只有 0.33 m 与 0.14 m —— 屏幕上只剩一块肌腹，看不出\"这一段是胸前还是后背\"。现在 0.67 m / 0.26 m，章节能看出部位、穴位能看出相邻穴。"
+  },
+  "anatomy": {
+    "layers": {
+      "skin": {
+        "label": "体表",
+        "color": "#b3907c",
+        "roughness": 0.86,
+        "metalness": 0.0,
+        "opacity": 1.0,
+        "texture": {
+          "scale": 30.0,
+          "bump": 0.16,
+          "note": "皮肤没有 UV，低频斑驳 + 极轻起伏即可；频率再高就是噪点，近看像砂纸。"
+        },
+        "note": "**唯一的解剖层**。362 穴是吸附在皮肤（FJ2810）三角形上的，经脉折线也走体表，所以穴位本来就定义在这一层。肌肉/骨骼层已于 P10 下架：肌肉是 7.5 mm 体素简化的产物，薄肌腹被磨穿、肌群间没有筋膜填充，1.25 m 章节视距下就是一块块断开的红肉；骨骼层则是同一份资产的附属展示，与「看穴位在哪」无关。两层的 .bin 资产保留在磁盘上（打包端未动），只是前端不再请求与渲染。"
+      }
+    },
+    "neutral_zone": {
+      "note": "下体中性化。教学场景是课堂投屏/多人围观，写实的男性下体没有教学收益，却带来明确的展示风险。**不用「加一条短裤」的遮挡**：任脉下腹三穴（曲骨 0.879 / 中极 0.917 / 关元 0.947）正好落在那块布会盖住的位置，遮挡会直接吃掉内容。这里改为把窗口内的体表**换成中性曲面**（边界固定的调和填充，Δp=0）：不新增图层、不挡穴位，边界环完全不动，与臀股腹壁严格连续。也**不用「平滑一下」**：受限拉普拉斯是扩散算子，只能把突起摊成更矮更宽的突起——实测 z 峰值仅从 0.106 m 降到 0.093 m，侧面仍一眼可辨，反而把腹股沟一起熨平了。窗口只取生殖器本身（|x|≤0.055 / y 0.765–0.872 / z≥0.02），96 次超松弛实测已收敛到 0.55 mm 以内。",
+      "enabled": true,
+      "box": {
+        "x": 0.055,
+        "y_min": 0.765,
+        "y_max": 0.872,
+        "z_min": 0.02
+      },
+      "iterations": 96,
+      "relax": 1.7
+    },
+    "lights": {
+      "hemisphere": {
+        "sky": "#d2d8d2",
+        "ground": "#2a1c14",
+        "intensity": 0.62
+      },
+      "key": {
+        "color": "#fff0e0",
+        "intensity": 2.05,
+        "position": [
+          1.6,
+          2.4,
+          2.4
+        ]
+      },
+      "fill": {
+        "color": "#a8c4c8",
+        "intensity": 0.95,
+        "position": [
+          -2.2,
+          1.0,
+          1.4
+        ]
+      },
+      "rim": {
+        "color": "#9fe0d0",
+        "intensity": 0.85,
+        "position": [
+          -0.8,
+          1.4,
+          -2.6
+        ]
+      },
+      "up": {
+        "color": "#ffd9b0",
+        "intensity": 0.42,
+        "position": [
+          0,
+          -2.2,
+          0.6
+        ]
+      },
+      "camera_fill": {
+        "color": "#cfe4e8",
+        "intensity": 0.52
+      }
+    }
+  },
+  "points": {
+    "radius_m": 0.0022,
+    "halo_scale": 3.4,
+    "label": {
+      "max": 16,
+      "avoid_px": 74,
+      "row_px": 19,
+      "normal_cull": 0.06,
+      "offset_y_m": 0.012
+    }
+  },
+  "line": {
+    "focus_width_px": 2.2,
+    "focus_glow_px": 6.0,
+    "idle_width_px": 0.9,
+    "lit_width_px": 2.6,
+    "lit_glow_px": 6.5,
+    "flow_samples": 12
+  },
+  "quality": {
+    "desktop": {
+      "pixel_ratio_cap": 2,
+      "bloom": true
+    },
+    "mobile": {
+      "pixel_ratio_cap": 1.5,
+      "bloom": false
+    },
+    "low": {
+      "pixel_ratio_cap": 1,
+      "bloom": false
+    },
+    "note": "移动端关 bloom（3 个全屏 pass，唯一吃满屏像素的），先保 30 fps，再谈光效。P10 起档位只剩像素比与 bloom 两项——肌肉/骨骼下架后，画质不再需要为解剖层分叉。"
+  },
+  "render": {
+    "background": "#0a1416",
+    "fog_density": 0.055,
+    "exposure": 1.2,
+    "bloom": {
+      "strength": 0.54,
+      "radius": 0.55,
+      "threshold": 0.62
+    }
+  }
+}

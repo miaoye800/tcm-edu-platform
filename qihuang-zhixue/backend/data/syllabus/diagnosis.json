@@ -1,0 +1,296 @@
+{
+  "subject": "diagnosis",
+  "title": "中医诊断学",
+  "textbook": {
+    "title": "中医诊断学",
+    "edition": "新世纪第5版（十四五规划）",
+    "editor": "李灿东、方朝义",
+    "publisher": "中国中医药出版社",
+    "toc_source": "《中医诊断学》（李灿东、方朝义主编，中国中医药出版社，2021-06，ISBN 9787513268493）绪论 + 九章、27 节。章目与第一章前两节的节名核对来源 https://book.cppinfo.cn/Encyclopedias/home/index?id=4418364 ；其余节名逐条对自同社上一版（2016，ISBN 9787513234009）目录，两版节次一致。绪论里「一、二、三」是行文标题不是节号，按不分节处理，五条内容直接作知识点。"
+  },
+  "schema_version": 1,
+  "chapters": [
+    {
+      "no": 1,
+      "book_no": 0,
+      "part": "绪论",
+      "title": "绪论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "绪论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": [
+            "中医诊断学的发展简史",
+            "中医诊断学的主要内容",
+            "中医诊断的基本原理",
+            "中医诊断的基本原则",
+            "学习中医诊断学的方法"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 2,
+      "book_no": 1,
+      "part": "各论",
+      "title": "望诊",
+      "sections": [
+        {
+          "no": 1,
+          "title": "全身望诊",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "局部望诊",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "舌诊",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "望小儿食指络脉",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "望排出物",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 3,
+      "book_no": 2,
+      "part": "各论",
+      "title": "闻诊",
+      "sections": [
+        {
+          "no": 1,
+          "title": "听声音",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "嗅气味",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 4,
+      "book_no": 3,
+      "part": "各论",
+      "title": "问诊",
+      "sections": [
+        {
+          "no": 1,
+          "title": "问诊的意义及方法",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "问诊的内容",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "问现在症",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 5,
+      "book_no": 4,
+      "part": "各论",
+      "title": "切诊",
+      "sections": [
+        {
+          "no": 1,
+          "title": "脉诊",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "按诊",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 6,
+      "book_no": 5,
+      "part": "各论",
+      "title": "八纲辨证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "八纲基本证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "八纲证之间的关系",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 7,
+      "book_no": 6,
+      "part": "各论",
+      "title": "病性辨证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "六淫辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "阴阳虚损辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "气血辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "津液辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 8,
+      "book_no": 7,
+      "part": "各论",
+      "title": "病位辨证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "脏腑辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "六经辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "卫气营血辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "三焦辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "经络辨证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 9,
+      "book_no": 8,
+      "part": "各论",
+      "title": "中医诊断思维与应用",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中医诊断思维方法",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "中医诊断思维的应用",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 10,
+      "book_no": 9,
+      "part": "各论",
+      "title": "中医医案与病历书写",
+      "sections": [
+        {
+          "no": 1,
+          "title": "中医医案",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "中医病历书写",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,9 @@ from typing import Final, Literal
 
 from app.kb.ingest import load_formulas, load_herbs, load_syndromes
 from app.kb.models import Herb
+from app.mindmap.catalog import Coverage
+from app.mindmap.catalog import match as match_catalog
+from app.mindmap.catalog import titles_line
 
 IntentKind = Literal[
     "monograph",  # 单味药
@@ -37,6 +40,10 @@ IntentKind = Literal[
 ]
 
 #: 问法 → 结构原型。原型决定 prompt 的槽位清单与确定性兜底的骨架。
+#:
+#: 「整门课概览」（``overview``）不在这张表里：它不是一类**问法**，而是同一句
+#: 话落在库里某一门课时的形态。``classify`` 在最后一步用 ``catalog.match``
+#: 直接构造，kind 仍是 concept，archetype 换成 overview。
 ARCHETYPE: Final[dict[str, str]] = {
     "monograph": "monograph",
     "taxonomy": "taxonomy",
@@ -141,16 +148,30 @@ class MapIntent:
     signals: tuple[str, ...] = ()
     #: True = 语料外，整棵树只能标 model。前端据此在对话里明说。
     degraded: bool = False
+    #: True = 这句话落在本库某一门课（或某一章）上，库里确实有内容可用。
+    #: 与 ``degraded`` 互斥：``degraded`` 是「库外」，这个是「库内的整门课」。
+    covered: bool = False
+    #: 命中的学科正名（《中药学》），与命中的章名（空 = 只命中整门课）。
+    covered_subject: str = ""
+    covered_chapter: str = ""
 
     @property
     def label(self) -> str:
+        if self.covered_chapter:
+            return "整章概览"
+        if self.covered:
+            return "整门课概览"
         return _KIND_LABEL[self.kind]
 
     def describe(self) -> str:
         """给对话栏用的一句话。不解释算法，只说结论。"""
 
         if self.degraded:
-            return "该主题不在中药学教材语料内，以下内容由模型整理，建议对照教材核对"
+            return f"这个主题不在本地教材里（本库有 {titles_line()}），以下内容由模型整理，建议核对"
+        if self.covered_chapter:
+            return f"《{self.covered_subject}》里有这一章「{self.covered_chapter}」，按它的节次组织"
+        if self.covered:
+            return f"本库有《{self.covered_subject}》这门课，按它的教材目录组织：章节点照用，目录外才由模型补"
         return f"按「{self.label}」组织"
 
 
@@ -413,6 +434,18 @@ def classify(topic: str) -> MapIntent:
     if (anchors.meridians or anchors.natures or anchors.flavors) and ("药" in text or "中药" in text):
         return _make(text, "filter", anchors, {**found, "filter": ()})
 
+    # 6.5) 整门课 / 整章：**排在「分类」前面**。
+    #
+    #      「针灸学概览」「中医基础理论有哪些内容」这类句子带「概览」「有哪些」，
+    #      以前会先命中分类题，然后因为没有药类锚点而拿不到任何素材——问一门课
+    #      却回一句「没认出是哪一类」。句子点到的是课程名，就该按课程答。
+    #
+    #      只在这句话没有点到具体药 / 方 / 证 / 药类时才算：点了就是那道具体的题。
+    if not (anchors.herbs or anchors.formulas or anchors.syndromes or anchors.categories):
+        coverage = match_catalog(text)
+        if coverage is not None:
+            return _overview(text, anchors, coverage)
+
     # 7) 分类章节：命中真实的知识树节点名（22 域 / 48 亚类），或明确说「分类/包括」。
     taxonomy_signal = _signals(text, _PATTERNS["taxonomy"])
     if anchors.categories or taxonomy_signal:
@@ -422,7 +455,16 @@ def classify(topic: str) -> MapIntent:
     if anchors.herbs:
         return _make(text, "monograph", anchors, found)
 
-    # 9) 域外兜底：诚实降级，不伪装成教材。
+    # 9) 整门课 / 整章：先问库，再决定是不是域外。
+    #
+    #    以前这里直接无条件判成 degraded——一句「中药学介绍」被判成教材语料之外，
+    #    整棵树 24 个节点全标推断，而库里就有这门课 28 章 65 节的目录。
+    #    现在顺序反过来：库里有就按库里的组织（archetype=overview，骨架=教材目录），
+    #    真没有才降级，并且降级说明里要写清本库到底覆盖什么。
+    coverage = match_catalog(text)
+    if coverage is not None:
+        return _overview(text, anchors, coverage)
+
     return MapIntent(
         topic=text,
         kind="concept",
@@ -431,6 +473,26 @@ def classify(topic: str) -> MapIntent:
         anchors=anchors,
         signals=_signals(text, _DEGRADED_HINTS),
         degraded=True,
+    )
+
+
+def _overview(text: str, anchors: Anchors, coverage: Coverage) -> MapIntent:
+    """落在库里某门课（或某一章）时的题意。骨架取教材目录，标注为「在库里」。"""
+
+    subject = coverage.chapter_subject or coverage.subjects[0]
+    chapter = coverage.chapter_info
+    return MapIntent(
+        topic=text,
+        kind="concept",
+        archetype="overview",
+        # 整门课按层级画（篇 → 章 → 节）；点到某一章时按并列画（那一章的几节）。
+        structure_hint="logic-right" if chapter is not None else "org-down",
+        anchors=anchors,
+        signals=tuple(item.title for item in coverage.subjects),
+        degraded=False,
+        covered=True,
+        covered_subject=subject.title,
+        covered_chapter=chapter.title if chapter is not None else "",
     )
 
 

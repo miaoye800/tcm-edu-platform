@@ -29,6 +29,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from app.resources.constants import StepSpec
+
 CapabilityKind = Literal["job", "query", "command"]
 Audience = Literal["agent", "frontend", "human"]
 
@@ -43,12 +45,11 @@ class ErrorSpec:
     remedy: str
 
 
-@dataclass(frozen=True)
-class StepSpec:
-    """管线的一步。与 ``resources/constants.py`` 的工序表同名同序，不另造一套。"""
-
-    id: str
-    label: str
+#: 管线的一步。**这里不另定义**，直接复用 ``resources/constants.py`` 的 TypedDict：
+#: 以前两处同名不同构（这里少一个 variants），导致「工序表单一事实源」只是口号——
+#: 契约、前端标签、SSE 的 step_label 各自能漂移。
+#:
+#: 现在只有一份定义，handler 直接 ``steps_for(type, CURRENT_PIPELINE_VERSION)``。
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,24 @@ class ArtifactSpec:
     theme: str = ""
     #: 产物里最能回答「这图靠不靠得住」的三个数。
     evidence_tiers: tuple[str, ...] = ("textbook", "graph", "model")
+    #: 同一个能力可能落成**不同体裁**，而体裁决定打开哪一页：``plan.present``
+    #: 既能出导图（``/mindmap``）也能出图文（``/resources``），选哪个要到跑完
+    #: 才知道。这里只补「与主体裁不同」的那几种，主体裁仍用 ``open_url_template``，
+    #: 免得每个能力都把自己写两遍。
+    variants: tuple[tuple[str, str], ...] = ()
+
+    def template_for(self, kind: str) -> str:
+        """某种体裁的打开地址模板；认不得的体裁回落到主模板。
+
+        存在的理由：以前「声明地址的地方」与「拼地址的地方」是两处
+        （spec 里写 mindmap、``present.open_url_for`` 里自己 if/else），
+        结果导图对得上、图文对不上，只有用户点开那一份才发现。
+        """
+
+        for name, template in self.variants:
+            if name == kind:
+                return template
+        return self.open_url_template
 
 
 @dataclass(frozen=True)
@@ -109,7 +128,7 @@ class CapabilitySpec:
             "audiences": list(self.audiences),
             "input_schema": self.input_model.model_json_schema(),
             "output_shape": self.output_shape,
-            "pipeline": [{"id": step.id, "label": step.label} for step in self.pipeline],
+            "pipeline": [{"id": step["id"], "label": step["label"]} for step in self.pipeline],
             "events": list(self.events),
             "idempotency": self.idempotency,
             "errors": [{"code": item.code, "http_status": item.http_status, "message": item.message} for item in self.errors],
@@ -127,6 +146,7 @@ class CapabilitySpec:
                 "structure": self.artifact.structure,
                 "theme": self.artifact.theme,
                 "evidence_tiers": list(self.artifact.evidence_tiers),
+                "variants": [{"kind": kind, "open_url_template": tpl} for kind, tpl in self.artifact.variants],
             }
         if self.deprecation:
             data["deprecation"] = self.deprecation
@@ -154,6 +174,10 @@ class CapabilitySpec:
         ]
         if self.artifact is not None:
             parts.append(f"【产物】{self.artifact.kind}，完成后打开 {self.artifact.open_url_template}")
+            # 同一能力能落成几种体裁时说清楚，否则模型只会说"给你导成导图"，
+            # 而用户要的是能打印的文稿时它不知道该改哪个参数。
+            for kind, template in self.artifact.variants:
+                parts.append(f"【产物·另一体裁】{kind}，完成后打开 {template}")
         if self.latency:
             parts.append(f"【耗时】{self.latency}")
         if self.errors:

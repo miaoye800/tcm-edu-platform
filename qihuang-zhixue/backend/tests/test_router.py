@@ -49,13 +49,13 @@ def _mock_settings() -> Settings:
 def test_router_selects_expected_models() -> None:
     router = ModelRouter(settings=_mock_settings())
 
-    assert router.resolve("classify").model_name == "deepseek-v4-flash"
-    assert router.resolve("route").model_name == "deepseek-v4-flash"
-    assert router.resolve("reason").model_name == "deepseek-v4-flash"
-    assert router.resolve("generate").model_name == "deepseek-v4-flash"
-    assert router.resolve("profile_extract").model_name == "deepseek-v4-flash"
-    assert router.resolve("profile_update").model_name == "deepseek-v4-flash"
-    assert router.resolve("profile_jury").model_name == "deepseek-v4-flash"
+    assert router.resolve("classify").model_name == "deepseek-flash"
+    assert router.resolve("route").model_name == "deepseek-flash"
+    assert router.resolve("reason").model_name == "deepseek-flash"
+    assert router.resolve("generate").model_name == "deepseek-flash"
+    assert router.resolve("profile_extract").model_name == "deepseek-flash"
+    assert router.resolve("profile_update").model_name == "deepseek-flash"
+    assert router.resolve("profile_jury").model_name == "deepseek-flash"
     assert router.resolve("vision").model_name == "glm-4.5v"
 
 
@@ -74,7 +74,7 @@ async def _assert_predictable_mock_without_keys() -> None:
 
     assert isinstance(client, MockClient)
     assert client.stream_delay == 0.0
-    assert text.startswith("[MOCK:deepseek-v4-flash]")
+    assert text.startswith("[MOCK:deepseek-flash]")
     assert messages[0]["content"] in text
     assert stream_text == text
     assert {kind for kind, _ in stream_tokens} == {"message"}
@@ -91,13 +91,13 @@ def test_router_treats_blank_deepseek_key_as_mock() -> None:
 def test_router_passes_deepseek_base_url_and_model_to_real_client() -> None:
     settings = _real_key_settings()
     settings.deepseek_base_url = "https://example.deepseek.test/v1/"
-    settings.deepseek_model_flash = "deepseek-v4-flash-custom"
+    settings.deepseek_model_flash = "deepseek-flash-custom"
     router = ModelRouter(settings=settings)
 
     client = router.select("profile_jury")
 
     assert isinstance(client, DeepSeekClient)
-    assert client.model_name == "deepseek-v4-flash-custom"
+    assert client.model_name == "deepseek-flash-custom"
     assert client.base_url == "https://example.deepseek.test/v1"
 
 
@@ -238,7 +238,7 @@ def test_router_stream_falls_back_to_mock_when_real_stream_raises(capsys: pytest
 
     assert recorder.stream_calls == 1
     assert {kind for kind, _ in tokens} == {"message"}
-    assert text.startswith("[MOCK:deepseek-v4-flash]")
+    assert text.startswith("[MOCK:deepseek-flash]")
     assert messages[0]["content"] in text
     assert "[FallbackReason:HTTP401]" in text
     assert "FallbackReason:HTTP401 | LLMHTTPStatusError: DeepSeek HTTP 401: invalid key" in out

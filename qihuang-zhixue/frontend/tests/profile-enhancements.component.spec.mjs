@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8')
 const reducer = read('../src/components/profile/profileDialogueStreamState.ts')
@@ -23,5 +23,9 @@ assert(!profile.includes('noKeyRuleDimensions.value.length'), 'profile narrative
 
 assert(dialogue.includes('proposeProfileGoal') && dialogue.includes('confirmProfileGoal'), 'dialogue convergence should support goal confirmation')
 assert(dialogue.includes('重新说') && dialogue.includes('确认'), 'goal confirmation needs both confirm and restate paths')
+
+// 审计面板只是开发期观察窗，已随需求下线；页面里不能再有它的挂载点。
+assert(!existsSync(new URL('../src/components/profile/ProfileDeveloperAudit.vue', import.meta.url)), 'developer audit component must be removed')
+assert(!dialogue.includes('ProfileDeveloperAudit'), 'dialogue must not mount the removed audit panel')
 
 console.log('ok - profile enhancement component contracts')

@@ -168,17 +168,24 @@ def build_dimension_facts(
             for item in getattr(dimension, "items", [])
         ]
         confidence = float(getattr(dimension, "confidence", 0.0) or 0.0)
+        # 分数只认一个入口：数值维写 `score`，分类维只写 `radar_score`。
+        # 不合并这两个字段，学习目标明明有 53 分，叙述里却按"待补充"处理。
+        effective_score = score if score is not None else getattr(dimension, "radar_score", None)
+        # "ready" 必须是"有结论"，不是"证据够多"：动机收了两项材料、分还没算
+        # 出来时置信度已经 0.67，只看置信度会把它写成"高置信维度"，和雷达上
+        # 一个尖角都没画出来的画面自相矛盾。
+        has_conclusion = effective_score is not None or bool(weak_points)
         facts.append(
             DimensionNarrativeFact(
                 key=key,
                 name=name,
-                score=float(score) if score is not None else None,
-                anchor=_anchor_text(key, float(score)) if score is not None else None,
+                score=float(effective_score) if effective_score is not None else None,
+                anchor=_anchor_text(key, float(effective_score)) if effective_score is not None else None,
                 label=str(label) if label is not None else None,
                 distribution=distribution,
                 weak_points=weak_points,
                 confidence=round(confidence, 4),
-                status="ready" if confidence >= low_confidence_threshold else "待补充",
+                status="ready" if has_conclusion and confidence >= low_confidence_threshold else "待补充",
                 evidence_count=len(getattr(dimension, "evidence", []) or []),
                 evidence_refs=_evidence_refs(getattr(dimension, "evidence", []) or []),
                 narrative=(str(dimension.narrative) if getattr(dimension, "narrative", "") else None),
@@ -378,9 +385,9 @@ def _render_narrative(
 
 def _overview(ready: list[DimensionNarrativeFact]) -> str:
     if not ready:
-        return "当前画像暂无高置信维度。"
+        return "当前画像暂无得出初步结论的维度。"
     if len(ready) < len(DIMENSION_LABELS):
-        return f"当前画像已有 {len(ready)} 个高置信维度。"
+        return f"当前画像已有 {len(ready)} 个维度得出初步结论。"
     return "当前画像七个维度均已有高置信数据。"
 
 

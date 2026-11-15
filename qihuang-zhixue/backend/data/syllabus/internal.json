@@ -1,0 +1,471 @@
+{
+  "subject": "internal",
+  "title": "中医内科学",
+  "textbook": {
+    "title": "中医内科学",
+    "edition": "新世纪第4版（十三五规划）",
+    "editor": "张伯礼、吴勉华",
+    "publisher": "中国中医药出版社",
+    "toc_source": "《中医内科学》（张伯礼、吴勉华主编，中国中医药出版社，2017，ISBN 9787513234825）总论 + 各论八章、53 节，逐节抄自该版目录（带页码）。核对来源 https://book.cppinfo.cn/Encyclopedias/home/index?id=4314466 与同版目录页 https://baike.baidu.com/item/中医内科学（第4版/本科中医药类/配增值）/66250278 。总论是「一、二、三」式行文标题，按不分节处理；章内「附：心瘅」这类附病证不单列为节。"
+  },
+  "schema_version": 1,
+  "chapters": [
+    {
+      "no": 1,
+      "book_no": 0,
+      "part": "总论",
+      "title": "总论",
+      "sections": [
+        {
+          "no": 1,
+          "title": "总论",
+          "kind": "concept",
+          "virtual": true,
+          "entries": [
+            "中医内科学的定义、性质和范围",
+            "中医内科学发展简史",
+            "中医内科疾病的分类方法",
+            "中医内科疾病的辨证方法",
+            "中医内科疾病的治疗法则",
+            "中医内科学的教学要求和学习方法"
+          ]
+        }
+      ]
+    },
+    {
+      "no": 2,
+      "book_no": 1,
+      "part": "各论",
+      "title": "肺系病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "感冒",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "咳嗽",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "哮病",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "喘证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "肺痈",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 6,
+          "title": "肺痨",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 7,
+          "title": "肺胀",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 8,
+          "title": "肺痿",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 3,
+      "book_no": 2,
+      "part": "各论",
+      "title": "心系病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "心悸",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "胸痹心痛",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "心衰",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "厥证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "不寐",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 4,
+      "book_no": 3,
+      "part": "各论",
+      "title": "脑系病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "头痛",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "眩晕",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "中风",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "痴呆",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "癫狂",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 6,
+          "title": "痫病",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 5,
+      "book_no": 4,
+      "part": "各论",
+      "title": "脾胃系病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "胃痛",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "痞满",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "呕吐",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "噎膈",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "呃逆",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 6,
+          "title": "腹痛",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 7,
+          "title": "泄泻",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 8,
+          "title": "痢疾",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 9,
+          "title": "便秘",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 6,
+      "book_no": 5,
+      "part": "各论",
+      "title": "肝胆病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "胁痛",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "黄疸",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "积聚",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "鼓胀",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "瘿病",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 6,
+          "title": "疟疾",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 7,
+      "book_no": 6,
+      "part": "各论",
+      "title": "肾系病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "水肿",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "淋证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "癃闭",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "阳痿",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "遗精",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 8,
+      "book_no": 7,
+      "part": "各论",
+      "title": "气血津液病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "郁证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "血证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "痰饮",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "消渴",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "自汗盗汗",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 6,
+          "title": "内伤发热",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 7,
+          "title": "虚劳",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 8,
+          "title": "肥胖",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 9,
+          "title": "癌病",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    },
+    {
+      "no": 9,
+      "book_no": 8,
+      "part": "各论",
+      "title": "肢体经络病证",
+      "sections": [
+        {
+          "no": 1,
+          "title": "痹证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 2,
+          "title": "痉证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 3,
+          "title": "痿证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 4,
+          "title": "颤证",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        },
+        {
+          "no": 5,
+          "title": "腰痛",
+          "kind": "concept",
+          "virtual": false,
+          "entries": []
+        }
+      ]
+    }
+  ]
+}
