@@ -3,7 +3,6 @@
     <section class="login-stage">
       <div class="brand-panel">
         <img :src="qihuangLogo" alt="岐黄智学" />
-        <p class="eyebrow">中国软件杯 A3</p>
         <h1>岐黄智学</h1>
         <p>个性化中药学学习多智能体系统</p>
       </div>
@@ -183,6 +182,11 @@ h2 {
 h1 {
   @include text-sheen;
   font-size: clamp(46px, 7vw, 76px);
+}
+
+// 品牌卡去掉顶部标签后，标题与图标之间的呼吸感要单独给回来
+.brand-panel h1 {
+  margin-top: 18px;
 }
 
 h2 {
