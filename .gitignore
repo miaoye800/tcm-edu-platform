@@ -180,3 +180,9 @@ qihuang-zhixue/docs/proto/assets/*.bin
 /.tmpsrc/
 /.tmpstyle/
 qihuang-zhixue/backend/.tmp_*.json
+
+# 个人工作笔记（Notion 导出），不入公开仓库
+/notion页面/
+
+# 内部交付物与验收记录：验收单、审计截图、质量基线、核对用 docx，不属于源码范围
+qihuang-zhixue/deliverables/
